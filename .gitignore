@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+
+# run.py writes this
+result.png
+
+# parity test scratch
+.parity_tmp/
