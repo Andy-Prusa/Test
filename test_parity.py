@@ -687,13 +687,31 @@ if __name__ == "__main__":
 # an inner fixed point (bloodgas.py:165-176). At extreme hypercapnia that inner
 # loop is poorly conditioned, so the residual is not smooth in PCO2 and the
 # bracket admits more than one root; successive one-second solves then land on
-# different ones. A related non-monotonicity was found independently in the
-# same residual: co2_content has a pole at pH 8.142 (bloodgas.py:154), and for
-# BE >= +6 brentq and model.js's bisection select DIFFERENT roots of it and
-# disagree by ~89%. Neither implementation is right there — they are two
-# arbitrary choices among several roots. That one is unreachable here only
-# because base excess is 0 in both (Patient.be, and model.js:78 hardcodes it),
-# which test_hardcoded_constants() pins.
+# different ones.
+#
+# The same residual has a second, structural cause of multiple roots, and it is
+# worth being precise about because the obvious summary of it is wrong.
+# co2_content carries a pole at pH 8.142 (bloodgas.py:154), and the residual is
+# multi-rooted once the pH at the bracket's low end (PCO2 = 3) rises past it.
+# That happens from BE = -0.50, measured over Hb 10-18, T 33-38, SO2 0-1 — so
+# BE = 0, the value actually used, is ALREADY past the pole. What saves the
+# production path is not distance from the pole but the narrowness of the band
+# of CO2 contents that traps the solver: over 1500 random states at BE = 0
+# (content 20-95 mL/dL, Hb 8-20, O2 content 0.2-24) the two implementations
+# agree to 1.3e-7. Do not restate this as "safe below BE +6"; the margin is
+# incidental, not structural.
+#
+# Where it does bite, the two disagree completely — at content 69.0, BE +6,
+# Hb 14, O2 content 16, Python returns PCO2 3.0004 mmHg at pH 8.203 and
+# model.js returns 58.285 mmHg at pH 7.358, 94.9% apart. Note WHICH is which:
+# 3 mmHg at pH 8.2 is the spurious root hard against the bracket's lower end,
+# and it is the PYTHON that lands on it. So this is the one place in this file
+# where "make the port track the reference" is the wrong instruction — it would
+# reproduce the reference's nonsense. The fix belongs in bloodgas.py, by
+# bracketing the residual below the pole so that only the physiological root is
+# admitted. Unreachable today because base excess is 0 on both sides
+# (Patient.be, and model.js:78 hardcodes it), which
+# test_hardcoded_constants() pins.
 #
 # Consequences are bounded and no published result rests on this: PaCO2 150 is
 # co2_response_cap, past which apnoea_core.py already says the model "is simply

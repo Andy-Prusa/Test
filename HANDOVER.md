@@ -214,13 +214,24 @@ be compared with Heard's.
    methods, so the fault may be ours.
 4. **Check the Douglas 1988 constants**, and while in `bloodgas.py`, make
    `pco2_from_co2_content` well-behaved above PaCO2 150 (see Numerical notes).
-   A second root-selection problem sits in the same residual: `co2_content` has
-   a pole at pH 8.142, and at base excess >= +6 the Python's `brentq` and
-   `model.js`'s bisection pick different roots and disagree by about 89%.
-   Neither is right — they are two arbitrary choices among several. It is
-   unreachable today only because base excess is 0 on both sides, which
-   `test_parity.py` pins; it would become reachable the moment anyone models a
-   metabolic alkalosis.
+   A second root-selection problem sits in the same residual, and it is closer
+   than it looks: `co2_content` has a pole at pH 8.142, and the residual goes
+   multi-rooted once the pH at the bracket's low end (PCO2 3) passes it, which
+   happens from base excess **-0.50** over Hb 10-18 and T 33-38. Base excess 0
+   — the value the model actually uses — is therefore already past the pole.
+   What keeps the current path clean is only that the band of CO2 contents
+   which traps the solver is narrow: at BE 0 the two implementations agree to
+   1.3e-7 over 1500 random states. That margin is incidental, not structural,
+   so do not record this as "safe below BE +6".
+
+   Where it bites they disagree completely — content 69.0, BE +6, Hb 14, O2
+   content 16 gives Python PCO2 3.0004 mmHg at pH 8.203 against `model.js`'s
+   58.285 at pH 7.358, 94.9% apart. Note which is which: 3 mmHg at pH 8.2 is
+   the spurious root against the bracket's lower end, and it is the PYTHON on
+   it. So this is the one place where making the port track the reference is
+   the wrong move; fix the bracket in `bloodgas.py` so only the physiological
+   root is admitted. It becomes reachable the moment anyone models a metabolic
+   alkalosis.
 5. **Paediatric parameterisation.** Absent entirely; Hardman & Wills 2006
    cannot currently be tested.
 6. **A simulation study of operator performance under stable versus falling
