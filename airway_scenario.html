@@ -643,6 +643,8 @@ const trace={A:new Float32Array(600),B:new Float32Array(600)};
 const phase={A:0,B:0};
 const plethCv={A:document.getElementById('wA'),B:document.getElementById('wB')};
 const plethTrace={A:new Float32Array(600),B:new Float32Array(600)};
+const SR=220;   // trace sample rate, samples per second of wall clock
+const acc={A:0,B:0};   // fractional sample carried between frames
 function ecgWave(p){
   const g=(c,w,a)=>a*Math.exp(-((p-c)*(p-c))/(2*w*w));
   return g(0.15,0.022,0.12)+g(0.29,0.007,-0.14)+g(0.315,0.009,1.0)
@@ -680,10 +682,27 @@ function plethWave(p,hr){
 }
 function ecgStep(k,hr,wall){
   const tr=trace[k],pw=plethTrace[k],N=tr.length;
-  const steps=Math.min(80,Math.max(1,Math.round(wall*220)));
-  const beats=hr>1?hr/60*wall:0;
+  // One sample is 1/SR of a second, so the phase advance PER SAMPLE follows
+  // the heart rate alone. It used to be beats/steps, which spread the whole
+  // interval's beats across however many samples the loop actually ran -- so
+  // whenever the cap below engaged the waveform came out time-compressed
+  // rather than merely truncated. Capping is allowed to drop trace off the
+  // left-hand end; it is not allowed to change the shape of what it draws.
+  const dph=hr>1?hr/60/SR:0;
+  // Carry the fractional sample between frames so the sweep advances at
+  // exactly SR samples per wall second. Rounding it away per frame made the
+  // sweep speed depend on the frame duration -- 250 samples/s at a 16 ms
+  // frame against 212 at 33 ms, a 13.6% error either side of the truth -- and
+  // since the beats are spaced in SAMPLES, the rate you saw inherited it.
+  acc[k]+=wall*SR;
+  let steps=Math.floor(acc[k]);
+  acc[k]-=steps;
+  // Writing more than N samples would only overwrite work already done, so N
+  // is the natural bound. It stops a long stall (a backgrounded tab) from
+  // spinning; the backlog is dropped rather than banked.
+  if(steps>N){ steps=N; acc[k]=0; }
   for(let s=0;s<steps;s++){
-    phase[k]=(phase[k]+beats/steps)%1;
+    phase[k]=(phase[k]+dph)%1;
     tr.copyWithin(0,1); tr[N-1]=hr>1?ecgWave(phase[k]):0;
     pw.copyWithin(0,1); pw[N-1]=hr>1?plethWave(phase[k],hr):0;
   }
@@ -780,9 +799,10 @@ function run(){
    D.B=simulate(P,tl(P.fgBuccal,STARTS[P.buccalIdx][0],true));
    stale=false; T=0;
    busy.textContent=((performance.now()-t0)/1000).toFixed(1)+' s';
-   // prime the ECG with a few resting beats so it reads as a rhythm at rest
-   for(const k of ['A','B']){ phase[k]=0; trace[k].fill(0); plethTrace[k].fill(0);
-     ecgStep(k, D[k].hr[0], trace[k].length/220); }
+   // prime both traces with resting beats so they read as a rhythm at rest
+   for(const k of ['A','B']){ phase[k]=0; acc[k]=0;
+     trace[k].fill(0); plethTrace[k].fill(0);
+     ecgStep(k, D[k].hr[0], trace[k].length/SR); }
    runBtn.textContent='Re-run';
   }catch(err){
    busy.textContent='error: '+err.message;
