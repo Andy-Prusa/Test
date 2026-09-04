@@ -45,6 +45,7 @@ font-family:Barlow,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
  .stage{grid-template-columns:auto minmax(0,1fr);margin-top:8px}
  .stage canvas:not(.ecg){height:clamp(150px,30vh,400px);width:auto}
  .ecg{height:clamp(38px,7vh,80px)}
+ .plethw{height:clamp(24px,4.5vh,54px)}
  .foot{margin-top:8px;padding-top:9px;font-size:11.5px;max-width:none}
  .legend{margin-top:8px}
 }
@@ -97,6 +98,7 @@ white-space:nowrap}
 font-size:clamp(34px,6vw,62px);line-height:.85}
 .biglab{font-size:11px;color:var(--dim);margin-bottom:-2px}
 .ecg{width:100%;height:44px;display:block;margin-top:6px;background:#050a0d}
+.plethw{width:100%;height:30px;display:block;margin-top:2px;background:#050a0d}
 .pleth{flex:1;height:6px;background:var(--rule);overflow:hidden;margin-bottom:9px}
 .pleth i{display:block;height:100%;background:var(--spo2);transition:width .2s linear}
 .stage{display:grid;grid-template-columns:126px minmax(0,1fr);gap:12px;align-items:start;
@@ -144,6 +146,7 @@ body.zen .armnote{font-size:clamp(9px,1.4vh,12px)}
 body.zen .big{font-size:clamp(26px,7.5vh,76px)}
 body.zen .biglab{font-size:clamp(8px,1.3vh,11px)}
 body.zen .ecg{height:clamp(26px,7vh,74px);margin-top:4px}
+body.zen .plethw{height:clamp(17px,4.5vh,50px)}
 body.zen .stage{grid-template-columns:auto minmax(0,1fr);gap:9px;margin-top:6px}
 body.zen .stage canvas:not(.ecg){height:clamp(110px,32vh,330px);width:auto}
 body.zen .row{font-size:clamp(10px,1.65vh,15px);padding:clamp(1px,0.35vh,5px) 0}
@@ -184,6 +187,7 @@ the top of its range.</p>
 <div class="stoplab" id="tA"></div></div>
 <div class="pleth"><i id="pA"></i></div></div>
 <canvas class="ecg" id="eA" width="600" height="88"></canvas>
+<canvas class="plethw" id="wA" width="600" height="60"></canvas>
 <div class="stage"><canvas id="bA" width="252" height="404"></canvas><div class="rows" id="mA"></div></div></div>
 <div class="arm"><div class="armhead"><span class="armname">Buccal oxygen</span>
 <span class="armnote" id="noteB">pharynx at 100% O&#8322;</span></div>
@@ -191,6 +195,7 @@ the top of its range.</p>
 <div class="stoplab" id="tB"></div></div>
 <div class="pleth"><i id="pB"></i></div></div>
 <canvas class="ecg" id="eB" width="600" height="88"></canvas>
+<canvas class="plethw" id="wB" width="600" height="60"></canvas>
 <div class="stage"><canvas id="bB" width="252" height="404"></canvas><div class="rows" id="mB"></div></div></div>
 </div>
 
@@ -304,18 +309,51 @@ let D={},T=0,playing=false,last=0,pend=null,SPEED=4;
 const ecgCv={A:document.getElementById('eA'),B:document.getElementById('eB')};
 const trace={A:new Float32Array(600),B:new Float32Array(600)};
 const phase={A:0,B:0};
+const plethCv={A:document.getElementById('wA'),B:document.getElementById('wB')};
+const plethTrace={A:new Float32Array(600),B:new Float32Array(600)};
 function ecgWave(p){
   const g=(c,w,a)=>a*Math.exp(-((p-c)*(p-c))/(2*w*w));
   return g(0.15,0.022,0.12)+g(0.29,0.007,-0.14)+g(0.315,0.009,1.0)
        +g(0.345,0.011,-0.28)+g(0.52,0.042,0.26);
 }
+// ---- plethysmograph --------------------------------------------------------
+// The pulse oximeter's own trace, the waveform an anaesthetist reads the SpO2
+// number off. It is driven from the SAME cardiac phase as the ECG, delayed by
+// a pulse transit time, so every upstroke follows its own QRS and the two can
+// never drift apart however the rate changes.
+//
+// As with the ECG, only the RATE carries information. The morphology is
+// decorative: a real pleth's amplitude tracks peripheral pulse volume, and
+// this model has no peripheral vascular bed to predict that from. Do not read
+// the shape as anything. What IS honest is the rhythm, and the flatline - it
+// stops when the modelled heart stops, at the same instant as the ECG.
+const R_WAVE=0.315;   // phase of the R peak in ecgWave()
+const PTT=0.22;       // s, pulse transit time to a finger probe: the delay
+                      // from the R wave to the FOOT of the pulse. Held in
+                      // absolute time rather than as a fraction of the cycle,
+                      // because that is what it is - a fraction would stretch
+                      // to most of a second at the terminal escape rates and
+                      // put the pulse nowhere near its own QRS.
+const PLETH_NORM=1.243;   // peak of the unnormalised sum, so this returns 0-1
+function plethWave(p,hr){
+  const q=(p-R_WAVE-PTT*hr/60+2)%1;
+  // fast systolic upstroke into a rounded peak, the dicrotic wave after the
+  // notch, then a diastolic runoff that carries through to the next upstroke
+  // so the trace never sits dead flat between beats
+  const s=q<0.11?0.048:0.095;
+  const peak=Math.exp(-((q-0.11)*(q-0.11))/(2*s*s));
+  const dicrotic=0.28*Math.exp(-((q-0.35)*(q-0.35))/(2*0.058*0.058));
+  const runoff=0.34*Math.exp(-q/0.50)*(1-Math.exp(-q/0.05));
+  return (peak+dicrotic+runoff)/PLETH_NORM;
+}
 function ecgStep(k,hr,wall){
-  const tr=trace[k],N=tr.length;
+  const tr=trace[k],pw=plethTrace[k],N=tr.length;
   const steps=Math.min(80,Math.max(1,Math.round(wall*220)));
   const beats=hr>1?hr/60*wall:0;
   for(let s=0;s<steps;s++){
     phase[k]=(phase[k]+beats/steps)%1;
     tr.copyWithin(0,1); tr[N-1]=hr>1?ecgWave(phase[k]):0;
+    pw.copyWithin(0,1); pw[N-1]=hr>1?plethWave(phase[k],hr):0;
   }
 }
 function ecgDraw(k){
@@ -327,6 +365,21 @@ function ecgDraw(k){
     i?g.lineTo(x,y):g.moveTo(x,y);
   }
   g.stroke();
+}
+function plethDraw(k){
+  const cv=plethCv[k],g=cv.getContext('2d'),W=cv.width,H=cv.height,tr=plethTrace[k];
+  const N=tr.length, base=H*0.93, amp=H*0.78;
+  g.clearRect(0,0,W,H);
+  const path=close=>{
+    g.beginPath();
+    for(let i=0;i<N;i++){
+      const x=i*W/N, y=base-tr[i]*amp;
+      i?g.lineTo(x,y):g.moveTo(x,y);
+    }
+    if(close){ g.lineTo(W,base); g.lineTo(0,base); g.closePath(); }
+  };
+  path(true); g.globalAlpha=0.20; g.fillStyle=css('--spo2'); g.fill(); g.globalAlpha=1;
+  path(false); g.strokeStyle=css('--spo2'); g.lineWidth=1.6; g.stroke();
 }
 
 // ---- pulse oximeter tone ---------------------------------------------------
@@ -396,7 +449,7 @@ function run(){
    stale=false; T=0;
    busy.textContent=((performance.now()-t0)/1000).toFixed(1)+' s';
    // prime the ECG with a few resting beats so it reads as a rhythm at rest
-   for(const k of ['A','B']){ phase[k]=0; trace[k].fill(0);
+   for(const k of ['A','B']){ phase[k]=0; trace[k].fill(0); plethTrace[k].fill(0);
      ecgStep(k, D[k].hr[0], trace[k].length/220); }
    runBtn.textContent='Re-run';
   }catch(err){
@@ -470,7 +523,7 @@ function panel(k,t){
 function render(){
  if(!D.A||!D.B) return;
  bottle('A',T);bottle('B',T);panel('A',T);panel('B',T);
- ecgDraw('A');ecgDraw('B');
+ ecgDraw('A');ecgDraw('B');plethDraw('A');plethDraw('B');
  cvs.A.style.opacity=alive(D.A,T)?1:0.55; cvs.B.style.opacity=alive(D.B,T)?1:0.55;
  document.getElementById('clock').textContent=
   Math.floor(T/60)+':'+String(Math.floor(T%60)).padStart(2,'0');
