@@ -1,4 +1,5 @@
 import os
+import sys
 
 # Paths are relative to this file, not to the shell's working directory, so
 # that "re-run build_page.py after any change to model.js" (HANDOVER.md) works
@@ -537,5 +538,25 @@ document.addEventListener('fullscreenchange',()=>{
 labels(); run();
 </script></body></html>"""
 
-open(OUT_HTML, 'w').write(HTML.replace('__MODEL__', model))
+page = HTML.replace('__MODEL__', model)
+
+# --check compares without writing, so the pre-commit hook can refuse a commit
+# that changes model.js and leaves the embedded copy in the HTML behind. The
+# page is a single self-contained file with the model inlined; nothing else
+# notices when the two fall out of step.
+if '--check' in sys.argv:
+    current = open(OUT_HTML).read() if os.path.exists(OUT_HTML) else None
+    if current == page:
+        print(f"up to date: {os.path.basename(OUT_HTML)} matches model.js")
+        sys.exit(0)
+    if current is None:
+        print(f"{OUT_HTML} does not exist; run: python3 build_page.py")
+    else:
+        print(f"STALE: {os.path.basename(OUT_HTML)} does not match model.js.")
+        print("       The page embeds its own copy of the model, so it is now")
+        print("       running different physics from the file next to it.")
+        print("       Rebuild with: python3 build_page.py")
+    sys.exit(1)
+
+open(OUT_HTML, 'w').write(page)
 print(f"built {OUT_HTML}")

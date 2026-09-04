@@ -8,13 +8,26 @@ implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 ## Start here
 
 ```
+./setup-hooks.sh               # once per clone: gate commits on the benchmarks
 python3 test_validation.py     # every benchmark, as pass/fail
+python3 test_parity.py         # apnoea_core.py vs model.js, within 1%
 python3 run.py                 # a single scenario with plots
 ```
 
 `test_validation.py` is the important one. Several changes during development
 silently broke earlier agreements and were only caught by re-running things by
-hand. Run it after every change.
+hand. That is no longer left to memory: `.githooks/pre-commit` runs both test
+files before every commit and refuses the commit if either fails.
+`setup-hooks.sh` enables it, and has to be run once per clone because git does
+not clone hooks.
+
+If you genuinely need to commit a broken intermediate state, `git commit
+--no-verify` skips it — say in the message which benchmark is broken and why.
+
+Both suites exit non-zero on failure and both work under pytest. `check()`
+records rather than raises, so one run reports every failure instead of
+stopping at the first; a sentinel test at the foot of each file carries the
+verdict into pytest.
 
 ## Files
 
@@ -26,9 +39,16 @@ hand. Run it after every change.
 | `airway_scenario.html` | self-contained interactive page, embeds `model.js` |
 | `build_page.py` | regenerates the HTML from `model.js` + template |
 | `test_validation.py` | all benchmarks as executable tests |
+| `test_parity.py` | the two implementations against each other, within 1% |
+| `parity_driver.js` | stdin/stdout shim so Python can drive `model.js` |
 | `run.py` | simple entry point for one scenario |
+| `.githooks/pre-commit` | page freshness + both test files; blocks on failure |
+| `setup-hooks.sh` | enables the hook; run once per clone |
 
-`build_page.py` must be re-run after any change to `model.js`.
+`build_page.py` must be re-run after any change to `model.js`. The pre-commit
+hook will not do it for you, but `build_page.py --check` will tell you that you
+forgot, and the hook runs it first — the page embeds its own copy of the model,
+so a stale HTML runs different physics from the file next to it.
 
 ## What is validated, and against what
 
@@ -57,6 +77,30 @@ therefore worth something: the arterial-venous CO2 gradient REVERSES during
 apnoea (O'Loughlin describe this and attribute it to pulmonary CO2 retention
 plus the Haldane effect), and failure requires TWO coincident abnormalities
 rather than one, which matches Toner's single outlier and O'Loughlin's two.
+
+### The two implementations against each other
+
+`test_parity.py` runs `apnoea_core.py` and `model.js` on identical inputs and
+requires every output to agree within 1%. It currently does, worst case 0.1%
+across six scenarios covering long apnoeic oxygenation, a desaturating room-air
+control, the reopening inrush, a sealed airway and a partial obstruction.
+
+It did not when it was written. `model.js` had kept the well-mixed nitrogen
+exchange that `apnoea_core.py` replaced with a per-compartment one, and by 15
+minutes the two were 21% apart on PaO2, 14% on shunt and 25% on absorption
+atelectasis. Nothing caught it because SpO2 — the output anyone looks at —
+stayed within 1% throughout: the oxygen plateau holds saturation flat while the
+gas exchange underneath it drifts. Anything comparing only desaturation times
+would have called the port fine.
+
+Two smaller drifts went with it: a sealed airway could vent gas through an
+airway that is by definition closed, and `lungO2` was reported one step stale,
+which is 35% out at an inrush.
+
+The comparison is limited to where the model says it predicts anything —
+SaO2 >= 70% and PaCO2 <= 150 — see Numerical notes for why the upper CO2
+bound is not merely caution. Saturation is compared over the whole run
+regardless.
 
 ### Model comparators
 
@@ -129,6 +173,21 @@ be compared with Heard's.
   ten-second rolling minimum, which is also what a monitor would show.
 - Runs continued past the terminal rhythm are numerical noise. Do not plot
   them; `stop_sao2` exists for this.
+- **Above PaCO2 ~150 the arterial CO2 inverse misbehaves.** Not just
+  unvalidated — wrong. In a 15-minute obstructed-then-rescued obese run, PaCO2
+  reads 218 mmHg at 650 s, 138 at 700 s, 126 at 725 s, 230 at 825 s: twelve of
+  ninety ten-second intervals have PaCO2 FALLING, once by 43.8 mmHg. With no
+  ventilation there is nothing to remove CO2, so it cannot fall at all.
+  `pco2_from_co2_content` solves a residual whose inner SO2/pH fixed point is
+  poorly conditioned at that end, so successive one-second solves land on
+  different roots. Both implementations do it and agree with each other while
+  doing it, so it is not a port problem. 150 is already `co2_response_cap`,
+  past which this file says the model is not valid, and every benchmark
+  finishes well below it — so nothing published is affected. But the model
+  does not merely stop being predictive up there, it starts producing
+  impossible numbers, and if anything is ever to be claimed in that range this
+  needs fixing first. Reproduction is in the note at the foot of
+  `test_parity.py`.
 
 ## Open work, roughly by value
 
@@ -145,7 +204,15 @@ be compared with Heard's.
    arms and has resisted every structural change. The pregnancy physiology in
    our configuration was assembled from textbook multipliers, not their
    methods, so the fault may be ours.
-4. **Check the Douglas 1988 constants.**
+4. **Check the Douglas 1988 constants**, and while in `bloodgas.py`, make
+   `pco2_from_co2_content` well-behaved above PaCO2 150 (see Numerical notes).
+   A second root-selection problem sits in the same residual: `co2_content` has
+   a pole at pH 8.142, and at base excess >= +6 the Python's `brentq` and
+   `model.js`'s bisection pick different roots and disagree by about 89%.
+   Neither is right — they are two arbitrary choices among several. It is
+   unreachable today only because base excess is 0 on both sides, which
+   `test_parity.py` pins; it would become reachable the moment anyone models a
+   metabolic alkalosis.
 5. **Paediatric parameterisation.** Absent entirely; Hardman & Wills 2006
    cannot currently be tested.
 6. **A simulation study of operator performance under stable versus falling

@@ -8,8 +8,9 @@
 # not happen.
 #
 # Runs, in order, cheapest first:
-#   test_parity.py      apnoea_core.py vs model.js on identical inputs, 1%
-#   test_validation.py  every clinical and model benchmark
+#   build_page.py --check   airway_scenario.html still matches model.js
+#   test_parity.py          apnoea_core.py vs model.js on identical inputs, 1%
+#   test_validation.py      every clinical and model benchmark
 #
 # Both are run against the WORKING TREE, not the staged index. If you have
 # unstaged edits to a model file the hook says so, because what it just
@@ -66,9 +67,21 @@ run_suite() {
     return 1
 }
 
-# Parity first: it is much the faster of the two, so a broken port is reported
-# in seconds rather than after the full benchmark suite has run.
-run_suite "cross-language parity" test_parity.py || status=1
+# Cheapest first, so a trivial mistake is reported in a second rather than
+# after four minutes of numerical integration.
+#
+# The page staleness check comes first because it is the easiest thing to
+# forget: airway_scenario.html embeds its own copy of model.js, so editing the
+# model without rebuilding leaves the page running different physics from the
+# file beside it, and nothing else in the repo would notice.
+if [ -f build_page.py ]; then
+    echo "pre-commit: page freshness (build_page.py --check) ..."
+    python3 build_page.py --check || status=1
+fi
+
+if [ "$status" -eq 0 ]; then
+    run_suite "cross-language parity" test_parity.py || status=1
+fi
 
 if [ "$status" -eq 0 ]; then
     run_suite "validation benchmarks" test_validation.py || status=1
