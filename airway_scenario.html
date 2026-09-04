@@ -505,8 +505,14 @@ function simulate(P, epochs, dt=0.1){
       p1=vO2[j];p2=vC[j]; }
 
     if(i%stride===0||!last){ last=arterialState(aC[NP-1],be,hb,aO2[NP-1],T);
-      pvo2=po2FromO2Content(vO2[NP-1],hb,last.pH,last.pco2,T);
       paco2Prev=last.pco2; sao2Prev=last.so2; }
+    // PvO2 is the only stimulus tension HPV has, and the venous pool moves
+    // every step, so apnoea_core.py recomputes it every step - outside the
+    // block that refreshes the arterial state once a second. Leaving it
+    // inside fed HPV a stimulus up to stride-1 steps stale (0.9 s at dt=0.1
+    // against the Python's 0.1 s), which the 250 s HPV lag then smoothed into
+    // a small persistent offset rather than removing.
+    pvo2=po2FromO2Content(vO2[NP-1],hb,last.pH,last.pco2,T);
     hist.push(last.so2);
     const lag=Math.round(25/dt);
     spo2+=(hist[Math.max(0,hist.length-1-lag)]-spo2)*(dt/8);

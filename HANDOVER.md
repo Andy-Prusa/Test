@@ -81,9 +81,13 @@ rather than one, which matches Toner's single outlier and O'Loughlin's two.
 ### The two implementations against each other
 
 `test_parity.py` runs `apnoea_core.py` and `model.js` on identical inputs and
-requires every output to agree within 1%. It currently does, worst case 0.1%
-across six scenarios covering long apnoeic oxygenation, a desaturating room-air
-control, the reopening inrush, a sealed airway and a partial obstruction.
+requires every output to agree within 1%. It currently does with three orders
+of margin — worst case 0.03%, and four of the six scenarios agree exactly —
+across long apnoeic oxygenation, a desaturating room-air control, the reopening
+inrush, a sealed airway and a partial obstruction. The two scenarios that are
+not exact are the ones that drive a compartment to gas exhaustion, where the
+per-species floor differs (1e-9 mL in Python, 1e-12 in the JavaScript); that
+and the other latent differences are listed at the foot of `test_parity.py`.
 
 It did not when it was written. `model.js` had kept the well-mixed nitrogen
 exchange that `apnoea_core.py` replaced with a per-compartment one, and by 15
@@ -93,9 +97,13 @@ stayed within 1% throughout: the oxygen plateau holds saturation flat while the
 gas exchange underneath it drifts. Anything comparing only desaturation times
 would have called the port fine.
 
-Two smaller drifts went with it: a sealed airway could vent gas through an
-airway that is by definition closed, and `lungO2` was reported one step stale,
-which is 35% out at an inrush.
+Three smaller drifts went with it: a sealed airway could vent gas through an
+airway that is by definition closed; `lungO2` was reported one step stale,
+which is 35% out at an inrush; and the HPV stimulus PvO2 was refreshed only
+once a second where the Python refreshes it every step, so hypoxic
+vasoconstriction was driven by a tension up to 0.9 s old. That last one is
+small — 0.03% on the HPV fraction — but it was the entire residual, and
+removing it made four of the six scenarios agree exactly.
 
 The comparison is limited to where the model says it predicts anything —
 SaO2 >= 70% and PaCO2 <= 150 — see Numerical notes for why the upper CO2
