@@ -227,7 +227,24 @@ def run_both(pt, epochs, dt, feo2):
     stop_sao2 is disabled so that Python does not truncate the run partway —
     model.js has no equivalent early stop, and a comparison of two runs of
     different length is not a comparison.
+
+    Each epoch is expanded into steps by round(duration/dt) on both sides, but
+    Python's round() is banker's rounding and JavaScript's Math.round() is
+    half-up. A duration/dt landing exactly on .5 therefore gets a different
+    number of steps in each — 0.25 s at dt=0.1 is 2 steps in Python and 3 in
+    JavaScript — which moves the boundary between a sealed and a patent epoch
+    by one step and so changes which step first vents or sees fresh pharyngeal
+    gas. Requiring exact multiples keeps every scenario clear of it, and fails
+    loudly rather than quietly mis-comparing if a future one is not.
     """
+    for i, e in enumerate(epochs):
+        steps = e.duration / dt
+        if abs(steps - round(steps)) > 1e-9:
+            raise AssertionError(
+                f"epoch {i} lasts {e.duration} s, which is not a whole number "
+                f"of dt={dt} steps ({steps}). Python and JavaScript round the "
+                f"half case in opposite directions, so the two would run "
+                f"different numbers of steps in this epoch.")
     rec = simulate(pt, epochs, dt=dt, feo2_start=feo2, stop_sao2=0.0)
     out = run_js(pt, epochs, dt, feo2)
     return rec, out, int(round(1.0 / dt))
@@ -684,4 +701,47 @@ if __name__ == "__main__":
 # Worth fixing before anything is claimed in that range — most likely by
 # bracketing the inner fixed point, or by solving PCO2 monotonically in CO2
 # content rather than re-solving from scratch each step.
+#
+#
+# NOTE — latent defects in model.js that no scenario here reaches.
+#
+# Found while establishing that the two implementations agree. None of them
+# fires at the parameters this model is actually run with, so none is tested
+# above; they are recorded so that whoever first strays into them does not have
+# to rediscover them.
+#
+#   * `||` where `=== undefined` was meant. model.js reads frcScale, ccScale,
+#     bmrScale, nVq, rv, pCollapse and cvFrac with `||`, so a legitimate value
+#     of ZERO is silently replaced by the built-in default. Python honours the
+#     zero. pCollapse=0 (recoil may not go subatmospheric) differs by a full
+#     50 cmH2O of alveolar pressure between the two. The same file uses
+#     `=== undefined` correctly for vqLogSd, tauMix, inflowMechFrac,
+#     tiltGain*, shuntBase and the gains, so this is inconsistency rather than
+#     intent.
+#
+#   * vqDist(1) is NaN. n_vq = 1 gives 4.4*i/(n-1) = 0/0. Python's
+#     vq_distribution() returns a valid single compartment. Only n = 1.
+#
+#   * The output stride collapses for dt > 2 s. model.js computes
+#     stride = Math.round(1/dt), which is 0 there, and `i % 0` is NaN, so it
+#     records nothing at all while Python still records every step. Python
+#     guards the same expression with max(1, ...). Unreachable in practice —
+#     HANDOVER.md requires dt well under 0.1 — but it fails silently rather
+#     than loudly.
+#
+#   * VO2 is floored at 60 mL/min in model.js and unfloored in Python. It
+#     never binds at vo2_ref = 250; it would if anyone lowered vo2_ref far
+#     enough to make returning nitrogen outrun oxygen uptake, which is
+#     precisely the scenario someone would build to exercise the venting rule.
+#
+#   * The alveolar gas floor is 1e-9 mL per species in Python and 1e-12 in
+#     model.js. Three orders below anything physical; it shows only once a
+#     species is driven to exhaustion in a sealed lung, where the worst
+#     absolute difference over half an hour is 0.002 mL.
+#
+#   * `fao2` is pAO2/713, i.e. divided by the standard dry pressure rather
+#     than the actual one, so it is only the alveolar oxygen fraction while
+#     alveolar pressure equals atmospheric. It equals apnoea_core.py's
+#     pao2_alv/713 exactly, so it is a naming problem rather than a maths one.
+#     Declared unmatched in JS_ONLY rather than compared.
 # ---------------------------------------------------------------------------
