@@ -40,6 +40,31 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 1
 fi
 
+# Distinguish "the model is broken" from "this machine cannot run the model".
+# Without this the suites die on an ImportError and the hook reports a failed
+# benchmark, which sends whoever hit it looking for a bug in the physics.
+missing=$(python3 - <<'PY' 2>/dev/null
+import importlib.util
+print(" ".join(m for m in ("numpy", "scipy")
+                if importlib.util.find_spec(m) is None))
+PY
+)
+if [ -n "${missing:-}" ]; then
+    echo "pre-commit: the benchmarks cannot run on this machine -- missing:"
+    echo "              $missing"
+    echo "            This is an environment problem, not a model failure."
+    echo "            Install with:  pip install -r requirements.txt"
+    exit 1
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+    echo "pre-commit: node not found, so model.js cannot be run and the port"
+    echo "            cannot be checked against the Python. Install node, or"
+    echo "            commit with --no-verify and say in the message that"
+    echo "            parity is unverified."
+    exit 1
+fi
+
 # Warn when the tree under test is not the tree being committed.
 unstaged=$(git diff --name-only -- '*.py' '*.js' 2>/dev/null)
 if [ -n "$unstaged" ]; then

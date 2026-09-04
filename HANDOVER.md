@@ -8,10 +8,11 @@ implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 ## Start here
 
 ```
-./setup-hooks.sh               # once per clone: gate commits on the benchmarks
-python3 test_validation.py     # every benchmark, as pass/fail
-python3 test_parity.py         # apnoea_core.py vs model.js, within 1%
-python3 run.py                 # a single scenario with plots
+pip install -r requirements.txt   # numpy, scipy, matplotlib (+ node for the port)
+./setup-hooks.sh                  # once per clone: gate commits on the benchmarks
+python3 test_validation.py        # every benchmark, as pass/fail
+python3 test_parity.py            # apnoea_core.py vs model.js, within 1%
+python3 run.py                    # a single scenario with plots
 ```
 
 `test_validation.py` is the important one. Several changes during development
@@ -44,6 +45,7 @@ verdict into pytest.
 | `run.py` | simple entry point for one scenario |
 | `.githooks/pre-commit` | page freshness + both test files; blocks on failure |
 | `setup-hooks.sh` | enables the hook; run once per clone |
+| `requirements.txt` | the Python dependencies. JavaScript has none |
 
 `build_page.py` must be re-run after any change to `model.js`. The pre-commit
 hook will not do it for you, but `build_page.py --check` will tell you that you
