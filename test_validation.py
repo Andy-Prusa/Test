@@ -16,7 +16,15 @@ TWO CLASSES OF TARGET, and they are not equal:
 Where a target is a median with an interquartile range, the test asserts the
 model lands inside the IQR, not on the median. Where it is a mean with an SD,
 the test allows two SD. Anything tighter would be fitting to noise.
+
+EXIT STATUS: check() deliberately does not raise, so that one run reports every
+benchmark rather than stopping at the first failure. The process therefore has
+to signal failure some other way, and it must, because the pre-commit hook in
+.githooks/ gates on it: __main__ exits 1 if anything failed, and under pytest
+the sentinel test at the foot of the file carries the same verdict.
 """
+import sys
+
 import numpy as np
 from apnoea_core import Patient, AirwayEpoch, simulate, time_to
 
@@ -177,6 +185,18 @@ def test_timestep_stability():
           "if this fails the integrator is unstable, not the physiology")
 
 
+def test_zz_all_benchmarks_passed():
+    """Sentinel: carries the verdict of every check() above into pytest.
+
+    check() records rather than raises, so without this pytest would collect
+    each test_* function, watch it print FAIL, and still report the run green.
+    Named zz_ because pytest executes in definition order and this has to run
+    last, after every other test has had its say.
+    """
+    assert not FAILURES, (f"{len(FAILURES)} benchmark(s) failed: "
+                          + ", ".join(FAILURES))
+
+
 if __name__ == "__main__":
     print("=" * 74)
     print("CLINICAL TARGETS — measurements in patients. These are the arbiters.")
@@ -200,3 +220,4 @@ if __name__ == "__main__":
     else:
         print("all checks passed")
     print("=" * 74)
+    sys.exit(1 if FAILURES else 0)
