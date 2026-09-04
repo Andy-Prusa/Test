@@ -1,4 +1,15 @@
-model = open('model.js').read().split("if(typeof module")[0]
+import os
+
+# Paths are relative to this file, not to the shell's working directory, so
+# that "re-run build_page.py after any change to model.js" (HANDOVER.md) works
+# from anywhere and lands in the repo. It previously wrote to an absolute
+# /mnt/user-data/outputs path left over from the machine it was written on,
+# which meant it silently did not update the page it is supposed to build.
+HERE = os.path.dirname(os.path.abspath(__file__))
+MODEL_JS = os.path.join(HERE, 'model.js')
+OUT_HTML = os.path.join(HERE, 'airway_scenario.html')
+
+model = open(MODEL_JS).read().split("if(typeof module")[0]
 
 HTML = """<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -526,5 +537,5 @@ document.addEventListener('fullscreenchange',()=>{
 labels(); run();
 </script></body></html>"""
 
-open('/mnt/user-data/outputs/airway_scenario.html','w').write(HTML.replace('__MODEL__', model))
-print("built")
+open(OUT_HTML, 'w').write(HTML.replace('__MODEL__', model))
+print(f"built {OUT_HTML}")

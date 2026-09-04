@@ -42,15 +42,29 @@ so this loosens nothing that matters.
 WHERE IT IS COMPARED
 
 Full-length channel comparison is restricted to the window where the model
-claims to predict anything: SaO2 >= 70%. HANDOVER.md is explicit that "anything
-below SaO2 ~70% is not predictive" and that the bradycardia curve below it is
-"chosen to look right, not fitted to anything". That regime is also numerically
-vicious — the bradycardia sigmoid is steep enough there to amplify a 0.17%
-saturation difference into a 1.0% heart-rate difference, and once the rhythm
-degenerates to the terminal escape rates heart rate is a step function through
-zero, where a sub-sample timing difference is arbitrarily large in relative
-terms. Comparing there would measure the stiffness of a curve the model
-disclaims, not agreement between the implementations.
+claims to predict anything. The model states two limits and both are applied:
+
+  SaO2 >= 70%.  HANDOVER.md: "anything below SaO2 ~70% is not predictive", and
+  the bradycardia curve below it is "chosen to look right, not fitted to
+  anything". That regime is also numerically vicious — the sigmoid is steep
+  enough there to amplify a 0.17% saturation difference into a 1.0% heart-rate
+  difference, and once the rhythm degenerates to the terminal escape rates
+  heart rate is a step function through zero, where a sub-sample timing
+  difference is arbitrarily large in relative terms.
+
+  PaCO2 <= co2_response_cap (150 mmHg).  apnoea_core.py: "Beyond it there is no
+  human data in this population ... The model holds them flat instead of
+  extrapolating, and is simply not valid past here." It is worse than merely
+  unvalidated up there: above roughly 150 mmHg the arterial CO2 inverse becomes
+  erratic, and PaCO2 in the REFERENCE implementation jumps around — 218 -> 137
+  -> 126 -> 230 mmHg over four minutes of a single apnoea, including 10-second
+  intervals in which PaCO2 falls by 43 mmHg, which cannot happen when there is
+  no ventilation to remove it. Both implementations reproduce that wobble and
+  agree on it to about 0.1%, so it is not a parity defect, but comparing there
+  measures agreement about nonsense. See the note at the foot of this file.
+
+Comparing in either excluded region would measure the stiffness of a curve the
+model disclaims, not agreement between the implementations.
 
 That window is not a loophole:
   * saturation itself is compared over the WHOLE run, agonal phase included,
@@ -67,6 +81,7 @@ import sys
 
 import numpy as np
 
+import bloodgas as bg
 from apnoea_core import Patient, AirwayEpoch, simulate, time_to
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -247,12 +262,14 @@ def compare(name, pt, epochs, dt=0.1, feo2=0.87, valid_window=True):
     t = np.asarray(out["t"][:n], dtype=float)
 
     if valid_window:
-        mask = rec["sao2"][::stride][:n] >= SAO2_VALID
+        mask = ((rec["sao2"][::stride][:n] >= SAO2_VALID)
+                & (rec["paco2"][::stride][:n] <= pt.co2_response_cap))
     else:
         mask = np.ones(n, dtype=bool)
     if not mask.any():
         FAILURES.append(name)
-        print(f"  [FAIL] {name:52s}  no samples above SaO2 {SAO2_VALID:.0f}%")
+        print(f"  [FAIL] {name:52s}  nothing inside the model's stated "
+              f"validity envelope")
         return
 
     worst, w_ch, w_t, w_p, w_j, w_u = 0.0, "", 0.0, 0.0, 0.0, ""
@@ -267,7 +284,8 @@ def compare(name, pt, epochs, dt=0.1, feo2=0.87, valid_window=True):
         if rel[k] > worst:
             worst, w_ch, w_t, w_p, w_j, w_u = rel[k], pk, t[k], p[k], j[k], unit
 
-    span = f"{int(mask.sum())}/{n} samples compared (SaO2 >= {SAO2_VALID:.0f}%)"
+    span = (f"{int(mask.sum())}/{n} samples compared "
+            f"(SaO2 >= {SAO2_VALID:.0f}%, PaCO2 <= {pt.co2_response_cap:.0f})")
     report(name, worst, w_ch, w_t, w_p, w_j, w_u, span)
 
 
@@ -301,11 +319,19 @@ def test_obese_patent_room_air():
 def test_obese_obstructed_then_rescue():
     """The inrush. When the airway opens after obstruction, ~600 mL arrives
     within seconds through the dead space; this is the largest transient the
-    model contains and the hardest thing for two ports to agree on."""
-    compare("obese, obstructed 120 s then patent buccal, 900 s",
+    model contains and the hardest thing for two ports to agree on.
+
+    Ten minutes, not fifteen: this patient's PaCO2 crosses the 150 mmHg
+    response cap at around 11 minutes, and past it the reference implementation
+    itself becomes erratic (see the note at the foot of this file). Running
+    longer would spend most of the scenario comparing the two implementations
+    in a regime the model disclaims, rather than on the transient it is here to
+    exercise.
+    """
+    compare("obese, obstructed 120 s then patent buccal, 600 s",
             Patient(**OBESE),
             [AirwayEpoch(120, resistance=OBS, fgo2=1.00),
-             AirwayEpoch(780, resistance=2, fgo2=1.00)])
+             AirwayEpoch(480, resistance=2, fgo2=1.00)])
 
 
 def test_lean_sealed_airway():
@@ -467,6 +493,11 @@ def test_hardcoded_constants():
          "model.js:114 qf=[0.75,0.18,0.07]"),
         ("hr_term_rates", tuple(pt.hr_term_rates), (18.0, 12.0, 6.0),
          "model.js:196 RATES=[18,12,6]"),
+        # bloodgas.py exposes CO2_CAL so the Douglas curve can be recalibrated
+        # to reference points (HANDOVER.md flags the constants as unverified).
+        # model.js has no such factor, so a recalibration there would apply to
+        # the Python only.
+        ("bloodgas.CO2_CAL", bg.CO2_CAL, 1.0, "model.js:34 has no CO2_CAL"),
     ]
     drift = [(n, p, j, w) for n, p, j, w in expected if p != j]
     ok = not drift
@@ -581,8 +612,9 @@ def test_zz_all_parity_checks_passed():
 if __name__ == "__main__":
     print("=" * 78)
     print("CROSS-LANGUAGE PARITY — apnoea_core.py vs model.js, identical inputs")
-    print(f"tolerance {TOL * 100:.0f}% | channel comparison limited to "
-          f"SaO2 >= {SAO2_VALID:.0f}%")
+    print(f"tolerance {TOL * 100:.0f}% | channels compared where the model is "
+          f"valid: SaO2 >= {SAO2_VALID:.0f}%, PaCO2 <= "
+          f"{Patient().co2_response_cap:.0f} mmHg")
     print("=" * 78)
     print("\nsame patient, same airway, same timestep:")
     test_lean_patent_buccal()
@@ -610,3 +642,46 @@ if __name__ == "__main__":
         print("model.js tracks apnoea_core.py")
     print("=" * 78)
     sys.exit(1 if FAILURES else 0)
+
+
+# ---------------------------------------------------------------------------
+# NOTE — an instability in the REFERENCE, found while building this file.
+#
+# Not a parity defect. Both implementations do it and agree with each other to
+# about 0.1% while doing it, so nothing here is caught by the tests above; it
+# is recorded because it was found by them and should not be lost.
+#
+# Above roughly PaCO2 150 mmHg the arterial CO2 inverse stops behaving.
+# Reproduce:
+#
+#     pt = Patient(weight=107, height=1.75, age=45, hb=14, tilt_deg=25)
+#     rec = simulate(pt, [AirwayEpoch(120, resistance=np.inf, fgo2=1.0),
+#                         AirwayEpoch(780, resistance=2, fgo2=1.0)],
+#                    dt=0.1, feo2_start=0.87, stop_sao2=0.0)
+#
+# PaCO2 then reads 218 mmHg at 650 s, 138 at 700 s, 126 at 725 s, 230 at 825 s
+# and 246 at 850 s. Twelve of the ninety ten-second intervals have PaCO2
+# FALLING, once by 43.8 mmHg. With no ventilation there is nothing to remove
+# CO2, so PaCO2 cannot fall at all; the trajectory is a numerical artefact, not
+# physiology.
+#
+# The likely mechanism is pco2_from_co2_content (bloodgas.py:159). Its residual
+# is solved by brentq on [3, 400] while SO2 and pH are themselves resolved by
+# an inner fixed point (bloodgas.py:165-176). At extreme hypercapnia that inner
+# loop is poorly conditioned, so the residual is not smooth in PCO2 and the
+# bracket admits more than one root; successive one-second solves then land on
+# different ones. A related non-monotonicity was found independently in the
+# same residual: co2_content has a pole at pH 8.142 (bloodgas.py:154), and for
+# BE >= +6 brentq and model.js's bisection select DIFFERENT roots of it and
+# disagree by ~89%. Neither implementation is right there — they are two
+# arbitrary choices among several roots. That one is unreachable here only
+# because base excess is 0 in both (Patient.be, and model.js:78 hardcodes it),
+# which test_hardcoded_constants() pins.
+#
+# Consequences are bounded and no published result rests on this: PaCO2 150 is
+# co2_response_cap, past which apnoea_core.py already says the model "is simply
+# not valid", and every benchmark in test_validation.py finishes well below it.
+# Worth fixing before anything is claimed in that range — most likely by
+# bracketing the inner fixed point, or by solving PCO2 monotonically in CO2
+# content rather than re-solving from scratch each step.
+# ---------------------------------------------------------------------------
