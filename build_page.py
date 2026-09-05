@@ -20,7 +20,7 @@ HTML = """<!DOCTYPE html>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{--screen:#060a0d;--panel:#0d151b;--rule:#16242e;--rule2:#223743;
---spo2:#4fd8e8;--co2:#e8d54a;--ecg-line:#4ade5e;--alarm:#ff4d3d;--o2:#a8ecff;--inert:#41586a;
+--spo2:#4fd8e8;--co2:#e8d54a;--ecg-line:#4ade5e;--sat:#35d17a;--alarm:#ff4d3d;--o2:#a8ecff;--inert:#41586a;
 --ink:#c8d6de;--dim:#6b8494}
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -93,17 +93,20 @@ border-bottom:1px solid var(--rule);padding-bottom:7px;margin-bottom:10px}
 .armname{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:500;
 white-space:nowrap}
 .armnote{font-size:11.5px;color:var(--dim);text-align:right;line-height:1.2}
-.vitals{display:flex;align-items:flex-end;gap:12px}
+.satrow{display:flex;align-items:center;gap:14px;margin-top:6px}
+.satrow .plethw{flex:1;min-width:0;margin-top:0}
+.satnum{flex:none;min-width:104px;text-align:right}
 .big{font-family:'Barlow Condensed',sans-serif;font-variant-numeric:tabular-nums;
-font-size:clamp(34px,6vw,62px);line-height:.85}
+font-size:clamp(34px,6vw,62px);line-height:.85;color:var(--sat)}
 .biglab{font-size:11px;color:var(--dim);margin-bottom:-2px}
 .ecg{width:100%;height:44px;display:block;margin-top:6px;background:#050a0d}
 .plethw{width:100%;height:30px;display:block;margin-top:2px;background:#050a0d}
-.pleth{flex:1;height:6px;background:var(--rule);overflow:hidden;margin-bottom:9px}
-.pleth i{display:block;height:100%;background:var(--spo2);transition:width .2s linear}
 .stage{display:grid;grid-template-columns:126px minmax(0,1fr);gap:12px;align-items:start;
 margin-top:10px}
-@media(max-width:620px){.stage{grid-template-columns:82px minmax(0,1fr);gap:8px}}
+@media(max-width:620px){.stage{grid-template-columns:82px minmax(0,1fr);gap:8px}
+ /* two arms share a phone screen, so stop the numeric reserving width
+    the waveform needs more than it does */
+ .satrow{gap:7px} .satnum{min-width:0}}
 canvas{width:100%;height:auto;display:block}
 .row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--rule);
 padding:3px 0;font-size:12.5px}
@@ -183,19 +186,17 @@ the top of its range.</p>
 <div class="arms">
 <div class="arm"><div class="armhead"><span class="armname">No buccal oxygen</span>
 <span class="armnote">pharynx holds room air</span></div>
-<div class="vitals"><div><div class="biglab">SpO&#8322; %</div><div class="big" id="sA">--</div>
-<div class="stoplab" id="tA"></div></div>
-<div class="pleth"><i id="pA"></i></div></div>
 <canvas class="ecg" id="eA" width="600" height="88"></canvas>
-<canvas class="plethw" id="wA" width="600" height="60"></canvas>
+<div class="satrow"><canvas class="plethw" id="wA" width="600" height="60"></canvas>
+<div class="satnum"><div class="biglab">SpO&#8322; %</div><div class="big" id="sA">--</div>
+<div class="stoplab" id="tA"></div></div></div>
 <div class="stage"><canvas id="bA" width="252" height="404"></canvas><div class="rows" id="mA"></div></div></div>
 <div class="arm"><div class="armhead"><span class="armname">Buccal oxygen</span>
 <span class="armnote" id="noteB">pharynx at 100% O&#8322;</span></div>
-<div class="vitals"><div><div class="biglab">SpO&#8322; %</div><div class="big" id="sB">--</div>
-<div class="stoplab" id="tB"></div></div>
-<div class="pleth"><i id="pB"></i></div></div>
 <canvas class="ecg" id="eB" width="600" height="88"></canvas>
-<canvas class="plethw" id="wB" width="600" height="60"></canvas>
+<div class="satrow"><canvas class="plethw" id="wB" width="600" height="60"></canvas>
+<div class="satnum"><div class="biglab">SpO&#8322; %</div><div class="big" id="sB">--</div>
+<div class="stoplab" id="tB"></div></div></div>
 <div class="stage"><canvas id="bB" width="252" height="404"></canvas><div class="rows" id="mB"></div></div></div>
 </div>
 
@@ -283,7 +284,7 @@ lmaBtn.onclick=()=>{P.lmaOpens=!P.lmaOpens;
  dirty();};
 dialsEl.appendChild(lmaBtn);dialsEl.appendChild(rb);
 
-const cvs={A:bA,B:bB},mon={A:mA,B:mB},sN={A:sA,B:sB},pl={A:pA,B:pB},tL={A:tA,B:tB};
+const cvs={A:bA,B:bB},mon={A:mA,B:mB},sN={A:sA,B:sB},tL={A:tA,B:tB};
 const css=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
 const OBS=Infinity;
 // Airway resistance by time, and the pharyngeal oxygen fraction switched on
@@ -397,6 +398,8 @@ function plethDraw(k){
     }
     if(close){ g.lineTo(W,base); g.lineTo(0,base); g.closePath(); }
   };
+  // the trace stays cyan: green here sits too close to the ECG's green and
+  // the two waveforms stop being tellable apart at a glance
   path(true); g.globalAlpha=0.20; g.fillStyle=css('--spo2'); g.fill(); g.globalAlpha=1;
   path(false); g.strokeStyle=css('--spo2'); g.lineWidth=1.6; g.stroke();
 }
@@ -516,12 +519,10 @@ function panel(k,t){
  // the comparison is the whole point and it matters most at the end.
  const end=a.t[a.t.length-1];
  sN[k].textContent=s.toFixed(0);
- sN[k].style.color=(!live||s<90)?css('--alarm'):css('--spo2');
+ sN[k].style.color=(!live||s<90)?css('--alarm'):css('--sat');
  tL[k].textContent=live?'':'asystole at '+Math.floor(end/60)+':'+
    String(Math.round(end%60)).padStart(2,'0');
  mon[k].className='rows'+(live?'':' stopped');
- pl[k].style.width=Math.max(0,(s-40)/60*100)+'%';
- pl[k].style.background=live?css('--spo2'):css('--alarm');
  const r=(l,v,c)=>'<div class="row"><span class="k">'+l+'</span><b'+
   (c?' style="color:'+c+'"':'')+'>'+v+'</b></div>';
  mon[k].innerHTML=r('PaO&#8322;',at(a,'pao2',t).toFixed(0))+
