@@ -22,6 +22,8 @@ font-family:Barlow,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
  .side{overflow-y:auto;min-height:0;padding-right:4px}
  .main{display:flex;flex-direction:column;min-height:0;gap:8px}
  .arms{flex:1 1 auto;min-height:0}
+ .main .transport,.main .steps,.main .track,.main .caption{flex:none}
+ .main .caption{margin-bottom:0}
  .arm{min-height:0;overflow-y:auto}
  .dials{grid-template-columns:1fr;gap:9px 0}
  .transport{gap:8px}
@@ -79,9 +81,7 @@ border-bottom:1px solid var(--rule);padding-bottom:7px;margin-bottom:10px}
 .armname{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:500;
 white-space:nowrap}
 .armnote{font-size:11.5px;color:var(--dim);text-align:right;line-height:1.2}
-.satrow{display:flex;align-items:center;gap:14px;margin-top:6px}
-.satrow .plethw{flex:1;min-width:0;margin-top:0}
-.satnum{flex:none;min-width:104px;text-align:right}
+.satnum{margin-top:7px}
 .big{font-family:'Barlow Condensed',sans-serif;font-variant-numeric:tabular-nums;
 font-size:clamp(34px,6vw,62px);line-height:.85;color:var(--sat)}
 .biglab{font-size:11px;color:var(--dim);margin-bottom:-2px}
@@ -92,7 +92,7 @@ margin-top:10px}
 @media(max-width:620px){.stage{grid-template-columns:82px minmax(0,1fr);gap:8px}
  /* two arms share a phone screen, so stop the numeric reserving width
     the waveform needs more than it does */
- .satrow{gap:7px} .satnum{min-width:0}}
+}
 canvas{width:100%;height:auto;display:block}
 .row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--rule);
 padding:3px 0;font-size:12.5px}
@@ -151,10 +151,10 @@ creates. Move the sliders and the whole simulation re-runs. Collapsibility defau
 the calibrated median; the patients who desaturate despite good tracheal oxygen sit near
 the top of its range.</p>
 
-<div class="steps" id="steps"></div>
-<div class="track" id="track"></div>
-<div class="caption" id="cap"></div>
+<div class="dials" id="dials"></div>
+</div>
 
+<div class="main">
 <div class="transport">
 <button id="runbtn">Run simulation</button>
 <button id="play">Play</button><button id="rew">Restart</button>
@@ -164,25 +164,23 @@ the top of its range.</p>
 <input type="range" id="scrub" min="0" max="900" value="0" step="1" aria-label="Time">
 <span class="busy" id="busy"></span>
 </div>
-
-<div class="dials" id="dials"></div>
-</div>
-
-<div class="main">
+<div class="steps" id="steps"></div>
+<div class="track" id="track"></div>
+<div class="caption" id="cap"></div>
 <div class="arms">
 <div class="arm"><div class="armhead"><span class="armname">No buccal oxygen</span>
 <span class="armnote">pharynx holds room air</span></div>
 <canvas class="ecg" id="eA" width="600" height="88"></canvas>
-<div class="satrow"><canvas class="plethw" id="wA" width="600" height="60"></canvas>
+<canvas class="plethw" id="wA" width="600" height="60"></canvas>
 <div class="satnum"><div class="biglab">SpO&#8322; %</div><div class="big" id="sA">--</div>
-<div class="stoplab" id="tA"></div></div></div>
+<div class="stoplab" id="tA"></div></div>
 <div class="stage"><canvas id="bA" width="252" height="404"></canvas><div class="rows" id="mA"></div></div></div>
 <div class="arm"><div class="armhead"><span class="armname">Buccal oxygen</span>
 <span class="armnote" id="noteB">pharynx at 100% O&#8322;</span></div>
 <canvas class="ecg" id="eB" width="600" height="88"></canvas>
-<div class="satrow"><canvas class="plethw" id="wB" width="600" height="60"></canvas>
+<canvas class="plethw" id="wB" width="600" height="60"></canvas>
 <div class="satnum"><div class="biglab">SpO&#8322; %</div><div class="big" id="sB">--</div>
-<div class="stoplab" id="tB"></div></div></div>
+<div class="stoplab" id="tB"></div></div>
 <div class="stage"><canvas id="bB" width="252" height="404"></canvas><div class="rows" id="mB"></div></div></div>
 </div>
 
@@ -557,7 +555,7 @@ const STEPS=[[0,'syringe','Induction'],[120,'mask','Facemask ventilation fails']
 [130,'lma','LMA inserted'],[220,'syringe','Rocuronium given'],
 [280,'blade','Laryngoscopy']];
 const EVENTS=[[0,'Induction. Airway obstructs immediately.'],
-[120,'Facemask off, LMA going in \u2014 airway briefly open'],
+[120,'Facemask off, LMA going in'],
 [130,'LMA in place but no patent airway'],
 [160,'LMA out. Laryngospasm. Drawing up rocuronium.'],
 [220,'Rocuronium given. 60 s to work.'],
@@ -884,6 +882,11 @@ function render(){
  head.style.left=(100*T/900)+'%';
  let c=EVENTS[0];for(const e of EVENTS)if(T>=e[0])c=e;
  let txt=c[1];
+ // The 120 s caption is the ONLY place the LMA toggle shows in words, so
+ // the base text above must not state an outcome of its own -- it used to
+ // end '-- airway briefly open', which this then appended to, giving
+ // '...briefly open -- airway stays shut' with the toggle off. The button
+ // was working; the sentence said it was not.
  if(c[0]===120) txt+=P.lmaOpens?' — airway briefly open':' — airway stays shut';
  document.getElementById('cap').textContent=txt;
  let cur=STEPS[0];for(const s of STEPS)if(T>=s[0])cur=s;
