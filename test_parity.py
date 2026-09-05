@@ -172,6 +172,8 @@ def js_params(pt, feo2):
         "svrFloor": pt.svr_floor, "pvrBase": pt.pvr_base, "pcwp": pt.pcwp,
         # blood pools
         "vArt": pt.v_art, "vVen": pt.v_ven, "vTisO2": pt.v_tis_o2,
+        "vTisCo2Fast": pt.v_tis_co2_fast, "vTisCo2Slow": pt.v_tis_co2_slow,
+        "kCo2Slow": pt.k_co2_slow,
         # initial condition
         "feo2": feo2,
         # JS-only interactive dials, pinned to identity
@@ -495,9 +497,9 @@ def test_hardcoded_constants():
         ("lambda_n2", pt.lambda_n2, 1.895e-5, "model.js:71 lam=1.895e-5"),
         ("lambda_fat_ratio", pt.lambda_fat_ratio, 5.0, "model.js:72 *5"),
         ("n2_pt_init", pt.n2_pt_init, 573.0, "model.js:111 n2p=[573,573,573]"),
-        ("v_tis_co2_fast", pt.v_tis_co2_fast, 22.0, "model.js:292 /(22*10)"),
-        ("v_tis_co2_slow", pt.v_tis_co2_slow, 140.0, "model.js:293 /(140*10)"),
-        ("k_co2_slow", pt.k_co2_slow, 0.80, "model.js:291 fs=0.8*..."),
+        ("v_tis_co2_fast", pt.v_tis_co2_fast, 22.0, "model.js P.vTisCo2Fast, default 22"),
+        ("v_tis_co2_slow", pt.v_tis_co2_slow, 140.0, "model.js P.vTisCo2Slow, default 140"),
+        ("k_co2_slow", pt.k_co2_slow, 0.80, "model.js P.kCo2Slow, default 0.8"),
         ("vd_anat", pt.vd_anat, 150.0, "model.js:79 frc-150, vseg=15"),
         ("vd_segments", pt.vd_segments, 10, "model.js:94 NS=10"),
         ("stiff_below_rv", pt.stiff_below_rv, 0.15, "model.js:131 stiff=0.15"),

@@ -70,9 +70,61 @@ another group's simulation — useful comparators, not truth.
 | O'Loughlin 2020, venous PCO2 rate | 0.15 (0.10) kPa/min | 0.22 |
 | Sci Rep 2023, cardiac output at 15 min | +30% | +36% |
 | Sci Rep 2023, PaCO2 rate | 2.1 mmHg/min | 2.4 |
+| Stock 1989, obstructed, first minute | 12 mmHg | 12.2 |
+| Stock 1989, obstructed, 1-5 min slope | 3.4 mmHg/min | 4.3 |
 | Lane / Ramkumar, 20 deg head-up | +24 to +36% | +33% |
 | Altermatt, BMI 35, 30 deg | +32% | +40% |
 | Dixon, BMI 44, 25 deg | +32% | +24% |
+
+### CO2 under obstruction: three defects, found 2026-09
+
+Every CO2 benchmark above uses a PATENT airway. Under OBSTRUCTION the model
+was producing 41.75 mmHg/min against Stock's measured 3.4 -- twelve times
+too fast -- and nothing in the suite looked, so nothing failed. There is now
+a `test_stock_1989` and it should not be removed.
+
+Three separate defects, all in the same few lines of gas exchange:
+
+1. **One pH for the whole lung.** `ph_c` was solved once from mean alveolar
+   PCO2 and applied to every compartment. Pricing a compartment at 60 mmHg
+   with the lung mean's pH inflated its CO2 content by up to 2.45x; content
+   went linear in PCO2, losing the dissociation curve's saturation, and
+   arterial PCO2 ran to 250 while alveolar sat at 112 and venous at 113 --
+   arterial outside both, which is impossible. Now solved per compartment.
+
+2. **The pole at pH 8.142 is reachable, and per-compartment pH reaches it.**
+   Item 4 below was right that this was closer than it looked. A compartment
+   whose gas has collapsed onto the 1e-9 floor has a PCO2 that is the ratio of
+   two floor values: a sealed run visits 1.8e-06 and 566 mmHg. Anything below
+   ~2.4 mmHg puts the pH past `co2_content`'s pole, where content changes
+   sign. The lung mean was always physiological so it never met the pole;
+   per compartment walks into it, and Python and JavaScript landed either side
+   and disagreed by 8.5%. The pH solve input is now clamped to [5, 250].
+
+3. **Collapsed compartments kept their perfusion.** `q_w` is the resting
+   distribution and never changed with collapse. Collapse was handled only in
+   aggregate, as `shunt`, so the right AMOUNT of blood bypassed but not from
+   the right COMPARTMENTS: a fully collapsed unit still received its full
+   share of the non-shunted blood and set arterial content with its floor-value
+   gas. Non-shunted perfusion is now weighted by `q_w * (1 - coll_c)`.
+
+**The CO2 store parameters were deliberately NOT touched.** Halving
+`v_tis_co2_fast` hits Stock's 3.4 exactly, and that is the trap: it buries
+three real bugs under a parameter that then no longer means what its name
+says. Fixing the three and refitting nothing leaves the obstructed slope at
+4.3 against 3.4, which is where it stands -- a known 26% residual, recorded
+rather than tuned away.
+
+**Open.** Stock found a LOGARITHMIC fit best, i.e. a decelerating curve; ours
+accelerates modestly over minutes 1-5, because by then the sealed lung has
+lost half its volume and the rising shunt sets arterial CO2. Nothing measured
+settles which is right over that window -- 14 patients fitted piecewise cannot
+resolve the curvature -- so the benchmark guards only against runaway.
+
+Worth knowing for anything that reads per-compartment gas: **a collapsed
+compartment's gas fractions are numerical debris**, not small numbers. Any new
+code that touches `fr_c` per compartment must either clamp or weight by the
+open fraction, exactly as these three fixes do.
 
 Two things the model reproduces that were not built into it, and which are
 therefore worth something: the arterial-venous CO2 gradient REVERSES during
@@ -225,6 +277,11 @@ be compared with Heard's.
    which traps the solver is narrow: at BE 0 the two implementations agree to
    1.3e-7 over 1500 random states. That margin is incidental, not structural,
    so do not record this as "safe below BE +6".
+
+   **Update 2026-09: this became reachable and was hit.** Per-compartment pH
+   drove it directly (see "CO2 under obstruction" above). The clamp added
+   there guards the alveolar path only. The bracket in `bloodgas.py` is still
+   unfixed and this remains the right item to do.
 
    Where it bites they disagree completely — content 69.0, BE +6, Hb 14, O2
    content 16 gives Python PCO2 3.0004 mmHg at pH 8.203 against `model.js`'s

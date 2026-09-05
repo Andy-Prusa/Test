@@ -260,11 +260,18 @@ class Patient:
     # Tuned to the MODERN measured arterial rate of rise, ~2.1 mmHg/min
     # (Sci Rep 2023, n=91; Gustafsson 0.24 kPa/min; Toner 0.30 kPa/min
     # transcutaneous). Historical series report 3.0-3.4 mmHg/min arterial
-    # (Frumin 1959; Eger & Severinghaus; Stock). O'Loughlin attributes the
-    # discrepancy to higher CO2 production under older technique, notably
-    # repeated suxamethonium. Our model reproduces the historical rate by
-    # raising RQ or VO2 rather than by changing the store, which is the same
-    # explanation. Fitted here to contemporary practice.
+    # (Frumin 1959; Eger & Severinghaus; Stock).
+    #
+    # These are UNCHANGED from the original fit, deliberately. The obstructed
+    # rate of rise was out by a factor of twelve, and it was tempting to
+    # correct it here: halving the fast store does hit Stock's 3.4 mmHg/min.
+    # It was the wrong lever. The error was three defects in the gas-exchange
+    # code (see the per-compartment pH note and the open-fraction perfusion
+    # note below), and with those fixed these values give 12.2 mmHg in the
+    # first minute against Stock's 12, and 2.4 mmHg/min patent against the
+    # measured 2.1, with nothing refitted. Retuning the stores would have
+    # buried three real bugs under a parameter that then no longer meant what
+    # its name says.
     v_tis_co2_fast: float = 22.0
     v_tis_co2_slow: float = 140.0
     k_co2_slow: float = 0.80
@@ -641,22 +648,58 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
 
         # ---- pulmonary capillary ------------------------------------------
         cv_o2, cv_co2 = ven_o2[-1], ven_co2[-1]
-        # One pH for the whole lung: every compartment is perfused by the same
-        # mixed venous blood and alveolar CO2 varies little between them during
-        # apnoea. This keeps every per-compartment term analytic.
-        ph_c = bg.ph_from_pco2_be(paco2_alv, be, hb, so2=0.99, temp=temp)
+        # One pH PER COMPARTMENT. The lung-wide pH this used to use assumed
+        # alveolar CO2 varies little between compartments, which is true while
+        # the V/Q spread is narrow but fails exactly when the model is being
+        # asked its hardest question: under obstruction the spread widens, and
+        # pricing a compartment at 60 mmHg with the pH belonging to the lung
+        # mean inflated its CO2 content by up to 2.45x. Content then went
+        # linear in PCO2 -- the dissociation curve's saturation was lost -- and
+        # arterial PCO2 ran away to 250 mmHg while alveolar sat at 112 and
+        # venous at 113, which is thermodynamically impossible: arterial must
+        # lie between them. The obstructed rate of rise came out at 41.75
+        # mmHg/min against Stock's measured 3.4. It costs one scalar solve per
+        # compartment per step and nothing else in the model changes.
+        #
+        # The solve input is clamped, and must be. A compartment whose gas
+        # volume has collapsed onto the 1e-9 floor has a PCO2 that is the
+        # ratio of two floor values: in a sealed run it ranges from 1.8e-06 to
+        # 566 mmHg and carries no physical information. That is not merely
+        # noisy, it is out of domain -- the RBC correction in co2_content has
+        # a POLE at pH 8.142, which any PCO2 below about 2.4 mmHg reaches, and
+        # beyond it the content changes sign. The lung-mean pH was always
+        # physiological so it never met the pole; a per-compartment pH walks
+        # straight into it, and Python and JavaScript then land either side
+        # and disagree by 8.5%. Collapsed units carry almost no perfusion, so
+        # clamping to the range over which the correlations are defined
+        # changes no gas exchange that is actually happening.
+        ph_c = np.array([bg.ph_from_pco2_be(float(pc), be, hb, so2=0.99, temp=temp)
+                         for pc in np.clip(p_co2_c, 5.0, 250.0)])
         sc_o2_c = bg.so2_from_po2(p_o2_c, ph_c, p_co2_c, temp)
         cc_o2_c = bg.HUFNER * hb * sc_o2_c + bg.O2_SOL * p_o2_c
         cc_co2_c = bg.co2_content(p_co2_c, ph_c, sc_o2_c, hb, temp)
 
         qeff = co * (1.0 - shunt) * 10.0     # dL/min through gas exchange
-        q_c = qeff * q_w                     # per compartment
+        # Blood that has NOT been shunted goes to the parts of the lung still
+        # open, in proportion to how open they are. Weighting it by the
+        # RESTING distribution instead -- which is what this did -- keeps
+        # sending a fully collapsed compartment its full share of perfusion
+        # and then mixes that unit's end-capillary blood into the artery at
+        # full weight. The aggregate shunt term above removes the right AMOUNT
+        # of blood but not from the right COMPARTMENTS. A unit with no gas
+        # left was still setting arterial content, and its gas fractions are
+        # by then the ratio of two 1e-9 floor values: in a sealed run those
+        # units reach PCO2 of 1.8e-06 and 566 mmHg in the same breath, so what
+        # they contributed was numerical debris.
+        w_open = q_w * (1.0 - coll_c)
+        w_open = w_open / max(w_open.sum(), 1e-12)
+        q_c = qeff * w_open                  # per compartment
         vo2_c = q_c * (cc_o2_c - cv_o2)
         vco2_c = q_c * (cv_co2 - cc_co2_c)
         vo2_lung, vco2_lung = vo2_c.sum(), vco2_c.sum()
         # arterial blood is the perfusion-weighted mix, then shunt admixture
-        ca_o2_new = (1 - shunt) * float(q_w @ cc_o2_c) + shunt * cv_o2
-        ca_co2_new = (1 - shunt) * float(q_w @ cc_co2_c) + shunt * cv_co2
+        ca_o2_new = (1 - shunt) * float(w_open @ cc_o2_c) + shunt * cv_o2
+        ca_co2_new = (1 - shunt) * float(w_open @ cc_co2_c) + shunt * cv_co2
 
         # ---- nitrogen: sum of three perfusion-limited compartments --------
         pan2 = frac[2] * p_dry
