@@ -34,6 +34,12 @@ font-family:Barlow,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
   display:grid;grid-template-columns:minmax(300px,24%) minmax(0,1fr);
   gap:16px;align-items:stretch}
  .side{overflow-y:auto;min-height:0;padding-right:4px}
+ /* The sliders panel folds away to the left, giving its width to the
+    patients. Animating the grid column rather than translating the panel
+    means the arms actually grow into the space instead of being overlapped. */
+ .wrap{transition:grid-template-columns .28s ease}
+ body.sidehid .wrap{grid-template-columns:0 minmax(0,1fr)}
+ body.sidehid .side{opacity:0;pointer-events:none;overflow:hidden;padding-right:0}
  .main{display:flex;flex-direction:column;min-height:0;gap:8px}
  .arms{flex:1 1 auto;min-height:0}
  .main .transport,.main .steps,.main .track,.main .caption{flex:none}
@@ -88,6 +94,10 @@ font-variant-numeric:tabular-nums;font-weight:500}
 .dial input{width:100%}
 .reset{grid-column:1/-1;justify-self:start}
 
+.side{transition:opacity .18s ease}
+/* Below the two-column breakpoint the panel simply goes away; there is no
+   column for it to fold into. */
+@media(max-width:1049px){body.sidehid .side{display:none}}
 .arms{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .arm{background:var(--panel);border:1px solid var(--rule);padding:12px}
 .armhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
@@ -139,6 +149,7 @@ body.zen{overflow:hidden}
 body.zen h1,body.zen .sub,body.zen .dials,body.zen .legend,body.zen .foot,
 body.zen .steps,body.zen .track{display:none}
 body.zen .side{display:none}
+body.zen #sidebtn{display:none}
 body.zen .wrap{grid-template-columns:1fr}
 body.zen .main{display:flex;flex-direction:column;min-height:0;height:100%}
 body.zen .wrap{max-width:100%;height:100vh;height:100dvh;padding:6px 8px;
@@ -163,7 +174,7 @@ body.zen .row{font-size:clamp(10px,1.65vh,15px);padding:clamp(1px,0.35vh,5px) 0}
 body.zen .row b{font-size:clamp(12px,2vh,19px)}
 body.zen .flat{font-size:clamp(9px,1.3vh,12px);padding:2px 0}
 </style></head><body><div class="wrap">
-<div class="side">
+<div class="side" id="side">
 <h1>Every time the airway opens, something rushes in</h1>
 <p class="sub">Obstructed from induction. Both arms are physically identical until 7:10 &mdash;
 the only difference is what sits in the pharynx when each inrush happens. The bottle is the
@@ -177,6 +188,7 @@ the top of its range.</p>
 
 <div class="main">
 <div class="transport">
+<button id="sidebtn" aria-controls="side" aria-expanded="true">Hide sliders</button>
 <button id="runbtn">Run simulation</button>
 <button id="play">Play</button><button id="rew">Restart</button>
 <button id="fs">Expand</button>
@@ -596,6 +608,31 @@ document.getElementById('play').onclick=e=>{
  e.target.textContent=playing?'Pause':'Play';last=0;if(playing)requestAnimationFrame(loop);};
 document.getElementById('rew').onclick=()=>{T=0;render();};
 document.getElementById('scrub').oninput=e=>{T=+e.target.value;render();};
+// ---- sliders panel ---------------------------------------------------------
+// Folds itself away after ten seconds so the patients get the whole width,
+// which is the point of the page. Any use of the panel cancels the countdown
+// and leaving it starts it again, so it cannot close under your hand while you
+// are dragging a slider.
+const SIDE_HIDE_MS=10000;
+const sideEl=document.getElementById('side'),sideBtn=document.getElementById('sidebtn');
+let sideTimer=null;
+function setSide(hidden){
+ document.body.classList.toggle('sidehid',hidden);
+ sideBtn.textContent=hidden?'Sliders':'Hide sliders';
+ sideBtn.setAttribute('aria-expanded',String(!hidden));
+}
+function armSide(){
+ clearTimeout(sideTimer);
+ if(document.body.classList.contains('sidehid')) return;   // already away
+ sideTimer=setTimeout(()=>setSide(true),SIDE_HIDE_MS);
+}
+sideBtn.onclick=()=>{setSide(!document.body.classList.contains('sidehid'));armSide();};
+['pointerenter','pointermove','input','focusin','wheel'].forEach(ev=>
+ sideEl.addEventListener(ev,()=>clearTimeout(sideTimer),{passive:true}));
+['pointerleave','focusout'].forEach(ev=>
+ sideEl.addEventListener(ev,armSide,{passive:true}));
+armSide();
+
 const sndBtn=document.getElementById('snd');
 sndBtn.onclick=()=>{
  if(!actx){ try{actx=new (window.AudioContext||window.webkitAudioContext)();}
