@@ -6,7 +6,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{--screen:#060a0d;--panel:#0d151b;--rule:#16242e;--rule2:#223743;
---spo2:#4fd8e8;--co2:#e8d54a;--ecg-line:#4ade5e;--alarm:#ff4d3d;--o2:#a8ecff;--inert:#41586a;
+--spo2:#4fd8e8;--co2:#dda23c;--ecg-line:#4ade5e;--sat:#ecdf49;--alarm:#ff4d3d;--o2:#a8ecff;--inert:#41586a;
 --ink:#c8d6de;--dim:#6b8494}
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -20,8 +20,16 @@ font-family:Barlow,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
   display:grid;grid-template-columns:minmax(300px,24%) minmax(0,1fr);
   gap:16px;align-items:stretch}
  .side{overflow-y:auto;min-height:0;padding-right:4px}
+ /* The sliders panel folds away to the left, giving its width to the
+    patients. Animating the grid column rather than translating the panel
+    means the arms actually grow into the space instead of being overlapped. */
+ .wrap{transition:grid-template-columns .28s ease}
+ body.sidehid .wrap{grid-template-columns:0 minmax(0,1fr)}
+ body.sidehid .side{opacity:0;pointer-events:none;overflow:hidden;padding-right:0}
  .main{display:flex;flex-direction:column;min-height:0;gap:8px}
  .arms{flex:1 1 auto;min-height:0}
+ .main .transport,.main .steps,.main .track,.main .caption{flex:none}
+ .main .caption{margin-bottom:0}
  .arm{min-height:0;overflow-y:auto}
  .dials{grid-template-columns:1fr;gap:9px 0}
  .transport{gap:8px}
@@ -31,6 +39,7 @@ font-family:Barlow,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
  .stage{grid-template-columns:auto minmax(0,1fr);margin-top:8px}
  .stage canvas:not(.ecg){height:clamp(150px,30vh,400px);width:auto}
  .ecg{height:clamp(38px,7vh,80px)}
+ .plethw{height:clamp(24px,4.5vh,54px)}
  .foot{margin-top:8px;padding-top:9px;font-size:11.5px;max-width:none}
  .legend{margin-top:8px}
 }
@@ -71,6 +80,10 @@ font-variant-numeric:tabular-nums;font-weight:500}
 .dial input{width:100%}
 .reset{grid-column:1/-1;justify-self:start}
 
+.side{transition:opacity .18s ease}
+/* Below the two-column breakpoint the panel simply goes away; there is no
+   column for it to fold into. */
+@media(max-width:1049px){body.sidehid .side{display:none}}
 .arms{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .arm{background:var(--panel);border:1px solid var(--rule);padding:12px}
 .armhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
@@ -78,16 +91,25 @@ border-bottom:1px solid var(--rule);padding-bottom:7px;margin-bottom:10px}
 .armname{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:500;
 white-space:nowrap}
 .armnote{font-size:11.5px;color:var(--dim);text-align:right;line-height:1.2}
-.vitals{display:flex;align-items:flex-end;gap:12px}
+.chan{display:flex;align-items:stretch;gap:10px;margin-top:6px}
+.chan canvas{flex:1;min-width:0;margin-top:0}
+.num{flex:none;width:98px;display:flex;flex-direction:column;justify-content:center;
+align-items:flex-end;line-height:1;border-left:1px solid var(--rule);padding-left:9px}
+.numlab{font-size:10.5px;color:var(--dim);letter-spacing:.04em;text-transform:uppercase}
+.num .big{font-size:clamp(26px,3.2vw,46px)}
+.numunit{font-size:10px;color:var(--dim);margin-top:2px}
 .big{font-family:'Barlow Condensed',sans-serif;font-variant-numeric:tabular-nums;
-font-size:clamp(34px,6vw,62px);line-height:.85}
+font-size:clamp(34px,6vw,62px);line-height:.85;color:var(--sat)}
 .biglab{font-size:11px;color:var(--dim);margin-bottom:-2px}
 .ecg{width:100%;height:44px;display:block;margin-top:6px;background:#050a0d}
-.pleth{flex:1;height:6px;background:var(--rule);overflow:hidden;margin-bottom:9px}
-.pleth i{display:block;height:100%;background:var(--spo2);transition:width .2s linear}
+.plethw{width:100%;height:30px;display:block;margin-top:2px;background:#050a0d}
 .stage{display:grid;grid-template-columns:126px minmax(0,1fr);gap:12px;align-items:start;
 margin-top:10px}
-@media(max-width:620px){.stage{grid-template-columns:82px minmax(0,1fr);gap:8px}}
+@media(max-width:620px){.stage{grid-template-columns:82px minmax(0,1fr);gap:8px}
+ /* two arms share a phone screen, so the numeric gives width back to the
+    trace, which needs it more than the digits do */
+ .chan{gap:6px} .num{width:58px;padding-left:6px} .num .big{font-size:25px}
+ .numlab,.numunit{font-size:9px}}
 canvas{width:100%;height:auto;display:block}
 .row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--rule);
 padding:3px 0;font-size:12.5px}
@@ -113,6 +135,7 @@ body.zen{overflow:hidden}
 body.zen h1,body.zen .sub,body.zen .dials,body.zen .legend,body.zen .foot,
 body.zen .steps,body.zen .track{display:none}
 body.zen .side{display:none}
+body.zen #sidebtn{display:none}
 body.zen .wrap{grid-template-columns:1fr}
 body.zen .main{display:flex;flex-direction:column;min-height:0;height:100%}
 body.zen .wrap{max-width:100%;height:100vh;height:100dvh;padding:6px 8px;
@@ -130,13 +153,14 @@ body.zen .armnote{font-size:clamp(9px,1.4vh,12px)}
 body.zen .big{font-size:clamp(26px,7.5vh,76px)}
 body.zen .biglab{font-size:clamp(8px,1.3vh,11px)}
 body.zen .ecg{height:clamp(26px,7vh,74px);margin-top:4px}
+body.zen .plethw{height:clamp(17px,4.5vh,50px)}
 body.zen .stage{grid-template-columns:auto minmax(0,1fr);gap:9px;margin-top:6px}
 body.zen .stage canvas:not(.ecg){height:clamp(110px,32vh,330px);width:auto}
 body.zen .row{font-size:clamp(10px,1.65vh,15px);padding:clamp(1px,0.35vh,5px) 0}
 body.zen .row b{font-size:clamp(12px,2vh,19px)}
 body.zen .flat{font-size:clamp(9px,1.3vh,12px);padding:2px 0}
 </style></head><body><div class="wrap">
-<div class="side">
+<div class="side" id="side">
 <h1>Every time the airway opens, something rushes in</h1>
 <p class="sub">Obstructed from induction. Both arms are physically identical until 7:10 &mdash;
 the only difference is what sits in the pharynx when each inrush happens. The bottle is the
@@ -145,11 +169,12 @@ creates. Move the sliders and the whole simulation re-runs. Collapsibility defau
 the calibrated median; the patients who desaturate despite good tracheal oxygen sit near
 the top of its range.</p>
 
-<div class="steps" id="steps"></div>
-<div class="track" id="track"></div>
-<div class="caption" id="cap"></div>
+<div class="dials" id="dials"></div>
+</div>
 
+<div class="main">
 <div class="transport">
+<button id="sidebtn" aria-controls="side" aria-expanded="true">Hide sliders</button>
 <button id="runbtn">Run simulation</button>
 <button id="play">Play</button><button id="rew">Restart</button>
 <button id="fs">Expand</button>
@@ -158,25 +183,27 @@ the top of its range.</p>
 <input type="range" id="scrub" min="0" max="900" value="0" step="1" aria-label="Time">
 <span class="busy" id="busy"></span>
 </div>
-
-<div class="dials" id="dials"></div>
-</div>
-
-<div class="main">
+<div class="steps" id="steps"></div>
+<div class="track" id="track"></div>
+<div class="caption" id="cap"></div>
 <div class="arms">
 <div class="arm"><div class="armhead"><span class="armname">No buccal oxygen</span>
 <span class="armnote">pharynx holds room air</span></div>
-<div class="vitals"><div><div class="biglab">SpO&#8322; %</div><div class="big" id="sA">--</div>
-<div class="stoplab" id="tA"></div></div>
-<div class="pleth"><i id="pA"></i></div></div>
-<canvas class="ecg" id="eA" width="600" height="88"></canvas>
+<div class="chan"><canvas class="ecg" id="eA" width="600" height="88"></canvas>
+<div class="num"><div class="numlab">ECG</div><div class="big" id="hA">--</div>
+<div class="numunit">bpm</div></div></div>
+<div class="chan"><canvas class="plethw" id="wA" width="600" height="60"></canvas>
+<div class="num"><div class="numlab">SpO&#8322;</div><div class="big" id="sA">--</div>
+<div class="numunit">%<span class="stoplab" id="tA"></span></div></div></div>
 <div class="stage"><canvas id="bA" width="252" height="404"></canvas><div class="rows" id="mA"></div></div></div>
 <div class="arm"><div class="armhead"><span class="armname">Buccal oxygen</span>
 <span class="armnote" id="noteB">pharynx at 100% O&#8322;</span></div>
-<div class="vitals"><div><div class="biglab">SpO&#8322; %</div><div class="big" id="sB">--</div>
-<div class="stoplab" id="tB"></div></div>
-<div class="pleth"><i id="pB"></i></div></div>
-<canvas class="ecg" id="eB" width="600" height="88"></canvas>
+<div class="chan"><canvas class="ecg" id="eB" width="600" height="88"></canvas>
+<div class="num"><div class="numlab">ECG</div><div class="big" id="hB">--</div>
+<div class="numunit">bpm</div></div></div>
+<div class="chan"><canvas class="plethw" id="wB" width="600" height="60"></canvas>
+<div class="num"><div class="numlab">SpO&#8322;</div><div class="big" id="sB">--</div>
+<div class="numunit">%<span class="stoplab" id="tB"></span></div></div></div>
 <div class="stage"><canvas id="bB" width="252" height="404"></canvas><div class="rows" id="mB"></div></div></div>
 </div>
 
@@ -299,6 +326,7 @@ function simulate(P, epochs, dt=0.1){
   let vO2=Array(NP).fill(cvo2), vC=Array(NP).fill(cvco2);
   let tO2=cvo2,tC=cvco2,sC=cvco2, collapsed=0, hpv=0, pvo2=40;
   const nc0=new Float64Array(NC), collC=new Float64Array(NC);
+  const wOpen=new Float64Array(NC);   // perfusion share of the OPEN lung
   for(let c=0;c<NC;c++) nc0[c]=n[3*c]+n[3*c+1]+n[3*c+2];
   let nc0Sum=0; for(let c=0;c<NC;c++) nc0Sum+=nc0[c];
   let n2p=[573,573,573];
@@ -328,7 +356,10 @@ function simulate(P, epochs, dt=0.1){
       for(let q=0;q<60;q++){const m=(lo+hi)/2;
         if((PB+rec(m)-PH2O)*m < nd*GASK) lo=m; else hi=m;}
       vv=(lo+hi)/2; pabs=PB+rec(vv);
-      if(pabs>PB){vv=nd*GASK/PDRY;pabs=PB;} }
+      // gas vents through an OPEN airway; it cannot vent through a SEALED
+      // one, where the pressure is instead allowed to rise - which is what
+      // returning nitrogen does to a closed lung
+      if(pabs>PB && isFinite(ep.R)){vv=nd*GASK/PDRY;pabs=PB;} }
     vA=vv; const pdry=pabs-PH2O;
     let tO=0,tC2=0,tN=0;
     for(let c=0;c<NC;c++){
@@ -403,23 +434,50 @@ function simulate(P, epochs, dt=0.1){
     papNow=coNow*(P.pvrBase||1.40)*(1+((P.hpvPvrMax||3.15)-1)*hpv)+(P.pcwp||8);
     const n2cond=qf.map(q=>q*coNow*1000*lam);
     const cvO2=vO2[NP-1], cvC=vC[NP-1];
-    // one pH for the lung; every compartment then costs only analytic terms
-    const phc=phFromPco2Be(pACO2,be,hb,0.99,T);
+    // One pH PER COMPARTMENT. Using the lung mean priced a compartment at
+    // 60 mmHg with the mean's pH and inflated its CO2 content by up to 2.45x,
+    // which sent arterial PCO2 above both alveolar and venous. See the note
+    // in apnoea_core.py at the matching line.
     const qeff=coNow*(1-shunt)*10;
+    // Non-shunted blood goes to the parts of the lung still open, weighted by
+    // how open they are. See the open-fraction note in apnoea_core.py: the
+    // resting distribution kept sending a fully collapsed unit its full share
+    // of perfusion and mixing its floor-value gas into the artery.
+    let wsum=0;
+    for(let c=0;c<NC;c++){ wOpen[c]=qw[c]*(1-collC[c]); wsum+=wOpen[c]; }
+    wsum=Math.max(wsum,1e-12);
+    for(let c=0;c<NC;c++) wOpen[c]/=wsum;
     let vo2L=0, vco2L=0, mixO=0, mixC=0;
     for(let c=0;c<NC;c++){
+      // clamped to the correlations' domain: see apnoea_core.py. A
+      // collapsed compartment's PCO2 is a ratio of floor values and
+      // reaches co2Content's pole at pH 8.142.
+      const phc=phFromPco2Be(Math.min(250,Math.max(5,pCO2[c])),be,hb,0.99,T);
       const s2=so2FromPo2(pO2[c],phc,pCO2[c],T);
       ccO2[c]=HUFNER*hb*s2+O2SOL*pO2[c];
       ccC[c]=co2Content(pCO2[c],phc,s2,hb,T);
-      const qc=qeff*qw[c];
+      const qc=qeff*wOpen[c];
       vo2c[c]=qc*(ccO2[c]-cvO2); vco2c[c]=qc*(cvC-ccC[c]);
       vo2L+=vo2c[c]; vco2L+=vco2c[c];
-      mixO+=qw[c]*ccO2[c]; mixC+=qw[c]*ccC[c];
+      mixO+=wOpen[c]*ccO2[c]; mixC+=wOpen[c]*ccC[c];
     }
     const caN=(1-shunt)*mixO+shunt*cvO2, ccN=(1-shunt)*mixC+shunt*cvC;
 
-    const flux=n2p.map((p,j)=>n2cond[j]*(p-pAN2));
-    const vn2=flux[0]+flux[1]+flux[2];
+    // Each tissue store exchanges with each COMPARTMENT across that
+    // compartment's own nitrogen tension, weighted by its share of perfusion.
+    // Driving it from the whole-lung mean instead lets a unit that has already
+    // filled with nitrogen keep taking more, which matters because nitrogen
+    // accumulation is what drives both the FgO2 cliff and the absorption
+    // atelectasis. This tracks apnoea_core.py; the earlier well-mixed form put
+    // the two implementations 21% apart on PaO2 by 15 min.
+    const condTot=n2cond[0]+n2cond[1]+n2cond[2];
+    const pTisEff=(n2cond[0]*n2p[0]+n2cond[1]*n2p[1]+n2cond[2]*n2p[2])
+                  /Math.max(condTot,1e-12);
+    const vn2c=new Float64Array(NC);
+    let vn2=0;
+    for(let c=0;c<NC;c++){ vn2c[c]=condTot*qw[c]*(pTisEff-pN2[c]); vn2+=vn2c[c]; }
+    // each store gives up its share of the total
+    const flux=n2cond.map((cj,j)=>cj*(n2p[j]-pTisEff)+cj/Math.max(condTot,1e-12)*vn2);
     const deficit=vo2L-vco2L-vn2;
     let inflow=0;
     if(isFinite(ep.R)){
@@ -444,7 +502,7 @@ function simulate(P, epochs, dt=0.1){
       }
       // inflow follows absorption, not volume: compartments share one airway
       let dtot=0; const dfc=new Float64Array(NC);
-      for(let c=0;c<NC;c++){ dfc[c]=Math.max(vo2c[c]-vco2c[c]-vn2*qw[c],0); dtot+=dfc[c]; }
+      for(let c=0;c<NC;c++){ dfc[c]=Math.max(vo2c[c]-vco2c[c]-vn2c[c],0); dtot+=dfc[c]; }
       for(let c=0;c<NC;c++){
         const byAbs = dtot>1e-9 ? dfc[c]/dtot : nc[c]/Math.max(nd,1e-9);
         let sh2 = (1-MECH)*byAbs + MECH*(nc[c]/Math.max(nd,1e-9));
@@ -455,13 +513,13 @@ function simulate(P, epochs, dt=0.1){
           sh2=(1-w)*sh2 + w*(nc0[c]/nc0Sum); }
         n[3*c]   += (-vo2c[c])*dtm + sh2*add[0];
         n[3*c+1] += ( vco2c[c])*dtm + sh2*add[1];
-        n[3*c+2] += ( vn2*qw[c])*dtm + sh2*add[2];
+        n[3*c+2] += ( vn2c[c])*dtm + sh2*add[2];
       }
     } else {
       for(let c=0;c<NC;c++){
         n[3*c]   += (-vo2c[c])*dtm;
         n[3*c+1] += ( vco2c[c])*dtm;
-        n[3*c+2] += ( vn2*qw[c])*dtm;
+        n[3*c+2] += ( vn2c[c])*dtm;
       }
     }
     // cardiogenic stirring toward the lung-mean composition
@@ -481,25 +539,40 @@ function simulate(P, epochs, dt=0.1){
     for(let j=0;j<NP;j++){ aO2[j]+=(coNow/vas)*(p1-aO2[j])*dtm; aC[j]+=(coNow/vas)*(p2-aC[j])*dtm;
       p1=aO2[j];p2=aC[j]; }
     tO2+=((coNow*(aO2[NP-1]-tO2)*10-vo2)/(P.vTisO2*10))*dtm;
-    const fs=0.8*(tC-sC)*10;
-    tC+=((coNow*(aC[NP-1]-tC)*10+vco2m-fs)/(22*10))*dtm;
-    sC+=(fs/(140*10))*dtm;
+    // Store sizes are physiological, not fitted to a 15-minute average:
+    // fast = blood + vessel-rich group, slow = muscle + fat, conductance =
+    // their share of cardiac output. See apnoea_core.py's store note.
+    const kSlow=P.kCo2Slow===undefined?0.8:P.kCo2Slow;
+    const fs=kSlow*(tC-sC)*10;
+    tC+=((coNow*(aC[NP-1]-tC)*10+vco2m-fs)/((P.vTisCo2Fast||22)*10))*dtm;
+    sC+=(fs/((P.vTisCo2Slow||140)*10))*dtm;
     p1=tO2;p2=tC;
     for(let j=0;j<NP;j++){ vO2[j]+=(coNow/vvs)*(p1-vO2[j])*dtm; vC[j]+=(coNow/vvs)*(p2-vC[j])*dtm;
       p1=vO2[j];p2=vC[j]; }
 
     if(i%stride===0||!last){ last=arterialState(aC[NP-1],be,hb,aO2[NP-1],T);
-      pvo2=po2FromO2Content(vO2[NP-1],hb,last.pH,last.pco2,T);
       paco2Prev=last.pco2; sao2Prev=last.so2; }
+    // PvO2 is the only stimulus tension HPV has, and the venous pool moves
+    // every step, so apnoea_core.py recomputes it every step - outside the
+    // block that refreshes the arterial state once a second. Leaving it
+    // inside fed HPV a stimulus up to stride-1 steps stale (0.9 s at dt=0.1
+    // against the Python's 0.1 s), which the 250 s HPV lag then smoothed into
+    // a small persistent offset rather than removing.
+    pvo2=po2FromO2Content(vO2[NP-1],hb,last.pH,last.pco2,T);
     hist.push(last.so2);
     const lag=Math.round(25/dt);
     spo2+=(hist[Math.max(0,hist.length-1-lag)]-spo2)*(dt/8);
 
     if(i%stride===0){
+      // tO is the alveolar O2 from the TOP of this step, before the gas
+      // update; apnoea_core.py records the post-update sum, so recompute it
+      // here rather than reporting a quantity one step stale. Only visible at
+      // an inrush, where a step is ~300 mL, but that is where it is worst.
+      let lungO2=0; for(let c=0;c<NC;c++) lungO2+=n[3*c];
       out.t.push(i*dt); out.spo2.push(spo2*100); out.vol.push(vLung);
       out.fao2.push(pAO2/713); out.pan2.push(pAN2); out.paco2.push(last.pco2);
       out.ph.push(last.pH); out.pao2.push(last.po2); out.shunt.push(shunt);
-      out.palv.push((pabs-PB)*1.35951); out.lungO2.push(tO);
+      out.palv.push((pabs-PB)*1.35951); out.lungO2.push(lungO2);
       out.hpv.push(hpv); out.pvo2.push(pvo2); out.co.push(coNow); out.hr.push(hrNow);
       out.map.push(mapNow); out.pap.push(papNow); out.sv.push(svNow);
       out.atel.push(absorbed);
@@ -524,7 +597,7 @@ const STEPS=[[0,'syringe','Induction'],[120,'mask','Facemask ventilation fails']
 [130,'lma','LMA inserted'],[220,'syringe','Rocuronium given'],
 [280,'blade','Laryngoscopy']];
 const EVENTS=[[0,'Induction. Airway obstructs immediately.'],
-[120,'Facemask off, LMA going in \u2014 airway briefly open'],
+[120,'Facemask off, LMA going in'],
 [130,'LMA in place but no patent airway'],
 [160,'LMA out. Laryngospasm. Drawing up rocuronium.'],
 [220,'Rocuronium given. 60 s to work.'],
@@ -583,7 +656,7 @@ lmaBtn.onclick=()=>{P.lmaOpens=!P.lmaOpens;
  dirty();};
 dialsEl.appendChild(lmaBtn);dialsEl.appendChild(rb);
 
-const cvs={A:bA,B:bB},mon={A:mA,B:mB},sN={A:sA,B:sB},pl={A:pA,B:pB},tL={A:tA,B:tB};
+const cvs={A:bA,B:bB},mon={A:mA,B:mB},sN={A:sA,B:sB},hN={A:hA,B:hB},tL={A:tA,B:tB};
 const css=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
 const OBS=Infinity;
 // Airway resistance by time, and the pharyngeal oxygen fraction switched on
@@ -609,18 +682,70 @@ let D={},T=0,playing=false,last=0,pend=null,SPEED=4;
 const ecgCv={A:document.getElementById('eA'),B:document.getElementById('eB')};
 const trace={A:new Float32Array(600),B:new Float32Array(600)};
 const phase={A:0,B:0};
+const plethCv={A:document.getElementById('wA'),B:document.getElementById('wB')};
+const plethTrace={A:new Float32Array(600),B:new Float32Array(600)};
+const SR=220;   // trace sample rate, samples per second of wall clock
+const acc={A:0,B:0};   // fractional sample carried between frames
 function ecgWave(p){
   const g=(c,w,a)=>a*Math.exp(-((p-c)*(p-c))/(2*w*w));
   return g(0.15,0.022,0.12)+g(0.29,0.007,-0.14)+g(0.315,0.009,1.0)
        +g(0.345,0.011,-0.28)+g(0.52,0.042,0.26);
 }
+// ---- plethysmograph --------------------------------------------------------
+// The pulse oximeter's own trace, the waveform an anaesthetist reads the SpO2
+// number off. It is driven from the SAME cardiac phase as the ECG, delayed by
+// a pulse transit time, so every upstroke follows its own QRS and the two can
+// never drift apart however the rate changes.
+//
+// As with the ECG, only the RATE carries information. The morphology is
+// decorative: a real pleth's amplitude tracks peripheral pulse volume, and
+// this model has no peripheral vascular bed to predict that from. Do not read
+// the shape as anything. What IS honest is the rhythm, and the flatline - it
+// stops when the modelled heart stops, at the same instant as the ECG.
+const R_WAVE=0.315;   // phase of the R peak in ecgWave()
+const PTT=0.22;       // s, pulse transit time to a finger probe: the delay
+                      // from the R wave to the FOOT of the pulse. Held in
+                      // absolute time rather than as a fraction of the cycle,
+                      // because that is what it is - a fraction would stretch
+                      // to most of a second at the terminal escape rates and
+                      // put the pulse nowhere near its own QRS.
+const PLETH_NORM=1.243;   // peak of the unnormalised sum, so this returns 0-1
+function plethWave(p,hr){
+  const q=(p-R_WAVE-PTT*hr/60+2)%1;
+  // fast systolic upstroke into a rounded peak, the dicrotic wave after the
+  // notch, then a diastolic runoff that carries through to the next upstroke
+  // so the trace never sits dead flat between beats
+  const s=q<0.11?0.048:0.095;
+  const peak=Math.exp(-((q-0.11)*(q-0.11))/(2*s*s));
+  const dicrotic=0.28*Math.exp(-((q-0.35)*(q-0.35))/(2*0.058*0.058));
+  const runoff=0.34*Math.exp(-q/0.50)*(1-Math.exp(-q/0.05));
+  return (peak+dicrotic+runoff)/PLETH_NORM;
+}
 function ecgStep(k,hr,wall){
-  const tr=trace[k],N=tr.length;
-  const steps=Math.min(80,Math.max(1,Math.round(wall*220)));
-  const beats=hr>1?hr/60*wall:0;
+  const tr=trace[k],pw=plethTrace[k],N=tr.length;
+  // One sample is 1/SR of a second, so the phase advance PER SAMPLE follows
+  // the heart rate alone. It used to be beats/steps, which spread the whole
+  // interval's beats across however many samples the loop actually ran -- so
+  // whenever the cap below engaged the waveform came out time-compressed
+  // rather than merely truncated. Capping is allowed to drop trace off the
+  // left-hand end; it is not allowed to change the shape of what it draws.
+  const dph=hr>1?hr/60/SR:0;
+  // Carry the fractional sample between frames so the sweep advances at
+  // exactly SR samples per wall second. Rounding it away per frame made the
+  // sweep speed depend on the frame duration -- 250 samples/s at a 16 ms
+  // frame against 212 at 33 ms, a 13.6% error either side of the truth -- and
+  // since the beats are spaced in SAMPLES, the rate you saw inherited it.
+  acc[k]+=wall*SR;
+  let steps=Math.floor(acc[k]);
+  acc[k]-=steps;
+  // Writing more than N samples would only overwrite work already done, so N
+  // is the natural bound. It stops a long stall (a backgrounded tab) from
+  // spinning; the backlog is dropped rather than banked.
+  if(steps>N){ steps=N; acc[k]=0; }
   for(let s=0;s<steps;s++){
-    phase[k]=(phase[k]+beats/steps)%1;
+    phase[k]=(phase[k]+dph)%1;
     tr.copyWithin(0,1); tr[N-1]=hr>1?ecgWave(phase[k]):0;
+    pw.copyWithin(0,1); pw[N-1]=hr>1?plethWave(phase[k],hr):0;
   }
 }
 function ecgDraw(k){
@@ -632,6 +757,24 @@ function ecgDraw(k){
     i?g.lineTo(x,y):g.moveTo(x,y);
   }
   g.stroke();
+}
+function plethDraw(k){
+  const cv=plethCv[k],g=cv.getContext('2d'),W=cv.width,H=cv.height,tr=plethTrace[k];
+  const N=tr.length, base=H*0.93, amp=H*0.78;
+  g.clearRect(0,0,W,H);
+  const path=close=>{
+    g.beginPath();
+    for(let i=0;i<N;i++){
+      const x=i*W/N, y=base-tr[i]*amp;
+      i?g.lineTo(x,y):g.moveTo(x,y);
+    }
+    if(close){ g.lineTo(W,base); g.lineTo(0,base); g.closePath(); }
+  };
+  // trace and numeric carry the same colour, which is what lets you pair them
+  // at a glance -- the SR6000's pleth and its SpO2 are both yellow for exactly
+  // this reason
+  path(true); g.globalAlpha=0.20; g.fillStyle=css('--sat'); g.fill(); g.globalAlpha=1;
+  path(false); g.strokeStyle=css('--sat'); g.lineWidth=1.6; g.stroke();
 }
 
 // ---- pulse oximeter tone ---------------------------------------------------
@@ -700,9 +843,10 @@ function run(){
    D.B=simulate(P,tl(P.fgBuccal,STARTS[P.buccalIdx][0],true));
    stale=false; T=0;
    busy.textContent=((performance.now()-t0)/1000).toFixed(1)+' s';
-   // prime the ECG with a few resting beats so it reads as a rhythm at rest
-   for(const k of ['A','B']){ phase[k]=0; trace[k].fill(0);
-     ecgStep(k, D[k].hr[0], trace[k].length/220); }
+   // prime both traces with resting beats so they read as a rhythm at rest
+   for(const k of ['A','B']){ phase[k]=0; acc[k]=0;
+     trace[k].fill(0); plethTrace[k].fill(0);
+     ecgStep(k, D[k].hr[0], trace[k].length/SR); }
    runBtn.textContent='Re-run';
   }catch(err){
    busy.textContent='error: '+err.message;
@@ -748,12 +892,14 @@ function panel(k,t){
  // the comparison is the whole point and it matters most at the end.
  const end=a.t[a.t.length-1];
  sN[k].textContent=s.toFixed(0);
- sN[k].style.color=(!live||s<90)?css('--alarm'):css('--spo2');
- tL[k].textContent=live?'':'asystole at '+Math.floor(end/60)+':'+
+ sN[k].style.color=(!live||s<90)?css('--alarm'):css('--sat');
+ // heart rate sits beside its own trace, coloured to match it
+ const hr=at(a,'hr',t);
+ hN[k].textContent=hr<1?'--':hr.toFixed(0);
+ hN[k].style.color=(!live||hr<45)?css('--alarm'):css('--ecg-line');
+ tL[k].textContent=live?'':' asystole '+Math.floor(end/60)+':'+
    String(Math.round(end%60)).padStart(2,'0');
  mon[k].className='rows'+(live?'':' stopped');
- pl[k].style.width=Math.max(0,(s-40)/60*100)+'%';
- pl[k].style.background=live?css('--spo2'):css('--alarm');
  const r=(l,v,c)=>'<div class="row"><span class="k">'+l+'</span><b'+
   (c?' style="color:'+c+'"':'')+'>'+v+'</b></div>';
  mon[k].innerHTML=r('PaO&#8322;',at(a,'pao2',t).toFixed(0))+
@@ -763,8 +909,6 @@ function panel(k,t){
   r('lung volume',at(a,'vol',t).toFixed(0)+' mL')+
   r('shunt',(at(a,'shunt',t)*100).toFixed(0)+'%')+
   r('atelectasis',(at(a,'atel',t)*100).toFixed(0)+'%')+
-  r('heart rate',at(a,'hr',t).toFixed(0)+' bpm',
-    at(a,'hr',t)<45?'var(--alarm)':null)+
   r('MAP',at(a,'map',t).toFixed(0)+' mmHg',at(a,'map',t)<55?'var(--alarm)':null)+
   r('cardiac output',at(a,'co',t).toFixed(1)+' L/min')+
   r('stroke volume',at(a,'sv',t).toFixed(0)+' mL')+
@@ -775,7 +919,7 @@ function panel(k,t){
 function render(){
  if(!D.A||!D.B) return;
  bottle('A',T);bottle('B',T);panel('A',T);panel('B',T);
- ecgDraw('A');ecgDraw('B');
+ ecgDraw('A');ecgDraw('B');plethDraw('A');plethDraw('B');
  cvs.A.style.opacity=alive(D.A,T)?1:0.55; cvs.B.style.opacity=alive(D.B,T)?1:0.55;
  document.getElementById('clock').textContent=
   Math.floor(T/60)+':'+String(Math.floor(T%60)).padStart(2,'0');
@@ -783,6 +927,11 @@ function render(){
  head.style.left=(100*T/900)+'%';
  let c=EVENTS[0];for(const e of EVENTS)if(T>=e[0])c=e;
  let txt=c[1];
+ // The 120 s caption is the ONLY place the LMA toggle shows in words, so
+ // the base text above must not state an outcome of its own -- it used to
+ // end '-- airway briefly open', which this then appended to, giving
+ // '...briefly open -- airway stays shut' with the toggle off. The button
+ // was working; the sentence said it was not.
  if(c[0]===120) txt+=P.lmaOpens?' — airway briefly open':' — airway stays shut';
  document.getElementById('cap').textContent=txt;
  let cur=STEPS[0];for(const s of STEPS)if(T>=s[0])cur=s;
@@ -810,6 +959,31 @@ document.getElementById('play').onclick=e=>{
  e.target.textContent=playing?'Pause':'Play';last=0;if(playing)requestAnimationFrame(loop);};
 document.getElementById('rew').onclick=()=>{T=0;render();};
 document.getElementById('scrub').oninput=e=>{T=+e.target.value;render();};
+// ---- sliders panel ---------------------------------------------------------
+// Folds itself away after ten seconds so the patients get the whole width,
+// which is the point of the page. Any use of the panel cancels the countdown
+// and leaving it starts it again, so it cannot close under your hand while you
+// are dragging a slider.
+const SIDE_HIDE_MS=10000;
+const sideEl=document.getElementById('side'),sideBtn=document.getElementById('sidebtn');
+let sideTimer=null;
+function setSide(hidden){
+ document.body.classList.toggle('sidehid',hidden);
+ sideBtn.textContent=hidden?'Sliders':'Hide sliders';
+ sideBtn.setAttribute('aria-expanded',String(!hidden));
+}
+function armSide(){
+ clearTimeout(sideTimer);
+ if(document.body.classList.contains('sidehid')) return;   // already away
+ sideTimer=setTimeout(()=>setSide(true),SIDE_HIDE_MS);
+}
+sideBtn.onclick=()=>{setSide(!document.body.classList.contains('sidehid'));armSide();};
+['pointerenter','pointermove','input','focusin','wheel'].forEach(ev=>
+ sideEl.addEventListener(ev,()=>clearTimeout(sideTimer),{passive:true}));
+['pointerleave','focusout'].forEach(ev=>
+ sideEl.addEventListener(ev,armSide,{passive:true}));
+armSide();
+
 const sndBtn=document.getElementById('snd');
 sndBtn.onclick=()=>{
  if(!actx){ try{actx=new (window.AudioContext||window.webkitAudioContext)();}

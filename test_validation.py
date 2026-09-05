@@ -16,7 +16,15 @@ TWO CLASSES OF TARGET, and they are not equal:
 Where a target is a median with an interquartile range, the test asserts the
 model lands inside the IQR, not on the median. Where it is a mean with an SD,
 the test allows two SD. Anything tighter would be fitting to noise.
+
+EXIT STATUS: check() deliberately does not raise, so that one run reports every
+benchmark rather than stopping at the first failure. The process therefore has
+to signal failure some other way, and it must, because the pre-commit hook in
+.githooks/ gates on it: __main__ exits 1 if anything failed, and under pytest
+the sentinel test at the foot of the file carries the same verdict.
 """
+import sys
+
 import numpy as np
 from apnoea_core import Patient, AirwayEpoch, simulate, time_to
 
@@ -89,6 +97,48 @@ def test_oloughlin_2020():
     check("PaCO2-PvCO2 gradient, 5 s (venous higher)", early, -20, -1, " mmHg")
     check("PaCO2-PvCO2 gradient, 10 min (reversed)", late, 0, 12, " mmHg",
           "their stated mechanism: pulmonary CO2 retention + Haldane")
+
+
+def test_stock_1989():
+    """Stock MC, Downs JB, McDonald JS et al. J Clin Anesth 1989;1:328-32.
+    CLINICAL. 14 healthy adults, enflurane-O2, TRACHEAL TUBE CLAMPED, so this
+    is complete obstruction with no fresh gas at all. A logarithmic function
+    fitted the PaCO2 rise best; quoted piecewise as 12 mmHg over the first
+    minute and 3.4 mmHg/min thereafter.
+
+    This is the only benchmark here that looks at CO2 under OBSTRUCTION, and
+    its absence is how the model carried an obstructed rate of rise of 41.75
+    mmHg/min -- twelve times the measured value -- through every other check
+    in this file. Everything else uses a patent airway, where the three
+    defects behind it did not show. Do not remove it.
+
+    The slope band is +-30% of the measured 3.4, which is the same width this
+    file already allows elsewhere for a study of this size reported as a
+    piecewise fit. The model sits at 4.3, near the top of it: a KNOWN residual,
+    not a pass to be proud of. It is recorded in the model's own notes rather
+    than tuned away, because the obvious lever -- halving the CO2 stores --
+    hits 3.4 exactly while making the stores mean something other than what
+    their names say.
+    """
+    p = Patient(weight=70, height=1.75, age=45, hb=15.0)
+    r = simulate(p, [AirwayEpoch(360, resistance=OBS, fgo2=0.21)],
+                 dt=DT, stop_sao2=0.0)
+    g = lambda s: float(np.interp(s, r['t'], r['paco2']))
+    check("Stock obstructed, first minute", g(60) - r['paco2'][0],
+          9, 15, " mmHg", "clinical; 12 mmHg measured")
+    check("Stock obstructed, 1-5 min slope", (g(300) - g(60)) / 4.0,
+          2.4, 4.4, " mmHg/min", "clinical; 3.4 mmHg/min measured, +-30%")
+    # A runaway guard, not a shape assertion. Stock's logarithmic fit implies
+    # the curve decelerates; ours accelerates modestly over minutes 1-5,
+    # because by then the sealed lung has lost half its volume and the rising
+    # shunt is what sets arterial CO2. Which of those is right over this
+    # window is not settled by anything measured here -- 14 patients fitted
+    # piecewise cannot resolve the curvature -- so this checks only that the
+    # late slope stays within a factor of three of the early one. That is what
+    # actually failed before: the old code reached 41.75 mmHg/min.
+    early, late = (g(180) - g(60)) / 2.0, (g(300) - g(180)) / 2.0
+    check("PaCO2 rise does not run away", late / max(early, 1e-9),
+          0.3, 3.0, " x early slope", "guard: the defect version hit 12x")
 
 
 def test_positioning_trials():
@@ -177,12 +227,25 @@ def test_timestep_stability():
           "if this fails the integrator is unstable, not the physiology")
 
 
+def test_zz_all_benchmarks_passed():
+    """Sentinel: carries the verdict of every check() above into pytest.
+
+    check() records rather than raises, so without this pytest would collect
+    each test_* function, watch it print FAIL, and still report the run green.
+    Named zz_ because pytest executes in definition order and this has to run
+    last, after every other test has had its say.
+    """
+    assert not FAILURES, (f"{len(FAILURES)} benchmark(s) failed: "
+                          + ", ".join(FAILURES))
+
+
 if __name__ == "__main__":
     print("=" * 74)
     print("CLINICAL TARGETS — measurements in patients. These are the arbiters.")
     print("=" * 74)
     test_toner_2018(); test_heard_2017(); test_oloughlin_2020()
     test_positioning_trials(); test_cardiac_output()
+    test_stock_1989()
     print()
     print("=" * 74)
     print("MODEL COMPARATORS — other people's simulations, not measurements.")
@@ -200,3 +263,4 @@ if __name__ == "__main__":
     else:
         print("all checks passed")
     print("=" * 74)
+    sys.exit(1 if FAILURES else 0)

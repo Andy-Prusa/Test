@@ -21,7 +21,7 @@ patient = Patient(
     height=1.75,         # m
     age=45,              # years
     hb=14.0,             # g/dL
-    position_gain=1.25,  # 1.0 supine, ~1.25 ramped / head-up
+    tilt_deg=25,         # 0 supine, 25 typical ramped / head-up, negative head-down
     # --- things worth playing with -----------------------------------------
     # vq_log_sd=0.70,    # spread of ventilation-perfusion ratios
     # tau_mix=45.0,      # s, cardiogenic mixing between compartments

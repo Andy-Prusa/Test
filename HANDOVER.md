@@ -8,13 +8,27 @@ implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 ## Start here
 
 ```
-python3 test_validation.py     # every benchmark, as pass/fail
-python3 run.py                 # a single scenario with plots
+pip install -r requirements.txt   # numpy, scipy, matplotlib (+ node for the port)
+./setup-hooks.sh                  # once per clone: gate commits on the benchmarks
+python3 test_validation.py        # every benchmark, as pass/fail
+python3 test_parity.py            # apnoea_core.py vs model.js, within 1%
+python3 run.py                    # a single scenario with plots
 ```
 
 `test_validation.py` is the important one. Several changes during development
 silently broke earlier agreements and were only caught by re-running things by
-hand. Run it after every change.
+hand. That is no longer left to memory: `.githooks/pre-commit` runs both test
+files before every commit and refuses the commit if either fails.
+`setup-hooks.sh` enables it, and has to be run once per clone because git does
+not clone hooks.
+
+If you genuinely need to commit a broken intermediate state, `git commit
+--no-verify` skips it — say in the message which benchmark is broken and why.
+
+Both suites exit non-zero on failure and both work under pytest. `check()`
+records rather than raises, so one run reports every failure instead of
+stopping at the first; a sentinel test at the foot of each file carries the
+verdict into pytest.
 
 ## Files
 
@@ -26,9 +40,17 @@ hand. Run it after every change.
 | `airway_scenario.html` | self-contained interactive page, embeds `model.js` |
 | `build_page.py` | regenerates the HTML from `model.js` + template |
 | `test_validation.py` | all benchmarks as executable tests |
+| `test_parity.py` | the two implementations against each other, within 1% |
+| `parity_driver.js` | stdin/stdout shim so Python can drive `model.js` |
 | `run.py` | simple entry point for one scenario |
+| `.githooks/pre-commit` | page freshness + both test files; blocks on failure |
+| `setup-hooks.sh` | enables the hook; run once per clone |
+| `requirements.txt` | the Python dependencies. JavaScript has none |
 
-`build_page.py` must be re-run after any change to `model.js`.
+`build_page.py` must be re-run after any change to `model.js`. The pre-commit
+hook will not do it for you, but `build_page.py --check` will tell you that you
+forgot, and the hook runs it first — the page embeds its own copy of the model,
+so a stale HTML runs different physics from the file next to it.
 
 ## What is validated, and against what
 
@@ -48,15 +70,99 @@ another group's simulation — useful comparators, not truth.
 | O'Loughlin 2020, venous PCO2 rate | 0.15 (0.10) kPa/min | 0.22 |
 | Sci Rep 2023, cardiac output at 15 min | +30% | +36% |
 | Sci Rep 2023, PaCO2 rate | 2.1 mmHg/min | 2.4 |
+| Stock 1989, obstructed, first minute | 12 mmHg | 12.2 |
+| Stock 1989, obstructed, 1-5 min slope | 3.4 mmHg/min | 4.3 |
 | Lane / Ramkumar, 20 deg head-up | +24 to +36% | +33% |
 | Altermatt, BMI 35, 30 deg | +32% | +40% |
 | Dixon, BMI 44, 25 deg | +32% | +24% |
+
+### CO2 under obstruction: three defects, found 2026-09
+
+Every CO2 benchmark above uses a PATENT airway. Under OBSTRUCTION the model
+was producing 41.75 mmHg/min against Stock's measured 3.4 -- twelve times
+too fast -- and nothing in the suite looked, so nothing failed. There is now
+a `test_stock_1989` and it should not be removed.
+
+Three separate defects, all in the same few lines of gas exchange:
+
+1. **One pH for the whole lung.** `ph_c` was solved once from mean alveolar
+   PCO2 and applied to every compartment. Pricing a compartment at 60 mmHg
+   with the lung mean's pH inflated its CO2 content by up to 2.45x; content
+   went linear in PCO2, losing the dissociation curve's saturation, and
+   arterial PCO2 ran to 250 while alveolar sat at 112 and venous at 113 --
+   arterial outside both, which is impossible. Now solved per compartment.
+
+2. **The pole at pH 8.142 is reachable, and per-compartment pH reaches it.**
+   Item 4 below was right that this was closer than it looked. A compartment
+   whose gas has collapsed onto the 1e-9 floor has a PCO2 that is the ratio of
+   two floor values: a sealed run visits 1.8e-06 and 566 mmHg. Anything below
+   ~2.4 mmHg puts the pH past `co2_content`'s pole, where content changes
+   sign. The lung mean was always physiological so it never met the pole;
+   per compartment walks into it, and Python and JavaScript landed either side
+   and disagreed by 8.5%. The pH solve input is now clamped to [5, 250].
+
+3. **Collapsed compartments kept their perfusion.** `q_w` is the resting
+   distribution and never changed with collapse. Collapse was handled only in
+   aggregate, as `shunt`, so the right AMOUNT of blood bypassed but not from
+   the right COMPARTMENTS: a fully collapsed unit still received its full
+   share of the non-shunted blood and set arterial content with its floor-value
+   gas. Non-shunted perfusion is now weighted by `q_w * (1 - coll_c)`.
+
+**The CO2 store parameters were deliberately NOT touched.** Halving
+`v_tis_co2_fast` hits Stock's 3.4 exactly, and that is the trap: it buries
+three real bugs under a parameter that then no longer means what its name
+says. Fixing the three and refitting nothing leaves the obstructed slope at
+4.3 against 3.4, which is where it stands -- a known 26% residual, recorded
+rather than tuned away.
+
+**Open.** Stock found a LOGARITHMIC fit best, i.e. a decelerating curve; ours
+accelerates modestly over minutes 1-5, because by then the sealed lung has
+lost half its volume and the rising shunt sets arterial CO2. Nothing measured
+settles which is right over that window -- 14 patients fitted piecewise cannot
+resolve the curvature -- so the benchmark guards only against runaway.
+
+Worth knowing for anything that reads per-compartment gas: **a collapsed
+compartment's gas fractions are numerical debris**, not small numbers. Any new
+code that touches `fr_c` per compartment must either clamp or weight by the
+open fraction, exactly as these three fixes do.
 
 Two things the model reproduces that were not built into it, and which are
 therefore worth something: the arterial-venous CO2 gradient REVERSES during
 apnoea (O'Loughlin describe this and attribute it to pulmonary CO2 retention
 plus the Haldane effect), and failure requires TWO coincident abnormalities
 rather than one, which matches Toner's single outlier and O'Loughlin's two.
+
+### The two implementations against each other
+
+`test_parity.py` runs `apnoea_core.py` and `model.js` on identical inputs and
+requires every output to agree within 1%. It currently does with three orders
+of margin — worst case 0.03%, and four of the six scenarios agree exactly —
+across long apnoeic oxygenation, a desaturating room-air control, the reopening
+inrush, a sealed airway and a partial obstruction. The two scenarios that are
+not exact are the ones that drive a compartment to gas exhaustion, where the
+per-species floor differs (1e-9 mL in Python, 1e-12 in the JavaScript); that
+and the other latent differences are listed at the foot of `test_parity.py`.
+
+It did not when it was written. `model.js` had kept the well-mixed nitrogen
+exchange that `apnoea_core.py` replaced with a per-compartment one, and by 15
+minutes the two were 21% apart on PaO2, 14% on shunt and 25% on absorption
+atelectasis. Nothing caught it because SpO2 — the output anyone looks at —
+stayed within 1% throughout: the oxygen plateau holds saturation flat while the
+gas exchange underneath it drifts. Anything comparing only desaturation times
+would have called the port fine.
+
+Three smaller drifts went with it: a sealed airway could vent gas through an
+airway that is by definition closed; `lungO2` was reported one step stale,
+which is 35% out at an inrush; and the HPV stimulus PvO2 was refreshed only
+once a second where the Python refreshes it every step, so hypoxic
+vasoconstriction was driven by a tension up to 0.9 s old. That last one is
+small — 0.03% on the HPV fraction — but it was the entire residual, and
+removing it made four of the six scenarios agree exactly.
+
+The comparison is limited to where the model says it predicts anything —
+SaO2 >= 70% and PaCO2 <= 150 — see Numerical notes for why the upper CO2
+bound is not merely caution. Saturation is compared over the whole run
+regardless.
 
 ### Model comparators
 
@@ -129,6 +235,21 @@ be compared with Heard's.
   ten-second rolling minimum, which is also what a monitor would show.
 - Runs continued past the terminal rhythm are numerical noise. Do not plot
   them; `stop_sao2` exists for this.
+- **Above PaCO2 ~150 the arterial CO2 inverse misbehaves.** Not just
+  unvalidated — wrong. In a 15-minute obstructed-then-rescued obese run, PaCO2
+  reads 218 mmHg at 650 s, 138 at 700 s, 126 at 725 s, 230 at 825 s: twelve of
+  ninety ten-second intervals have PaCO2 FALLING, once by 43.8 mmHg. With no
+  ventilation there is nothing to remove CO2, so it cannot fall at all.
+  `pco2_from_co2_content` solves a residual whose inner SO2/pH fixed point is
+  poorly conditioned at that end, so successive one-second solves land on
+  different roots. Both implementations do it and agree with each other while
+  doing it, so it is not a port problem. 150 is already `co2_response_cap`,
+  past which this file says the model is not valid, and every benchmark
+  finishes well below it — so nothing published is affected. But the model
+  does not merely stop being predictive up there, it starts producing
+  impossible numbers, and if anything is ever to be claimed in that range this
+  needs fixing first. Reproduction is in the note at the foot of
+  `test_parity.py`.
 
 ## Open work, roughly by value
 
@@ -145,7 +266,31 @@ be compared with Heard's.
    arms and has resisted every structural change. The pregnancy physiology in
    our configuration was assembled from textbook multipliers, not their
    methods, so the fault may be ours.
-4. **Check the Douglas 1988 constants.**
+4. **Check the Douglas 1988 constants**, and while in `bloodgas.py`, make
+   `pco2_from_co2_content` well-behaved above PaCO2 150 (see Numerical notes).
+   A second root-selection problem sits in the same residual, and it is closer
+   than it looks: `co2_content` has a pole at pH 8.142, and the residual goes
+   multi-rooted once the pH at the bracket's low end (PCO2 3) passes it, which
+   happens from base excess **-0.50** over Hb 10-18 and T 33-38. Base excess 0
+   — the value the model actually uses — is therefore already past the pole.
+   What keeps the current path clean is only that the band of CO2 contents
+   which traps the solver is narrow: at BE 0 the two implementations agree to
+   1.3e-7 over 1500 random states. That margin is incidental, not structural,
+   so do not record this as "safe below BE +6".
+
+   **Update 2026-09: this became reachable and was hit.** Per-compartment pH
+   drove it directly (see "CO2 under obstruction" above). The clamp added
+   there guards the alveolar path only. The bracket in `bloodgas.py` is still
+   unfixed and this remains the right item to do.
+
+   Where it bites they disagree completely — content 69.0, BE +6, Hb 14, O2
+   content 16 gives Python PCO2 3.0004 mmHg at pH 8.203 against `model.js`'s
+   58.285 at pH 7.358, 94.9% apart. Note which is which: 3 mmHg at pH 8.2 is
+   the spurious root against the bracket's lower end, and it is the PYTHON on
+   it. So this is the one place where making the port track the reference is
+   the wrong move; fix the bracket in `bloodgas.py` so only the physiological
+   root is admitted. It becomes reachable the moment anyone models a metabolic
+   alkalosis.
 5. **Paediatric parameterisation.** Absent entirely; Hardman & Wills 2006
    cannot currently be tested.
 6. **A simulation study of operator performance under stable versus falling

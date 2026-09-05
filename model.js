@@ -106,6 +106,7 @@ function simulate(P, epochs, dt=0.1){
   let vO2=Array(NP).fill(cvo2), vC=Array(NP).fill(cvco2);
   let tO2=cvo2,tC=cvco2,sC=cvco2, collapsed=0, hpv=0, pvo2=40;
   const nc0=new Float64Array(NC), collC=new Float64Array(NC);
+  const wOpen=new Float64Array(NC);   // perfusion share of the OPEN lung
   for(let c=0;c<NC;c++) nc0[c]=n[3*c]+n[3*c+1]+n[3*c+2];
   let nc0Sum=0; for(let c=0;c<NC;c++) nc0Sum+=nc0[c];
   let n2p=[573,573,573];
@@ -135,7 +136,10 @@ function simulate(P, epochs, dt=0.1){
       for(let q=0;q<60;q++){const m=(lo+hi)/2;
         if((PB+rec(m)-PH2O)*m < nd*GASK) lo=m; else hi=m;}
       vv=(lo+hi)/2; pabs=PB+rec(vv);
-      if(pabs>PB){vv=nd*GASK/PDRY;pabs=PB;} }
+      // gas vents through an OPEN airway; it cannot vent through a SEALED
+      // one, where the pressure is instead allowed to rise - which is what
+      // returning nitrogen does to a closed lung
+      if(pabs>PB && isFinite(ep.R)){vv=nd*GASK/PDRY;pabs=PB;} }
     vA=vv; const pdry=pabs-PH2O;
     let tO=0,tC2=0,tN=0;
     for(let c=0;c<NC;c++){
@@ -210,23 +214,50 @@ function simulate(P, epochs, dt=0.1){
     papNow=coNow*(P.pvrBase||1.40)*(1+((P.hpvPvrMax||3.15)-1)*hpv)+(P.pcwp||8);
     const n2cond=qf.map(q=>q*coNow*1000*lam);
     const cvO2=vO2[NP-1], cvC=vC[NP-1];
-    // one pH for the lung; every compartment then costs only analytic terms
-    const phc=phFromPco2Be(pACO2,be,hb,0.99,T);
+    // One pH PER COMPARTMENT. Using the lung mean priced a compartment at
+    // 60 mmHg with the mean's pH and inflated its CO2 content by up to 2.45x,
+    // which sent arterial PCO2 above both alveolar and venous. See the note
+    // in apnoea_core.py at the matching line.
     const qeff=coNow*(1-shunt)*10;
+    // Non-shunted blood goes to the parts of the lung still open, weighted by
+    // how open they are. See the open-fraction note in apnoea_core.py: the
+    // resting distribution kept sending a fully collapsed unit its full share
+    // of perfusion and mixing its floor-value gas into the artery.
+    let wsum=0;
+    for(let c=0;c<NC;c++){ wOpen[c]=qw[c]*(1-collC[c]); wsum+=wOpen[c]; }
+    wsum=Math.max(wsum,1e-12);
+    for(let c=0;c<NC;c++) wOpen[c]/=wsum;
     let vo2L=0, vco2L=0, mixO=0, mixC=0;
     for(let c=0;c<NC;c++){
+      // clamped to the correlations' domain: see apnoea_core.py. A
+      // collapsed compartment's PCO2 is a ratio of floor values and
+      // reaches co2Content's pole at pH 8.142.
+      const phc=phFromPco2Be(Math.min(250,Math.max(5,pCO2[c])),be,hb,0.99,T);
       const s2=so2FromPo2(pO2[c],phc,pCO2[c],T);
       ccO2[c]=HUFNER*hb*s2+O2SOL*pO2[c];
       ccC[c]=co2Content(pCO2[c],phc,s2,hb,T);
-      const qc=qeff*qw[c];
+      const qc=qeff*wOpen[c];
       vo2c[c]=qc*(ccO2[c]-cvO2); vco2c[c]=qc*(cvC-ccC[c]);
       vo2L+=vo2c[c]; vco2L+=vco2c[c];
-      mixO+=qw[c]*ccO2[c]; mixC+=qw[c]*ccC[c];
+      mixO+=wOpen[c]*ccO2[c]; mixC+=wOpen[c]*ccC[c];
     }
     const caN=(1-shunt)*mixO+shunt*cvO2, ccN=(1-shunt)*mixC+shunt*cvC;
 
-    const flux=n2p.map((p,j)=>n2cond[j]*(p-pAN2));
-    const vn2=flux[0]+flux[1]+flux[2];
+    // Each tissue store exchanges with each COMPARTMENT across that
+    // compartment's own nitrogen tension, weighted by its share of perfusion.
+    // Driving it from the whole-lung mean instead lets a unit that has already
+    // filled with nitrogen keep taking more, which matters because nitrogen
+    // accumulation is what drives both the FgO2 cliff and the absorption
+    // atelectasis. This tracks apnoea_core.py; the earlier well-mixed form put
+    // the two implementations 21% apart on PaO2 by 15 min.
+    const condTot=n2cond[0]+n2cond[1]+n2cond[2];
+    const pTisEff=(n2cond[0]*n2p[0]+n2cond[1]*n2p[1]+n2cond[2]*n2p[2])
+                  /Math.max(condTot,1e-12);
+    const vn2c=new Float64Array(NC);
+    let vn2=0;
+    for(let c=0;c<NC;c++){ vn2c[c]=condTot*qw[c]*(pTisEff-pN2[c]); vn2+=vn2c[c]; }
+    // each store gives up its share of the total
+    const flux=n2cond.map((cj,j)=>cj*(n2p[j]-pTisEff)+cj/Math.max(condTot,1e-12)*vn2);
     const deficit=vo2L-vco2L-vn2;
     let inflow=0;
     if(isFinite(ep.R)){
@@ -251,7 +282,7 @@ function simulate(P, epochs, dt=0.1){
       }
       // inflow follows absorption, not volume: compartments share one airway
       let dtot=0; const dfc=new Float64Array(NC);
-      for(let c=0;c<NC;c++){ dfc[c]=Math.max(vo2c[c]-vco2c[c]-vn2*qw[c],0); dtot+=dfc[c]; }
+      for(let c=0;c<NC;c++){ dfc[c]=Math.max(vo2c[c]-vco2c[c]-vn2c[c],0); dtot+=dfc[c]; }
       for(let c=0;c<NC;c++){
         const byAbs = dtot>1e-9 ? dfc[c]/dtot : nc[c]/Math.max(nd,1e-9);
         let sh2 = (1-MECH)*byAbs + MECH*(nc[c]/Math.max(nd,1e-9));
@@ -262,13 +293,13 @@ function simulate(P, epochs, dt=0.1){
           sh2=(1-w)*sh2 + w*(nc0[c]/nc0Sum); }
         n[3*c]   += (-vo2c[c])*dtm + sh2*add[0];
         n[3*c+1] += ( vco2c[c])*dtm + sh2*add[1];
-        n[3*c+2] += ( vn2*qw[c])*dtm + sh2*add[2];
+        n[3*c+2] += ( vn2c[c])*dtm + sh2*add[2];
       }
     } else {
       for(let c=0;c<NC;c++){
         n[3*c]   += (-vo2c[c])*dtm;
         n[3*c+1] += ( vco2c[c])*dtm;
-        n[3*c+2] += ( vn2*qw[c])*dtm;
+        n[3*c+2] += ( vn2c[c])*dtm;
       }
     }
     // cardiogenic stirring toward the lung-mean composition
@@ -288,25 +319,40 @@ function simulate(P, epochs, dt=0.1){
     for(let j=0;j<NP;j++){ aO2[j]+=(coNow/vas)*(p1-aO2[j])*dtm; aC[j]+=(coNow/vas)*(p2-aC[j])*dtm;
       p1=aO2[j];p2=aC[j]; }
     tO2+=((coNow*(aO2[NP-1]-tO2)*10-vo2)/(P.vTisO2*10))*dtm;
-    const fs=0.8*(tC-sC)*10;
-    tC+=((coNow*(aC[NP-1]-tC)*10+vco2m-fs)/(22*10))*dtm;
-    sC+=(fs/(140*10))*dtm;
+    // Store sizes are physiological, not fitted to a 15-minute average:
+    // fast = blood + vessel-rich group, slow = muscle + fat, conductance =
+    // their share of cardiac output. See apnoea_core.py's store note.
+    const kSlow=P.kCo2Slow===undefined?0.8:P.kCo2Slow;
+    const fs=kSlow*(tC-sC)*10;
+    tC+=((coNow*(aC[NP-1]-tC)*10+vco2m-fs)/((P.vTisCo2Fast||22)*10))*dtm;
+    sC+=(fs/((P.vTisCo2Slow||140)*10))*dtm;
     p1=tO2;p2=tC;
     for(let j=0;j<NP;j++){ vO2[j]+=(coNow/vvs)*(p1-vO2[j])*dtm; vC[j]+=(coNow/vvs)*(p2-vC[j])*dtm;
       p1=vO2[j];p2=vC[j]; }
 
     if(i%stride===0||!last){ last=arterialState(aC[NP-1],be,hb,aO2[NP-1],T);
-      pvo2=po2FromO2Content(vO2[NP-1],hb,last.pH,last.pco2,T);
       paco2Prev=last.pco2; sao2Prev=last.so2; }
+    // PvO2 is the only stimulus tension HPV has, and the venous pool moves
+    // every step, so apnoea_core.py recomputes it every step - outside the
+    // block that refreshes the arterial state once a second. Leaving it
+    // inside fed HPV a stimulus up to stride-1 steps stale (0.9 s at dt=0.1
+    // against the Python's 0.1 s), which the 250 s HPV lag then smoothed into
+    // a small persistent offset rather than removing.
+    pvo2=po2FromO2Content(vO2[NP-1],hb,last.pH,last.pco2,T);
     hist.push(last.so2);
     const lag=Math.round(25/dt);
     spo2+=(hist[Math.max(0,hist.length-1-lag)]-spo2)*(dt/8);
 
     if(i%stride===0){
+      // tO is the alveolar O2 from the TOP of this step, before the gas
+      // update; apnoea_core.py records the post-update sum, so recompute it
+      // here rather than reporting a quantity one step stale. Only visible at
+      // an inrush, where a step is ~300 mL, but that is where it is worst.
+      let lungO2=0; for(let c=0;c<NC;c++) lungO2+=n[3*c];
       out.t.push(i*dt); out.spo2.push(spo2*100); out.vol.push(vLung);
       out.fao2.push(pAO2/713); out.pan2.push(pAN2); out.paco2.push(last.pco2);
       out.ph.push(last.pH); out.pao2.push(last.po2); out.shunt.push(shunt);
-      out.palv.push((pabs-PB)*1.35951); out.lungO2.push(tO);
+      out.palv.push((pabs-PB)*1.35951); out.lungO2.push(lungO2);
       out.hpv.push(hpv); out.pvo2.push(pvo2); out.co.push(coNow); out.hr.push(hrNow);
       out.map.push(mapNow); out.pap.push(papNow); out.sv.push(svNow);
       out.atel.push(absorbed);
