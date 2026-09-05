@@ -20,7 +20,7 @@ HTML = """<!DOCTYPE html>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{--screen:#060a0d;--panel:#0d151b;--rule:#16242e;--rule2:#223743;
---spo2:#4fd8e8;--co2:#e8d54a;--ecg-line:#4ade5e;--sat:#4fd8e8;--alarm:#ff4d3d;--o2:#a8ecff;--inert:#41586a;
+--spo2:#4fd8e8;--co2:#dda23c;--ecg-line:#4ade5e;--sat:#ecdf49;--alarm:#ff4d3d;--o2:#a8ecff;--inert:#41586a;
 --ink:#c8d6de;--dim:#6b8494}
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -407,10 +407,11 @@ function plethDraw(k){
     }
     if(close){ g.lineTo(W,base); g.lineTo(0,base); g.closePath(); }
   };
-  // the trace stays cyan: green here sits too close to the ECG's green and
-  // the two waveforms stop being tellable apart at a glance
-  path(true); g.globalAlpha=0.20; g.fillStyle=css('--spo2'); g.fill(); g.globalAlpha=1;
-  path(false); g.strokeStyle=css('--spo2'); g.lineWidth=1.6; g.stroke();
+  // trace and numeric carry the same colour, which is what lets you pair them
+  // at a glance -- the SR6000's pleth and its SpO2 are both yellow for exactly
+  // this reason
+  path(true); g.globalAlpha=0.20; g.fillStyle=css('--sat'); g.fill(); g.globalAlpha=1;
+  path(false); g.strokeStyle=css('--sat'); g.lineWidth=1.6; g.stroke();
 }
 
 // ---- pulse oximeter tone ---------------------------------------------------
