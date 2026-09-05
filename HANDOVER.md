@@ -121,6 +121,45 @@ lost half its volume and the rising shunt sets arterial CO2. Nothing measured
 settles which is right over that window -- 14 patients fitted piecewise cannot
 resolve the curvature -- so the benchmark guards only against runaway.
 
+### Axial cardiogenic mixing: tested, bounded, not the answer
+
+`tau_mix` stirs gas BETWEEN compartments. The same heartbeat also stirs it
+ALONG the airway, and that arm is absent: there is no outflow term anywhere,
+`inflow` is clamped non-negative, so with a patent airway CO2 has no route out
+of the lung at all. That looked like the missing CO2 clearance path.
+
+It was built and measured. As a diffusive chain over pharynx | dead space |
+alveoli, scaling with cardiac output, with the pharyngeal boundary present
+only when the airway is patent -- so obstruction removes the boundary rather
+than the stirring, the dead space equilibrates in seconds, and net transport
+stops by itself. Gated that way the obstructed case is bit-identical at every
+strength (12.16 mmHg first minute, 4.35 mmHg/min slope), which is the right
+behaviour and worth keeping if anyone rebuilds this.
+
+**It is capped by oxygenation, not by CO2.** Dispersion is species-independent,
+so the same chain that carries CO2 out carries nitrogen IN whenever the
+pharynx is room air. Toner's sham arm is the binding constraint:
+
+| end-to-end mL/min | Toner sham (380-525 s) | patent PaCO2 (2.1) |
+|---|---|---|
+| 0 | 402 | 2.45 |
+| 50 | 394 | 2.44 |
+| 100 | **377 FAIL** | 2.40 |
+| 300 | 313 | 2.16 |
+
+The value that would fix CO2 is ~300 mL/min. The ceiling is ~75. So at any
+strength the oxygenation data permits -- about 1 mL per beat -- it changes the
+patent CO2 rate by ~1%, and it is NOT the explanation for CO2 clearance. That
+is why the store and curve-shape account above is the one the model uses.
+
+Two caveats before anyone re-opens this. The bound assumes pharyngeal FO2 =
+0.21 in the sham arm, which item 2 below already flags as uncertain; a higher
+residual pharyngeal FO2 would loosen it. And a first attempt at this measured
+the mechanism at roughly a tenth of its true strength by parameterising the
+per-node conductance rather than the end-to-end one -- the dead space is
+discretised into `vd_segments` for the inrush CFL condition only, and putting
+physics on that number makes it depend on a numerical choice.
+
 Worth knowing for anything that reads per-compartment gas: **a collapsed
 compartment's gas fractions are numerical debris**, not small numbers. Any new
 code that touches `fr_c` per compartment must either clamp or weight by the
