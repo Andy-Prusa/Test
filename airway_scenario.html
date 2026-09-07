@@ -26,7 +26,7 @@ font-family:Barlow,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
  .wrap{transition:grid-template-columns .28s ease}
  body.sidehid .wrap{grid-template-columns:0 minmax(0,1fr)}
  body.sidehid .side{opacity:0;pointer-events:none;overflow:hidden;padding-right:0}
- .main{display:flex;flex-direction:column;min-height:0;gap:8px}
+ .main{display:flex;flex-direction:column;min-height:0;gap:6px}
  .arms{flex:1 1 auto;min-height:0}
  .main .transport,.main .steps,.main .track,.main .caption{flex:none}
  .main .caption{margin-bottom:0}
@@ -35,12 +35,18 @@ font-family:Barlow,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
  .transport{gap:8px}
  .transport button{padding:5px 12px;font-size:15px}
  #scrub{width:100%;flex:1 1 100%;min-width:0}
- .steps{height:52px}
+ /* One icon and a label need 34px, not 62. The old rule here said 52 and
+    never applied: a later base rule of the same specificity overrode it, so
+    the compact height had been written but was dead. Scoping to .main is what
+    makes it win. */
+ .main .steps{height:34px;margin-bottom:0}
+ .main .transport{margin-bottom:2px}
+ .main .track{margin-bottom:2px}
  .stage{grid-template-columns:auto minmax(0,1fr);margin-top:8px}
  .stage canvas:not(.ecg){height:clamp(150px,30vh,400px);width:auto}
  .ecg{height:clamp(38px,7vh,80px)}
  .plethw{height:clamp(24px,4.5vh,54px)}
- .foot{margin-top:8px;padding-top:9px;font-size:11.5px;max-width:none}
+ .foot{margin-top:14px;padding-top:11px;font-size:11.5px;max-width:none}
  .legend{margin-top:8px}
 }
 h1{font-family:'Barlow Condensed',sans-serif;font-weight:600;
@@ -170,6 +176,11 @@ the calibrated median; the patients who desaturate despite good tracheal oxygen 
 the top of its range.</p>
 
 <div class="dials" id="dials"></div>
+<p class="foot">Modelled, not measured. Saturation carries a pulse oximeter delay. There is no
+end-tidal CO&#8322; because there is no ventilation; the CO&#8322; and pH shown are arterial model
+values you would not have at the bedside. Each arm stops where the model's fixed cardiac
+output stops being defensible. Closing capacity and the FRC&ndash;BMI relation are
+parameterised, not fitted to source data.</p>
 </div>
 
 <div class="main">
@@ -210,11 +221,7 @@ the top of its range.</p>
 <div class="legend"><span><i class="sw" style="background:var(--o2)"></i>oxygen in the lung</span>
 <span><i class="sw" style="background:var(--inert)"></i>nitrogen and CO&#8322;</span>
 <span><i class="sw" style="background:#0a1218;border:1px solid var(--rule2)"></i>vacuum</span></div>
-<p class="foot">Modelled, not measured. Saturation carries a pulse oximeter delay. There is no
-end-tidal CO&#8322; because there is no ventilation; the CO&#8322; and pH shown are arterial model
-values you would not have at the bedside. Each arm stops where the model's fixed cardiac
-output stops being defensible. Closing capacity and the FRC&ndash;BMI relation are
-parameterised, not fitted to source data.</p>
+
 </div>
 </div>
 <script>
@@ -773,7 +780,7 @@ function plethDraw(k){
   // trace and numeric carry the same colour, which is what lets you pair them
   // at a glance -- the SR6000's pleth and its SpO2 are both yellow for exactly
   // this reason
-  path(true); g.globalAlpha=0.20; g.fillStyle=css('--sat'); g.fill(); g.globalAlpha=1;
+  path(true); g.fillStyle=css('--sat'); g.fill();
   path(false); g.strokeStyle=css('--sat'); g.lineWidth=1.6; g.stroke();
 }
 
