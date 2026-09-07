@@ -265,6 +265,7 @@ const DIALS=[
  ['height','Height',1.45,2.05,0.01,1.75,null],
  ['frcScale','FRC',0.55,1.5,0.01,1.0,null],
  ['bmrScale','Metabolic rate',0.6,1.7,0.01,1.0,null],
+ ['hb','Haemoglobin',4.0,18.0,0.5,14.0,null],
  ['ccScale','Closing capacity',0.6,1.6,0.01,1.0,null],
  ['maxClosed','Lung collapsibility',0.10,0.65,0.01,0.25,null],
  ['vqLogSd','V/Q spread',0.0,1.4,0.02,0.70,null],
@@ -278,7 +279,7 @@ const STARTS=[[0,'From induction'],[120,'After mask ventilation fails'],
  [160,'After the LMA fails'],[280,'At laryngoscopy'],
  [370,'After failed intubation attempts']];
 
-const BASE={age:45,hb:14,lmaOpens:true,frcRef:2500,frcDrop:400,tiltDeg:25,
+const BASE={age:45,lmaOpens:true,frcRef:2500,frcDrop:400,tiltDeg:25,
  ccAt20:1800,ccPerYear:20,ccPerBmi:45,ccK:1.5,vo2Ref:250,coRef:5,crs:85,
  vArt:1.0,vVen:2.0,vTisO2:1.5,feo2:0.87,rv:1100,pCollapse:-50,nVq:20};
 const P=Object.assign({},BASE);
@@ -466,6 +467,13 @@ function labels(){
    P.height.toFixed(2)+' m \u00b7 BMI '+(P.weight/(P.height*P.height)).toFixed(1);
  document.getElementById('v_vqLogSd').textContent='log SD '+P.vqLogSd.toFixed(2);
  document.getElementById('v_tauMix').textContent=P.tauMix.toFixed(0)+' s';
+ // Below 7 g/dL the resting cardiac output rises to defend delivery, so say
+ // so on the dial: the number on its own does not tell you the circulation
+ // has changed underneath it.
+ {const hb=P.hb, thr=7.0;
+  const f=hb>=thr?1:Math.min(3,Math.pow(thr/Math.max(hb,0.5),1.535));
+  document.getElementById('v_hb').textContent=
+    hb.toFixed(1)+' g/dL'+(f>1.005?' \u00b7 CO \u00d7'+f.toFixed(1):'');}
  document.getElementById('v_fgBuccal').textContent=(P.fgBuccal*100).toFixed(0)+'%';
  if(D.B) document.getElementById('v_inflowMechFrac').textContent=
    'atelectasis '+(D.B.atel[D.B.atel.length-1]*100).toFixed(0)+'%';

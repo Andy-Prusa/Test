@@ -66,15 +66,23 @@ function derive(P){
   const frc=Math.max(300,(frcAwake-Math.min(P.frcDrop,0.25*frcAwake))*(P.frcScale||1));
   const cc=(P.ccAt20+P.ccPerYear*(P.age-20)+P.ccPerBmi*Math.max(0,bmi-25))*hf*(P.ccScale||1);
   const vo2=P.vo2Ref*Math.pow(abw/70,0.75)*(P.bmrScale||1)-0.27*P.weight;
-  const co=P.coRef*Math.pow(P.weight/70,0.75)*0.75;   // baseline at induction
+  // The circulation's answer to anaemia. Exactly 1 at and above the
+  // threshold, so a normal patient is untouched by it. Anchors and the fit
+  // are documented in apnoea_core.py; applied before the anaesthetic drop,
+  // so anaesthesia blunts the compensation in proportion.
+  const hbThr=P.hbCoThreshold===undefined?7.0:P.hbCoThreshold;
+  const anaemiaCo = P.hb>=hbThr ? 1.0 : Math.min(
+    P.hbCoMax===undefined?3.0:P.hbCoMax,
+    Math.pow(hbThr/Math.max(P.hb,0.5), P.hbCoExp===undefined?1.535:P.hbCoExp));
+  const co=P.coRef*Math.pow(P.weight/70,0.75)*anaemiaCo*0.75;  // at induction
   const fatKg=Math.max(5,P.weight*(0.10+0.011*Math.max(0,bmi-20)));
   const leanKg=P.weight-fatKg, lam=1.895e-5;
   const n2cap=[(5+0.10*leanKg)*1000*lam,(0.50*leanKg)*1000*lam,(fatKg/0.92)*1000*lam*5];
-  return {bmi,frc,cc,vo2:Math.max(60,vo2),co,n2cap,lam,hf,tiltF};
+  return {bmi,frc,cc,vo2:Math.max(60,vo2),co,n2cap,lam,hf,tiltF,anaemiaCo};
 }
 
 function simulate(P, epochs, dt=0.1){
-  const d=derive(P), {frc,cc,vo2,co,n2cap,lam,hf}=d;
+  const d=derive(P), {frc,cc,vo2,co,n2cap,lam,hf,anaemiaCo}=d;
   const hb=P.hb,T=37,be=0,crs=P.crs/1.35951, vco2m=vo2*0.8;
   let vA=frc-150;
   const fo2=P.feo2, fco2=40/PDRY, fn2=Math.max(0,1-fo2-fco2);
@@ -208,7 +216,8 @@ function simulate(P, epochs, dt=0.1){
               *Math.max(0.15,1+(P.svItpGain===undefined?0.0025:P.svItpGain)*itp);
     coNow=Math.max(0.02, coBase*(hrNow/(P.hrBase||70))*svf);
     svNow=coNow*1000/Math.max(hrNow,1e-6);
-    svrNow=(P.svrBase||18)*Math.max(P.svrFloor||0.40,
+    // resistance falls with the output, or MAP would double alongside it
+    svrNow=(P.svrBase||18)/anaemiaCo*Math.max(P.svrFloor||0.40,
             1+(P.svrCo2Gain===undefined?-0.0045:P.svrCo2Gain)*co2arg);
     mapNow=coNow*svrNow;
     papNow=coNow*(P.pvrBase||1.40)*(1+((P.hpvPvrMax||3.15)-1)*hpv)+(P.pcwp||8);

@@ -169,6 +169,8 @@ def js_params(pt, feo2):
         "coMaxFactor": pt.co_max_factor, "svCo2Gain": pt.sv_co2_gain,
         "svItpGain": pt.sv_itp_gain, "itpFraction": pt.itp_fraction,
         "svrBase": pt.svr_base, "svrCo2Gain": pt.svr_co2_gain,
+        "hbCoThreshold": pt.hb_co_threshold, "hbCoExp": pt.hb_co_exp,
+        "hbCoMax": pt.hb_co_max,
         "svrFloor": pt.svr_floor, "pvrBase": pt.pvr_base, "pcwp": pt.pcwp,
         # blood pools
         "vArt": pt.v_art, "vVen": pt.v_ven, "vTisO2": pt.v_tis_o2,
@@ -359,6 +361,18 @@ def test_lean_sealed_airway():
     stiffening below residual volume, and the collapse floor."""
     compare("lean, sealed airway, room air, 600 s",
             Patient(**LEAN), [AirwayEpoch(600, resistance=OBS, fgo2=0.21)])
+
+
+def test_anaemic_patient():
+    """Hb 4.5, where the cardiac output response to anaemia is active.
+
+    Every other case here runs Hb 14-15, where that response is exactly 1.0
+    and therefore untested. A port of it could be arbitrarily wrong and
+    nothing else in this file would notice.
+    """
+    compare("anaemic Hb 4.5, sealed airway, 600 s",
+            Patient(weight=70, height=1.75, age=45, hb=4.5, tilt_deg=0),
+            [AirwayEpoch(600, resistance=OBS, fgo2=0.21)])
 
 
 def test_partial_obstruction():
@@ -640,6 +654,7 @@ if __name__ == "__main__":
     test_obese_patent_room_air()
     test_obese_obstructed_then_rescue()
     test_lean_sealed_airway()
+    test_anaemic_patient()
     test_partial_obstruction()
     test_published_timestep()
     print("\nclinical endpoints and derived quantities:")

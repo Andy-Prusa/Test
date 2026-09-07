@@ -27,6 +27,7 @@ import sys
 
 import numpy as np
 from apnoea_core import Patient, AirwayEpoch, simulate, time_to
+import bloodgas as bg
 
 DT = 0.05          # dt=0.1 is stable but the nadir does not converge until 0.05
 OBS = np.inf
@@ -141,6 +142,54 @@ def test_stock_1989():
           0.3, 3.0, " x early slope", "guard: the defect version hit 12x")
 
 
+def test_anaemia_cardiac_response():
+    """Varat, Adolph & Fowler, Am Heart J 1972;83:415-26, and Hemodynamic
+    Effects of Chronic Severe Anemia, Circulation 1963;28:346. CLINICAL.
+
+    Varat: chronic anaemia "usually increases the cardiac output when the
+    haemoglobin level is 7 g/dL or less". Circulation 1963: Hb 4.0-6.5
+    (mean 4.5) gave a cardiac index of 6.3 L/min/m2 against a normal ~3.2,
+    so very nearly double.
+
+    The RATIO is what is tested, not the absolute cardiac index. Both
+    sources measured awake patients; ours is anaesthetised and carries
+    co_drop_frac, so the absolute figures are legitimately lower. Testing
+    the absolute value would be testing the anaesthetic drop against awake
+    data, which is not what either paper says.
+
+    The first check is the one that matters most: at a normal haemoglobin
+    this response must be exactly inert, because every other benchmark in
+    this file runs Hb 14-15 and a circulation change that quietly moved the
+    oxygenation results would be very hard to trust.
+    """
+    ref = Patient(weight=70, height=1.75, age=45, hb=15.0)
+    for hb in (15.0, 14.0, 10.0, 8.0, 7.0):
+        q = Patient(weight=70, height=1.75, age=45, hb=hb)
+        check(f"no cardiac response at Hb {hb:.0f} (must be inert)",
+              q.co_anaes() / ref.co_anaes(), 1.0, 1.0, " x",
+              "Varat: the rise begins at 7 g/dL or less")
+    q45 = Patient(weight=70, height=1.75, age=45, hb=4.5)
+    check("cardiac output at Hb 4.5", q45.co_anaes() / ref.co_anaes(),
+          1.7, 2.3, " x normal", "clinical; CI 6.3 vs ~3.2 normal = 1.97x")
+    # Mean arterial pressure must NOT double along with the output. Anaemic
+    # patients run a normal or slightly low MAP on a markedly reduced
+    # resistance; that reduction is why the output rises in the first place.
+    r15 = simulate(ref, [AirwayEpoch(60, resistance=OBS, fgo2=0.21)],
+                   dt=DT, stop_sao2=0.0)
+    r45 = simulate(q45, [AirwayEpoch(60, resistance=OBS, fgo2=0.21)],
+                   dt=DT, stop_sao2=0.0)
+    check("MAP holds when the output rises", r45['map'][0] / r15['map'][0],
+          0.85, 1.10, " x", "clinical; normal or slightly low MAP in anaemia")
+    # The patient must be viable before the apnoea starts. Without this
+    # response, Hb 4 gave a delivery-to-consumption ratio of 0.91: the
+    # tissues were consuming more oxygen than they were being sent.
+    q4 = Patient(weight=70, height=1.75, age=45, hb=4.0)
+    do2 = q4.co_anaes() * (bg.HUFNER * 4.0 + bg.O2_SOL * 100) * 10
+    check("oxygen delivery exceeds consumption at Hb 4",
+          do2 / q4.vo2_anaes(), 1.5, 3.0, " x",
+          "extraction ratio must stay survivable at rest")
+
+
 def test_positioning_trials():
     """Lane 2005, Ramkumar 2011, Altermatt 2005, Dixon 2005. CLINICAL.
     All four found roughly +30% safe apnoea time for 20-25 deg head-up."""
@@ -245,6 +294,7 @@ if __name__ == "__main__":
     print("=" * 74)
     test_toner_2018(); test_heard_2017(); test_oloughlin_2020()
     test_positioning_trials(); test_cardiac_output()
+    test_anaemia_cardiac_response()
     test_stock_1989()
     print()
     print("=" * 74)

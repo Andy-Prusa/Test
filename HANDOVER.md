@@ -72,6 +72,8 @@ another group's simulation — useful comparators, not truth.
 | Sci Rep 2023, PaCO2 rate | 2.1 mmHg/min | 2.4 |
 | Stock 1989, obstructed, first minute | 12 mmHg | 12.2 |
 | Stock 1989, obstructed, 1-5 min slope | 3.4 mmHg/min | 4.3 |
+| Varat 1972, cardiac output rise below Hb 7 | none above 7 | none |
+| Circulation 1963, cardiac output at Hb 4.5 | 1.97x (CI 6.3 vs 3.2) | 1.97x |
 | Lane / Ramkumar, 20 deg head-up | +24 to +36% | +33% |
 | Altermatt, BMI 35, 30 deg | +32% | +40% |
 | Dixon, BMI 44, 25 deg | +32% | +24% |
@@ -120,6 +122,58 @@ accelerates modestly over minutes 1-5, because by then the sealed lung has
 lost half its volume and the rising shunt sets arterial CO2. Nothing measured
 settles which is right over that window -- 14 patients fitted piecewise cannot
 resolve the curvature -- so the benchmark guards only against runaway.
+
+### Haemoglobin is a dial now, and the circulation answers to it
+
+Hb was always in the physics -- oxygen content, CO2 content, the Van Slyke
+base excess through cHb, the Haldane term. What was missing was any
+CIRCULATORY response to it, and without one the low end of the range was not
+a patient: at Hb 4 with a fixed cardiac output, oxygen delivery came to 0.91
+times consumption. The tissues were being sent less than they were using
+before the apnoea started.
+
+Two measured anchors, neither fitted to anything of ours:
+
+  Varat, Adolph & Fowler, Am Heart J 1972;83:415-26 -- the rise begins at
+  7 g/dL or less. Above that, nothing.
+
+  Hemodynamic Effects of Chronic Severe Anemia, Circulation 1963;28:346 --
+  Hb 4.0-6.5 (mean 4.5) gave a cardiac index of 6.3 L/min/m2 against a
+  normal ~3.2. Very nearly double.
+
+A power law through both, (7/hb)**1.535, capped at 3x. Delivery at Hb 4 is
+now 2.16 times consumption. Systemic vascular resistance is divided by the
+same factor, because reduced viscosity and vasodilatation are WHY the output
+rises: without that, mean arterial pressure would double alongside it, where
+real anaemic patients run a normal or slightly low MAP on a markedly reduced
+resistance. MAP holds at 68 mmHg across the whole range.
+
+**It is exactly 1.0 at and above 7 g/dL**, so every pre-existing benchmark --
+all of which run Hb 14-15 -- is untouched by construction, and the first
+check in `test_anaemia_cardiac_response` asserts that inertness. A change to
+the circulation that quietly moved the oxygenation results would be very hard
+to trust afterwards.
+
+Two things to know:
+
+- **The knee at 7 is hard, and reality's is soft.** Varat says the rise
+  "usually" begins there, "with many exceptions". The artefact is that the
+  worst oxygen delivery in the whole range sits exactly at Hb 7 (1.56x),
+  because that patient has the small blood store and no compensation yet.
+  Nothing incoherent comes of it, but a smooth onset would be more faithful
+  if anyone wants to source one.
+- **Desaturation time barely moves with Hb** -- 298 s at Hb 15 against 302 s
+  at Hb 4, obstructed. That is not a bug. During apnoea the FRC oxygen
+  dominates the store, not the blood, so quartering the haemoglobin barely
+  touches the time course. It surprises people, including me: I predicted a
+  large shortening and measured almost none.
+
+Cyanosis, when the head visualisation lands, should be driven by
+DEOXYGENATED haemoglobin rather than saturation -- roughly 5 g/dL is the
+clinical threshold. At Hb 15 the head starts turning around SpO2 67%, which
+is right; at Hb 4 deoxyHb cannot reach 5 g/dL at ANY saturation, so that
+patient can never look cyanotic however dead they are. That is the classic
+trap, and driving it from deoxyHb gives it for nothing.
 
 ### Axial cardiogenic mixing: tested, bounded, not the answer
 

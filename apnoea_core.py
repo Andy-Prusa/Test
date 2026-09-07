@@ -181,6 +181,28 @@ class Patient:
     # not dominate anywhere in the range this model is used.
     co_ref: float = 5.0
     co_drop_frac: float = 0.25
+    # --- the circulation's answer to anaemia ------------------------------
+    # Below a threshold haemoglobin the resting cardiac output rises to
+    # defend oxygen delivery. Two measured anchors fix this, and nothing
+    # here is fitted to anything of ours:
+    #
+    #   Varat, Adolph & Fowler, Am Heart J 1972;83:415-26 -- chronic anaemia
+    #   "usually increases the cardiac output when the haemoglobin level is
+    #   7 g/dL or less". Above 7, no rise: hence the threshold.
+    #
+    #   Hemodynamic Effects of Chronic Severe Anemia, Circulation
+    #   1963;28:346 -- Hb 4.0-6.5 (mean 4.5) gave a cardiac index of
+    #   6.3 L/min/m2 against a normal ~3.2, so very nearly double.
+    #
+    # A power law through those two points, (thresh/hb)**exp, needs
+    # exp = ln(1.97)/ln(7/4.5) = 1.535. It is EXACTLY 1.0 at and above the
+    # threshold, so every existing benchmark -- all of which run Hb 14-15 --
+    # is untouched by this. That is deliberate: a change to the circulation
+    # that silently moved the oxygenation results would be very hard to
+    # trust.
+    hb_co_threshold: float = 7.0    # g/dL, below which CO starts to rise
+    hb_co_exp: float = 1.535        # fitted to the two anchors above
+    hb_co_max: float = 3.0          # ceiling; the heart cannot do better
     # The measured +30% cardiac output over +31 mmHg PaCO2 is the NET of a
     # rate and a stroke volume response, and the source does not split them.
     # Applying the whole coefficient to rate and then adding a stroke volume
@@ -336,8 +358,24 @@ class Patient:
         return (self.vo2_ref * (self.abw() / 70.0) ** 0.75
                 - self.vo2_drop_per_kg * self.weight)
 
+    def anaemia_co_factor(self):
+        """How much the resting cardiac output rises at this haemoglobin.
+
+        1.0 at and above hb_co_threshold, so a normal patient is unaffected.
+        """
+        if self.hb >= self.hb_co_threshold:
+            return 1.0
+        f = (self.hb_co_threshold / max(self.hb, 0.5)) ** self.hb_co_exp
+        return float(min(self.hb_co_max, f))
+
     def co_anaes(self):
-        return self.co_ref * self.scale() * (1.0 - self.co_drop_frac)
+        # The anaemia response is applied BEFORE the anaesthetic drop, not
+        # after, so anaesthesia blunts the compensation in proportion. That
+        # is the clinically important bit: the anaemic patient who was
+        # holding their delivery together awake gives some of it back on
+        # induction, exactly when the reserve is wanted.
+        return (self.co_ref * self.scale() * self.anaemia_co_factor()
+                * (1.0 - self.co_drop_frac))
 
     def n2_capacities(self):
         """N2 capacity of each tissue compartment, mL STPD per mmHg."""
@@ -640,7 +678,14 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
                 * max(0.15, 1.0 + pt.sv_itp_gain * itp))
         co = max(0.02, co_base * (hr / pt.hr_base) * sv_f)
         # pressures
-        svr = pt.svr_base * max(pt.svr_floor, 1.0 + pt.svr_co2_gain * co2_arg)
+        # Reduced viscosity and vasodilatation are WHY the output rises, so
+        # the resistance falls with it. Leaving svr_base alone would double
+        # the mean arterial pressure along with the cardiac output, whereas
+        # measured anaemic patients have a normal or slightly low MAP and a
+        # markedly reduced resistance -- Circulation 1963 records exactly
+        # that, and its reversal when the anaemia is treated.
+        svr = (pt.svr_base / pt.anaemia_co_factor()
+               * max(pt.svr_floor, 1.0 + pt.svr_co2_gain * co2_arg))
         map_ = co * svr
         pvr = pt.pvr_base * (1.0 + (pt.hpv_pvr_max - 1.0) * hpv)
         pap = co * pvr + pt.pcwp
