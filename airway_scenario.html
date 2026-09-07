@@ -780,7 +780,7 @@ function plethDraw(k){
   // trace and numeric carry the same colour, which is what lets you pair them
   // at a glance -- the SR6000's pleth and its SpO2 are both yellow for exactly
   // this reason
-  path(true); g.fillStyle=css('--sat'); g.fill();
+  path(true); g.globalAlpha=0.20; g.fillStyle=css('--sat'); g.fill(); g.globalAlpha=1;
   path(false); g.strokeStyle=css('--sat'); g.lineWidth=1.6; g.stroke();
 }
 
