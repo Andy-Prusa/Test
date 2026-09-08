@@ -359,6 +359,53 @@ gases. `test_icsm_jet_2026` records the gas channels.
 
 ### Known disagreement
 
+**A CONFLICT between two clinical measurements -- read this before touching
+`stiff_below_rv`, `itp_fraction` or `sv_itp_gain`.** These three are coupled,
+and two measurements in patients now pull against each other through them.
+
+Moreault's pressures say the sub-RV stiffening is far too stiff.
+`stiff_below_rv = 0.15` is not the retained compliance directly: the term is
+additive in series, so the lung keeps `stiff/(1+stiff)` of its compliance
+below RV, i.e. **13%** -- an eightfold stiffening the instant it crosses
+residual volume, and it is what drives the pressure onto the -50 floor.
+Softening it fixes the pressure. It also breaks Stock:
+
+    stiff  retained  P@1008 (-20)  P@1260 (-31)  Stock 1-5 min (3.4)
+    0.15     13%        -30.4         -50.0          4.3   in band
+    0.50     33%        -24.4         -40.4          4.9   FAILS
+    1.00     50%        ~-23          ~-34           5.1   FAILS
+    2.00     67%        -22.2         -30.4          5.2   FAILS
+
+**The coupling is the Muller effect, not the gas.** Alveolar PCO2 barely
+moves across that sweep (63.0 -> 63.3 at 300 s). What moves is the heart: the
+vacuum suppresses stroke volume, and lifting the vacuum lifts cardiac output,
+which delivers CO2 to the lung faster and steepens the arterial rise.
+
+    stiff      P     ITP   stroke vol    CO   PaCO2 at 300 s
+    0.15   -50.0   -30.0       56.1     4.30      69.6
+    2.00   -28.1   -16.9       58.8     4.57      72.8
+
+So: Moreault says less vacuum; less vacuum means more cardiac output; more
+cardiac output means a faster CO2 rise; and Stock says our CO2 rise is
+already 26% too fast at 4.3 against 3.4.
+
+**Nothing was changed, deliberately.** Making Stock pass again would mean
+moving `itp_fraction` or `sv_itp_gain` at the same time, and those are exactly
+as unvalidated as the term being fixed -- `sv_itp_gain` carries its own note
+saying the pig magnitude does not transfer and tuning to it would be wrong.
+One unvalidated change compensating another is how the single lung-wide pH,
+the perfusion of collapsed units and the pole at 8.142 all survived for so
+long underneath CO2 store parameters that had been sized to hide them. Do not
+repeat it. If you soften the sub-RV term, Stock will fail and that failure is
+information, not an obstacle.
+
+**What would settle it:** one study measuring airway pressure AND PaCO2 in the
+same patients during obstructed apnoea -- a clamped tracheal tube, which is
+physiologically the same event as any circuit disconnection. At present we
+have Moreault's pressures in one group and Stock's CO2 in another, thirty
+years apart, with no way to know which limb is wrong. That study is designed
+and was ready for ethics.
+
 **Pressure under obstruction runs too negative.** Moreault 2021 measured
 -20 (5) cmH2O at 504 mL of gas resorbed from one sealed lung and -31 (10) at
 630 mL. Doubled for a whole lung we give -30.4 and -50.0. The sub-RV
