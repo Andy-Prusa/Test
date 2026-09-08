@@ -74,6 +74,8 @@ another group's simulation — useful comparators, not truth.
 | Stock 1989, obstructed, 1-5 min slope | 3.4 mmHg/min | 4.3 |
 | Varat 1972, cardiac output rise below Hb 7 | none above 7 | none |
 | Circulation 1963, cardiac output at Hb 4.5 | 1.97x (CI 6.3 vs 3.2) | 1.97x |
+| Moreault 2021, sealed lung, 1008 mL gas absorbed | -20 (5) cmH2O | -30.4 |
+| Moreault 2021, sealed lung, 1260 mL gas absorbed | -31 (10) cmH2O | -50.0 |
 | Lane / Ramkumar, 20 deg head-up | +24 to +36% | +33% |
 | Altermatt, BMI 35, 30 deg | +32% | +40% |
 | Dixon, BMI 44, 25 deg | +32% | +24% |
@@ -264,8 +266,120 @@ regardless.
 | Laviola 2020, airway rescue | 42.3 (4.4) kPa | 38.7 kPa |
 | Ellis 2022, pregnancy BMI 24 | 25.4 min | 18.1 min |
 | Ellis 2022, pregnancy BMI 50 | 9.9 min | 5.8 min |
+| ICSM jet 2026, PaO2 at cricothyroidotomy | 28.3 (0.4) mmHg | 29.1 |
+| ICSM jet 2026, PaCO2 at cricothyroidotomy | 84.6 (4.4) mmHg | 82.7 |
+| ICSM jet 2026, time to SaO2 40% | ~510 s | 500 s |
+
+### The collapse investigation, 2026-09 -- read before touching the mechanics
+
+Chasing the jet-insufflation scenario exposed the mechanics limb, which had
+never been benchmarked by anything. What follows is the whole investigation,
+including the parts that failed, so nobody repeats them.
+
+**The question.** At SaO2 40% after complete obstruction the model puts the
+lung at 590 mL -- 29% of FRC -- on the `p_collapse = -50` floor. The comparator
+model's published pressures implied a lung near its relaxation volume. Same
+oxygen uptake, opposite sign of pressure.
+
+**What is NOT the problem.** The volume loss is forced: 1936 mL of O2 absorbed
+minus ~364 mL of nitrogen returned leaves 1572 mL, and VO2 is benchmarked. The
+-50 then follows arithmetically -- the linear term gives -16.6 and the sub-RV
+stiffening the other -38.9. No setting of the chosen-not-fitted parameters
+escapes it: halving `stiff_below_rv` AND dropping `rv` to 700 mL still only
+reaches -26.
+
+**A hypothesis that FAILED, and why.** Collapse ought to be self-limiting:
+units that close leave the mechanical circuit, so they stop contributing FRC
+and compliance and the deficit is relieved rather than deepened. Implemented
+as a closing-pressure feedback, it did not work -- the floor was reached at
+420 s instead of 300 s and that was all. The reason is worth knowing:
+**the compartments that close first hold 50% of the perfusion but only 25% of
+the volume**, so closing the dependent lung creates a large shunt while
+relieving almost no mechanical deficit. Mapping "low V/Q" onto "the dependent
+lung" is fine for gas exchange and wrong for mechanics; these compartments are
+a FUNCTIONAL decomposition, not a spatial one, and the model cannot represent
+"the dorsal half collapses and takes half the thoracic volume with it". That
+is architectural, not a parameter.
+
+**Nitrogen sets the floor.** Absorption is self-limiting after all, but through
+gas exchange rather than mechanics: it stops dead at 430 mL when alveolar PO2
+falls to mixed venous, and the residual is 81% nitrogen at tissue equilibrium.
+So anything touching body nitrogen stores -- preoxygenation, obesity, the fat
+compartment's four-hour time constant -- moves the floor. Dropping FEO2 from
+0.87 to 0.60 puts the trigger pressure at -10.9 instead of -50. That lever is
+not available (0.87 is right for three minutes of preoxygenation) but it says
+what the floor is made of, and nothing benchmarks it.
+
+**Then the measurement arrived, and the model was right.** Moreault 2021
+sealed one lung in patients, chest closed, transducer in the bronchus:
+-20 (5) cmH2O at 504 mL resorbed, -31 (10) at 630 mL, returning toward
+atmospheric once the pleura was opened. A sealed lung DOES develop large
+negative pressure. Compared at MATCHED GAS ABSORBED -- their volumes were measured at
+atmospheric pressure, and a lung shrinks by LESS than the gas that leaves it
+because the remainder expands, an error worth not repeating -- and doubled for
+a whole lung, we give -30.4 where they measured -20 (5) and hit the -50 floor
+where they measured -31 (10). So the DIRECTION and regime are confirmed and
+the MAGNITUDE is not: we run 10-20 cmH2O too negative. That is the first
+evidence ever brought to bear on `stiff_below_rv` and it says the term is too
+stiff. `test_moreault_2021` asserts the direction, which was genuinely in
+doubt; the overshoot is under Known disagreement.
+
+### The comparator model, and a correction
+
+I concluded from the main text of Laviola 2020 and the 2026 jet paper that
+ICSM modelled shunt as a fixed 1-3% input with no atelectasis and no lung
+mechanics. **That was wrong**, and it was wrong in an avoidable way: it rested
+on word-absence in short clinical papers and on reading a cohort-configuration
+table as a model specification. The supplementary material (SDC S3a) shows
+100 alveolar compartments in parallel, each with configurable compliance,
+inlet resistance, vascular resistance, extrinsic pressure and threshold
+opening pressure; alveolar pressure as a cubic in volume; `P_ext` explicitly
+carrying "the outward pull of the chest wall"; volume-dependent PVR; and
+hypoxic vasoconstriction. The 1-3% is the anatomical shunt ON TOP of
+V/Q-derived shunt from those 100 compartments. Structurally the two models are
+close relatives.
+
+**Where they genuinely differ is one parameter.** ICSM's threshold opening
+pressures are **TOP = 3-12 cmH2O**. Rothen 1993 measured re-expansion of
+atelectasis by CT in anaesthetised adults with healthy lungs and found
+20 cmH2O does essentially nothing (6.4 -> 5.9 cm2), 30 gives 45%, and 40 is
+needed to clear it -- and that repeated inflations add nothing. A 1000 mL
+insufflation is, in Rothen's own calibration, about a 20 cmH2O inflation.
+So whether a narrow-bore cannula insufflation can act as a recruitment
+manoeuvre turns entirely on whether TOP is 3-12 or 30-40. If it is the latter,
+recruitment needs pressures that also exceed the safe volume envelope: there
+is no window between the pressure that recruits and the pressure that injures.
+This is the open question, and it is empirically settleable.
+
+**And the gas state agrees anyway.** Despite all of the above, at the moment
+of cricothyroidotomy the two models land in the same place: PaO2 29.1 vs
+28.3 (0.4), PaCO2 82.7 vs 84.6 (4.4), time to SaO2 40% 500 s vs ~510 s, none
+of it tuned. The mechanics disagreement does not propagate into the blood
+gases. `test_icsm_jet_2026` records the gas channels.
 
 ### Known disagreement
+
+**Pressure under obstruction runs too negative.** Moreault 2021 measured
+-20 (5) cmH2O at 504 mL of gas resorbed from one sealed lung and -31 (10) at
+630 mL. Doubled for a whole lung we give -30.4 and -50.0. The sub-RV
+stiffening term is the likely cause: at these volumes it contributes about
+-39 of the total against -17 from the linear term, and it has never had data
+behind it. Do not simply soften it -- the collapse notes above show the
+volume loss itself is forced by benchmarked VO2, so anything done here has to
+keep `test_moreault_2021` and the Stock CO2 rates.
+
+**Haemodynamics below SaO2 ~70%.** At the cricothyroidotomy point ICSM gives
+CO 2.7 (0.1) L/min and MAP 57.4 (2.4) mmHg; we give 1.98 and 29. Our patient
+is far more shocked. This is not defended -- it is the region the parameter
+provenance section already calls illustrative and not predictive, and a MAP of
+29 at SaO2 40% is the less plausible of the two. Deliberately NOT given a
+benchmark band wide enough to pass, because that would hide it. The gas
+channels of the same comparison are benchmarked and agree closely.
+
+**Weight sensitivity of the apnoea.** Our PaCO2 at the trigger spans 64-121
+mmHg across 46-90 kg; theirs has an SD of 4.4 over the same range, and their
+time to SaO2 80% has an SD of 1 second across the whole cohort. Our
+desaturation time varies far more with body size than theirs does. Unexplained.
 
 Mohanty 2021 (buccal RAE vs nasal cannula, obese) reports a buccal mean of
 375 s where Heard reports a median of 750 s in a similar population. Four

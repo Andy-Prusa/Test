@@ -26,7 +26,8 @@ the sentinel test at the foot of the file carries the same verdict.
 import sys
 
 import numpy as np
-from apnoea_core import Patient, AirwayEpoch, simulate, time_to
+from apnoea_core import (Patient, AirwayEpoch, simulate, time_to,
+                          PB, PH2O)
 import bloodgas as bg
 
 DT = 0.05          # dt=0.1 is stable but the nadir does not converge until 0.05
@@ -190,6 +191,62 @@ def test_anaemia_cardiac_response():
           "extraction ratio must stay survivable at rest")
 
 
+def test_moreault_2021():
+    """Moreault O, Couture EJ, Provencher S, et al. Can J Anesth
+    2021;68:791-800. CLINICAL.
+
+    A sealed human lung absorbing its own gas, with the pressure measured
+    inside it. Lung isolated with a double-lumen tube or a bronchial blocker
+    after ventilation at FiO2 1.0, chest closed, transducer in the
+    non-ventilated bronchus. At pleural opening:
+
+        DL-ETT   504 (85) mL resorbed;  -20 (5)  cmH2O
+        BB       630 (86) mL resorbed;  -31 (10) cmH2O
+
+    and once the pleura was opened the pressure returned toward atmospheric --
+    the negative pressure exists because the chest wall resists it.
+
+    This is the ONLY test of the mechanics limb. Until it existed the model's
+    pressure under obstruction was entirely unvalidated while carrying the
+    whole obstructed-airway argument, and a competing account had the lung
+    staying near atmospheric. It does not: that is what this settles, and
+    that is what is asserted here.
+
+    The MAGNITUDE is a known disagreement and is deliberately not asserted.
+    Compared at matched gas absorbed (their volumes were measured at
+    atmospheric pressure, and the lung shrinks by less than the gas that
+    leaves it because the remainder expands), doubled for a whole lung, we
+    give -30.4 where they measured -20 (5) and reach the -50 floor where they
+    measured -31 (10). We run 10-20 cmH2O too negative, which is the first
+    evidence ever brought to bear on `stiff_below_rv` and says it is too
+    stiff. Recorded under Known disagreement in HANDOVER.md rather than
+    hidden inside a band wide enough to pass.
+
+    Two caveats on the comparison. V_resorb and P_airway were measured in
+    SEPARATE randomised groups, so the volume-pressure pairs are cohort means
+    rather than paired observations. And doubling one lung to a whole lung is
+    rough, and if anything flatters us: their isolated lung sits beside a
+    contralateral lung on PEEP 5, so the mediastinum shifts toward it and
+    makes its pressure LESS negative than a whole sealed thorax.
+    """
+    p = Patient(weight=70, height=1.75, age=45, hb=14.0)
+    r = simulate(p, [AirwayEpoch(900, resistance=OBS, fgo2=0.21)],
+                 dt=DT, stop_sao2=0.0)
+    # gas actually gone, expressed at atmospheric pressure, as they measured it
+    n_atm = r['va'] * (PB + r['palv_cmh2o'] / 1.35951 - PH2O) / (PB - PH2O)
+    lost = n_atm[0] - n_atm
+    i500 = int(np.argmax(lost >= 1008.0))
+    check("Moreault, sealed lung goes strongly subatmospheric",
+          float(r['palv_cmh2o'][i500]), -50.0, -12.0, " cmH2O",
+          "clinical; -20 (5) doubled. Direction and regime only -- see docstring")
+    # and it must be the chest wall doing it: the pressure has to track the
+    # gas lost, not sit at some fixed value
+    i250 = int(np.argmax(lost >= 500.0))
+    check("Moreault, pressure tracks the gas removed",
+          float(r['palv_cmh2o'][i500] - r['palv_cmh2o'][i250]), -40.0, -5.0,
+          " cmH2O", "clinical; deeper absorption gives a more negative pressure")
+
+
 def test_positioning_trials():
     """Lane 2005, Ramkumar 2011, Altermatt 2005, Dixon 2005. CLINICAL.
     All four found roughly +30% safe apnoea time for 20-25 deg head-up."""
@@ -223,6 +280,42 @@ def test_cardiac_output():
     check("stroke volume rises with hypercapnia",
           (sv[-1] / sv[0] - 1) * 100, 5, 30, " %",
           "clinical; Chest: HR, SV, CO and MAP all rose")
+
+
+def test_icsm_jet_2026():
+    """Laviola M, Dinsmore J, Lacquiere D, Niklas C, Heard A, Hardman JG.
+    Anesth Analg 2026, DOI 10.1213/ANE.0000000000008194, Supplementary S5.
+    MODEL comparator, not measurement.
+
+    The state at the end of apnoea -- the moment of cricothyroidotomy, at
+    SaO2 40% after complete upper airway obstruction -- in their 45-90 kg
+    cohort:
+
+        PaO2   28.3 (0.4) mmHg      PaCO2  84.6 (4.4) mmHg
+        CO     2.7 (0.1) L/min      MAP    57.4 (2.4) mmHg
+
+    Worth having because the two models were built independently and neither
+    was tuned to the other, and because the mechanics of the two disagree
+    sharply (see the collapse notes in HANDOVER.md) while the GAS state does
+    not. Only the gas channels are checked here; the haemodynamic
+    disagreement is real and is recorded under Known disagreement rather
+    than papered over with a band wide enough to pass.
+    """
+    p = Patient(weight=70, height=1.75, age=45, hb=14.0)
+    r = simulate(p, [AirwayEpoch(1400, resistance=OBS, fgo2=0.21)],
+                 dt=DT, stop_sao2=0.0)
+    t40 = time_to(r, 'sao2', 40)
+    check("ICSM jet, time to SaO2 40%", 9999 if t40 is None else t40,
+          400, 620, " s", "MODEL comparator; ~510 s (8.5 min)")
+    i = int(np.searchsorted(r['t'], t40))
+    # Their SD of 0.4 mmHg is the internal spread of a 100-subject in-silico
+    # cohort with tightly controlled parameters, not measurement uncertainty,
+    # and it is the wrong yardstick for agreement between two different
+    # models. Banded at +-3 mmHg, which is what "these agree" means here.
+    check("ICSM jet, PaO2 at cricothyroidotomy", r['pao2'][i],
+          25.3, 31.3, " mmHg", "MODEL comparator; 28.3 (0.4), we allow +-3")
+    check("ICSM jet, PaCO2 at cricothyroidotomy", r['paco2'][i],
+          75.8, 93.4, " mmHg", "MODEL comparator; 84.6 (4.4), 2 SD")
 
 
 def test_icsm_airway_rescue():
@@ -295,12 +388,12 @@ if __name__ == "__main__":
     test_toner_2018(); test_heard_2017(); test_oloughlin_2020()
     test_positioning_trials(); test_cardiac_output()
     test_anaemia_cardiac_response()
-    test_stock_1989()
+    test_stock_1989(); test_moreault_2021()
     print()
     print("=" * 74)
     print("MODEL COMPARATORS — other people's simulations, not measurements.")
     print("=" * 74)
-    test_icsm_airway_rescue()
+    test_icsm_airway_rescue(); test_icsm_jet_2026()
     print()
     print("=" * 74)
     print("INTERNAL CONSISTENCY")
