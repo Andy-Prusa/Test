@@ -538,12 +538,33 @@ the occlusion is released**. It is worth more than it looks.
   BMI 22.9 and 161 mL at BMI 32.7. A shortfall of any size is a result the
   model cannot accommodate.
 
-The measurement is by calibrated syringe, not by flow integration: peak flow at
-release is 7.8 L/s with 90% of the volume delivered in 0.20 s, which is outside
-a conventional pneumotachograph's linear range and whose added resistance would
-alter the quantity being measured. The syringe also gives pressure and volume on
-the same lung at the same instant, which Moreault structurally could not — their
-volumes and pressures came from separately randomised groups.
+The measurement is by flow integration through a **calibrated fixed-orifice
+resistor**. Released into an open circuit the inrush peaks at 7.8 L/s with 90%
+of the volume in 0.20 s, which is at or beyond a common adult flow head's linear
+range and needs a bandwidth clinical equipment does not have. A resistor in the
+release path fixes it, and does NOT change the answer, because the endpoint is
+the chest wall returning to its relaxed volume and not the path the gas took:
+
+| release R, cmH2O/(L/s) | peak flow | 99% by | volume |
+|---|---|---|---|
+| 2 (open) | 7.80 L/s | 0.46 s | 739 mL |
+| 10 | 1.56 L/s | 2.40 s | 739 mL |
+| 20 | 0.78 L/s | 4.07 s | 736 mL |
+| 50 | 0.31 L/s | 4.84 s | 653 mL, incomplete |
+
+R = 10 is specified. Above ~50 the manoeuvre is slow enough that continuing
+absorption eats into it. Interrupting the inflow two or three times and reading
+the static plateau gives quasi-static P-V points through the re-inflation --
+the opening pressure of closed lung, measured with no gas delivered and nothing
+above atmospheric.
+
+An earlier draft restored the pressure by syringe injection and read the volume
+injected. Rejected: it needs many strokes of a clinical syringe or an unwieldy
+3 L calibration syringe, and it delivered gas into the lung, which cost the
+protocol a risk assessment it no longer needs. Worth recording that half the
+argument against flow integration was wrong -- added resistance changes the flow
+PROFILE and not the VOLUME, since the endpoint is mechanical. Only the bandwidth
+half stood, and a resistor answers it.
 
 `protocol/predictions.py` regenerates every number quoted in the document from
 `apnoea_core` and fails if any of them has drifted. Run it before the protocol

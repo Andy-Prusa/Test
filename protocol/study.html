@@ -192,7 +192,8 @@ colour.</div>
       <em>molar</em> measurement, so unlike the pressure channel it does not depend on where the
       transducer sits, nor on whether small airways have closed between the transducer and the
       alveoli. It therefore constrains the mass balance that generates the pressure in the first
-      place. Predicted at 180 s: <code>735–740 mL</code>.</li>
+      place, and it is measured on release without delivering any gas. Predicted at 180 s:
+      <code>735–740 mL</code>.</li>
     <li><strong>Coupling.</strong> Within subjects, does the CO₂ rate covary with the airway
       pressure reached? This is the observation no existing dataset can provide, and the one that
       identifies which limb of the model is at fault.</li>
@@ -293,12 +294,13 @@ colour.</div>
   sequences.</p>
   <p>The entrained volume is the best-powered of the secondary outcomes, and it is the measurement
   method rather than the sample size that determines whether it is worth making. The discriminant
-  is the 125–161 mL recruitment shortfall of §2.4. A calibrated syringe reads to ±5–10 mL, so the
-  shortfall is resolved in a single participant and twenty give it with certainty. Integrated flow,
-  at a realistic ±10% on a 739 mL volume, carries an error of ±74 mL against a 125 mL discriminant
-  — enough to detect the shortfall on the group mean, not enough to attribute it to an
-  individual. This is why §4.3 makes the syringe the primary method and the flow meter the
-  cross-check, and not the other way round.</p>
+  is the 125–161 mL recruitment shortfall of §2.4. Released through the resistor of §4.3 and
+  integrated on a calibrated head at ±3%, the error on a 739 mL volume is ±22 mL — so the shortfall
+  is resolved in a single participant, and twenty give it with certainty. Released into an open
+  circuit instead, where the flow head is working outside its linear range on a 0.2 s transient, a
+  realistic ±10% gives ±74 mL: enough to detect the shortfall on the group mean, not enough to
+  attribute it to an individual. The resistor is what makes this a per-participant measurement, and
+  it is the reason §4.3 specifies one.</p>
 </section>
 
 <section>
@@ -348,53 +350,75 @@ colour.</div>
   protocol violation and the participant is not replaced unless fewer than 60 s were obtained.</p>
 
   <h3><span class="n">4.3</span> Measuring the entrained volume</h3>
-  <p>The manoeuvre adds 15–20 seconds to the apnoea and is therefore permitted only when the
-  sequence has run to 180 s with SpO₂ ≥ 96% and no stopping criterion met, and only with the
-  treating anaesthetist's agreement <em>at that moment</em>. It is abandoned at once, and the
-  patient ventilated, on any change. It is a secondary outcome and no participant is replaced for
-  not having it.</p>
+  <p>The occlusion is released through a <strong>calibrated fixed-orifice resistor</strong> with a
+  flow sensor in series, and the flow is integrated from release to zero. No gas is delivered and
+  nothing is injected. The manoeuvre adds about five seconds to the apnoea.</p>
 
-  <p><b>Primary method — syringe restoration.</b> With the tube still occluded and the transducer
-  in line, gas of the same composition as the inspired mixture is injected from a calibrated
-  large-volume syringe in steps until airway pressure returns to zero. The total injected volume,
-  corrected as below, is the entrained volume.</p>
+  <p><b>Why a resistor.</b> Released into an open circuit the inrush is violent — the model puts
+  peak flow at <b>7.8 L·s⁻¹</b> with 90% of the volume arriving in <b>0.20 s</b>. That is at or
+  beyond the linear range of a common adult flow head, and worse, integrating a transient with most
+  of its volume inside a fifth of a second demands a frequency response and freedom from phase lag
+  that ordinary clinical equipment does not have. A resistor in the release path slows it to
+  something any calibrated head measures well, and — this is the point — <em>does not change the
+  answer</em>, because the endpoint is set by the mechanics of the chest wall returning to its
+  relaxed volume, not by the path the gas took to get there:</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Release resistance<br><span style="font-weight:400;font-size:11px">cmH₂O/(L·s⁻¹)</span></th><th>Peak flow</th><th>99% delivered by</th><th>Volume measured</th></tr></thead>
+    <tbody>
+      <tr><td class="n">2 <span style="color:var(--ink3)">(open circuit)</span></td><td class="n">7.80 L·s⁻¹</td><td class="n">0.48 s</td><td class="n">739 mL</td></tr>
+      <tr><td class="n">5</td><td class="n">3.12</td><td class="n">1.24 s</td><td class="n">739 mL</td></tr>
+      <tr><td class="n"><strong>10</strong></td><td class="n"><strong>1.56</strong></td><td class="n"><strong>2.42 s</strong></td><td class="n"><strong>739 mL</strong></td></tr>
+      <tr><td class="n">20</td><td class="n">0.78</td><td class="n">4.08 s</td><td class="n">736 mL</td></tr>
+      <tr><td class="n">50</td><td class="n">0.31</td><td class="n">—</td><td class="n">653 mL <span style="color:var(--stop)">incomplete</span></td></tr>
+    </tbody>
+  </table></div>
+  <p><b>10 cmH₂O/(L·s⁻¹) is specified</b>, giving a 1.56 L·s⁻¹ peak over about two and a half
+  seconds. The value is not critical anywhere between 5 and 20 and should be matched to whichever
+  flow head is used; above about 50 the manoeuvre becomes slow enough that continuing absorption
+  eats into it and the measured volume falls short. The resistor is calibrated in series with the
+  tracheal tube, and its resistance is measured rather than assumed.</p>
+
   <ul>
-    <li><b>Temperature and humidity.</b> Syringe gas is dry at ambient temperature; the ATPD→BTPS
-      factor at 21 °C is ≈ 1.12 and is applied to the injected volume. Ambient temperature and
-      pressure are recorded for each participant.</li>
-    <li><b>Continued absorption.</b> Gas is still being absorbed at ≈ 4 mL·s⁻¹ during the
-      manoeuvre. Elapsed time from release of the first step to the zero-pressure endpoint is
-      recorded and the absorbed volume added back.</li>
-    <li><b>Apparatus dead space.</b> The volume of the syringe connector and tap is measured by
+    <li><b>Sensor.</b> A heated pneumotachograph or, preferably, a transit-time ultrasonic head:
+      ultrasonic devices respond to molar flow and are comparatively insensitive to gas composition,
+      which changes through the inrush. A pneumotachograph is acceptable because the entering gas
+      is circuit gas of known and constant composition, so the correction is known.</li>
+    <li><b>Conditioning.</b> Volume is reported BTPS. Circuit gas temperature and humidity at the
+      sensor are recorded for each participant.</li>
+    <li><b>Continuing absorption.</b> Gas is still being absorbed at ≈ 4 mL·s⁻¹. Integration stops
+      when flow reaches zero, and the elapsed time is recorded so the absorbed volume over the
+      manoeuvre can be added back.</li>
+    <li><b>Apparatus dead space.</b> The volume of the resistor, sensor and connector is measured by
       water displacement once and subtracted.</li>
   </ul>
-  <p>This is the only method that measures pressure and volume <em>on the same lung at the same
-  instant</em>. It is what Moreault could not do: their resorbed volumes and their airway pressures
-  came from two separately randomised groups, so every volume–pressure pair in that dataset is a
-  pair of cohort means rather than an observation.</p>
 
-  <p><b>Secondary method — flow integration.</b> A wide-range ultrasonic flow meter at the tube,
-  integrated from release to zero flow. Retained only as a cross-check, because the model predicts
-  a peak flow of <b>7.8 L·s⁻¹</b> with 90% of the volume delivered within <b>0.20 s</b> and flow
-  below 1% of peak by 0.42 s, which is
-  outside the linear range of a conventional heated pneumotachograph and whose added resistance
-  would itself alter the quantity being measured. Transit-time ultrasonic devices are preferred
-  because they respond to molar flow and are comparatively insensitive to gas composition, which
-  changes during the inrush.</p>
+  <p><b>Expected precision.</b> A calibrated head at ±3% of a 739 mL volume gives ±22 mL, against a
+  recruitment discriminant of 125–161 mL. The shortfall of §2.4 is therefore resolved in a single
+  participant, not merely on the group mean.</p>
 
-  <p><b>Regional distribution — electrical impedance tomography.</b> Recorded continuously through
-  the sequence and the release. EIT gives no absolute volume, but it answers the question the total
-  volume cannot: whether the entrained gas enters dependent lung, which is recruitment, or only
-  already-open non-dependent lung, which is not.</p>
+  <p><b>Pressure through the manoeuvre.</b> While gas is flowing, pressure at the tube is not
+  alveolar pressure — the resistive drop across the orifice at 1.56 L·s⁻¹ accounts for the whole of
+  the 15.6 cmH₂O available. Alveolar pressure is recovered either by computation,
+  <code>P<sub>alv</sub> = P<sub>tube</sub> − R·V̇</code> with R from the orifice calibration, or
+  directly by interrupting the inflow briefly two or three times and reading the static plateau at
+  each. The interrupter route is preferred where it can be done, because it yields quasi-static
+  pressure–volume points through the re-inflation itself — a measurement of the pressure at which
+  closed lung reopens, obtained without delivering any gas and without ever going above
+  atmospheric. This is the direct form of the recruitment question that the volume shortfall answers
+  only by inference.</p>
 
-  <div class="todo"><b>Optional extension — requires separate approval</b>
-  Injection continued beyond the zero-pressure endpoint in 100 mL steps, with a 3 s pause at each to
-  read static pressure, yields a static inflation pressure–volume curve from the apnoeic point
-  upward; the pressure at which compliance rises sharply is the opening pressure of the collapsed
-  lung, which is the quantity that separates the model's 3–12 cmH₂O from Rothen's 30–40. This takes
-  airway pressure above atmospheric in an apnoeic patient and is not part of the main protocol. It
-  is described here so that it can be considered on its own merits, with its own risk assessment and
-  its own consent, and it should not be approved as a rider to this study.</div>
+  <p><b>Safety gating.</b> Permitted only when the sequence has run to 180 s with SpO₂ ≥ 96% and no
+  stopping criterion met, and only with the treating anaesthetist's agreement at that moment. It is
+  abandoned at once, and the patient ventilated, on any change. It is a secondary outcome and no
+  participant is replaced for not having it.</p>
+
+  <p style="font-size:13px;color:var(--ink3)">An earlier draft proposed restoring the pressure to
+  zero by injection from a calibrated syringe and reading the volume injected. It was rejected: the
+  volumes involved need either many strokes of a clinical syringe, which takes far too long at the
+  head of an anaesthetised patient, or a 3 L lung-function calibration syringe, which is unwieldy
+  in theatre and imprecise on a partial stroke. It also delivered gas into the lung, which the
+  method above does not, and which cost the protocol a risk assessment it no longer needs.</p>
 </section>
 
 <section>
@@ -432,18 +456,15 @@ colour.</div>
           <td>A single recruitment manoeuvre on resumption, which is standard practice after
               induction irrespective of this study.</td></tr>
       <tr><td><strong>Barotrauma</strong></td>
-          <td>Throughout the apnoea, not applicable: all pressures are subatmospheric. During the
-              volume measurement of §4.3 gas <em>is</em> delivered, but the endpoint is
-              <strong>zero</strong> airway pressure and the lung is returned only to its own
-              relaxation volume — a smaller inflation than the first ventilator breath that
-              follows it.</td>
-          <td>Injection stops at zero on the same transducer that recorded the apnoea; syringe
-              volume limited to 1000 mL, which is below the predicted requirement plus its widest
-              plausible error; the optional pressure–volume extension, which alone goes above
-              atmospheric, is excluded from this protocol.</td></tr>
+          <td>Not applicable. All pressures are subatmospheric and no gas is delivered at any point:
+              the volume measurement of §4.3 lets the lung draw gas in through a resistor under its
+              own recoil, and the endpoint is its own relaxed volume at zero airway pressure.</td>
+          <td>Nothing is injected; the release path is open to the circuit at atmospheric pressure
+              throughout, so no pressure above zero can be generated.</td></tr>
       <tr><td><strong>Extended apnoea for the volume measurement</strong></td>
-          <td>The manoeuvre of §4.3 adds 15–20 s beyond 180 s. Predicted SaO₂ at 200 s is 96.8%,
-              and the model does not put SpO₂ at the 94% stopping threshold until approximately 261 s.</td>
+          <td>The manoeuvre of §4.3 adds about 5 s beyond 180 s. Predicted SaO₂ at 185 s is 98.2%
+              against 98.4% at 180 s, and the model does not put SpO₂ at the 94% stopping threshold
+              until approximately 261 s.</td>
           <td>Permitted only from a completed 180 s sequence with SpO₂ ≥ 96% and no stopping
               criterion met, and only with the treating anaesthetist's agreement at that moment;
               abandoned instantly on any change; never attempted after an aborted sequence. It is
@@ -452,7 +473,7 @@ colour.</div>
           <td>Not increased. Anaesthesia is maintained unchanged throughout.</td>
           <td>Depth monitoring to the anaesthetist's usual practice.</td></tr>
       <tr><td><strong>Delay to surgery</strong></td>
-          <td>Approximately five minutes, or five and a half with the volume measurement.</td>
+          <td>Approximately five minutes; the volume measurement adds about five seconds.</td>
           <td>Sequence performed while the patient is otherwise ready; abandoned at the surgical
               team's request.</td></tr>
     </tbody>

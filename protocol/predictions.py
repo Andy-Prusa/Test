@@ -131,36 +131,41 @@ check("shortfall at BMI 32.7",
       161.0, 12.0, " mL")
 
 # --------------------------------------------------------------------------
-print("\n4.3  The inrush, and why a pneumotachograph is the wrong instrument")
+print("\n4.3  The inrush, and why the release goes through a resistor")
 pt4 = Patient(weight=70, height=1.75, age=45, hb=14.0)
-fine = 0.005
-r4 = simulate(pt4, [AirwayEpoch(180, resistance=OBS, fgo2=FGO2),
-                    AirwayEpoch(10, resistance=2.0, fgo2=FGO2)],
-              dt=fine, stop_sao2=0.0)
-i0 = int(round(180 / fine))
-flow = r4['inflow'][i0:] * GASK / PDRY / 1000.0 / 60.0        # L/s
-cum = np.cumsum(r4['inflow'][i0:]) * (fine / 60.0) * GASK / PDRY
-# The inrush is over long before the epoch is. Nearly all of it arrives in the
-# first fifth of a second, but the last few millilitres trickle in over about a
-# second as the refill term closes the remaining deficit, so the integral is
-# taken to one second. Beyond that what is being counted is ongoing metabolic
-# absorption, not the release.
-ceases = int(np.argmax(flow < 0.01 * flow.max())) * fine
-end = int(round(1.0 / fine))
-vol = cum[end]
-t90 = float(np.argmax(cum >= 0.90 * vol) * fine)
-print(f"  peak flow {flow.max():.2f} L/s;  90% of the volume by {t90:.2f} s;"
-      f"  flow below 1% of peak by {ceases:.2f} s;  total at 1 s {vol:.0f} mL")
-check("peak inspiratory flow", flow.max(), 7.8, 0.3, " L/s")
-check("time to 90% of the volume", t90, 0.20, 0.03, " s")
-# the two routes to the same number: gas balance, and integrating the inrush
-check("inrush integral vs gas balance", vol, ent[i180], 10.0, " mL")
+fine = 0.01
+peaks, t99s, vols = {}, {}, {}
+print("      R      peak flow   t99     volume at 5 s")
+for R in (2.0, 5.0, 10.0, 20.0, 50.0):
+    r4 = simulate(pt4, [AirwayEpoch(180, resistance=OBS, fgo2=FGO2),
+                        AirwayEpoch(15, resistance=R, fgo2=FGO2)],
+                  dt=fine, stop_sao2=0.0)
+    i0 = int(round(180 / fine))
+    flow = r4['inflow'][i0:] * GASK / PDRY / 1000.0 / 60.0        # L/s
+    cum = np.cumsum(r4['inflow'][i0:]) * (fine / 60.0) * GASK / PDRY
+    v5 = cum[int(round(5 / fine))]
+    peaks[R] = flow.max()
+    t99s[R] = float(np.argmax(cum >= 0.99 * v5) * fine)
+    vols[R] = v5
+    print(f"  {R:6.1f}  {flow.max():9.2f} L/s {t99s[R]:6.2f} s {v5:11.0f} mL")
+
+check("open-circuit peak flow", peaks[2.0], 7.8, 0.3, " L/s")
+check("peak flow through R = 10", peaks[10.0], 1.56, 0.1, " L/s")
+check("99% delivered by, at R = 10", t99s[10.0], 2.42, 0.1, " s")
+# The resistor must not change the answer: the endpoint is set by the chest
+# wall returning to its relaxed volume, not by the path the gas took.
+check("volume at R = 2 (open circuit)", vols[2.0], 739.0, 8.0, " mL")
+check("volume at R = 10", vols[10.0], 739.0, 8.0, " mL")
+check("volume at R = 20", vols[20.0], 736.0, 8.0, " mL")
+check("R = 50 is too slow to complete", vols[50.0], 653.0, 15.0, " mL")
+# and the flow route must agree with the gas-balance route
+check("inrush integral vs gas balance", vols[10.0], ent[i180], 10.0, " mL")
 
 # --------------------------------------------------------------------------
 print("\n5  Safety margins")
 pt5, r5 = run(70, 1.75, duration=420.0)
-check("SaO2 at 200 s, end of the volume manoeuvre",
-      r5['sao2'][at(r5, 200)], 96.8, 0.3, " %")
+check("SaO2 at 185 s, end of the volume manoeuvre",
+      r5['sao2'][at(r5, 185)], 98.2, 0.2, " %")
 check("SpO2 reaches 95%", float(np.argmax(r5['spo2'] < 95.0) * DT),
       253.0, 4.0, " s")
 check("SpO2 reaches the 94% stopping threshold",
