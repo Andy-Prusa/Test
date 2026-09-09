@@ -48,6 +48,7 @@ verdict into pytest.
 | `requirements.txt` | the Python dependencies. JavaScript has none |
 | `protocol/study.html` | protocol for the three-way study. See below |
 | `protocol/predictions.py` | regenerates every number that protocol quotes |
+| `protocol/evidence.md` | what the literature does and does not pair. Read before benchmarking |
 
 `build_page.py` must be re-run after any change to `model.js`. The pre-commit
 hook will not do it for you, but `build_page.py --check` will tell you that you
@@ -413,6 +414,23 @@ the mechanical Muller effect. The mechanical coupling the source actually
 supports is about zero -- and our patient is the oxygenated one, so the arm
 that applies is the arm showing no effect.
 
+**But the parameter is not therefore unevidenced -- corrected September 2026.**
+Human Mueller-manoeuvre studies measure intrathoracic pressure and stroke
+volume simultaneously in normoxic subjects and DO find an effect: at ITP
+-30 cmH2O held 15 s, LV stroke volume fell 10+-4 mL in 17 healthy adults,
+about -13% on a young-adult baseline, i.e. a gain near 0.0044 per cmH2O; Buda
+and Scharf found aortic flow down 10.1+-6.6% by the fifth beat. Our 0.0025
+sits inside that range at the conservative end. What is wrong is the CITATION,
+not necessarily the number.
+
+The two literatures disagree, and the likely discriminator is DURATION. A
+Mueller manoeuvre lasts 5-15 s, over which venous return cannot
+re-equilibrate; our patient reaches -15 cmH2O over three minutes. The
+sustained, oxygenated evidence is the arm showing about zero. So read the
+acute human data as an upper bound on a transient, not as a calibration for
+our case -- and note that nothing published answers which applies at three
+minutes. See `protocol/evidence.md`.
+
 Removing the term makes Stock worse, not better:
 
     sv_itp_gain  stiff |  P@1008   P@1260  Stock 1-5 min
@@ -468,6 +486,17 @@ not substitute:
 
 Dale WA, Rahn H. Rate of gas absorption during atelectasis. Am J Physiol
 1952;170:606-13 is the closest classical source and is held here.
+
+**The full evidence map is `protocol/evidence.md`** (searched September 2026).
+Its headline correction to the claim above: pressure+haemodynamics HAS been
+paired (human Mueller studies) and CO2+haemodynamics HAS been paired (a
+brain-death apnoea-test study, n=9, patent airway, which puts cardiac output
+up 18.8% at PaCO2 78 where we give about 33% -- our CO2-to-output gain may be
+1.8x too strong, and reducing it is the FIRST correction found that would move
+the Stock slope the right way). What has never been paired is **pressure with
+CO2**, which is the pairing that identifies the faulty limb. Do not act on
+either finding until the papers are read: this environment could search but
+not reach the publishers, so both rest on abstracts.
 
 **Pressure under obstruction runs too negative.** Moreault 2021 measured
 -20 (5) cmH2O at 504 mL of gas resorbed from one sealed lung and -31 (10) at

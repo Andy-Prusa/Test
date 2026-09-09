@@ -256,7 +256,13 @@ class Patient:
     # UNCHANGED, so the fall in the room-air arm is hypoxaemia and its
     # autonomic consequences, not the mechanical Muller effect. Our patient is
     # the oxygenated one. The mechanical coupling the source supports is
-    # therefore about zero, and this term is not evidenced.
+    # therefore about zero by ITS OWN CITATION. The NUMBER is defensible even
+    # so: human Mueller-manoeuvre studies pair intrathoracic pressure with
+    # stroke volume in normoxic subjects and find -13% at ITP -30 cmH2O (a
+    # gain near 0.0044), so 0.0025 sits inside the human range at the
+    # conservative end. The catch is duration -- a Mueller manoeuvre lasts
+    # 5-15 s, ours develops over minutes -- so treat the human figure as an
+    # upper bound on a transient. See protocol/evidence.md.
     # It is retained anyway, because deleting it in isolation makes the fit
     # WORSE: the Stock obstructed slope goes 4.35 -> 4.51 against a measured
     # 3.4, and `stiff_below_rv` is coupled to it through the same pathway. See
