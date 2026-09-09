@@ -379,14 +379,71 @@ Softening it fixes the pressure. It also breaks Stock:
     1.00     50%        ~-23          ~-34           5.1   FAILS
     2.00     67%        -22.2         -30.4          5.2   FAILS
 
-**The coupling is the Muller effect, not the gas.** Alveolar PCO2 barely
-moves across that sweep (63.0 -> 63.3 at 300 s). What moves is the heart: the
-vacuum suppresses stroke volume, and lifting the vacuum lifts cardiac output,
-which delivers CO2 to the lung faster and steepens the arterial rise.
+**THE COUPLING IS V/Q HETEROGENEITY. Established September 2026 by
+elimination; this replaces an earlier claim here that it was the Muller
+effect, which was wrong.** Alveolar PCO2 barely moves across the sweep
+(63.0 -> 63.3 at 300 s), and neither does shunt (0.181 both) or mixed venous
+PCO2 (57.7 -> 57.9). What moves is the arterial-to-alveolar CO2 gap: +6.7 at
+stiff 0.15 against +9.5 at stiff 2.00.
 
-    stiff      P     ITP   stroke vol    CO   PaCO2 at 300 s
-    0.15   -50.0   -30.0       56.1     4.30      69.6
-    2.00   -28.1   -16.9       58.8     4.57      72.8
+Four candidates were tested and three excluded:
+
+  CARDIAC OUTPUT -- partly, about a quarter. Changing CO alone via
+    `co_drop_frac`, mechanics untouched, gives +0.22 of slope for +6.4% CO,
+    where the stiffness change gives +0.80 for +6.1% CO. So CO carries about
+    28% of it and something else carries the rest.
+  SHUNT -- excluded. Identical to three decimal places across the sweep.
+  THE p_collapse FLOOR -- excluded, and this was the best guess. At stiff 0.15
+    the pressure sits exactly on the -50 floor while at stiff 2.00 it does
+    not, so the sweep compares two mechanical regimes. But moving the floor to
+    -200 so it never binds leaves the coupling at +0.86 instead of +0.80. Not
+    the floor.
+  THE ALVEOLAR CO2 STORE -- excluded on magnitude. The lung holds about 77 mL
+    of CO2 and the two conditions differ by under 2 mL, which spread over the
+    blood volume is under 0.1 mmHg against the 3.2 mmHg observed.
+
+Then the decisive one. Shrink the V/Q spread and the coupling vanishes
+exactly:
+
+    vq_log_sd   stiff 0.15   stiff 2.00   coupling
+      0.70         4.35         5.15       +0.80
+      0.20         1.98         1.98       -0.00
+      0.05         2.02         2.01       -0.00
+
+At the same time the arterial-to-alveolar CO2 gap collapses from +6.7 to
+-0.8. So the whole coupling -- including its cardiac-output component, which
+also disappears at low spread despite CO still differing by 2.9% there -- is
+carried by the heterogeneity of the 20 compartments. Arterial CO2 is formed by
+mixing CONTENTS across compartments and then inverting to a partial pressure;
+in a heterogeneous lung that mixing is nonlinear and its offset depends on the
+lung's state, which is what `stiff_below_rv` changes. In a near-homogeneous
+lung there is nothing for it to act on.
+
+**AND THIS REFRAMES THE WHOLE DISAGREEMENT.** `vq_log_sd` controls the Stock
+slope far more strongly than `stiff_below_rv`, `sv_itp_gain` or the CO2 stores,
+and it does so without touching the first-minute rise at all:
+
+    vq_log_sd | 1st min   slope   a-A gap   PaCO2@300   shunt@300
+      0.30    |   12.3     1.99     -0.8       60.3       0.146
+      0.40    |   12.2     2.49      1.1       62.3       0.154
+      0.50    |   12.2     3.07      2.9       64.6       0.163
+      0.60    |   12.2     3.79      5.1       67.4       0.172
+      0.70    |   12.2     4.35      6.7       69.6       0.181
+
+**Stock's measured 3.4 sits at vq_log_sd of about 0.55**, and the first-minute
+value stays at 12.2 against a measured 12 throughout. So the 26% Stock residual
+is most likely a V/Q-spread question, not a CO2-store or mechanics question.
+
+**Nothing was changed, and think hard before changing it.** `vq_log_sd` 0.70
+is listed under "Chosen, not fitted" in the provenance section precisely
+because the note there records that spread 0.5 with mixing 25 s hits Toner and
+Heard almost exactly, and that the middle was chosen rather than tuned SO THAT
+THE TRIALS STAY AS VALIDATION. Moving it to 0.55 to satisfy Stock would very
+likely improve Toner and Heard as well -- which is the point: it would convert
+three independent validations into one fit, and there would then be no
+untouched trial left to test the model against. That is a decision about what
+the model is for, not a parameter tweak, and it is not one to make while
+chasing a benchmark.
 
 So: Moreault says less vacuum; less vacuum means more cardiac output; more
 cardiac output means a faster CO2 rise; and Stock says our CO2 rise is

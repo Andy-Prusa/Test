@@ -285,10 +285,16 @@ conclusions. What remains:
 2. **Decide whether to add Ebata's pulmonary benchmarks**: mean PAP 11 -> 17
    and PVR +63% at PaCO2 78. These do not depend on sympathetic integrity, and
    our pulmonary limb is almost untested.
-3. **Establish what actually couples `stiff_below_rv` to the Stock slope.**
-   It is not cardiac output and it is not shunt -- both are now excluded by the
-   sweep above. Until this is known, the Moreault/Stock conflict is not even
-   correctly described, let alone resolved.
+3. ~~Establish what actually couples `stiff_below_rv` to the Stock slope.~~
+   **DONE. It is V/Q heterogeneity.** Cardiac output carries about 28% of it;
+   shunt, the p_collapse floor and the alveolar CO2 store are all excluded;
+   and shrinking `vq_log_sd` from 0.70 to 0.20 takes the coupling to exactly
+   zero while the arterial-to-alveolar CO2 gap collapses from +6.7 to -0.8.
+   The consequence is larger than the question: `vq_log_sd` controls the Stock
+   slope almost entirely, and Stock's measured 3.4 sits at about 0.55 with the
+   first-minute rise unchanged at 12.2 against a measured 12. See the "Known
+   disagreement" section of HANDOVER.md before acting on that -- it would
+   convert Toner and Heard from validation into fit.
 4. Consider raising `sv_itp_gain` from 0.0025 toward the human 0.0033-0.00476.
    It changes the Stock slope by about 0.1 and nothing else that is
    benchmarked, so this is a truth-in-labelling change rather than a fit
