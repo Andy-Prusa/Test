@@ -211,9 +211,9 @@ function simulate(P, epochs, dt=0.1){
     if(tLow>=TD){ const k=Math.floor((tLow-TD)/10);
       hrNow = k<RATES.length ? RATES[k] : 0; }
     // stroke volume: hypercapnic inotropy up, Muller effect down
-    // svItpGain is NOT evidenced -- the source's oxygen arm shows stroke volume
-    // unchanged at the same ITP. Retained because removing it alone makes the
-    // Stock benchmark worse. See apnoea_core.py and HANDOVER.md before changing.
+    // svItpGain is mis-cited but conservative: two human Mueller studies give
+    // 0.0033 and 0.00476 per cmH2O where we use 0.0025. Nearly inert on the
+    // Stock benchmark either way. See apnoea_core.py and protocol/evidence.md.
     const itp=Math.min(0,(pabs-PB)*1.35951)*(P.itpFraction||0.60);
     const svf=(1+(P.svCo2Gain===undefined?0.0045:P.svCo2Gain)*co2arg)
               *Math.max(0.15,1+(P.svItpGain===undefined?0.0025:P.svItpGain)*itp);

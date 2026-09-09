@@ -256,13 +256,19 @@ class Patient:
     # UNCHANGED, so the fall in the room-air arm is hypoxaemia and its
     # autonomic consequences, not the mechanical Muller effect. Our patient is
     # the oxygenated one. The mechanical coupling the source supports is
-    # therefore about zero by ITS OWN CITATION. The NUMBER is defensible even
-    # so: human Mueller-manoeuvre studies pair intrathoracic pressure with
-    # stroke volume in normoxic subjects and find -13% at ITP -30 cmH2O (a
-    # gain near 0.0044), so 0.0025 sits inside the human range at the
-    # conservative end. The catch is duration -- a Mueller manoeuvre lasts
-    # 5-15 s, ours develops over minutes -- so treat the human figure as an
-    # upper bound on a transient. See protocol/evidence.md.
+    # therefore about zero by ITS OWN CITATION. The NUMBER is nonetheless too
+    # SMALL, not too large: two human studies pair intrathoracic pressure with
+    # stroke volume in normoxic subjects and both exceed us. Wright 2023
+    # (AJP-Heart 325:H1235) n=19, ITP -30 cmH2O for 15 s, SV 70 -> 60 mL, i.e.
+    # 0.00476 per cmH2O; Condos 1987 (Circulation 76:1020) n=10 with
+    # micromanometry, SV 83 -> 74 at an intrathoracic swing of -24 mmHg, i.e.
+    # 0.0033. We are conservative by 1.3-1.9x. The open question is duration:
+    # a Mueller manoeuvre is 5-15 s and ours develops over minutes, though
+    # Wright's effect grows from 5 s to 15 s rather than fading.
+    # Raising it to the human value moves the Stock slope only 4.35 -> 4.24,
+    # so this term is nearly inert on the Moreault/Stock conflict despite what
+    # HANDOVER's "Known disagreement" section used to claim.
+    # See protocol/evidence.md.
     # It is retained anyway, because deleting it in isolation makes the fit
     # WORSE: the Stock obstructed slope goes 4.35 -> 4.51 against a measured
     # 3.4, and `stiff_below_rv` is coupled to it through the same pathway. See

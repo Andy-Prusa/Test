@@ -414,23 +414,57 @@ the mechanical Muller effect. The mechanical coupling the source actually
 supports is about zero -- and our patient is the oxygenated one, so the arm
 that applies is the arm showing no effect.
 
-**But the parameter is not therefore unevidenced -- corrected September 2026.**
-Human Mueller-manoeuvre studies measure intrathoracic pressure and stroke
-volume simultaneously in normoxic subjects and DO find an effect: at ITP
--30 cmH2O held 15 s, LV stroke volume fell 10+-4 mL in 17 healthy adults
-(AJP-Heart 2023), about -13% on a young-adult baseline, i.e. a gain near 0.0044
-per cmH2O; Condos et al. (Circulation 1987;76:1020) found aortic flow down
-10.1+-6.6% by the fifth beat in 10 catheterised subjects. Our 0.0025
-sits inside that range at the conservative end. What is wrong is the CITATION,
-not necessarily the number.
+**But the parameter is not unevidenced, and it is too SMALL, not too large.
+Corrected from the full texts, September 2026.** Two human studies measure
+intrathoracic pressure and stroke volume simultaneously in normoxic subjects:
 
-The two literatures disagree, and the likely discriminator is DURATION. A
-Mueller manoeuvre lasts 5-15 s, over which venous return cannot
-re-equilibrate; our patient reaches -15 cmH2O over three minutes. The
-sustained, oxygenated evidence is the arm showing about zero. So read the
-acute human data as an upper bound on a transient, not as a calibration for
-our case -- and note that nothing published answers which applies at three
-minutes. See `protocol/evidence.md`.
+  Wright 2023 (AJP-Heart 325:H1235), n=19 healthy, ITP -30 cmH2O held 15 s:
+    LV SV 70+-16 -> 60+-16 mL, EDV 120 -> 108, ESV unchanged, EF 59 -> 55.
+    -14.3%, i.e. a gain of 0.00476 per cmH2O. ESV unchanged with EDV down
+    makes this a PRELOAD effect, the same mechanism as in our patient.
+  Condos 1987 (Circulation 76:1020), n=10 at cardiac catheterisation with
+    multisensor micromanometry: CO 6.0 -> 5.3 L/min, SV 83 -> 74 mL, SVR
+    1331 -> 1892, mean RA pressure 7 -> -17 mmHg. SV -10.8% at an
+    intrathoracic swing of -24 mmHg = -32.6 cmH2O, i.e. 0.0033 per cmH2O.
+
+Ours is 0.0025 -- **conservative by 1.3x to 1.9x against both**. The CITATION is
+what is wrong, not the number, and if the number moves it should move UP.
+
+Duration remains open. A Mueller manoeuvre is 5-15 s and our patient takes three
+minutes; but Wright's effect GROWS from 10% at 5 s to 14.3% at 15 s, which
+argues against a pure transient. Nothing published reaches three minutes.
+
+**AND IT BARELY MATTERS, which was the surprise.** At hb 15.0, as
+`test_stock_1989` runs it:
+
+    stiff  sv_itp_gain | P@1008  P@1260 | 1st min  slope | CO@300  shunt
+     0.15     0.00250  |  -30.4   -50.0 |   12.2   4.35  |  4.30   0.181
+     0.15     0.00330  |  -30.4   -50.0 |   12.2   4.30  |  4.19   0.180
+     0.15     0.00476  |  -30.4   -50.0 |   12.2   4.24  |  3.98   0.180
+     2.00     0.00250  |  -22.2   -30.4 |   12.2   5.15  |  4.57   0.181
+     2.00     0.00476  |  -22.2   -30.4 |   12.2   5.01  |  4.37   0.180
+
+Adopting the human value moves the Stock slope 4.35 -> 4.24 against 3.4. The
+Muller term does NOT rescue Stock, and softening `stiff_below_rv` to satisfy
+Moreault still fails at 5.01 with the human gain. So the Chen & Scharf
+mis-citation, while real, is **nearly inert on the knot** -- much less
+consequential than this section previously implied.
+
+**AND THE MECHANISM RECORDED ABOVE IS CONTRADICTED BY THE MODEL ITSELF.**
+The claim "the coupling is the Muller effect, not the gas" does not survive the
+sweep:
+
+    gain 0.0025 -> 0.00476 at stiff 0.15:  CO -7.4%,  slope -2.5%
+    stiff 0.15 -> 2.00 at gain 0.0025:     CO +6.3%,  slope +18.4%
+
+Two manipulations of comparable size, both acting through cardiac output, with
+slope sensitivities differing about SEVENFOLD and in opposite proportion.
+Cardiac output cannot be the mediator of the stiffness effect. Shunt is
+identical across every row (0.180-0.181), so it is not shunt either. **What the
+real mediator is has not been established, and no guess is recorded here.**
+`stiff_below_rv` does control the Stock slope, strongly; the reason given above
+for why it does is wrong. Fixing that description is item 3 of the next steps
+in `protocol/evidence.md`.
 
 Removing the term makes Stock worse, not better:
 
@@ -488,16 +522,35 @@ not substitute:
 Dale WA, Rahn H. Rate of gas absorption during atelectasis. Am J Physiol
 1952;170:606-13 is the closest classical source and is held here.
 
-**The full evidence map is `protocol/evidence.md`** (searched September 2026).
-Its headline correction to the claim above: pressure+haemodynamics HAS been
-paired (human Mueller studies) and CO2+haemodynamics HAS been paired (a
-brain-death apnoea-test study, n=9, patent airway, which puts cardiac output
-up 18.8% at PaCO2 78 where we give about 33% -- our CO2-to-output gain may be
-1.8x too strong, and reducing it is the FIRST correction found that would move
-the Stock slope the right way). What has never been paired is **pressure with
-CO2**, which is the pairing that identifies the faulty limb. Do not act on
-either finding until the papers are read: this environment could search but
-not reach the publishers, so both rest on abstracts.
+**The full evidence map is `protocol/evidence.md`.** Pressure+haemodynamics HAS
+been paired (Wright 2023, Condos 1987) and CO2+haemodynamics HAS been paired
+(Ebata 1991, patent airway). What has never been paired is **pressure with
+CO2**, which is the pairing that identifies the faulty limb.
+
+**Retracted:** an earlier version said Ebata showed our CO2-to-cardiac-output
+gain to be 1.8x too strong. The full text destroys that. Baseline PaCO2 was 45,
+not 40 -- ventilation was deliberately slowed beforehand. Every patient was on
+dopamine 5-30 ug/kg/min, two also on dobutamine. Body temperature was
+34.0-37.4 C. And the paper's own thesis is that the response in brain death is
+"markedly depressed compared with those in volunteers and patients under
+general anaesthesia", so using it as a like-for-like comparator inverts its
+argument. Ebata gives the ladder instead:
+
+    awake, from Cullen and Eger        0.17  L/min per mmHg PaCO2
+    our model, anaesthetised           0.034 L/min per mmHg
+    brain-dead on dopamine at 35.8 C   0.027 L/min per mmHg (from their table)
+
+We sit between awake and brain-dead, where an anaesthetised patient belongs,
+and we already match the Sci Rep n=91 benchmark at +35.8% against +30%
+reported. If anything we are LOW: Price et al., quoted by Ebata, put
+anaesthesia at a half to a third of the awake response, i.e. 0.057-0.085.
+**Nothing should change on the strength of Ebata, and any future change is more
+likely upward.**
+
+What Ebata does offer are two clean candidate benchmarks that do not depend on
+sympathetic integrity: **mean PAP 11 -> 17 mmHg and PVR 112 -> 183 (+63%) at
+PaCO2 78 / pH 7.17**, correlated at r=0.72. Our pulmonary limb has almost
+nothing testing it.
 
 **Pressure under obstruction runs too negative.** Moreault 2021 measured
 -20 (5) cmH2O at 504 mL of gas resorbed from one sealed lung and -31 (10) at

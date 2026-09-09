@@ -1,11 +1,16 @@
 # Evidence map for the three linked variables
 
-Searched September 2026. **Read the caveat first:** this environment's network
-policy allows web *search* but blocks the publisher domains, so everything
-below comes from abstracts and search summaries, not from full texts. Nothing
-here should be entered as a benchmark until the paper has been read. The
+Searched September 2026. **Status: four papers have now been READ IN FULL**
+(Wright 2023, Condos 1987, Ebata 1991, and the OLV review) because they were
+supplied as files. The rest still rest on abstracts and search summaries: this
+environment allows web *search* but blocks every publisher domain, verified
+across 17 hosts and both fetch tools. Entries are marked READ or ABSTRACT
+ONLY. Nothing marked ABSTRACT ONLY should be entered as a benchmark. The
 mistake this file is designed not to repeat is the ICSM one, where a
 conclusion was drawn from what a short document did not say.
+
+Reading the three haemodynamic papers overturned two conclusions that had been
+recorded from their abstracts. Both are corrected below and in HANDOVER.
 
 The three variables are airway pressure under obstruction (**P**), the rate of
 rise of arterial CO2 (**C**), and the haemodynamic response (**H**). The claim
@@ -23,8 +28,8 @@ missing pairing is the one that matters most.
 | P alone | yes | Moreault 2021 |
 | C alone | yes | Stock 1989; brain-death apnoea-test literature |
 | H alone | yes | large |
-| **P + H** | **yes** | human Mueller-manoeuvre studies |
-| **C + H** | **yes** | Can J Anaesth apnoea-test study, n=9 |
+| **P + H** | **yes** | Wright 2023 (n=19); Condos 1987 (n=10) |
+| **C + H** | **yes** | Ebata 1991 (n=9), patent airway |
 | **P + C** | **NOT FOUND** | — |
 | P + C + H | **NOT FOUND** | — |
 
@@ -35,95 +40,162 @@ of the model is wrong, because those two are what the Muller effect couples.
 
 ---
 
-## P + H — human Mueller manoeuvre. This bears on `sv_itp_gain`.
+## P + H — human Mueller manoeuvre. This bears on `sv_itp_gain`. READ.
 
-These measure intrathoracic pressure and stroke volume simultaneously, in
-normoxic humans, and they do show an effect.
+Two studies measure intrathoracic pressure and stroke volume simultaneously in
+normoxic humans. Both find a clear effect, and both put our parameter too LOW.
 
-- **AJP-Heart 2023** (doi 10.1152/ajpheart.00505.2023). Healthy adults,
-  **n=17 (10M/7F, 24+-4 y), ITP -30 cmH2O held 15 s**, echocardiography with
-  speckle tracking: LV stroke volume **-10+-4 mL**, LVEDV -11+-9 mL, returning
-  to baseline on release. On a young-adult baseline SV near 75 mL that is about
-  **-13%**, i.e. a gain near **0.0044 per cmH2O**. This is the single most
-  useful number on the page and the one to verify first.
-- **Koshino Y, Villarraga HR, Orban M, et al. Circ Cardiovasc Imaging
-  2010;3(3):282-9.** n=24 healthy (9 women, 30+-6 y), Mueller to a target of
-  **-40 mmHg**. Reports myocardial strain and strain rate, not stroke volume
-  directly -- so it constrains the mechanism but not the gain.
-- **Condos WR, Latham RD, Hoadley SD, Pasipoularides A. Circulation
-  1987;76:1020-8.** n=10 with normal haemodynamics at elective cardiac
-  catheterisation, right and left heart multisensor micromanometry with
-  Doppler: mitral and aortic flow fell **12.2+-7.2%** and **10.1+-6.6%** by the
-  fifth beat, with SVR and LV peak dP/dt up and heart rate unchanged. The
-  intrathoracic pressure achieved is not stated in the abstract, so no gain can
-  be computed from this one yet.
-- **CHF patients at -40 cmH2O**: stroke volume index **-33%** (J Appl Physiol
-  1998;85:1476). A failing ventricle is far more preload-dependent, so this is
-  not our patient.
+**Wright SP, Dawkins TG, Harper MI, Stembridge M, Shave R, Eves ND. Mueller
+maneuver attenuates left atrial phasic volumes and myocardial strain in healthy
+younger adults. Am J Physiol Heart Circ Physiol 2023;325:H1235-H1241.** READ.
+n=19 healthy (10M/9F, 24+-4 y), Mueller to **ITP -30 cmH2O held 15 s**, six
+repeated trials, echocardiography with speckle tracking.
 
-**Our `sv_itp_gain` is 0.0025 per cmH2O.** At ITP -30 it predicts -7.5% where
-these measure -13%. So the parameter sits INSIDE the range human normoxic data
-supports, at the conservative end — it is not, as an earlier note in HANDOVER
-said, unevidenced. What is unevidenced is its CITATION: Chen & Scharf's oxygen
-arm shows no effect at -42 cmH2O, and that remains true.
+    LV SV, mL     70 +- 16  ->  63 +- 16 (early)  ->  60 +- 16 (late)   back to 72
+    LV EDV, mL   120 +- 26  -> 113 +- 28          -> 108 +- 28
+    LV ESV, mL    49 +- 11  ->  49 +- 14          ->  48 +- 15   (unchanged)
+    LV EF, %      59 +-  3  ->  56 +-  4          ->  55 +-  5
+    HR, bpm       60 +- 11  ->  64 +- 13          ->  63 +- 11
 
-**The two literatures disagree, and the likely discriminator is duration.** A
-Mueller manoeuvre is 5-15 s, over which venous return has no time to
-re-equilibrate. Our patient reaches -15 cmH2O over three minutes, which is the
-sustained condition, and the sustained-and-oxygenated evidence is the arm
-showing about zero. So the acute human data is best read as an **upper bound**
-on a transient, not as a calibration for our case. Which of the two applies at
-three minutes is not answerable from any of these papers, and is exactly what
-the protocol's haemodynamic channel measures.
+SV fell **14.3%** at ITP -30 cmH2O sustained 15 s, giving a gain of
+**0.00476 per cmH2O**; at 5 s it was 10%, i.e. 0.0033. ESV unchanged with EDV
+down means this is a **preload** effect -- impaired filling, not impaired
+ejection -- which is the same mechanism that would operate in our patient.
 
----
+**Condos WR Jr, Latham RD, Hoadley SD, Pasipoularides A. Hemodynamics of the
+Mueller maneuver in man: right and left heart micromanometry and Doppler
+echocardiography. Circulation 1987;76:1020-8.** READ. n=10 with normal
+haemodynamics at elective cardiac catheterisation, multisensor micromanometry.
 
-## C + H — the brain-death apnoea test. A candidate second benchmark.
+    cardiac output   6.0 +- 1.3  ->  5.3 +- 2.0 L/min   p=.026
+    stroke volume     83 +- 18   ->   74 +- 29 mL       p=.046
+    heart rate        71 +- 9    ->   74 +- 9           NS
+    SVR             1331 +- 372  -> 1892 +- 738         p=.013
+    mean RA pressure   7 +- 3    ->  -17 +- 14 mmHg     p=.0002
+    LV end-diastolic  12 +- 4    ->   -3 +- 13 mmHg     p=.0025
+    mean PA           18 +- 4    -> -0.9 +- 16 mmHg     p=.0007
 
-**Ebata et al. Haemodynamic changes during the apnoea test for diagnosis of
-brain death. Can J Anaesth 1991;38:436-40** (doi 10.1007/BF03007579), n=9,
-severe head injury or CVA. The authors' own conclusion is that the test did NOT
-produce haemodynamic disturbance, with acidosis limited to pH 7.17+-0.02 and
-PaCO2 60-80 mmHg -- so the cardiac output rise below is an incidental
-observation in that paper, not its subject, which is a reason to read the
-methods carefully before treating it as a benchmark.
-Ventilator disconnected ten minutes with oxygen insufflation, so the airway is
-PATENT and intrathoracic pressure stays near zero. That is what makes it
-useful: it isolates the CO2 effect from the Muller effect.
+Mean right atrial pressure is the best available proxy for the intrathoracic
+swing: **-24 mmHg, i.e. -32.6 cmH2O**. SV fell 10.8%, giving a gain of
+**0.0033 per cmH2O**. Note also that this study overturned the prior teaching
+that a sustained Mueller INCREASES right heart flow: it does not, it falls.
 
-    PaCO2 at 10 min      78 +- 3 mmHg        pH 7.17 +- 0.02
-    cardiac output       4.8 +- 0.7  ->  5.7 +- 0.8 L/min   (+18.8%)
-    mean PAP             11 +- 1     ->  17 +- 2 mmHg
-    MAP, HR, PAWP, RAP   unchanged
-    plasma noradrenaline rose in all three patients measured
+**Our `sv_itp_gain` is 0.0025.** Both human measurements are higher --
+0.0033 and 0.00476 -- so the parameter is **conservative, by between 1.3x and
+1.9x**. It is not unevidenced, and it is not too large. An earlier note in
+HANDOVER said it was "not evidenced"; that was wrong and is corrected.
 
-Against our model, run patent with FgO2 1.0:
+What remains true is that its CITATION does not support it: Chen & Scharf's
+oxygen arm shows nothing at -42 cmH2O in sedated pigs.
 
-    PaCO2 60   CO +18.8%    PAP 18.1
-    PaCO2 70   CO +28.8%    PAP 19.5
-    PaCO2 77   CO ~ +33%    (measured: +18.8% at 78)
+**Duration is still the open question.** A Mueller manoeuvre is 5-15 s; our
+patient reaches -15 cmH2O over three minutes. Wright's own data show the effect
+GROWING from 5 s to 15 s (10% then 14.3%), which argues against it being a pure
+transient, but neither study goes past about 20 s. Nothing published says what
+happens at three minutes.
 
-So our CO2-to-cardiac-output gain looks roughly **1.8x too strong** on this
-dataset. It is not a refutation, for three reasons that must be weighed before
-anything is changed:
+### And it barely matters, which was the surprise
 
-1. These patients are brain-dead. Central sympathetic outflow is gone and only
-   a spinal sympathoadrenal response remains — the authors say so, and offer it
-   as the reason the direct depressant effect of hypercapnia did not show. A
-   blunted response is expected.
-2. Baseline PaCO2 is not given as 40. Apnoea tests are usually begun from a
-   preconditioned 40-45, which shrinks the CO2 excursion and the predicted rise.
-3. Baseline CO 4.8 against our anaesthetised 3.75 — different populations.
+Raising the gain to Wright's measured value changes almost nothing. Run at
+hb 15.0, exactly as `test_stock_1989` does:
 
-Set against `test_validation.py`'s existing benchmark, which takes +30% from a
-Sci Rep n=91 measurement in apnoeic oxygenation and which we meet at +35.8%,
-we now have one source at +30% and one at +18.8%, with our model at or above
-the top of both. **Read the paper before acting.** If it holds, `co_co2_gain`
-and `sv_co2_gain` are too large, and note the direction: reducing them SLOWS
-CO2 delivery to the lung and would move the Stock slope from 4.3 toward 3.4.
-That is the first correction found so far that pushes Stock the right way.
+    stiff  sv_itp_gain | P@1008  P@1260 | 1st min  slope | CO@300  SV@300  shunt
+     0.15     0.00250  |  -30.4   -50.0 |   12.2   4.35  |  4.30    56.1  0.181
+     0.15     0.00330  |  -30.4   -50.0 |   12.2   4.30  |  4.19    54.6  0.180
+     0.15     0.00476  |  -30.4   -50.0 |   12.2   4.24  |  3.98    51.9  0.180
+     2.00     0.00250  |  -22.2   -30.4 |   12.2   5.15  |  4.57    58.8  0.181
+     2.00     0.00476  |  -22.2   -30.4 |   12.2   5.01  |  4.37    56.4  0.180
 
----
+Adopting the human value moves the Stock slope 4.35 -> 4.24 against a target of
+3.4. **The Muller term does not rescue Stock**, and softening
+`stiff_below_rv` to satisfy Moreault still fails it at 5.01 even with the human
+gain. The knot is not resolved by this.
+
+### The recorded mechanism for the knot is contradicted by the model itself
+
+HANDOVER says "the coupling is the Muller effect, not the gas". The table above
+says otherwise:
+
+    gain 0.0025 -> 0.00476 at stiff 0.15:  CO -7.4%,  slope -2.5%
+    stiff 0.15 -> 2.00 at gain 0.0025:     CO +6.3%,  slope +18.4%
+
+Two manipulations of comparable size, acting through cardiac output, with
+slope sensitivities differing about **sevenfold** and in opposite proportion.
+Cardiac output cannot be the mediator of the stiffness effect. Shunt is
+identical across all five rows (0.180-0.181), so it is not shunt either. What
+the actual mediator is has NOT been established here, and no guess is recorded.
+`stiff_below_rv` still controls the Stock slope strongly; the reason given for
+why it does is wrong.
+
+## C + H — the brain-death apnoea test. READ. **My earlier reading of this was wrong.**
+
+**Ebata T, Watanabe Y, Amaha K, Hosaka Y, Takagi S. Haemodynamic changes during
+the apnoea test for diagnosis of brain death. Can J Anaesth 1991;38:436-40.**
+n=9, severe head injury or cerebrovascular disease, Tokyo. Ventilator
+disconnected ten minutes with oxygen insufflated at 6 L/min through a 2.1 mm
+catheter 2-5 cm above the carina, so the airway is **patent** and intrathoracic
+pressure stays near zero. Pulmonary artery catheter, thermodilution CO
+(mean of three), radial arterial line.
+
+                        Before        After        P
+    pH               7.37 +- 0.01  7.17 +- 0.02  <0.001
+    PaCO2, mmHg        45 +- 1       78 +- 3      <0.001
+    PaO2, mmHg        373 +- 46     332 +- 38      NS
+    MAP, mmHg          80 +- 5       81 +- 7       NS
+    HR, bpm           100 +- 7      100 +- 7       NS
+    mean PAP, mmHg     11 +- 1       17 +- 2      <0.01
+    PCWP, mmHg          5 +- 1        5 +- 1       NS
+    RAP, mmHg           3 +- 1        3 +- 1       NS
+    SVR, dyn.s.cm-5  1560 +- 252   1387 +- 259     NS
+    PVR, dyn.s.cm-5   112 +- 23     183 +- 37      NS
+    CO, L/min         4.8 +- 0.7    5.7 +- 0.8   <0.05
+
+**I previously wrote that this shows our CO2-to-cardiac-output gain is 1.8x too
+strong. That was wrong, for four reasons the full text makes plain.**
+
+1. **Baseline PaCO2 is 45, not 40.** Ventilation was deliberately slowed before
+   the test to raise it. The excursion is 33 mmHg, not 38.
+2. **Every patient was on dopamine** at 5-30 ug/kg/min, two also on dobutamine,
+   held constant. A heart already beta-stimulated has less reserve.
+3. **Body temperature 34.0-37.4 C** (mean 35.8), which lowers CO2 production.
+4. **The paper's entire point is that the response IS depressed** in brain
+   death. It says so: "the circulatory stimulating response was markedly
+   depressed compared with those in volunteers and patients under general
+   anaesthesia". Treating it as a like-for-like comparator for an anaesthetised
+   patient inverts its argument.
+
+The paper hands us the ladder to place ourselves on. Citing **Cullen and Eger**
+for awake subjects, it gives **0.17 L/min of cardiac output per mmHg PaCO2**,
+against **0.05 L/min per mmHg** in its own brain-dead patients. (Their 0.05 does
+not reconcile with their own table -- 0.9 L/min over 33 mmHg is 0.027 -- so
+either they used individual slopes or it is a slip. Use the table.)
+
+    awake (Cullen & Eger)          0.17  L/min/mmHg
+    our model, anaesthetised       0.034 L/min/mmHg   (0.9% of baseline 3.75)
+    brain-dead on dopamine, 35.8 C 0.027 L/min/mmHg   (from Ebata's table)
+
+**Our value sits between awake and brain-dead, which is where an anaesthetised
+patient belongs**, and it agrees with the benchmark we already hold (Sci Rep
+n=91, +30% reported, we give +35.8%). If anything it is on the low side: Price
+et al., quoted by Ebata, found anaesthesia reduces the haemodynamic response to
+CO2 by a half (cyclopropane) to two-thirds (halothane), which would put an
+anaesthetised patient at 0.057-0.085 L/min/mmHg, above ours. **Nothing should be
+changed on the strength of this paper**, and the direction of any future change
+is more likely up than down.
+
+Ebata's regression lines, worth having (x = change in PaCO2, torr):
+
+    awake         dHR = 0.97x + 3.1      dMAP = 0.59x + 0.1
+    cyclopropane  dHR = 0.50x + 0.5      dMAP = 0.20x + 0.7
+    halothane     dHR = 0.19x + 2.0      dMAP = 0.09x + 0.9
+    brain death   dHR = -0.02x + 0.5     dMAP = -0.02x + 0.9
+
+**Two candidate benchmarks that ARE clean**, because they do not depend on
+sympathetic integrity: mean PAP 11 -> 17 mmHg and PVR 112 -> 183 (+63%) at
+PaCO2 78 / pH 7.17, with the rise in PAP correlating with the rise in PVR
+(r=0.72, P<0.05) -- i.e. hypercapnic pulmonary vasoconstriction, which is a
+direct effect. Our pulmonary limb has almost nothing testing it. This is worth
+adding.
 
 ## C alone — the rate of rise, and how much data exists
 
@@ -158,12 +230,24 @@ the obstructed case, which is Stock's alone.
   only human measurement we have of pressure developing inside a lung from gas
   absorption. Method: catheter from the non-ventilated bronchus to a
   differential pressure transducer.
-- The wider one-lung-ventilation literature uses the same method and reports
-  the same phenomenon — airway pressure in the non-ventilated lung becoming
-  progressively negative, with entrainment toward it when it is open to
-  atmosphere. A 2025 narrative review (doi 10.3390/jcm15135078) is the entry
-  point. **This is the most promising place to find a second P dataset**, and
-  possibly a P+C one, since OLV studies routinely sample arterial gases.
+- **The OLV narrative review (J Clin Med 2026;15:5078, doi 10.3390/jcm15135078)
+  has now been READ. It contains no second pressure dataset** -- it is a
+  strategy review, and Moreault is the only pressure measurement it cites. So
+  that lead is weaker than it looked.
+  Its real value is elsewhere: it is an entire clinical literature built on
+  **our model's nitrogen limb**, independently. It frames lung collapse as
+  phase I (elastic recoil, passive venting) then phase II (residual gas
+  absorption), and its central practical claim is that letting ambient air into
+  the non-ventilated lumen lets **nitrogen re-enter and delays absorption
+  collapse** -- which is exactly the nitrogen splinting our model uses to set
+  the lung-volume floor, arrived at from the operating theatre rather than from
+  a simulation. It also notes that hypoxic pulmonary vasoconstriction reduces
+  perfusion to the non-ventilated lung and so further slows absorption, another
+  coupling we model. Worth citing in the paper as external corroboration.
+  Candidate primary sources it names, none yet read: Pfitzner et al. 2001,
+  Ko et al. 2009, Yoshimura et al. 2014, Somma et al. 2021, Huang et al. 2024
+  (OCAT: median time to complete collapse 10 min vs 25 min), and Quan et al.
+  (80 patients, 1 min of -30 cmH2O bronchial suction).
 - **Dale WA, Rahn H. Rate of gas absorption during atelectasis. Am J Physiol
   1952;170:606-13.** Held here. The classical source.
 - **Alveolar gas exchanges and atelectasis: the mechanism of gas absorption in
@@ -192,33 +276,35 @@ Recorded so the same false leads are not followed again.
 
 ## What to do next, in order
 
+Items 2 and 4 of the previous list are DONE and both reversed their provisional
+conclusions. What remains:
+
 1. **Get Stock 1989 full text** and find out whether airway pressure was
-   recorded. Highest value of anything on this list.
-2. **Get the Can J Anaesth apnoea-test paper** and check baseline PaCO2 and
-   whether the brain-death caveat is disqualifying. If not, it becomes a second
-   haemodynamic benchmark and probably shrinks `co_co2_gain`.
-3. **Search the one-lung-ventilation literature properly** for bronchial
-   pressure paired with arterial gases. This is where a P+C dataset would be,
-   if one exists anywhere.
-4. Get **AJP-Heart 2023** first of the Mueller papers -- it is the one with the
-   stroke-volume change and a stated pressure. Baseline SV is what turns
-   -10+-4 mL into a gain; everything else about `sv_itp_gain` waits on it.
-   Condos 1987 second, for the pressure it achieved.
-5. Douglas 1988 full text, for the red-cell CO2 correction. Unchanged from
-   before.
+   recorded. Still the highest value of anything here, and now the only
+   remaining route to a P+C pairing that does not require running the study.
+2. **Decide whether to add Ebata's pulmonary benchmarks**: mean PAP 11 -> 17
+   and PVR +63% at PaCO2 78. These do not depend on sympathetic integrity, and
+   our pulmonary limb is almost untested.
+3. **Establish what actually couples `stiff_below_rv` to the Stock slope.**
+   It is not cardiac output and it is not shunt -- both are now excluded by the
+   sweep above. Until this is known, the Moreault/Stock conflict is not even
+   correctly described, let alone resolved.
+4. Consider raising `sv_itp_gain` from 0.0025 toward the human 0.0033-0.00476.
+   It changes the Stock slope by about 0.1 and nothing else that is
+   benchmarked, so this is a truth-in-labelling change rather than a fit
+   improvement -- and it should not be made without deciding the 15 s versus
+   3 min question, since a 15 s manoeuvre may not transfer.
+5. Douglas 1988 full text, for the red-cell CO2 correction. Unchanged.
+6. Pfitzner 2001 and Ko 2009 from the OLV review, for the nitrogen limb.
 
-## Likely access status
+## Access status
 
-Judged from publisher policy and from whether search surfaced a full-text or
-abstract-only link. **Not verified** -- this environment cannot open any of
-them, so treat as a starting order, not a fact.
-
-| Paper | Expected |
+| Paper | Status |
 |---|---|
-| OLV review, doi 10.3390/jcm15135078 | **Open access.** MDPI, and it has a PMC record |
-| Condos, Circulation 1987;76:1020 | **Probably free.** AHA opens content after 12 months and search surfaced a direct `/doi/pdf/` link |
-| Koshino, Circ Cardiovasc Imaging 2010 | **Probably free.** Same AHA policy; search surfaced `/doi/full/` |
-| AJP-Heart 2023, ajpheart.00505.2023 | **Probably free.** APS opens research articles 12 months after publication |
-| Ebata, Can J Anaesth 1991;38:436 | **Probably paywalled.** Springer; some BF-prefix content is free, worth a click |
-| Douglas, J Appl Physiol 1988;65:473 | **Probably paywalled.** APS pre-1997 archive is not covered by the 12-month rule; search found abstract only |
-| Stock, J Clin Anesth 1989;1:328 | **Probably paywalled.** Elsevier, 1989, abstract only |
+| OLV review, doi 10.3390/jcm15135078 | **Obtained and read** |
+| Wright, AJP-Heart 2023;325:H1235 | **Obtained and read** |
+| Condos, Circulation 1987;76:1020 | **Obtained and read** |
+| Ebata, Can J Anaesth 1991;38:436 | **Obtained and read** |
+| Koshino, Circ Cardiovasc Imaging 2010;3:282 | Not obtained. Reports strain, not stroke volume, so low priority |
+| Douglas, J Appl Physiol 1988;65:473 | Not obtained |
+| Stock, J Clin Anesth 1989;1:328 | Not obtained. **The one that matters** |
