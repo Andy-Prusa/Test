@@ -46,6 +46,8 @@ verdict into pytest.
 | `.githooks/pre-commit` | page freshness + both test files; blocks on failure |
 | `setup-hooks.sh` | enables the hook; run once per clone |
 | `requirements.txt` | the Python dependencies. JavaScript has none |
+| `protocol/study.html` | protocol for the three-way study. See below |
+| `protocol/predictions.py` | regenerates every number that protocol quotes |
 
 `build_page.py` must be re-run after any change to `model.js`. The pre-commit
 hook will not do it for you, but `build_page.py --check` will tell you that you
@@ -504,6 +506,52 @@ be compared with Heard's.
   impossible numbers, and if anything is ever to be claimed in that range this
   needs fixing first. Reproduction is in the note at the foot of
   `test_parity.py`.
+
+## The three-way study protocol
+
+`protocol/study.html` is the protocol for the study that would settle the three
+open disagreements at once — airway pressure against Moreault, PaCO2 against
+Stock, and the haemodynamic response against Chen & Scharf — by measuring all
+three in the same patients. It exists because no dataset does this, and because
+each of those three conflicts is currently arguable only against a source that
+measured one channel.
+
+A fourth channel was added after the first draft: the **volume entrained when
+the occlusion is released**. It is worth more than it looks.
+
+- It is a *molar* measurement, so unlike the pressure channel it does not
+  depend on where the transducer sits or on whether small airways have closed
+  between the transducer and the alveolus. That is the standing objection to
+  every airway-pressure measurement in this literature, and this channel is
+  immune to it.
+- It is a direct measurement of apnoeic oxygen uptake, which cannot otherwise
+  be obtained in an obstructed patient. At 180 s the model puts it at 739 mL,
+  made of −840 mL O2, −9 mL CO2 and +110 mL N2.
+- The CO2 term is almost exactly nil because PACO2 rises 43% while the lung
+  shrinks 36%. That near-cancellation means the volume constrains the CO2 limb
+  in a way the arterial sample does not.
+- **It can falsify the recruitment limb outright.** The model's refill term
+  targets FRC unconditionally: it has no mechanism that withholds gas from
+  units that closed, so it *must* predict full restoration. If Rothen's opening
+  pressures apply in vivo, closed lung will not reopen at the few cmH2O a
+  passive inrush generates and the measured volume falls short by 125 mL at
+  BMI 22.9 and 161 mL at BMI 32.7. A shortfall of any size is a result the
+  model cannot accommodate.
+
+The measurement is by calibrated syringe, not by flow integration: peak flow at
+release is 7.8 L/s with 90% of the volume delivered in 0.20 s, which is outside
+a conventional pneumotachograph's linear range and whose added resistance would
+alter the quantity being measured. The syringe also gives pressure and volume on
+the same lung at the same instant, which Moreault structurally could not — their
+volumes and pressures came from separately randomised groups.
+
+`protocol/predictions.py` regenerates every number quoted in the document from
+`apnoea_core` and fails if any of them has drifted. Run it before the protocol
+is submitted, and against any later commit, to see whether the registered
+predictions still hold. It is deliberately not part of the pre-commit suite:
+these are predictions about the world, not benchmarks the model must pass, and
+they are expected to move when the model is corrected. What must not happen is
+that they move silently.
 
 ## Open work, roughly by value
 

@@ -1,0 +1,578 @@
+<title>Three-Channel Apnoea Protocol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#f7f7f6; --surface:#ffffff; --sunk:#efefee; --rule:#dedddb; --rule2:#c3c2bf;
+  --ink:#16171a; --ink2:#4a4c52; --ink3:#7c7e85;
+  --accent:#3c4a7a; --accent-soft:#e6e9f3;
+  --todo:#8a4a12; --todo-soft:#f7ecdf;
+  --stop:#8f2f28; --stop-soft:#f8e6e4;
+  --ok:#2f6146; --ok-soft:#e5efe9;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#101113; --surface:#181a1d; --sunk:#141517; --rule:#2a2c30; --rule2:#3a3d42;
+  --ink:#eceded; --ink2:#b0b3b9; --ink3:#83868d;
+  --accent:#93a4d8; --accent-soft:#1c2237;
+  --todo:#e0a163; --todo-soft:#2e2113;
+  --stop:#e08a80; --stop-soft:#311917;
+  --ok:#77bb96; --ok-soft:#162a20;
+}}
+:root[data-theme="dark"]{
+  --ground:#101113; --surface:#181a1d; --sunk:#141517; --rule:#2a2c30; --rule2:#3a3d42;
+  --ink:#eceded; --ink2:#b0b3b9; --ink3:#83868d;
+  --accent:#93a4d8; --accent-soft:#1c2237;
+  --todo:#e0a163; --todo-soft:#2e2113;
+  --stop:#e08a80; --stop-soft:#311917;
+  --ok:#77bb96; --ok-soft:#162a20;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);
+  font-family:'Public Sans',system-ui,sans-serif;font-size:15px;line-height:1.6;
+  padding:0 20px 90px}
+.page{max-width:860px;margin:0 auto}
+header{padding:50px 0 22px;border-bottom:3px double var(--rule2)}
+.doctype{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 13px}
+h1{font-family:Newsreader,Georgia,serif;font-weight:600;font-size:clamp(27px,4.2vw,37px);
+  line-height:1.15;letter-spacing:-.01em;margin:0 0 12px;text-wrap:balance}
+.sub{font-family:Newsreader,Georgia,serif;font-size:17px;line-height:1.5;color:var(--ink2);
+  max-width:62ch;margin:0}
+.docmeta{margin-top:22px;font-family:'JetBrains Mono',monospace;font-size:11.5px;
+  color:var(--ink3);display:grid;grid-template-columns:auto 1fr;gap:3px 16px;max-width:560px}
+.docmeta b{color:var(--ink2);font-weight:500}
+section{padding-top:38px}
+h2{font-family:Newsreader,Georgia,serif;font-weight:600;font-size:21px;margin:0 0 8px;
+  padding-bottom:5px;border-bottom:1px solid var(--rule2);display:flex;gap:11px;align-items:baseline}
+h2 .n{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--accent);flex:none;font-weight:500}
+h3{font-family:'Public Sans',sans-serif;font-weight:600;font-size:14.5px;margin:22px 0 5px;
+  color:var(--ink);display:flex;gap:10px}
+h3 .n{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--ink3);flex:none;font-weight:400}
+p{max-width:72ch;margin:0 0 11px;color:var(--ink2)}
+p strong,li strong{color:var(--ink);font-weight:600}
+ul,ol{margin:0 0 11px;padding-left:22px;color:var(--ink2);max-width:72ch}
+li{margin-bottom:5px}
+.tw{overflow-x:auto;margin:13px 0;border:1px solid var(--rule);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);
+  text-align:left;font-weight:600;padding:8px 12px;border-bottom:1px solid var(--rule2);
+  background:var(--sunk);white-space:nowrap}
+td{padding:7px 12px;border-bottom:1px solid var(--rule);vertical-align:top;color:var(--ink2)}
+tr:last-child td{border-bottom:0}
+td.n{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;
+  text-align:right;white-space:nowrap;color:var(--ink)}
+td.c{text-align:center}
+.todo{background:var(--todo-soft);border-left:3px solid var(--todo);padding:11px 15px;
+  margin:12px 0;font-size:13.5px;color:var(--ink2)}
+.todo b{color:var(--todo);font-family:'JetBrains Mono',monospace;font-size:10.5px;
+  letter-spacing:.09em;text-transform:uppercase;display:block;margin-bottom:4px}
+.stopbox{background:var(--stop-soft);border:1px solid var(--stop);padding:15px 18px;margin:14px 0}
+.stopbox h4{margin:0 0 8px;font-size:14px;color:var(--stop);font-weight:600;
+  font-family:'Public Sans',sans-serif}
+.stopbox ul{margin:0;color:var(--ink2)}
+.key{background:var(--surface);border:1px solid var(--rule);border-left:3px solid var(--accent);
+  padding:14px 17px;margin:14px 0;font-size:14px}
+.key p{margin:0;max-width:none}
+.key p+p{margin-top:8px}
+footer{margin-top:48px;padding-top:16px;border-top:3px double var(--rule2);
+  font-size:12px;color:var(--ink3);max-width:76ch}
+code{font-family:'JetBrains Mono',monospace;font-size:.88em;color:var(--ink)}
+@media(max-width:560px){.docmeta{grid-template-columns:1fr;gap:0 0}
+  .docmeta b{margin-top:7px}}
+</style>
+
+<div class="page">
+<header>
+  <p class="doctype">Draft research protocol &middot; for adaptation and sponsor review</p>
+  <h1>Airway pressure, carbon dioxide and haemodynamics measured together during brief obstructed apnoea</h1>
+  <p class="sub">A single-centre observational physiological study in anaesthetised adults. Three
+  quantities that have only ever been measured separately, in different patients and different
+  decades, recorded simultaneously in the same subject.</p>
+  <div class="docmeta">
+    <b>Design</b><span>Single-arm observational physiological study</span>
+    <b>Participants</b><span>20 adults, elective surgery under general anaesthesia</span>
+    <b>Exposure</b><span>Tracheal tube clamped at end-expiration, up to 180 s</span>
+    <b>Primary outcome</b><span>Airway pressure at 180 s</span>
+    <b>Status</b><span>Draft &mdash; sections marked below require completion</span>
+  </div>
+</header>
+
+<div class="todo"><b>Before anything else</b>
+This is a scientific protocol, not a submittable application. It contains the parts that follow
+from the modelling work: rationale, hypotheses, design, outcomes, sample size, analysis and the
+physiological risk argument. It does <strong>not</strong> contain sponsor details, indemnity,
+local governance, the participant information sheet, the consent form, data-protection
+documentation, or investigator details, and the clinical risk judgements need the sign-off of a
+named clinical investigator rather than the model's author. Every such gap is flagged in this
+colour.</div>
+
+<section>
+  <h2><span class="n">1</span> Background and rationale</h2>
+
+  <h3><span class="n">1.1</span> The gap</h3>
+  <p>What happens inside a sealed chest during apnoea is described by three bodies of work, none of
+  which overlap. Each measured one channel well and the others not at all.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Source</th><th>Subjects</th><th>Measured</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Moreault 2021<br><span style="color:var(--ink3)">Can J Anesth 68:791–800</span></td>
+          <td>Adults, one lung isolated, chest closed</td>
+          <td>Intrabronchial pressure</td>
+          <td class="n">−20 (5) at 504 mL absorbed<br>−31 (10) at 630 mL</td></tr>
+      <tr><td>Stock 1989<br><span style="color:var(--ink3)">J Clin Anesth 1:328–32</span></td>
+          <td>14 adults, tracheal tube clamped</td>
+          <td>Arterial PCO₂</td>
+          <td class="n">12 mmHg first minute<br>then 3.4 mmHg/min</td></tr>
+      <tr><td>Chen &amp; Scharf 1998<br><span style="color:var(--ink3)">J Appl Physiol 84:1289–98</span></td>
+          <td>9 sedated pigs</td>
+          <td>Haemodynamics, intrathoracic pressure</td>
+          <td class="n">CO 2.97 → 2.39 L/min on air<br>unchanged on 100% O₂</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3><span class="n">1.2</span> Why the separation matters</h3>
+  <p>These three are not independent. Airway pressure, alveolar volume, cardiac output and the rate
+  of CO₂ accumulation are coupled: the more negative the intrathoracic pressure, the more the
+  circulation is loaded; the greater the cardiac output, the faster CO₂ is delivered to the lung.
+  A computational model of apnoeic oxygenation and airway obstruction, developed independently of
+  this proposal, <strong>cannot satisfy all three measurements simultaneously</strong>. Softening
+  the lung mechanics to match Moreault's pressures raises cardiac output and takes the CO₂ rate
+  further from Stock's; removing the mechanical cardiac coupling — which Chen &amp; Scharf's own
+  oxygenated control arm shows should not be there — makes the CO₂ rate worse again.</p>
+  <p>There is currently no way to know which limb is wrong, because no study has measured more than
+  one of them in the same person.</p>
+
+  <h3><span class="n">1.3</span> Why it is worth resolving</h3>
+  <ul>
+    <li><strong>Cannot intubate, cannot oxygenate.</strong> Rescue oxygenation through a narrow-bore
+      cannula depends on what state the lung is in when the neck is opened — its volume, its
+      pressure, and how much of it has collapsed. Published simulation work models this without
+      measured constraint on any of the three.</li>
+    <li><strong>Apnoeic oxygenation and prolonged apnoea techniques.</strong> Increasingly used, and
+      the safe limits are inferred from models that disagree with one another.</li>
+    <li><strong>Barotrauma risk in cannula rescue.</strong> Depends directly on the pressure the lung
+      starts from, which has never been measured in a whole obstructed thorax.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="n">2</span> Objectives and hypotheses</h2>
+  <p>Hypotheses are stated quantitatively and registered before recruitment. Predictions come from
+  the computational model at a fixed, recorded version, and the model is explicitly
+  <strong>not</strong> assumed correct — the study is designed to be able to refute it.</p>
+
+  <h3><span class="n">2.1</span> Primary</h3>
+  <p>To measure airway pressure in a preoxygenated, paralysed adult whose tracheal tube is clamped
+  at end-expiration, and to distinguish two competing accounts:</p>
+  <div class="tw"><table>
+    <thead><tr><th>Account</th><th>Mechanism</th><th>Prediction at 180 s</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Progressive</strong></td>
+          <td>Gas absorption draws the whole thorax inward against chest wall recoil; pressure falls
+              continuously and steepens as the lung passes residual volume</td>
+          <td class="n">−14 to −16 cmH₂O<br>still falling</td></tr>
+      <tr><td><strong>Self-limiting</strong></td>
+          <td>Units close and leave the mechanical circuit, relieving the deficit; pressure plateaus
+              near the closing pressure</td>
+          <td class="n">−8 to −12 cmH₂O<br>plateaued</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3><span class="n">2.2</span> Secondary</h3>
+  <ol>
+    <li><strong>CO₂.</strong> Is the rate of rise of PaCO₂ over minutes 1–3 closer to Stock's
+      3.4 mmHg/min or to the model's 4.3 mmHg/min? Predicted PaCO₂ at 180 s: <code>58–59 mmHg</code>.</li>
+    <li><strong>Haemodynamics.</strong> Does cardiac output fall as intrathoracic pressure becomes
+      negative in an <em>oxygenated</em> subject? Chen &amp; Scharf's oxygen arm and the model both
+      predict <strong>no fall</strong>; their room-air arm, and the mechanical coupling still present
+      in the model, predict one. Predicted CO at 180 s: <code>within 5% of baseline</code>.</li>
+    <li><strong>Entrained volume.</strong> How much gas rushes in when the occlusion is released?
+      This is the net gas the lung has lost, expressed at atmospheric pressure. It is a
+      <em>molar</em> measurement, so unlike the pressure channel it does not depend on where the
+      transducer sits, nor on whether small airways have closed between the transducer and the
+      alveoli. It therefore constrains the mass balance that generates the pressure in the first
+      place. Predicted at 180 s: <code>735–740 mL</code>.</li>
+    <li><strong>Coupling.</strong> Within subjects, does the CO₂ rate covary with the airway
+      pressure reached? This is the observation no existing dataset can provide, and the one that
+      identifies which limb of the model is at fault.</li>
+  </ol>
+
+  <h3><span class="n">2.3</span> Pre-specified predictions</h3>
+  <p>Registered in full before recruitment, from the model at a recorded commit, for a 70 kg,
+  1.75 m adult:</p>
+  <div class="tw"><table>
+    <thead><tr><th>Time</th><th>Airway pressure</th><th>PaCO₂</th><th>SaO₂</th><th>Cardiac output</th><th>MAP</th><th>Entrained volume<br><span style="font-weight:400;font-size:11px">if released now</span></th></tr></thead>
+    <tbody>
+      <tr><td>30 s</td><td class="n">−2.1</td><td class="n">49.3</td><td class="n">100.0</td><td class="n">4.05</td><td class="n">70</td><td class="n">100</td></tr>
+      <tr><td>60 s</td><td class="n">−4.9</td><td class="n">52.5</td><td class="n">100.0</td><td class="n">4.15</td><td class="n">71</td><td class="n">235</td></tr>
+      <tr><td>120 s</td><td class="n">−10.4</td><td class="n">54.4</td><td class="n">99.9</td><td class="n">4.19</td><td class="n">70</td><td class="n">494</td></tr>
+      <tr><td>180 s</td><td class="n">−15.6</td><td class="n">58.8</td><td class="n">98.4</td><td class="n">4.30</td><td class="n">71</td><td class="n">739</td></tr>
+    </tbody>
+  </table></div>
+  <p style="font-size:13px;color:var(--ink3)">Units: cmH₂O, mmHg, %, L·min⁻¹, mmHg, mL. The model
+  additionally predicts a strong dependence on body habitus — at BMI 32.7 it reaches its pressure
+  floor by 120 s with SaO₂ 83.9% at 180 s — which is the basis for the BMI limit in §3.2.</p>
+
+  <h3><span class="n">2.4</span> What the entrained volume is made of</h3>
+  <p>The entrained volume is not an independent quantity bolted on to the other three — it is the
+  same gas balance seen from the other side, and that is what makes it useful. At 180 s the model
+  puts it at 739 mL, of which:</p>
+  <div class="tw"><table>
+    <thead><tr><th>Component</th><th>Change in alveolar<br>content by 180 s</th><th>What it is</th></tr></thead>
+    <tbody>
+      <tr><td>Oxygen</td><td class="n">−840</td><td>Cumulative alveolar uptake; 232 mL·min⁻¹ at this patient's anaesthetised VO₂</td></tr>
+      <tr><td>Carbon dioxide</td><td class="n">−9</td><td>Almost exactly nil, for an instructive reason: PACO₂ rises 43% while the lung shrinks 36%, so the two nearly cancel and the alveolus ends up holding slightly <em>less</em> CO₂ than it started with. This is the CO₂ question of §2.2(1) seen as a volume</td></tr>
+      <tr><td>Nitrogen</td><td class="n">+110</td><td>Returned from the tissue stores by perfusion; this is what splints the lung and sets the volume floor</td></tr>
+      <tr><td><strong>Net</strong></td><td class="n"><strong>−739</strong></td><td>The gas the lung has lost, and therefore the <strong>739 mL</strong> that must be put back on release — ≈ 250 mL·min⁻¹, or 88% of cumulative oxygen uptake</td></tr>
+    </tbody>
+  </table></div>
+  <p>So the measurement is, in effect, a direct <em>in vivo</em> measurement of apnoeic oxygen
+  uptake, which cannot otherwise be obtained in an obstructed patient. Because the CO₂ and N₂ terms
+  are of opposite sign and comparable size, a systematic error in either limb of the model shows up
+  in the volume even when it is invisible in the arterial CO₂.</p>
+
+  <div class="key">
+    <p><b>The recruitment test.</b> The model predicts that release restores the lung to its
+    relaxed FRC in full: its refill term targets FRC unconditionally, with no term that withholds
+    gas from units that have closed. If collapsed lung does <em>not</em> reopen at the few cmH₂O
+    the passive inrush generates — which is what Rothen's data imply, since 20 cmH₂O barely moved
+    atelectasis and 30–40 cmH₂O were needed to clear it — the measured volume falls short of the
+    predicted volume by the trapped volume.</p>
+    <p>Predicted shortfall if nothing reopens: <b>125 mL at BMI 22.9, 161 mL at BMI 32.7</b> —
+    17 to 23% of the entrained volume. The model cannot produce a shortfall of any size, so
+    observing one refutes its recruitment limb outright, without needing to argue about the
+    pressure at all.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">3</span> Design and participants</h2>
+
+  <h3><span class="n">3.1</span> Design</h3>
+  <p>Single-centre, single-arm observational physiological study. Each participant contributes one
+  measurement sequence. There is no randomisation, no comparator arm and no therapeutic intent.</p>
+
+  <h3><span class="n">3.2</span> Eligibility</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Inclusion</th><th>Exclusion</th></tr></thead>
+    <tbody><tr>
+      <td>
+        <ul style="margin:0;padding-left:17px">
+          <li>Adults ≥18 years</li>
+          <li>Elective surgery under general anaesthesia with tracheal intubation and neuromuscular blockade</li>
+          <li><strong>Arterial line already clinically indicated</strong>, so the study adds no invasive procedure</li>
+          <li>ASA I–III</li>
+          <li>BMI &lt; 30 kg·m⁻²</li>
+        </ul>
+      </td>
+      <td>
+        <ul style="margin:0;padding-left:17px">
+          <li>Significant respiratory disease, or SpO₂ &lt; 96% on air</li>
+          <li>Significant cardiac disease, or known pulmonary hypertension</li>
+          <li>Raised intracranial pressure, or any contraindication to hypercapnia</li>
+          <li>Anticipated difficult airway</li>
+          <li>Pregnancy</li>
+          <li>Anaemia (Hb &lt; 100 g·L⁻¹)</li>
+        </ul>
+      </td>
+    </tr></tbody>
+  </table></div>
+  <p>The BMI limit is a safety decision, not a convenience one: desaturation is faster and the
+  pressure excursion larger in the obese, and the discriminating measurement can be made safely in
+  patients of normal habitus. Extension to higher BMI should be a separate application once the
+  normal-BMI data exist.</p>
+
+  <h3><span class="n">3.3</span> Sample size</h3>
+  <p>The two accounts in §2.1 differ by approximately <strong>5 cmH₂O</strong> at 180 s. Moreault
+  reports a standard deviation of 5 cmH₂O for a comparable measurement. Twenty participants give a
+  standard error of 1.12 and a 95% confidence interval of ±2.19 cmH₂O, which separates the two
+  predictions with a wide margin; 11 would suffice for 90% power at α = 0.05. Twenty is proposed to
+  power the secondary outcomes — for the CO₂ slope it gives a confidence interval of
+  ±0.35 mmHg·min⁻¹ against a 0.9 mmHg·min⁻¹ difference — and to allow for withdrawal or aborted
+  sequences.</p>
+  <p>The entrained volume is the best-powered of the secondary outcomes, and it is the measurement
+  method rather than the sample size that determines whether it is worth making. The discriminant
+  is the 125–161 mL recruitment shortfall of §2.4. A calibrated syringe reads to ±5–10 mL, so the
+  shortfall is resolved in a single participant and twenty give it with certainty. Integrated flow,
+  at a realistic ±10% on a 739 mL volume, carries an error of ±74 mL against a 125 mL discriminant
+  — enough to detect the shortfall on the group mean, not enough to attribute it to an
+  individual. This is why §4.3 makes the syringe the primary method and the flow meter the
+  cross-check, and not the other way round.</p>
+</section>
+
+<section>
+  <h2><span class="n">4</span> Procedure</h2>
+
+  <h3><span class="n">4.1</span> Before the sequence</h3>
+  <ol>
+    <li>Anaesthesia induced and maintained by the treating anaesthetist to their usual practice.
+      Trachea intubated, position confirmed by capnography.</li>
+    <li>Arterial line sited as clinically indicated. Baseline arterial blood gas.</li>
+    <li>Full neuromuscular blockade confirmed by train-of-four.</li>
+    <li>Preoxygenation to <strong>end-tidal O₂ ≥ 0.85</strong>, confirmed on the gas analyser.</li>
+    <li>Five minutes of stable ventilation. Baseline haemodynamics recorded.</li>
+    <li>The sequence takes place <strong>before surgery begins</strong>, with the patient otherwise
+      ready. It does not delay the operation by more than approximately five minutes.</li>
+  </ol>
+
+  <h3><span class="n">4.2</span> The sequence</h3>
+  <ol>
+    <li>At end-expiration, the tracheal tube is occluded at the connector. Pressure transducer in
+      line at the tube, zeroed to atmosphere.</li>
+    <li>Occlusion maintained for <strong>up to 180 seconds</strong>.</li>
+    <li>Arterial blood sampled at 0, 60, 120 and 180 s.</li>
+    <li>Airway pressure, ECG, invasive arterial pressure, SpO₂ and cardiac output recorded
+      continuously at ≥ 25 Hz.</li>
+    <li>At 180 s the release manoeuvre of §4.3 is performed, then ventilation is resumed and a
+      single recruitment manoeuvre given to the anaesthetist's usual practice.
+      <strong>At any stopping criterion the tube is released and ventilation resumed immediately,
+      with no measurement of any kind.</strong></li>
+    <li>Arterial blood gas at 5 and 10 minutes after resumption.</li>
+  </ol>
+
+  <div class="stopbox">
+    <h4>Stopping criteria — any one ends the sequence immediately</h4>
+    <ul>
+      <li><strong>SpO₂ &lt; 94%</strong></li>
+      <li>Mean arterial pressure falls more than 20% below baseline, or below 60 mmHg</li>
+      <li>Any new arrhythmia, or heart rate outside 40–120 min⁻¹</li>
+      <li>Airway pressure more negative than <strong>−40 cmH₂O</strong></li>
+      <li>Any clinical concern of the treating anaesthetist, at their sole discretion and without
+        needing to give a reason</li>
+      <li>Request of the surgical team</li>
+    </ul>
+  </div>
+  <p>The treating anaesthetist is not an investigator for the sequence and retains unconditional
+  authority to stop it. An aborted sequence is recorded and analysed as far as it went; it is not a
+  protocol violation and the participant is not replaced unless fewer than 60 s were obtained.</p>
+
+  <h3><span class="n">4.3</span> Measuring the entrained volume</h3>
+  <p>The manoeuvre adds 15–20 seconds to the apnoea and is therefore permitted only when the
+  sequence has run to 180 s with SpO₂ ≥ 96% and no stopping criterion met, and only with the
+  treating anaesthetist's agreement <em>at that moment</em>. It is abandoned at once, and the
+  patient ventilated, on any change. It is a secondary outcome and no participant is replaced for
+  not having it.</p>
+
+  <p><b>Primary method — syringe restoration.</b> With the tube still occluded and the transducer
+  in line, gas of the same composition as the inspired mixture is injected from a calibrated
+  large-volume syringe in steps until airway pressure returns to zero. The total injected volume,
+  corrected as below, is the entrained volume.</p>
+  <ul>
+    <li><b>Temperature and humidity.</b> Syringe gas is dry at ambient temperature; the ATPD→BTPS
+      factor at 21 °C is ≈ 1.12 and is applied to the injected volume. Ambient temperature and
+      pressure are recorded for each participant.</li>
+    <li><b>Continued absorption.</b> Gas is still being absorbed at ≈ 4 mL·s⁻¹ during the
+      manoeuvre. Elapsed time from release of the first step to the zero-pressure endpoint is
+      recorded and the absorbed volume added back.</li>
+    <li><b>Apparatus dead space.</b> The volume of the syringe connector and tap is measured by
+      water displacement once and subtracted.</li>
+  </ul>
+  <p>This is the only method that measures pressure and volume <em>on the same lung at the same
+  instant</em>. It is what Moreault could not do: their resorbed volumes and their airway pressures
+  came from two separately randomised groups, so every volume–pressure pair in that dataset is a
+  pair of cohort means rather than an observation.</p>
+
+  <p><b>Secondary method — flow integration.</b> A wide-range ultrasonic flow meter at the tube,
+  integrated from release to zero flow. Retained only as a cross-check, because the model predicts
+  a peak flow of <b>7.8 L·s⁻¹</b> with 90% of the volume delivered within <b>0.20 s</b> and flow
+  below 1% of peak by 0.42 s, which is
+  outside the linear range of a conventional heated pneumotachograph and whose added resistance
+  would itself alter the quantity being measured. Transit-time ultrasonic devices are preferred
+  because they respond to molar flow and are comparatively insensitive to gas composition, which
+  changes during the inrush.</p>
+
+  <p><b>Regional distribution — electrical impedance tomography.</b> Recorded continuously through
+  the sequence and the release. EIT gives no absolute volume, but it answers the question the total
+  volume cannot: whether the entrained gas enters dependent lung, which is recruitment, or only
+  already-open non-dependent lung, which is not.</p>
+
+  <div class="todo"><b>Optional extension — requires separate approval</b>
+  Injection continued beyond the zero-pressure endpoint in 100 mL steps, with a 3 s pause at each to
+  read static pressure, yields a static inflation pressure–volume curve from the apnoeic point
+  upward; the pressure at which compliance rises sharply is the opening pressure of the collapsed
+  lung, which is the quantity that separates the model's 3–12 cmH₂O from Rothen's 30–40. This takes
+  airway pressure above atmospheric in an apnoeic patient and is not part of the main protocol. It
+  is described here so that it can be considered on its own merits, with its own risk assessment and
+  its own consent, and it should not be approved as a rider to this study.</div>
+</section>
+
+<section>
+  <h2><span class="n">5</span> Risk and its mitigation</h2>
+  <div class="key"><p>The central ethical argument is that <strong>this exposure already happens,
+  unplanned and unmeasured, in routine practice</strong>. A ventilator disconnection, a period of
+  apnoea during a difficult intubation, or an apnoea test are all the same physiological event. What
+  this study adds is not the exposure but the measurement, a bounded duration, and stopping rules
+  that ordinary practice does not have.</p></div>
+
+  <div class="tw"><table>
+    <thead><tr><th>Risk</th><th>Assessment</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Hypoxaemia</strong></td>
+          <td>Predicted SaO₂ at 180 s is 98.4% after preoxygenation to ETO₂ ≥ 0.85. The model
+              predicts SpO₂ reaches 95% at approximately 253 s and the 94% stopping threshold at
+              approximately 261 s, so the sequence ends more than a minute before the rule fires.</td>
+          <td>Preoxygenation to a measured endpoint; continuous SpO₂; stopping rule at 94%, which is
+              above the threshold at which any harm is plausible; immediate reconnection to 100% O₂.</td></tr>
+      <tr><td><strong>Hypercapnia and acidaemia</strong></td>
+          <td>Predicted PaCO₂ 58 mmHg and pH approximately 7.28 at 180 s. Transient, and of no
+              consequence in a patient without raised intracranial pressure or pulmonary
+              hypertension — both excluded.</td>
+          <td>Duration bounded at 180 s; exclusions as above; resolves within minutes of resumed
+              ventilation, confirmed by the 5 and 10 minute gases.</td></tr>
+      <tr><td><strong>Negative-pressure pulmonary oedema</strong></td>
+          <td>Requires vigorous inspiratory effort against a closed airway, at pressures of −50 to
+              −100 cmH₂O. The participant is <strong>fully paralysed</strong> and makes no effort;
+              the pressure arises passively from gas absorption and is predicted at −16 cmH₂O.</td>
+          <td>Confirmed neuromuscular blockade before the sequence; stopping rule at −40 cmH₂O, well
+              short of the range associated with this complication.</td></tr>
+      <tr><td><strong>Atelectasis</strong></td>
+          <td>Real and expected. Absorption atelectasis develops during any apnoea at high inspired
+              oxygen and is routine after preoxygenation alone.</td>
+          <td>A single recruitment manoeuvre on resumption, which is standard practice after
+              induction irrespective of this study.</td></tr>
+      <tr><td><strong>Barotrauma</strong></td>
+          <td>Throughout the apnoea, not applicable: all pressures are subatmospheric. During the
+              volume measurement of §4.3 gas <em>is</em> delivered, but the endpoint is
+              <strong>zero</strong> airway pressure and the lung is returned only to its own
+              relaxation volume — a smaller inflation than the first ventilator breath that
+              follows it.</td>
+          <td>Injection stops at zero on the same transducer that recorded the apnoea; syringe
+              volume limited to 1000 mL, which is below the predicted requirement plus its widest
+              plausible error; the optional pressure–volume extension, which alone goes above
+              atmospheric, is excluded from this protocol.</td></tr>
+      <tr><td><strong>Extended apnoea for the volume measurement</strong></td>
+          <td>The manoeuvre of §4.3 adds 15–20 s beyond 180 s. Predicted SaO₂ at 200 s is 96.8%,
+              and the model does not put SpO₂ at the 94% stopping threshold until approximately 261 s.</td>
+          <td>Permitted only from a completed 180 s sequence with SpO₂ ≥ 96% and no stopping
+              criterion met, and only with the treating anaesthetist's agreement at that moment;
+              abandoned instantly on any change; never attempted after an aborted sequence. It is
+              a secondary outcome and no participant is replaced for going without it.</td></tr>
+      <tr><td><strong>Awareness</strong></td>
+          <td>Not increased. Anaesthesia is maintained unchanged throughout.</td>
+          <td>Depth monitoring to the anaesthetist's usual practice.</td></tr>
+      <tr><td><strong>Delay to surgery</strong></td>
+          <td>Approximately five minutes, or five and a half with the volume measurement.</td>
+          <td>Sequence performed while the patient is otherwise ready; abandoned at the surgical
+              team's request.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="todo"><b>Requires clinical sign-off</b>
+  The risk assessment above is drafted from published physiology and from model predictions. It must
+  be reviewed, amended and signed by the named clinical investigator before submission. In
+  particular the stopping thresholds — SpO₂ 94%, MAP −20%, airway pressure −40 cmH₂O — are proposed
+  values and are a clinical judgement, not a modelling one.</div>
+</section>
+
+<section>
+  <h2><span class="n">6</span> Outcomes and analysis</h2>
+
+  <h3><span class="n">6.1</span> Outcome measures</h3>
+  <div class="tw"><table>
+    <thead><tr><th></th><th>Measure</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td class="c"><strong>Primary</strong></td><td>Airway pressure</td><td>At 180 s, or at the last complete second before a stopping criterion</td></tr>
+      <tr><td class="c">Secondary</td><td>Airway pressure trajectory; time to plateau if any</td><td>Continuous</td></tr>
+      <tr><td class="c">Secondary</td><td>Rate of rise of PaCO₂</td><td>Slope over 60–180 s</td></tr>
+      <tr><td class="c">Secondary</td><td>Cardiac output, stroke volume, MAP, heart rate</td><td>Continuous; reported at 60, 120, 180 s</td></tr>
+      <tr><td class="c">Secondary</td><td>Entrained volume on release, BTPS-corrected</td><td>At release, 180 s</td></tr>
+      <tr><td class="c">Secondary</td><td>Shortfall of entrained volume against the registered prediction</td><td>Derived</td></tr>
+      <tr><td class="c">Secondary</td><td>Regional distribution of the inrush by EIT</td><td>At release</td></tr>
+      <tr><td class="c">Secondary</td><td>Within-subject association between pressure and CO₂ slope</td><td>Derived</td></tr>
+      <tr><td class="c">Safety</td><td>Lowest SpO₂; sequences stopped early and why; time to recovery of baseline gases</td><td>Throughout</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3><span class="n">6.2</span> Analysis</h3>
+  <ul>
+    <li>Primary outcome summarised as mean with 95% confidence interval, and compared against each
+      pre-specified prediction by one-sample <em>t</em> test. The registered predictions are the
+      comparators; no post-hoc alternative is admitted.</li>
+    <li>Pressure trajectories modelled by mixed-effects regression with a random intercept per
+      participant, testing for curvature — a plateau and a continuing fall are distinguishable by
+      the sign of the quadratic term.</li>
+    <li>CO₂ slope by linear regression within participant, then summarised across.</li>
+    <li>Haemodynamic change from baseline by paired comparison at each time point.</li>
+    <li>Entrained volume summarised as mean with 95% confidence interval and compared against the
+      registered 739 mL by one-sample <em>t</em> test. The recruitment test is one-sided in the
+      direction of a shortfall, since the model has no mechanism that could produce a surplus; a
+      surplus, if observed, is reported as a failure of the mass balance and not interpreted.</li>
+    <li>Coupling by within-subject correlation of pressure at 180 s against CO₂ slope, and of
+      entrained volume against pressure — the two are predicted to be tightly related, and a
+      dissociation between them localises the fault to the mechanics rather than the gas exchange.</li>
+    <li>Aborted sequences analysed to the point of abortion; no imputation.</li>
+  </ul>
+
+  <div class="todo"><b>To be completed</b>
+  Statistical analysis plan to be finalised and signed by a statistician before recruitment opens,
+  including handling of missing samples, multiplicity across the three secondary outcomes, and the
+  exact mixed-model specification.</div>
+</section>
+
+<section>
+  <h2><span class="n">7</span> Consent, data and governance</h2>
+  <p>Written informed consent at the pre-operative visit, by an investigator, with adequate time for
+  consideration. Participants are told what will be measured, that the exposure is a brief period of
+  apnoea of the kind that occurs in routine anaesthesia, that it carries the risks set out above,
+  that it will be stopped immediately on any concern, and that declining changes nothing about their
+  care.</p>
+
+  <div class="todo"><b>To be completed by the applicant</b>
+  Sponsor and chief investigator. Indemnity and insurance. Local research and development approval.
+  Participant information sheet and consent form in the institution's format. Data management plan,
+  lawful basis for processing and retention schedule. Trial registration. Funding and declarations
+  of interest. Investigator CVs and site details. Adverse event reporting route and the safety
+  monitoring arrangement, including whether an independent monitor is required for a study of this
+  size.</div>
+</section>
+
+<section>
+  <h2><span class="n">8</span> What the study settles</h2>
+  <p>Each result is informative, including the ones unfavourable to the model that motivated it.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Finding</th><th>Interpretation</th></tr></thead>
+    <tbody>
+      <tr><td>Pressure at 180 s near −15 and still falling</td>
+          <td>The thorax is drawn inward progressively. Collapse does not relieve the mechanical
+              deficit, and models that hold the lung near its relaxation volume during obstruction
+              are wrong.</td></tr>
+      <tr><td>Pressure plateaus near −10</td>
+          <td>Collapse is self-limiting. The model's lung mechanics are too stiff below residual
+              volume, and its predictions of the state of the lung at cricothyroidotomy are too
+              pessimistic.</td></tr>
+      <tr><td>CO₂ slope near 3.4 with either pressure result</td>
+          <td>The model's CO₂ handling under obstruction is 26% too fast independently of its
+              mechanics, and the fault is in gas transport rather than in the lung.</td></tr>
+      <tr><td>Cardiac output unchanged</td>
+          <td>Confirms that the fall seen in animal work is hypoxic and autonomic rather than
+              mechanical, and that the mechanical cardiac coupling in the model should be removed.</td></tr>
+      <tr><td>Entrained volume near 739 mL</td>
+          <td>The gas balance is right: oxygen uptake, alveolar CO₂ delivery and nitrogen return
+              are jointly correct under obstruction, and any error in the CO₂ result must then lie
+              in the blood and tissue stores rather than at the alveolus.</td></tr>
+      <tr><td>Entrained volume short by 100–200 mL</td>
+          <td>Lung that closed during the apnoea does not reopen at the pressures a passive inrush
+              generates. Rothen's opening pressures apply <em>in vivo</em>, the model's recruitment
+              limb is wrong, and the clinical implication — that relieving an obstruction does not
+              restore the lung — is the most consequential result the study could produce.</td></tr>
+      <tr><td>Entrained volume short by more than 200 mL, or PaCO₂ and volume disagree</td>
+          <td>The mass balance itself is wrong, not just its distribution. This would be the one
+              outcome that invalidates the model rather than correcting it, and it is the reason
+              the volume channel is worth the extra 20 seconds.</td></tr>
+      <tr><td>Pressure and CO₂ slope covary within subjects</td>
+          <td>Identifies the coupling directly, and tells us which of the two limbs to correct —
+              the observation no existing dataset can supply.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>
+  Predictions in §2.3 and §5 are generated from a computational model of apnoeic oxygenation and
+  airway obstruction at a fixed, recorded version, and are registered as falsifiable predictions
+  rather than offered as established physiology. The model is validated against 36 benchmarks
+  including the Moreault, Stock and Chen &amp; Scharf sources cited here, and its known
+  disagreements with those sources are the reason for this study. The model's own documentation
+  records that it cannot satisfy all three simultaneously.
+</footer>
+</div>
