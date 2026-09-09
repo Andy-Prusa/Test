@@ -417,9 +417,10 @@ that applies is the arm showing no effect.
 **But the parameter is not therefore unevidenced -- corrected September 2026.**
 Human Mueller-manoeuvre studies measure intrathoracic pressure and stroke
 volume simultaneously in normoxic subjects and DO find an effect: at ITP
--30 cmH2O held 15 s, LV stroke volume fell 10+-4 mL in 17 healthy adults,
-about -13% on a young-adult baseline, i.e. a gain near 0.0044 per cmH2O; Buda
-and Scharf found aortic flow down 10.1+-6.6% by the fifth beat. Our 0.0025
+-30 cmH2O held 15 s, LV stroke volume fell 10+-4 mL in 17 healthy adults
+(AJP-Heart 2023), about -13% on a young-adult baseline, i.e. a gain near 0.0044
+per cmH2O; Condos et al. (Circulation 1987;76:1020) found aortic flow down
+10.1+-6.6% by the fifth beat in 10 catheterised subjects. Our 0.0025
 sits inside that range at the conservative end. What is wrong is the CITATION,
 not necessarily the number.
 

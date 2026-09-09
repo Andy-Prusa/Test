@@ -40,15 +40,23 @@ of the model is wrong, because those two are what the Muller effect couples.
 These measure intrathoracic pressure and stroke volume simultaneously, in
 normoxic humans, and they do show an effect.
 
-- **Healthy adults, n=17 (10M/7F, 24+-4 y), ITP -30 cmH2O held 15 s**,
-  echocardiography with speckle tracking: LV stroke volume **-10+-4 mL**,
-  LVEDV -11+-9 mL, returning to baseline on release. On a young-adult baseline
-  SV near 75 mL that is about **-13%**, i.e. a gain near **0.0044 per cmH2O**.
-  (Circ Cardiovasc Imaging 10.1161/CIRCIMAGING.109.901561, and the AJP-Heart
-  2023 companion.)
-- **Buda / Scharf, Circulation 1987;76:1020**, right and left heart
-  micromanometry with Doppler: mitral and aortic flow fell **12.2+-7.2%** and
-  **10.1+-6.6%** by the fifth beat. Pressure not confirmed from the abstract.
+- **AJP-Heart 2023** (doi 10.1152/ajpheart.00505.2023). Healthy adults,
+  **n=17 (10M/7F, 24+-4 y), ITP -30 cmH2O held 15 s**, echocardiography with
+  speckle tracking: LV stroke volume **-10+-4 mL**, LVEDV -11+-9 mL, returning
+  to baseline on release. On a young-adult baseline SV near 75 mL that is about
+  **-13%**, i.e. a gain near **0.0044 per cmH2O**. This is the single most
+  useful number on the page and the one to verify first.
+- **Koshino Y, Villarraga HR, Orban M, et al. Circ Cardiovasc Imaging
+  2010;3(3):282-9.** n=24 healthy (9 women, 30+-6 y), Mueller to a target of
+  **-40 mmHg**. Reports myocardial strain and strain rate, not stroke volume
+  directly -- so it constrains the mechanism but not the gain.
+- **Condos WR, Latham RD, Hoadley SD, Pasipoularides A. Circulation
+  1987;76:1020-8.** n=10 with normal haemodynamics at elective cardiac
+  catheterisation, right and left heart multisensor micromanometry with
+  Doppler: mitral and aortic flow fell **12.2+-7.2%** and **10.1+-6.6%** by the
+  fifth beat, with SVR and LV peak dP/dt up and heart rate unchanged. The
+  intrathoracic pressure achieved is not stated in the abstract, so no gain can
+  be computed from this one yet.
 - **CHF patients at -40 cmH2O**: stroke volume index **-33%** (J Appl Physiol
   1998;85:1476). A failing ventricle is far more preload-dependent, so this is
   not our patient.
@@ -72,8 +80,13 @@ the protocol's haemodynamic channel measures.
 
 ## C + H — the brain-death apnoea test. A candidate second benchmark.
 
-**Haemodynamic changes during the apnoea test for diagnosis of brain death**,
-Can J Anaesth (doi 10.1007/BF03007579), n=9, severe head injury or CVA.
+**Ebata et al. Haemodynamic changes during the apnoea test for diagnosis of
+brain death. Can J Anaesth 1991;38:436-40** (doi 10.1007/BF03007579), n=9,
+severe head injury or CVA. The authors' own conclusion is that the test did NOT
+produce haemodynamic disturbance, with acidosis limited to pH 7.17+-0.02 and
+PaCO2 60-80 mmHg -- so the cardiac output rise below is an incidental
+observation in that paper, not its subject, which is a reason to read the
+methods carefully before treating it as a benchmark.
 Ventilator disconnected ten minutes with oxygen insufflation, so the airway is
 PATENT and intrathoracic pressure stays near zero. That is what makes it
 useful: it isolates the CO2 effect from the Muller effect.
@@ -187,8 +200,25 @@ Recorded so the same false leads are not followed again.
 3. **Search the one-lung-ventilation literature properly** for bronchial
    pressure paired with arterial gases. This is where a P+C dataset would be,
    if one exists anywhere.
-4. Get the Mueller papers to confirm the pressures and baseline stroke volumes,
-   so the acute upper bound on `sv_itp_gain` can be stated numerically rather
-   than estimated from a percentage.
+4. Get **AJP-Heart 2023** first of the Mueller papers -- it is the one with the
+   stroke-volume change and a stated pressure. Baseline SV is what turns
+   -10+-4 mL into a gain; everything else about `sv_itp_gain` waits on it.
+   Condos 1987 second, for the pressure it achieved.
 5. Douglas 1988 full text, for the red-cell CO2 correction. Unchanged from
    before.
+
+## Likely access status
+
+Judged from publisher policy and from whether search surfaced a full-text or
+abstract-only link. **Not verified** -- this environment cannot open any of
+them, so treat as a starting order, not a fact.
+
+| Paper | Expected |
+|---|---|
+| OLV review, doi 10.3390/jcm15135078 | **Open access.** MDPI, and it has a PMC record |
+| Condos, Circulation 1987;76:1020 | **Probably free.** AHA opens content after 12 months and search surfaced a direct `/doi/pdf/` link |
+| Koshino, Circ Cardiovasc Imaging 2010 | **Probably free.** Same AHA policy; search surfaced `/doi/full/` |
+| AJP-Heart 2023, ajpheart.00505.2023 | **Probably free.** APS opens research articles 12 months after publication |
+| Ebata, Can J Anaesth 1991;38:436 | **Probably paywalled.** Springer; some BF-prefix content is free, worth a click |
+| Douglas, J Appl Physiol 1988;65:473 | **Probably paywalled.** APS pre-1997 archive is not covered by the 12-month rule; search found abstract only |
+| Stock, J Clin Anesth 1989;1:328 | **Probably paywalled.** Elsevier, 1989, abstract only |
