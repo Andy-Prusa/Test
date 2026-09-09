@@ -249,12 +249,22 @@ class Patient:
     #     room air dropped cardiac output 2.97 -> 2.39 L/min while MAP rose
     #     103 -> 124 Torr (J Appl Physiol 1998;84:1289).
     sv_co2_gain: float = 0.0045   # per mmHg PaCO2 over 40; see above
-    # The Muller coupling is kept deliberately small. In the pig study the
-    # animals were SEDATED and making inspiratory efforts against a closed
-    # airway, which generates large negative swings actively. Our patient is
-    # paralysed: the subatmospheric pressure develops slowly from gas
-    # absorption alone, with no inspiratory effort behind it. The pig
-    # magnitude therefore does not transfer, and tuning to it would be wrong.
+    # The Muller coupling is kept deliberately small, and READ THIS BEFORE
+    # TOUCHING IT. The figures quoted above are that study's ROOM-AIR arm. Its
+    # OXYGEN arm reached the same -31 Torr (-42 cmH2O) intrathoracic pressure
+    # with oxygenation preserved and found stroke volume and cardiac output
+    # UNCHANGED, so the fall in the room-air arm is hypoxaemia and its
+    # autonomic consequences, not the mechanical Muller effect. Our patient is
+    # the oxygenated one. The mechanical coupling the source supports is
+    # therefore about zero, and this term is not evidenced.
+    # It is retained anyway, because deleting it in isolation makes the fit
+    # WORSE: the Stock obstructed slope goes 4.35 -> 4.51 against a measured
+    # 3.4, and `stiff_below_rv` is coupled to it through the same pathway. See
+    # "Known disagreement" in HANDOVER.md. Do not remove this on its own.
+    # (The pig magnitude would not transfer in any case: those animals were
+    # sedated and making inspiratory efforts against a closed airway, which
+    # generates large swings actively, where ours is paralysed and the
+    # subatmospheric pressure develops slowly from gas absorption alone.)
     sv_itp_gain: float = 0.0025   # per cmH2O of subatmospheric alveolar pressure
     itp_fraction: float = 0.60    # alveolar pressure transmitted to the pleura
     svr_base: float = 18.0        # mmHg per L/min (~1440 dyne.s.cm-5)
