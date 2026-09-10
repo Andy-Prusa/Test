@@ -183,9 +183,10 @@ body.zen .flat{font-size:clamp(9px,1.3vh,12px);padding:2px 0}
 <div class="side" id="side">
 <h1>Every time the airway opens, something rushes in</h1>
 <p class="sub">Obstructed from induction. Both arms are physically identical until 7:10 &mdash;
-the only difference is what sits in the pharynx when each inrush happens. The bottle is the
-lung: bright is oxygen, dull is nitrogen and CO&#8322;, the dark gap is the vacuum obstruction
-creates. Move the sliders and the whole simulation re-runs. Collapsibility defaults to
+the only difference is what sits in the pharynx when each inrush happens. In the lungs,
+bright is oxygen, dull is nitrogen and CO&#8322;, the dark gap is the vacuum obstruction
+creates, and the bases go violet as they collapse. The head turns blue on deoxygenated
+haemoglobin rather than saturation, so an anaemic patient never looks as bad as they are. Move the sliders and the whole simulation re-runs. Collapsibility defaults to
 the calibrated median; the patients who desaturate despite good tracheal oxygen sit near
 the top of its range.</p>
 
@@ -523,32 +524,131 @@ const at=(a,k,t)=>t>=a.t[a.t.length-1]?a[k][a[k].length-1]:a[k][Math.min(Math.ro
 const alive=(a,t)=>t<=a.t[a.t.length-1];
 const isOpen=(k,t)=>(t>=120&&t<130)||(k==='B'?t>=280:(t>=280&&t<430));
 
-function bottle(k,t){
+// The patient, as the anaesthetist sees them from the head of the table: two
+// lungs beyond, the head in profile nearest, the trachea between. Fill height
+// is gas volume, bright is oxygen, dull is nitrogen and CO2, the dark gap above
+// is the vacuum obstruction creates.
+//
+// Two things here are physiology rather than decoration. The bases go violet as
+// compartments collapse, because collapse starts dependent and the tilt slider
+// moves it. And the head turns blue on DEOXYGENATED HAEMOGLOBIN, not on
+// saturation: cyanosis needs roughly 5 g/dL of it, so at Hb 15 the head starts
+// turning near SpO2 67% while at Hb 4 it can never turn at all, however dead
+// the patient is. That trap falls straight out of the Hb slider.
+const SKIN=[198,158,136], CYAN=[86,100,158], ATEL=[122,74,140];
+function mixc(a,b,f){f=Math.max(0,Math.min(1,f));
+ // parenthesised: without them these are string concatenations, not sums,
+ // and the head renders white at every saturation.
+ const m=i=>Math.round(a[i]+(b[i]-a[i])*f);
+ return 'rgb('+m(0)+','+m(1)+','+m(2)+')';}
+
+// One lung in a normalised box; mirrored for the other side so the concave
+// medial border faces the trachea on both.
+function lungPath(g,x,y,w,h,flip){
+ g.save(); g.translate(x+(flip?w:0),y); g.scale(flip?-1:1,1);
+ g.beginPath();
+ g.moveTo(w*0.66,h*0.02);
+ g.bezierCurveTo(w*0.40,h*0.00, w*0.04,h*0.24, w*0.07,h*0.64);
+ g.bezierCurveTo(w*0.09,h*0.89, w*0.22,h*0.99, w*0.44,h*0.99);
+ g.lineTo(w*0.82,h*0.99);
+ g.bezierCurveTo(w*0.95,h*0.72, w*0.92,h*0.34, w*0.80,h*0.16);
+ g.bezierCurveTo(w*0.75,h*0.06, w*0.71,h*0.02, w*0.66,h*0.02);
+ g.closePath(); g.restore();
+}
+
+// Profile, neck uppermost so the trachea meets it, face to the viewer's left.
+// The facial detail is drawn with straight segments and the cranium with
+// curves; smoothing the nose and lips rounds them away at this size.
+function headPath(g,cx,yN,h){
+ const X=v=>cx+v, Y=u=>yN+u*h;
+ g.beginPath();
+ g.moveTo(X(-17),Y(0.00));
+ g.lineTo(X(-31),Y(0.11));            // jaw angle
+ g.lineTo(X(-41),Y(0.23));            // chin
+ g.lineTo(X(-47),Y(0.30));            // lower lip
+ g.lineTo(X(-43),Y(0.34));            // mouth
+ g.lineTo(X(-48),Y(0.38));            // upper lip
+ g.lineTo(X(-46),Y(0.42));            // nose base
+ g.lineTo(X(-63),Y(0.47));            // nose tip
+ g.lineTo(X(-45),Y(0.54));            // bridge
+ g.lineTo(X(-49),Y(0.61));            // brow
+ g.bezierCurveTo(X(-48),Y(0.76), X(-32),Y(0.94), X(-6),Y(0.98));   // forehead
+ g.bezierCurveTo(X(16),Y(1.01), X(40),Y(0.94), X(48),Y(0.76));     // vertex
+ g.bezierCurveTo(X(55),Y(0.58), X(50),Y(0.34), X(34),Y(0.18));     // occiput
+ g.lineTo(X(25),Y(0.00));             // back of neck
+ g.closePath();
+}
+
+function patient(k,t){
  const cv=cvs[k],a=D[k],g=cv.getContext('2d'),W=cv.width,H=cv.height;
  g.clearRect(0,0,W,H);
- const L=46,R=W-46,top=14,nT=H-96,nB=H-38,nL=W/2-19,nR=W/2+19;
- const path=()=>{g.beginPath();g.moveTo(L,top+14);g.quadraticCurveTo(L,top,L+14,top);
-  g.lineTo(R-14,top);g.quadraticCurveTo(R,top,R,top+14);g.lineTo(R,nT-28);
-  g.quadraticCurveTo(R,nT,nR,nT+6);g.lineTo(nR,nB);g.lineTo(nL,nB);g.lineTo(nL,nT+6);
-  g.quadraticCurveTo(L,nT,L,nT-28);g.closePath();};
- path();g.save();g.clip();
- const vol=at(a,'vol',t),fao2=at(a,'fao2',t),body=nT-top;
- const fill=Math.max(0,Math.min(1,vol/a.frc)),liqTop=top+body*(1-fill);
- g.fillStyle='#0a1218';g.fillRect(0,0,W,H);
- g.fillStyle=css('--inert');g.fillRect(0,liqTop,W,H-liqTop);
- const o2h=(nT-liqTop)*Math.max(0,Math.min(1,fao2));
- g.fillStyle=css('--o2');g.fillRect(0,nT-o2h,W,H-(nT-o2h));
- g.strokeStyle='rgba(255,255,255,.45)';g.lineWidth=1;
- g.beginPath();g.moveTo(0,liqTop+.5);g.lineTo(W,liqTop+.5);g.stroke();
- g.restore();
- path();g.strokeStyle=css('--rule2');g.lineWidth=2;g.stroke();
- const op=isOpen(k,t);
- g.fillStyle=op?css('--o2'):css('--alarm');g.fillRect(nL-6,nB,50,op?7:11);
- g.fillStyle=css('--dim');g.textAlign='center';g.font="13px 'Barlow Condensed',sans-serif";
- g.fillText(op?'airway open':'obstructed',W/2,H-9);
+ const cx=W/2;
+ const lT=14, lB=190, lw=W*0.375, gap=W*0.055;
+ const carina=lB+12, neck=250, headH=H-neck-6;
+
+ const vol=at(a,'vol',t), fao2=at(a,'fao2',t), atel=at(a,'atel',t);
+ const fill=Math.max(0,Math.min(1,vol/a.frc));
+ const liqTop=lT+(lB-lT)*(1-fill);
+
+ // ---- lungs -------------------------------------------------------------
+ for(const flip of [false,true]){
+  const x = flip ? cx+gap : cx-gap-lw;
+  lungPath(g,x,lT,lw,lB-lT,flip);
+  g.save(); g.clip();
+  g.fillStyle='#0a1218'; g.fillRect(x-2,lT-2,lw+4,lB-lT+4);
+  g.fillStyle=css('--inert'); g.fillRect(x-2,liqTop,lw+4,lB-liqTop+2);
+  const o2h=(lB-liqTop)*Math.max(0,Math.min(1,fao2));
+  g.fillStyle=css('--o2'); g.fillRect(x-2,lB-o2h,lw+4,o2h+2);
+  // collapse is dependent: shade upward from the base by the collapsed share
+  if(atel>0.001){
+   const ah=(lB-lT)*Math.min(1,atel*3.2);
+   const grd=g.createLinearGradient(0,lB-ah,0,lB);
+   grd.addColorStop(0,'rgba(122,74,140,0)');
+   grd.addColorStop(1,'rgba(122,74,140,.82)');
+   g.fillStyle=grd; g.fillRect(x-2,lB-ah,lw+4,ah+2);
+  }
+  g.strokeStyle='rgba(255,255,255,.40)'; g.lineWidth=1;
+  g.beginPath(); g.moveTo(x-2,liqTop+.5); g.lineTo(x+lw+2,liqTop+.5); g.stroke();
+  g.restore();
+  lungPath(g,x,lT,lw,lB-lT,flip);
+  g.strokeStyle=css('--rule2'); g.lineWidth=2; g.stroke();
+ }
+
+ // ---- trachea and bronchi ----------------------------------------------
+ const op=isOpen(k,t), tw=15;
+ g.strokeStyle=css('--rule2'); g.lineWidth=2; g.fillStyle=css('--panel');
+ g.beginPath(); g.moveTo(cx-tw,neck); g.lineTo(cx-tw,carina);
+ g.lineTo(cx+tw,carina); g.lineTo(cx+tw,neck); g.closePath();
+ g.fill(); g.stroke();
+ g.beginPath();
+ g.moveTo(cx-tw,carina); g.lineTo(cx-gap-lw*0.30,lB-6);
+ g.moveTo(cx+tw,carina); g.lineTo(cx+gap+lw*0.30,lB-6);
+ g.stroke();
+
+ // the obstruction sits on the trachea, where it does in life
+ g.fillStyle=op?css('--o2'):css('--alarm');
+ g.fillRect(cx-tw-5, carina+16, (tw+5)*2, op?5:12);
+ g.fillStyle=op?css('--dim'):css('--alarm');
+ g.textAlign='left'; g.font="13px 'Barlow Condensed',sans-serif";
+ g.fillText(op?'airway open':'obstructed', cx+tw+12, carina+26);
+
+ // ---- head --------------------------------------------------------------
+ const spo2=at(a,'spo2',t), hb=(P.hb||14);
+ const deoxy=hb*(1-Math.max(0,Math.min(1,spo2/100)));
+ const blue=(deoxy-3.2)/(6.0-3.2);
+ headPath(g,cx,neck-4,headH);
+ g.fillStyle=mixc(SKIN,CYAN,blue); g.fill();
+ g.strokeStyle=css('--rule2'); g.lineWidth=2; g.stroke();
+ // an ear and a closed eye, so it reads as a face at this size
+ g.strokeStyle='rgba(0,0,0,.34)'; g.lineWidth=1.6;
+ g.beginPath(); g.arc(cx+8,neck-4+headH*0.50,8,-0.6,2.2); g.stroke();
+ g.beginPath(); g.moveTo(cx-38,neck-4+headH*0.585);
+ g.lineTo(cx-25,neck-4+headH*0.575); g.stroke();
+
+ // ---- the vacuum, labelled where it lives -------------------------------
  const p=at(a,'palv',t);
- if(p<-0.5&&fill<0.97){g.fillStyle=css('--dim');
-  g.fillText(p.toFixed(1)+' cmH\\u2082O',W/2,top+body*(1-fill)/2+5);}
+ if(p<-0.5&&fill<0.97){g.fillStyle=css('--dim'); g.textAlign='center';
+  g.fillText(p.toFixed(1)+' cmH₂O', cx, lT+(lB-lT)*(1-fill)/2+5);}
 }
 function panel(k,t){
  const a=D[k],live=alive(a,t),s=at(a,'spo2',t);
@@ -582,7 +682,7 @@ function panel(k,t){
 }
 function render(){
  if(!D.A||!D.B) return;
- bottle('A',T);bottle('B',T);panel('A',T);panel('B',T);
+ patient('A',T);patient('B',T);panel('A',T);panel('B',T);
  ecgDraw('A');ecgDraw('B');plethDraw('A');plethDraw('B');
  cvs.A.style.opacity=alive(D.A,T)?1:0.55; cvs.B.style.opacity=alive(D.B,T)?1:0.55;
  document.getElementById('clock').textContent=
