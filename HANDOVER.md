@@ -516,13 +516,43 @@ collapse mechanism, so the comparison is roughly like-for-like, but that has
 been assumed rather than confirmed against the papers' own definition. Second,
 none of these numbers has been read in the source.
 
-The paper to get is **Tokics L, Hedenstierna G, et al. V/Q distribution and
-correlation to atelectasis in anesthetized paralyzed humans. J Appl Physiol
-1996;81(4):1822-33** (PMID 8904605, doi 10.1152/jappl.1996.81.4.1822), which
-appears to be free full text at journals.physiology.org. Ten anaesthetised,
-paralysed, supine adults with MIGET and CT -- our patient exactly, with awake
-and anaesthetised measurements in the same people. Until it is read, 0.70 is
-what ships.
+**A second search settles the direction. ABSTRACT ONLY, but now four
+independent numbers agree and all of them point the same way:**
+
+    normal young awake              0.3-0.6   (upper 95% limit 0.60)
+    COPD patients, awake            0.99      Gunnarsson, ERJ 1991;4:1106
+    elderly awake supine (61-72 y)  0.93      MIGET halothane study, below
+    elderly, halothane + IPPV       1.67      same study, same patients
+    ---------------------------------------------------------------
+    OUR MODEL, anaesthetised 45 y   0.70
+
+The 0.93 and 1.67 are from a MIGET study of nine patients aged 61-72 studied
+awake and then under halothane with mechanical ventilation; the search did not
+disambiguate between PMID 6837252 and PMID 6428137 as its source, so check
+which before citing.
+
+So the measured spread in ANAESTHETISED adults is substantially ABOVE 0.70, not
+below it. Our 0.70 already sits under the awake value for older subjects. That
+kills the Stock fix outright: moving to 0.55 is unsupportable, and if the
+parameter moves on evidence it should move UP, which makes the Stock slope
+WORSE, not better. **The 26% Stock residual stands and needs an explanation
+that is not the V/Q spread.**
+
+Three caveats, none of which changes the direction. Those patients are 61-72
+against our 45, and spread widens with age. Halothane is not modern
+anaesthesia. And MIGET computes log SDQ on the NON-SHUNT distribution,
+excluding compartments below V/Q 0.005, while ours sits alongside a separate
+shunt and collapse mechanism -- so if anything our 0.70 should be compared
+against a MIGET number with its shunt already removed, which is what these are.
+
+The paper to get remains **Tokics L, Hedenstierna G, et al. V/Q distribution
+and correlation to atelectasis in anesthetized paralyzed humans. J Appl Physiol
+1996;81(4):1822-33** (PMID 8904605, doi 10.1152/jappl.1996.81.4.1822): ten
+anaesthetised, PARALYSED, supine adults with MIGET and CT, awake and
+anaesthetised in the same people, which is our patient exactly and younger than
+the halothane cohort. No free copy was found -- no repository, thesis or mirror
+surfaced, only the publisher. Until then, 0.70 ships and the sweep at 0.50-0.60
+stands as a recorded negative result rather than a proposal.
 
 So: Moreault says less vacuum; less vacuum means more cardiac output; more
 cardiac output means a faster CO2 rise; and Stock says our CO2 rise is
