@@ -73,6 +73,10 @@ real defect elsewhere.
 **Kelman 1967 and 1968** (critical path), Eger & Severinghaus 1961, Stock 1989.
 See `protocol/evidence.md` for what each would settle.
 
+**Toner's tracheal O2 traces** — Andy believes these still exist. Ask for the
+**SHAM** arm and the **first 120 s**; the buccal traces would settle nothing.
+Reasoning and the sensitivity table are in Open work item 2.
+
 ## Start here
 
 ```
@@ -1267,11 +1271,44 @@ it rather than before -- the fix moves the value such a constant would need.
    Would anchor two of the four collapse parameters. This is the single most
    valuable missing dataset. Mohanty's starting PaO2 of 328 mmHg is one such
    measurement and implies ~16% shunt; more would pin the regression.
-2. **Toner's tracheal oxygen traces**, if they still exist. Would let
-   pharyngeal patency be fitted from measurement rather than assumed. In their
-   absence, present pharyngeal FO2 as a declared sensitivity band; Toner's
-   published primary outcome (tracheal O2 maintained >90%) already bounds it,
-   and O'Loughlin bypasses the question by delivering below the glottis.
+2. **Toner's tracheal oxygen traces.** Andy believes these still exist
+   (2026-09-10). **Ask for the SHAM arm, not the buccal arm** -- which is the
+   opposite of the obvious request, and the sensitivity says why:
+
+       pharyngeal FO2   sham, time to SpO2<95%    Toner: 447 s, IQR 405-525
+             0.21            402.0 s   BELOW the IQR   <- what we ship
+             0.25            417.7 s   in band
+             0.30            439.7 s   in band, near their median
+             0.40            493.4 s   in band
+             0.50            565.9 s   above
+
+       pharyngeal FO2   buccal, time to SpO2<95%  Toner: held to 750 s
+             1.00, 0.95, 0.90   holds       <- 1.00 is what we ship
+             0.80            1075.7 s   holds
+             0.70             822.9 s   holds
+             0.60             668.4 s   fails
+
+   The model assumes the sham pharynx is INSTANTLY room air at 0.21, and that
+   is the only value tested that falls below Toner's IQR. After preoxygenation
+   to ETO2 0.87 the upper airway holds oxygen-rich gas that must wash out over
+   some seconds, so early mass flow entrains something richer than 0.21. That
+   washout has never been measured and is the single assumption carrying our
+   Toner shortfall.
+
+   The buccal arm settles nothing: anything at or above 0.70 holds to 750 s,
+   and Toner's published bound of tracheal O2 >90% is already deep inside the
+   safe region. Do not spend effort on those traces.
+
+   **What to ask for:** time-resolved tracheal oxygen fraction in the SHAM arm
+   from the onset of apnoea, at whatever sampling rate was recorded, per
+   subject if possible and mean +- SD otherwise. **The first 120 s is what
+   matters.** Also the per-subject preoxygenation endpoint (ETO2), since that
+   sets the initial condition of the washout.
+
+   **This is a measurement replacing an assumption, not a fit.** The
+   distinction matters: setting `fgo2` to 0.30 because it lands on Toner's
+   median would be exactly the tuning refused four times in this file. Taking
+   the number the trace gives, whatever it is, is not.
 3. **Reconcile or explain the Ellis pregnancy comparator.** 40% short in both
    arms and has resisted every structural change. The pregnancy physiology in
    our configuration was assembled from textbook multipliers, not their

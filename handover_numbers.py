@@ -124,6 +124,27 @@ print("     which bloodgas.py records. The CURVATURE has never been checked --")
 print("     that needs Kelman 1967.)")
 
 # ---------------------------------------------------------------------------
+print("\nPharyngeal FO2 -- what Toner's tracheal traces would settle")
+from apnoea_core import time_to  # noqa: E402
+
+_pt = Patient(weight=70, height=1.75, age=45, hb=15, tilt_deg=0)
+
+
+def t95(fg, dur):
+    r = simulate(_pt, [AirwayEpoch(dur, resistance=2, fgo2=fg)],
+                 dt=DT, feo2_start=0.87, stop_sao2=0.0)
+    t = time_to(r, 'spo2', 95)
+    return 9999.0 if t is None else t
+
+
+check("sham arm at FO2 0.21 (shipped; Toner IQR 405-525)", t95(0.21, 700), 402.0, 4.0, " s")
+check("sham arm at FO2 0.30 (Toner median is 447)", t95(0.30, 700), 439.7, 5.0, " s")
+check("buccal arm at FO2 0.60 (below this it fails)", t95(0.60, 900), 668.4, 8.0, " s")
+print("    The SHAM assumption is the sensitive one: 0.21 is the only value")
+print("    tested that falls BELOW Toner's IQR. The buccal arm holds to 750 s")
+print("    anywhere at or above 0.70, so its traces would settle nothing.")
+
+# ---------------------------------------------------------------------------
 print("\nNOT REPRODUCIBLE, and recorded as such")
 print("    Ellis 2022 pregnancy comparator: HANDOVER quotes 18.1 and 5.8 min")
 print("    against their 25.4 and 9.9. The configuration behind those two")
