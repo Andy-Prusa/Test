@@ -561,8 +561,59 @@ chasing a benchmark.
 What would settle it properly is a MEASURED log SD of the perfusion
 distribution in anaesthetised adults -- MIGET data.
 
-**A first look at that literature points AGAINST the change. ABSTRACT ONLY --
-verify before relying on it.** Gunnarsson et al., Eur Respir J 1991;4:1106-16,
+**SETTLED, FROM THE PAPER. Tokics L, Hedenstierna G, Svensson L, Brismar B,
+Cederlund T, Lundquist H, Strandberg A. V/Q distribution and correlation to
+atelectasis in anesthetized paralyzed humans. J Appl Physiol 1996;81:1822-33.**
+n=10, anaesthetised, PARALYSED, supine -- our patient exactly -- measured awake
+and then anaesthetised in the same people, by MIGET and by SPECT. Table 2,
+means +- SE:
+
+                       awake        anaesthesia      anaesthesia
+                                    (inert gas)      (isotope)
+    shunt Qs, %      0.2 +- 0.1     7.0 +- 1.3       6.9 +- 1.9
+    Qlow, %          1.2 +- 0.7     5.1 +- 1.8       3.6 +- 0.8
+    log QSD          0.65 +- 0.05   1.18 +- 0.12     0.80 +- 0.04
+    log VSD          0.74 +- 0.06   0.62 +- 0.07     0.58 +- 0.04
+    VD, %            30 +- 7        32 +- 3          7.3 +- 1.6
+
+The convention matches ours: MIGET calls perfusion below V/Q 0.005 SHUNT and
+reports it separately, so log QSD is the spread of the NON-shunt distribution,
+which is what `vq_log_sd` is. Directly comparable.
+
+**Our 0.70 is below the measured anaesthetised value on both techniques**
+(0.80 isotope, 1.18 inert gas) and barely above the AWAKE value of 0.65. Our
+baseline shunt of 5.0% sits just under their 7.0 +- 1.3% and inside their
+range of 0.4-12.2%.
+
+**And setting the spread to the measured value breaks Stock badly:**
+
+    vq_log_sd | shunt@0s  shunt@300s | Stock 1st min   1-5 min slope
+       0.70   |    5.0%      18.1%   |     12.2            4.35   shipped
+       0.80   |    5.0%      18.9%   |     12.1            5.02   measured, isotope
+       1.18   |    5.0%      21.3%   |     11.9            7.44   measured, MIGET
+
+against a measured 3.4 and a band of 2.4-4.4.
+
+**This is the sharpest statement of the defect we have, and it is not about the
+value of the parameter.** The model only passes Stock at all because its V/Q
+spread is set BELOW what is measured in this exact population. At a
+physiological spread the arterial CO2 runs away. So the fault is the
+SENSITIVITY: real lungs at log QSD 1.18 give 3.4 mmHg/min and ours gives 7.44.
+d(slope)/d(spread) is far too steep, and that steepness is the a-A gap
+mechanism documented above.
+
+Two structural notes. Their log VSD is 0.62-0.74 and FALLS slightly with
+anaesthesia while log QSD rises; we have no independent ventilation-spread
+parameter at all, since all compartments share one alveolar pressure and
+volumes are held. And their dead space is 30-32% by inert gas against 7.3% by
+isotope, a threefold disagreement between techniques in the same patients,
+which is a fair warning about how much any single MIGET number should be
+trusted.
+
+*(Superseded, kept for the record: the abstract-only estimate below pointed the
+same way but for weaker reasons.)*
+
+**The earlier abstract-only reading. ABSTRACT ONLY.** Gunnarsson et al., Eur Respir J 1991;4:1106-16,
 state in their abstract that the mean log Q SD in their COPD patients was 0.99
 against an "upper 95% confidence limit of normal subject: **0.60**", and a
 second source gives the normal median range as 0.3-0.6. Anaesthesia is

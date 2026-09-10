@@ -313,4 +313,5 @@ conclusions. What remains:
 | Ebata, Can J Anaesth 1991;38:436 | **Obtained and read** |
 | Koshino, Circ Cardiovasc Imaging 2010;3:282 | Not obtained. Reports strain, not stroke volume, so low priority |
 | Douglas, J Appl Physiol 1988;65:473 | Not obtained |
+| Tokics, J Appl Physiol 1996;81:1822 | **Obtained and read.** Settles the V/Q spread: log QSD 0.65 awake, 1.18 anaesthetised by MIGET, 0.80 by isotope, n=10 paralysed supine |
 | Stock, J Clin Anesth 1989;1:328 | Not obtained. **The one that matters** |
