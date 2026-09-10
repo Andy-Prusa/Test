@@ -273,6 +273,70 @@ regardless.
 | ICSM jet 2026, PaCO2 at cricothyroidotomy | 84.6 (4.4) mmHg | 82.7 |
 | ICSM jet 2026, time to SaO2 40% | ~510 s | 500 s |
 
+**THESE ARE NOT SIX INDEPENDENT COMPARATORS. THEY ARE ONE SIMULATOR.**
+Established September 2026 from the author lists:
+
+    Hardman 1998, NPS validation   Hardman, Bedforth, Ahmed, Mahajan, Aitkenhead
+    Laviola 2020, airway rescue    Laviola, Niklas, Das, Bates, HARDMAN
+    Ellis 2022, pregnancy          Ellis, Laviola, Stolady, Valentine, Pillai, HARDMAN
+    ICSM jet 2026 (Anesth Analg)   Laviola, Dinsmore, Lacquiere, Niklas, Heard, HARDMAN
+
+Every one is the Nottingham Physiology Simulator lineage with Jonathan Hardman
+on it. Six rows across three studies is **one data point**, not six -- agreeing
+with them, or disagreeing, is agreeing or disagreeing with a single model. The
+suite is right to label them "not measurements"; it does not currently say they
+are all the same other people. Weight them accordingly, and do not let a
+comparator row veto a change that the CLINICAL benchmarks accept -- in
+particular the `ICSM jet, PaCO2 at cricothyroidotomy` row, which is the one
+that keeps appearing at band edges in this file.
+
+What that architecture is, from Hardman 1998 Appendix 1: a SINGLE well-mixed
+alveolar compartment with equipment, anatomical and alveolar deadspaces; blood
+flow in two compartments only, shunted and non-shunted, with shunt and
+deadspace supplied as INPUTS rather than emerging; blood time-sliced into
+packets each brought to true partial-pressure equilibrium with alveolar gas;
+CO2 content from **Kelman 1967**; and peripheral metabolism as "simple
+production of carbon dioxide and extraction of the preset VO2" with **no tissue
+CO2 store kinetics at all**. The paper itself offers that last omission as the
+reason for its own prediction error: "Equilibration requires modification of
+dissolved tissue stores in addition to the gas reservoirs in blood and
+functional residual capacity."
+
+Two consequences worth holding on to. That architecture **cannot produce an
+arterial PCO2 above alveolar** -- one well-mixed alveolus plus true
+equilibration puts PaCO2 between PACO2 and PvCO2 -- so it has no analogue of
+the a-A gap that carries our whole obstructed CO2 excess, and cannot corroborate
+it either way. And with no tissue store kinetics it is a poor comparator for the
+apnoeic CO2 rise specifically, which is precisely the window Stock measures.
+
+**Do not over-apply the 1998 description.** The 2026 supplement shows the modern
+version carries 100 compartments, so the architecture has moved on
+substantially in 25 years. What is quoted above is the 1998 paper.
+
+### The Ellis pregnancy comparator, and why the shortfall is worse than recorded
+
+Ellis et al.'s reply to Lyons (Br J Anaesth 2023, response to Br J Anaesth 2022;
+129:581-7) gives the configuration detail we lacked. Their pre-oxygenation
+endpoints DIFFER BY ARM: **FE'O2 80% for HFNO against 90% for tidal**, chosen
+from evidence that HFNO achieves a lower FE'O2 in pregnant subjects.
+
+Lyons's published objection is exactly that this biases the comparison. Ellis
+defend the choice but concede in print that "this assumption should be tested
+with further research" and that "further work is needed to establish the
+profile of alveolar denitrogenation during various methods of pre-oxygenation".
+So the comparator's own inputs are contested in the literature.
+
+That does NOT rescue our shortfall, and it is worth being clear that it makes it
+worse. We run `feo2_start` 0.87, ABOVE their HFNO endpoint of 0.80, and still
+come up 29% short at BMI 24 and 41% short at BMI 50. Starting oxygen cannot be
+the explanation. And if Lyons is right that HFNO reaches a higher FE'O2 than
+Ellis assumed, their times lengthen and our shortfall grows.
+
+Note also that the Ellis rows are a RECORDED COMPARISON, not a test in
+`test_validation.py`, so the exact configuration behind 18.1 and 5.8 min is not
+reproducible from this repository. Anyone re-opening this should regenerate
+them before drawing conclusions.
+
 ### The collapse investigation, 2026-09 -- read before touching the mechanics
 
 Chasing the jet-insufflation scenario exposed the mechanics limb, which had
