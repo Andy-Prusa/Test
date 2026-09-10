@@ -434,6 +434,55 @@ and it does so without touching the first-minute rise at all:
 value stays at 12.2 against a measured 12 throughout. So the 26% Stock residual
 is most likely a V/Q-spread question, not a CO2-store or mechanics question.
 
+**The full suite was then run at 0.50, 0.55 and 0.60.** Every benchmark, not
+just Stock. Values shown; `*` marks a failure:
+
+    benchmark                                  expect      0.50   0.55   0.60
+    Toner sham, time to SpO2<95%              380-525     423.2  418.8  413.8
+    Heard control, time to SpO2<95%           244-314     305.9  302.0  297.8
+    O'Loughlin SpO2 at 18.7 min                95-100      99.8   99.7   99.6
+    O'Loughlin venous PCO2 rate                50-350     224.9  224.5  223.9
+    PaCO2-PvCO2 gradient, 5 s                  -20--1      -8.6   -8.6   -8.6
+    PaCO2-PvCO2 gradient, 10 min (reversed)      0-12       1.8    1.8    1.8
+    tilt, non-obese 20 deg                      15-40      27.8   27.9   27.8
+    tilt, BMI 35 at 30 deg                      20-45      39.9   39.3   38.6
+    tilt, BMI 44 at 25 deg                      15-40      28.7   28.0   27.3
+    cardiac output rise at 15 min               20-45      35.8   35.8   35.8
+    arterial PaCO2 rate                           2-3       2.4    2.4    2.4
+    Stock obstructed, first minute               9-15      12.2   12.2   12.2
+    Stock obstructed, 1-5 min slope               2-4       3.1    3.5    3.8
+    Moreault, sealed lung subatmospheric      -50--12     -30.4  -30.4  -30.4
+    Moreault, pressure tracks gas removed      -40--5     -19.9  -19.9  -19.9
+    ICSM rescue, post-rescue PaO2               34-51      45.4   45.3   45.0
+    ICSM rescue on room air NOT sustained        0-60      32.9   33.0   33.0
+    ICSM jet, time to SaO2 40%                400-620     490.0  490.0  496.0
+    ICSM jet, PaO2 at cricothyroidotomy         25-31      27.9   28.2   28.5
+    ICSM jet, PaCO2 at cricothyroidotomy        76-93      72.6*  74.5*  77.9
+    oxygen balance closes                    -200-900      -4.2   -3.0   -1.5
+    aventilatory mass flow at 2 min           120-260     223.8  223.8  223.9
+    (the anaemia, MAP, SV and dt checks are bit-identical throughout)
+
+**At 0.60 all 36 checks pass.** At 0.55, 35 pass and the single failure is
+`ICSM jet, PaCO2 at cricothyroidotomy` at 74.5 against a band of 76-93 --
+missed by 1.5 mmHg. At 0.50 the same one misses by 3.4.
+
+Two things about that failure. It is the ONLY thing that breaks anywhere in
+the range, and it is a **MODEL COMPARATOR** -- another group's simulation,
+which this suite explicitly labels "not measurements". So fitting Stock costs
+agreement with a simulation and nothing else. No clinical benchmark moves out
+of band anywhere between 0.50 and 0.70.
+
+And some things improve. Toner's sham arm goes 402.0 at spread 0.70 to 413.8
+at 0.60, which moves it from just below their reported IQR of 405-525 to
+inside it. Heard goes 288.2 to 297.8, still inside 244-314. Moreault does not
+move at all, as expected, since the mechanics are untouched. Neither does the
+PaCO2-PvCO2 reversal, the anaemia ladder, or the tilt series.
+
+**So the position is:** the Stock residual can be removed by one parameter, in
+a direction that was predicted from the mechanism rather than found by
+scanning, at a cost of one model-comparator check and with two clinical
+benchmarks moving slightly closer to their measured values.
+
 **Nothing was changed, and think hard before changing it.** `vq_log_sd` 0.70
 is listed under "Chosen, not fitted" in the provenance section precisely
 because the note there records that spread 0.5 with mixing 25 s hits Toner and
@@ -444,6 +493,14 @@ three independent validations into one fit, and there would then be no
 untouched trial left to test the model against. That is a decision about what
 the model is for, not a parameter tweak, and it is not one to make while
 chasing a benchmark.
+
+What would settle it properly is a MEASURED log SD of the perfusion
+distribution in anaesthetised adults -- MIGET data. That number exists in the
+literature and is not in this repository; it has not been checked because this
+environment cannot reach the journals. **Get it before touching this
+parameter.** If the measured spread is near 0.6 the change is a correction; if
+it is near 0.7 the Stock residual stands and must be explained some other way.
+Until then, 0.70 is what ships.
 
 So: Moreault says less vacuum; less vacuum means more cardiac output; more
 cardiac output means a faster CO2 rise; and Stock says our CO2 rise is
