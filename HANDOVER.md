@@ -986,12 +986,37 @@ docstring says that saturation term IS the acid-base limb of the Haldane
 effect and that under-representing it "translates directly into an overestimate
 of the rate of rise of PaCO2" -- which is the defect we have.
 
-It is real but SMALL: at SO2 0.85 it costs 0.0035 pH and 0.74% of CO2 content,
-worth about 1 mmHg at 300 s, roughly 0.25 mmHg/min of slope. It cannot be the
-cause. It is harmless while SaO2 is near 0.99, which is why no patent benchmark
-ever caught it. Worth fixing on its own terms -- the forward path should
-iterate pH and SO2 to consistency the way `pco2_from_co2_content` already does
-internally -- but it is a correctness fix, not the answer to Stock.
+It is real but small per-compartment: at SO2 0.85 it costs 0.0035 pH and 0.74%
+of CO2 content. It is harmless while SaO2 is near 0.99, which is why no
+patent-airway benchmark ever caught it.
+
+**IT HAS BEEN WRITTEN AND IT MAKES STOCK FAIL. The patch is held in
+`patches/haldane-per-compartment-ph.patch` and is NOT applied.**
+
+The fix solves pH and SO2 together, three passes from 0.99, in both
+`apnoea_core.py` and `model.js` identically. Parity holds after it (worst
+channel 0.194%). Validation goes to 35 of 36: the only failure is the Stock
+slope at **4.7** against a band of 2.4-4.4, where the shipped model gives 4.35.
+PaCO2 at 300 s goes 69.6 -> 71.1 and the a-A gap 6.7 -> 8.2.
+
+**Note the sign, and do not repeat my error in reading it.** The docstring of
+`ph_from_pco2_be` warns that under-representing its saturation term
+"translates directly into an overestimate of the rate of rise of PaCO2". That
+is about omitting the term from BOTH ends, which shrinks the a-v content
+difference. What the code actually did was omit it only from the END-CAPILLARY
+pH while handing the true saturation to `co2_content` -- a different error with
+the OPPOSITE sign. Correcting it RAISES end-capillary CO2 content by about
+0.7%, so arterial PCO2 rises and the slope gets worse.
+
+So the fix is right and the residual is bigger than recorded: not 26% too fast
+but **39%**. The fix did not create that, it revealed it. A parameter-free
+correction that sharpens a disagreement is evidence of a real defect elsewhere,
+not of a tuning problem.
+
+It is unapplied only because the pre-commit hook blocks on a failing benchmark
+and widening the band to admit 4.7 would be hiding. Apply it together with
+whatever finally explains the a-A gap, and re-derive any mixing constant AFTER
+it rather than before -- the fix moves the value such a constant would need.
 
 ## Open work, roughly by value
 
