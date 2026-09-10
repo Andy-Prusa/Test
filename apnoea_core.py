@@ -32,8 +32,30 @@ PARAMETER PROVENANCE
 """
 
 from dataclasses import dataclass
+import os as _os
 import numpy as np
 import bloodgas as bg
+
+
+# ---------------------------------------------------------------------------
+# Provenance. A full afternoon of results was once computed against a stale
+# copy of this file sitting in a scratch directory, and only caught because one
+# number looked odd. Any throwaway script should print provenance() so its
+# output says which model produced it. Running a deliberately modified copy is
+# fine -- the point is that the output should say so.
+MODEL_FILE = _os.path.abspath(__file__)
+
+
+def provenance():
+    """One line naming the file this model was loaded from, and when it changed."""
+    import datetime as _dt
+    try:
+        m = _dt.datetime.fromtimestamp(_os.path.getmtime(MODEL_FILE))
+        stamp = m.strftime('%Y-%m-%d %H:%M')
+    except OSError:
+        stamp = 'unknown'
+    return f"apnoea_core from {MODEL_FILE} (modified {stamp})"
+
 
 PB = 760.0
 PH2O = 47.0

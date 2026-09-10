@@ -382,6 +382,8 @@ def test_zz_all_benchmarks_passed():
 
 
 if __name__ == "__main__":
+    import apnoea_core as _ac
+    print(_ac.provenance())
     print("=" * 74)
     print("CLINICAL TARGETS — measurements in patients. These are the arbiters.")
     print("=" * 74)
