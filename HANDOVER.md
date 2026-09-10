@@ -495,12 +495,34 @@ the model is for, not a parameter tweak, and it is not one to make while
 chasing a benchmark.
 
 What would settle it properly is a MEASURED log SD of the perfusion
-distribution in anaesthetised adults -- MIGET data. That number exists in the
-literature and is not in this repository; it has not been checked because this
-environment cannot reach the journals. **Get it before touching this
-parameter.** If the measured spread is near 0.6 the change is a correction; if
-it is near 0.7 the Stock residual stands and must be explained some other way.
-Until then, 0.70 is what ships.
+distribution in anaesthetised adults -- MIGET data.
+
+**A first look at that literature points AGAINST the change. ABSTRACT ONLY --
+verify before relying on it.** Gunnarsson et al., Eur Respir J 1991;4:1106-16,
+state in their abstract that the mean log Q SD in their COPD patients was 0.99
+against an "upper 95% confidence limit of normal subject: **0.60**", and a
+second source gives the normal median range as 0.3-0.6. Anaesthesia is
+consistently reported to INCREASE log SDQ above the awake value. If that holds,
+then an anaesthetised paralysed adult sits at or above 0.6, our shipped 0.70 is
+defensible, and moving to 0.55 would put the model below the upper limit of the
+AWAKE normal range -- further from measurement, not closer. **On that reading
+the Stock fix is not available and the 26% residual stands, needing another
+explanation.**
+
+Two things must be checked before this is treated as settled. First, MIGET
+computes log SDQ on the NON-SHUNT distribution, excluding compartments below
+V/Q 0.005; our `vq_log_sd` likewise sits alongside a separate shunt and
+collapse mechanism, so the comparison is roughly like-for-like, but that has
+been assumed rather than confirmed against the papers' own definition. Second,
+none of these numbers has been read in the source.
+
+The paper to get is **Tokics L, Hedenstierna G, et al. V/Q distribution and
+correlation to atelectasis in anesthetized paralyzed humans. J Appl Physiol
+1996;81(4):1822-33** (PMID 8904605, doi 10.1152/jappl.1996.81.4.1822), which
+appears to be free full text at journals.physiology.org. Ten anaesthetised,
+paralysed, supine adults with MIGET and CT -- our patient exactly, with awake
+and anaesthetised measurements in the same people. Until it is read, 0.70 is
+what ships.
 
 So: Moreault says less vacuum; less vacuum means more cardiac output; more
 cardiac output means a faster CO2 rise; and Stock says our CO2 rise is
