@@ -884,6 +884,63 @@ these are predictions about the world, not benchmarks the model must pass, and
 they are expected to move when the model is corrected. What must not happen is
 that they move silently.
 
+## Is Stock an outlier? No — and asking moved the problem to the patent side
+
+Checked September 2026. SECONDARY SOURCES, not yet read in the original.
+
+**Eger EI, Severinghaus JW. The rate of rise of PaCO2 in the apneic
+anesthetized patient. Anesthesiology 1961;22:419-25** (PMID 13725901, doi
+10.1097/00000542-196105000-00013, reported to be free) is the foundational
+measurement and describes anaesthetised apnoea with a **PATENT** airway:
+**10-12 mmHg in the first 30-60 s, then 3-5 mmHg/min.**
+
+On matched windows:
+
+    source                          airway     1st min   1-5 min slope
+    Eger & Severinghaus 1961        patent      10-12      3-5
+    Stock 1989 (n=14)               OBSTRUCTED  12         3.4
+    OUR MODEL, obstructed                       12.2       4.35
+    OUR MODEL, patent                           11.6       1.70
+    Ebata 1991 (n=9, brain-dead)    patent      -          3.3 over 0-10 min avg
+    Schafer & Caronna 1978          patent      -          3.2 over 0-10 min avg
+
+Three things follow, and the third is the important one.
+
+1. **Stock's 3.4 is NOT an outlier.** It sits at the low end of the classical
+   range for anaesthetised apnoea, and if anything is on the low side, since
+   obstruction ought to be at least as fast as a patent airway.
+2. **Our obstructed 4.35 is INSIDE the classical 3-5 range.** The "26%
+   residual" -- 39% with the held Haldane patch -- is measured against ONE
+   study's point estimate, with a band of +-30% around it, while the
+   foundational reference gives a range that comfortably contains our value.
+   That does not make the a-A gap analysis wrong; the gap is real and is still
+   the reason obstructed and patent differ so much here. But it does mean the
+   residual has been over-weighted as evidence of a defect.
+3. **Our PATENT 1-5 min slope of 1.70 is roughly HALF the classical 3-5, and
+   nothing in the suite tests it.** `test_cardiac_output` checks the patent
+   rate as `(PaCO2_final - 40)/15`, a FIFTEEN-MINUTE AVERAGE, which the
+   first-minute jump dominates: 11.6 of the total arrives in minute one, so the
+   average reads 2.38 and passes a band of 1.8-3.0 while the underlying slope
+   is 1.70. The averaging hides it.
+
+**So the larger discrepancy is on the patent side, not the obstructed side, and
+it has been invisible because of how the benchmark is computed.** Whether the
+model is too slow patent or Eger and Severinghaus's range is wider than their
+mean cannot be settled without reading them.
+
+Two changes to consider, neither made:
+
+- Widen the Stock band from +-30% of 3.4 to the literature's 3-5, citing Eger
+  and Severinghaus. This is NOT the same as widening a band to admit a
+  failure -- it is replacing one study's point estimate with the range the
+  field actually reports -- but it should be done only with the paper read,
+  and it would make the held Haldane patch (4.72) applicable.
+- Add a benchmark for the PATENT 1-5 min slope against 3-5. The model would
+  currently FAIL it at 1.70. That is the honest consequence of asking the
+  question and it should not be avoided by not adding the test.
+
+**Get Eger & Severinghaus 1961 before acting on either.** It is reported free.
+
 ## Where the Stock residual actually lives — located, not yet fixed
 
 Established September 2026 after V/Q spread, CO2 stores, mechanics, the Muller
