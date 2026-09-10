@@ -884,6 +884,115 @@ these are predictions about the world, not benchmarks the model must pass, and
 they are expected to move when the model is corrected. What must not happen is
 that they move silently.
 
+## Where the Stock residual actually lives — located, not yet fixed
+
+Established September 2026 after V/Q spread, CO2 stores, mechanics, the Muller
+term and cardiac output had all been excluded. Nothing in the model has been
+changed on the strength of this.
+
+**The whole excess is in the arterial-to-alveolar CO2 gap, and the CO2 stores
+are exonerated.** Run the same patient obstructed and patent:
+
+                          obstructed   patent
+      PaCO2 slope 60-300s     4.35      1.70
+      PACO2 slope             2.63      1.74
+      PvCO2 slope             2.01      1.80
+      a-A gap growth         +1.72     -0.04   mmHg/min
+
+The VENOUS slopes agree. Whole-body CO2 storage behaves identically in the two
+conditions, so no store parameter can be the fault -- which retires the lever
+HANDOVER has warned about since the beginning. The obstructed excess is
+entirely the a-A gap, which opens late:
+
+        t     a-A    shunt   SaO2
+       60    -0.2    0.058  100.0
+      120    -0.3    0.075   99.9
+      180    +1.3    0.103   98.5
+      240    +6.3    0.140   93.1
+      300    +6.7    0.181   84.9
+
+**It is not shunt.** Suppressing global closure (`max_closed` 0.02) drops shunt
+to 0.142 and the gap goes UP to 7.3 with the slope at 4.50. Raising `hb` to 18
+to delay desaturation drops the gap to 5.8 and the slope to 3.91, so
+desaturation contributes, but only about a fifth of it.
+
+**It is inter-compartmental mixing, and the shipped value is too fast.**
+`tau_mix` controls it monotonically, and touches only the slope -- the first
+minute stays at 12.1-12.2 against a measured 12 across the whole range:
+
+    tau_mix   1st min   slope   a-A@300
+        8       12.2     8.95     21.0
+       15       12.2     7.25     16.3
+       25       12.2     5.77     10.9
+       45       12.2     4.35      6.7   <- shipped
+       60       12.2     3.85      5.4
+       75       12.2     3.3       ~4     <- Stock's measured 3.4
+       90       12.1     2.99      2.3
+      150       12.1     2.33      0.4
+      off       12.1     1.46     -2.5
+
+Note the direction, which is the opposite of the obvious guess: FASTER mixing
+makes the gap and the slope WORSE. Why that is has not been established.
+
+**A patency-gated version passes everything.** Physical argument: cardiogenic
+stirring does not stop when the tube is clamped, but BULK FLOW does -- with a
+patent airway roughly 250 mL/min of aventilatory mass flow sweeps down the
+airway and redistributes gas between units on top of the stirring, and a sealed
+lung has only the stirring. Implemented as 45 s patent, 75 s sealed, the full
+suite gives **36 of 36, with the Stock slope at 3.3**:
+
+    Toner sham        402.0 s   IDENTICAL to shipped
+    Heard control     288.2 s   IDENTICAL
+    O'Loughlin SpO2    99.1 %   IDENTICAL
+    Moreault          -30.4 / -19.9   IDENTICAL
+    Stock slope         3.3     was 4.35, measured 3.4
+    ICSM jet PaCO2     76.1     was 82.7, band 76-93 -- now at the edge
+
+The patent benchmarks are bit-identical BY CONSTRUCTION, since the gate does
+not touch them. That is the attraction: unlike the `vq_log_sd` route, this
+cannot convert Toner and Heard from validation into fit.
+
+**Why it has NOT been adopted.** Four reasons, and the first is decisive.
+
+1. `tau_mix_sealed = 75` was chosen to hit Stock. One new parameter fitted to
+   one benchmark, in a regime where that benchmark is the ONLY constraint --
+   so Stock stops being validation for sealed-lung mixing the moment it is
+   made. That is the same trade refused three times already in this file.
+2. The physical argument is plausible but UNQUANTIFIED. Nobody has calculated
+   whether 250 mL/min of mass flow is enough to take lung mixing from 75 s to
+   45 s. Until that number exists, 75 is a fitted value wearing a mechanism's
+   clothes.
+3. ICSM jet PaCO2 lands on the band edge at 76.1.
+4. The mechanism by which `tau_mix` drives the a-A gap at all is not
+   understood -- only that it does, monotonically, in the counter-intuitive
+   direction.
+
+**Next step is the calculation in (2), not another sweep.** If mass flow at
+250 mL/min through a lung of this size plausibly halves a mixing time constant,
+the change is a correction and Stock becomes a genuine pass. If it does not,
+this is another parameter compensating for something else and must be recorded
+and left alone.
+
+### A separate, real inconsistency found on the way
+
+`apnoea_core.py` computes the per-compartment pH with **`so2=0.99` hard-coded**:
+
+    ph_c = [bg.ph_from_pco2_be(pc, be, hb, so2=0.99, temp=temp) for pc in ...]
+    cc_co2_c = bg.co2_content(p_co2_c, ph_c, sc_o2_c, hb, temp)
+
+so the pH is computed as if the blood were fully saturated while the content
+then uses the true per-compartment saturation. `ph_from_pco2_be`'s own
+docstring says that saturation term IS the acid-base limb of the Haldane
+effect and that under-representing it "translates directly into an overestimate
+of the rate of rise of PaCO2" -- which is the defect we have.
+
+It is real but SMALL: at SO2 0.85 it costs 0.0035 pH and 0.74% of CO2 content,
+worth about 1 mmHg at 300 s, roughly 0.25 mmHg/min of slope. It cannot be the
+cause. It is harmless while SaO2 is near 0.99, which is why no patent benchmark
+ever caught it. Worth fixing on its own terms -- the forward path should
+iterate pH and SO2 to consistency the way `pco2_from_co2_content` already does
+internally -- but it is a correctness fix, not the answer to Stock.
+
 ## Open work, roughly by value
 
 1. **Measured shunt fractions in obese anaesthetised patients against BMI.**
