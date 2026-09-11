@@ -1,3 +1,6 @@
+# Copyright (c) 2026 A. M. B. Heard. All rights reserved.
+# Unpublished research software. See LICENSE: use in any publication
+# requires prior written permission. Cite as in CITATION.cff.
 """
 bloodgas.py — blood gas physical chemistry for the apnoea model.
 
@@ -12,7 +15,17 @@ PROVENANCE / CONFIDENCE
   Severinghaus standard curve:  VERIFIED against published form. High confidence.
   Kelman Bohr correction terms: implemented from standard form. Medium-high
         confidence; signs checked by directional test (see selftest()).
-  Douglas 1988 CO2 content:     implemented FROM MEMORY of the published form.
+  Douglas 1988 CO2 content:     the PLASMA limb is VERIFIED against the
+                                published abstract, which gives
+                                plasma CCO2 = 2.226 . s . PCO2 . (1 + 10^(pH-pK')),
+                                exactly what co2_content computes below. The
+                                WHOLE-BLOOD limb -- the RBC correction, where
+                                the pole at pH 8.142 lives -- is still FROM
+                                MEMORY: the paper gives it only as "see text".
+                                s and pK' are KELMAN 1967 (Respir Physiol
+                                3:111-115), not Douglas, who took them from
+                                there; the two functions below said Douglas
+                                and have been corrected.
         UNVERIFIED against the original paper. selftest() reports deviation from
         textbook reference points; see NOTE_DOUGLAS below before publishing.
   Van Slyke BE:                 standard form, medium confidence.
@@ -99,13 +112,13 @@ def po2_from_o2_content(co2c, hb, pH=7.40, pco2=40.0, temp=37.0,
 # Acid-base
 # ---------------------------------------------------------------------------
 def _co2_solubility(temp):
-    """CO2 solubility in plasma, mmol/L/mmHg (Douglas 1988)."""
+    """CO2 solubility in plasma, mmol/L/mmHg (Kelman 1967)."""
     d = 37.0 - temp
     return 0.0307 + 0.00057 * d + 0.00002 * d * d
 
 
 def _pk_prime(pH, temp):
-    """Apparent pK' of the carbonic acid system (Douglas 1988)."""
+    """Apparent pK' of the carbonic acid system (Kelman 1967)."""
     return (6.086 + 0.042 * (7.4 - pH)
             + (38.0 - temp) * (0.00472 + 0.00139 * (7.4 - pH)))
 

@@ -1,3 +1,6 @@
+# Copyright (c) 2026 A. M. B. Heard. All rights reserved.
+# Unpublished research software. See LICENSE: use in any publication
+# requires prior written permission. Cite as in CITATION.cff.
 """
 apnoea_core.py — induction / apnoea model, stage 2.
 
@@ -32,8 +35,30 @@ PARAMETER PROVENANCE
 """
 
 from dataclasses import dataclass
+import os as _os
 import numpy as np
 import bloodgas as bg
+
+
+# ---------------------------------------------------------------------------
+# Provenance. A full afternoon of results was once computed against a stale
+# copy of this file sitting in a scratch directory, and only caught because one
+# number looked odd. Any throwaway script should print provenance() so its
+# output says which model produced it. Running a deliberately modified copy is
+# fine -- the point is that the output should say so.
+MODEL_FILE = _os.path.abspath(__file__)
+
+
+def provenance():
+    """One line naming the file this model was loaded from, and when it changed."""
+    import datetime as _dt
+    try:
+        m = _dt.datetime.fromtimestamp(_os.path.getmtime(MODEL_FILE))
+        stamp = m.strftime('%Y-%m-%d %H:%M')
+    except OSError:
+        stamp = 'unknown'
+    return f"apnoea_core from {MODEL_FILE} (modified {stamp})"
+
 
 PB = 760.0
 PH2O = 47.0
@@ -181,6 +206,28 @@ class Patient:
     # not dominate anywhere in the range this model is used.
     co_ref: float = 5.0
     co_drop_frac: float = 0.25
+    # --- the circulation's answer to anaemia ------------------------------
+    # Below a threshold haemoglobin the resting cardiac output rises to
+    # defend oxygen delivery. Two measured anchors fix this, and nothing
+    # here is fitted to anything of ours:
+    #
+    #   Varat, Adolph & Fowler, Am Heart J 1972;83:415-26 -- chronic anaemia
+    #   "usually increases the cardiac output when the haemoglobin level is
+    #   7 g/dL or less". Above 7, no rise: hence the threshold.
+    #
+    #   Hemodynamic Effects of Chronic Severe Anemia, Circulation
+    #   1963;28:346 -- Hb 4.0-6.5 (mean 4.5) gave a cardiac index of
+    #   6.3 L/min/m2 against a normal ~3.2, so very nearly double.
+    #
+    # A power law through those two points, (thresh/hb)**exp, needs
+    # exp = ln(1.97)/ln(7/4.5) = 1.535. It is EXACTLY 1.0 at and above the
+    # threshold, so every existing benchmark -- all of which run Hb 14-15 --
+    # is untouched by this. That is deliberate: a change to the circulation
+    # that silently moved the oxygenation results would be very hard to
+    # trust.
+    hb_co_threshold: float = 7.0    # g/dL, below which CO starts to rise
+    hb_co_exp: float = 1.535        # fitted to the two anchors above
+    hb_co_max: float = 3.0          # ceiling; the heart cannot do better
     # The measured +30% cardiac output over +31 mmHg PaCO2 is the NET of a
     # rate and a stroke volume response, and the source does not split them.
     # Applying the whole coefficient to rate and then adding a stroke volume
@@ -227,12 +274,34 @@ class Patient:
     #     room air dropped cardiac output 2.97 -> 2.39 L/min while MAP rose
     #     103 -> 124 Torr (J Appl Physiol 1998;84:1289).
     sv_co2_gain: float = 0.0045   # per mmHg PaCO2 over 40; see above
-    # The Muller coupling is kept deliberately small. In the pig study the
-    # animals were SEDATED and making inspiratory efforts against a closed
-    # airway, which generates large negative swings actively. Our patient is
-    # paralysed: the subatmospheric pressure develops slowly from gas
-    # absorption alone, with no inspiratory effort behind it. The pig
-    # magnitude therefore does not transfer, and tuning to it would be wrong.
+    # The Muller coupling is kept deliberately small, and READ THIS BEFORE
+    # TOUCHING IT. The figures quoted above are that study's ROOM-AIR arm. Its
+    # OXYGEN arm reached the same -31 Torr (-42 cmH2O) intrathoracic pressure
+    # with oxygenation preserved and found stroke volume and cardiac output
+    # UNCHANGED, so the fall in the room-air arm is hypoxaemia and its
+    # autonomic consequences, not the mechanical Muller effect. Our patient is
+    # the oxygenated one. The mechanical coupling the source supports is
+    # therefore about zero by ITS OWN CITATION. The NUMBER is nonetheless too
+    # SMALL, not too large: two human studies pair intrathoracic pressure with
+    # stroke volume in normoxic subjects and both exceed us. Wright 2023
+    # (AJP-Heart 325:H1235) n=19, ITP -30 cmH2O for 15 s, SV 70 -> 60 mL, i.e.
+    # 0.00476 per cmH2O; Condos 1987 (Circulation 76:1020) n=10 with
+    # micromanometry, SV 83 -> 74 at an intrathoracic swing of -24 mmHg, i.e.
+    # 0.0033. We are conservative by 1.3-1.9x. The open question is duration:
+    # a Mueller manoeuvre is 5-15 s and ours develops over minutes, though
+    # Wright's effect grows from 5 s to 15 s rather than fading.
+    # Raising it to the human value moves the Stock slope only 4.35 -> 4.24,
+    # so this term is nearly inert on the Moreault/Stock conflict despite what
+    # HANDOVER's "Known disagreement" section used to claim.
+    # See protocol/evidence.md.
+    # It is retained anyway, because deleting it in isolation makes the fit
+    # WORSE: the Stock obstructed slope goes 4.35 -> 4.51 against a measured
+    # 3.4, and `stiff_below_rv` is coupled to it through the same pathway. See
+    # "Known disagreement" in HANDOVER.md. Do not remove this on its own.
+    # (The pig magnitude would not transfer in any case: those animals were
+    # sedated and making inspiratory efforts against a closed airway, which
+    # generates large swings actively, where ours is paralysed and the
+    # subatmospheric pressure develops slowly from gas absorption alone.)
     sv_itp_gain: float = 0.0025   # per cmH2O of subatmospheric alveolar pressure
     itp_fraction: float = 0.60    # alveolar pressure transmitted to the pleura
     svr_base: float = 18.0        # mmHg per L/min (~1440 dyne.s.cm-5)
@@ -260,11 +329,18 @@ class Patient:
     # Tuned to the MODERN measured arterial rate of rise, ~2.1 mmHg/min
     # (Sci Rep 2023, n=91; Gustafsson 0.24 kPa/min; Toner 0.30 kPa/min
     # transcutaneous). Historical series report 3.0-3.4 mmHg/min arterial
-    # (Frumin 1959; Eger & Severinghaus; Stock). O'Loughlin attributes the
-    # discrepancy to higher CO2 production under older technique, notably
-    # repeated suxamethonium. Our model reproduces the historical rate by
-    # raising RQ or VO2 rather than by changing the store, which is the same
-    # explanation. Fitted here to contemporary practice.
+    # (Frumin 1959; Eger & Severinghaus; Stock).
+    #
+    # These are UNCHANGED from the original fit, deliberately. The obstructed
+    # rate of rise was out by a factor of twelve, and it was tempting to
+    # correct it here: halving the fast store does hit Stock's 3.4 mmHg/min.
+    # It was the wrong lever. The error was three defects in the gas-exchange
+    # code (see the per-compartment pH note and the open-fraction perfusion
+    # note below), and with those fixed these values give 12.2 mmHg in the
+    # first minute against Stock's 12, and 2.4 mmHg/min patent against the
+    # measured 2.1, with nothing refitted. Retuning the stores would have
+    # buried three real bugs under a parameter that then no longer meant what
+    # its name says.
     v_tis_co2_fast: float = 22.0
     v_tis_co2_slow: float = 140.0
     k_co2_slow: float = 0.80
@@ -329,8 +405,24 @@ class Patient:
         return (self.vo2_ref * (self.abw() / 70.0) ** 0.75
                 - self.vo2_drop_per_kg * self.weight)
 
+    def anaemia_co_factor(self):
+        """How much the resting cardiac output rises at this haemoglobin.
+
+        1.0 at and above hb_co_threshold, so a normal patient is unaffected.
+        """
+        if self.hb >= self.hb_co_threshold:
+            return 1.0
+        f = (self.hb_co_threshold / max(self.hb, 0.5)) ** self.hb_co_exp
+        return float(min(self.hb_co_max, f))
+
     def co_anaes(self):
-        return self.co_ref * self.scale() * (1.0 - self.co_drop_frac)
+        # The anaemia response is applied BEFORE the anaesthetic drop, not
+        # after, so anaesthesia blunts the compensation in proportion. That
+        # is the clinically important bit: the anaemic patient who was
+        # holding their delivery together awake gives some of it back on
+        # induction, exactly when the reserve is wanted.
+        return (self.co_ref * self.scale() * self.anaemia_co_factor()
+                * (1.0 - self.co_drop_frac))
 
     def n2_capacities(self):
         """N2 capacity of each tissue compartment, mL STPD per mmHg."""
@@ -633,7 +725,14 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
                 * max(0.15, 1.0 + pt.sv_itp_gain * itp))
         co = max(0.02, co_base * (hr / pt.hr_base) * sv_f)
         # pressures
-        svr = pt.svr_base * max(pt.svr_floor, 1.0 + pt.svr_co2_gain * co2_arg)
+        # Reduced viscosity and vasodilatation are WHY the output rises, so
+        # the resistance falls with it. Leaving svr_base alone would double
+        # the mean arterial pressure along with the cardiac output, whereas
+        # measured anaemic patients have a normal or slightly low MAP and a
+        # markedly reduced resistance -- Circulation 1963 records exactly
+        # that, and its reversal when the anaemia is treated.
+        svr = (pt.svr_base / pt.anaemia_co_factor()
+               * max(pt.svr_floor, 1.0 + pt.svr_co2_gain * co2_arg))
         map_ = co * svr
         pvr = pt.pvr_base * (1.0 + (pt.hpv_pvr_max - 1.0) * hpv)
         pap = co * pvr + pt.pcwp
@@ -641,22 +740,58 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
 
         # ---- pulmonary capillary ------------------------------------------
         cv_o2, cv_co2 = ven_o2[-1], ven_co2[-1]
-        # One pH for the whole lung: every compartment is perfused by the same
-        # mixed venous blood and alveolar CO2 varies little between them during
-        # apnoea. This keeps every per-compartment term analytic.
-        ph_c = bg.ph_from_pco2_be(paco2_alv, be, hb, so2=0.99, temp=temp)
+        # One pH PER COMPARTMENT. The lung-wide pH this used to use assumed
+        # alveolar CO2 varies little between compartments, which is true while
+        # the V/Q spread is narrow but fails exactly when the model is being
+        # asked its hardest question: under obstruction the spread widens, and
+        # pricing a compartment at 60 mmHg with the pH belonging to the lung
+        # mean inflated its CO2 content by up to 2.45x. Content then went
+        # linear in PCO2 -- the dissociation curve's saturation was lost -- and
+        # arterial PCO2 ran away to 250 mmHg while alveolar sat at 112 and
+        # venous at 113, which is thermodynamically impossible: arterial must
+        # lie between them. The obstructed rate of rise came out at 41.75
+        # mmHg/min against Stock's measured 3.4. It costs one scalar solve per
+        # compartment per step and nothing else in the model changes.
+        #
+        # The solve input is clamped, and must be. A compartment whose gas
+        # volume has collapsed onto the 1e-9 floor has a PCO2 that is the
+        # ratio of two floor values: in a sealed run it ranges from 1.8e-06 to
+        # 566 mmHg and carries no physical information. That is not merely
+        # noisy, it is out of domain -- the RBC correction in co2_content has
+        # a POLE at pH 8.142, which any PCO2 below about 2.4 mmHg reaches, and
+        # beyond it the content changes sign. The lung-mean pH was always
+        # physiological so it never met the pole; a per-compartment pH walks
+        # straight into it, and Python and JavaScript then land either side
+        # and disagree by 8.5%. Collapsed units carry almost no perfusion, so
+        # clamping to the range over which the correlations are defined
+        # changes no gas exchange that is actually happening.
+        ph_c = np.array([bg.ph_from_pco2_be(float(pc), be, hb, so2=0.99, temp=temp)
+                         for pc in np.clip(p_co2_c, 5.0, 250.0)])
         sc_o2_c = bg.so2_from_po2(p_o2_c, ph_c, p_co2_c, temp)
         cc_o2_c = bg.HUFNER * hb * sc_o2_c + bg.O2_SOL * p_o2_c
         cc_co2_c = bg.co2_content(p_co2_c, ph_c, sc_o2_c, hb, temp)
 
         qeff = co * (1.0 - shunt) * 10.0     # dL/min through gas exchange
-        q_c = qeff * q_w                     # per compartment
+        # Blood that has NOT been shunted goes to the parts of the lung still
+        # open, in proportion to how open they are. Weighting it by the
+        # RESTING distribution instead -- which is what this did -- keeps
+        # sending a fully collapsed compartment its full share of perfusion
+        # and then mixes that unit's end-capillary blood into the artery at
+        # full weight. The aggregate shunt term above removes the right AMOUNT
+        # of blood but not from the right COMPARTMENTS. A unit with no gas
+        # left was still setting arterial content, and its gas fractions are
+        # by then the ratio of two 1e-9 floor values: in a sealed run those
+        # units reach PCO2 of 1.8e-06 and 566 mmHg in the same breath, so what
+        # they contributed was numerical debris.
+        w_open = q_w * (1.0 - coll_c)
+        w_open = w_open / max(w_open.sum(), 1e-12)
+        q_c = qeff * w_open                  # per compartment
         vo2_c = q_c * (cc_o2_c - cv_o2)
         vco2_c = q_c * (cv_co2 - cc_co2_c)
         vo2_lung, vco2_lung = vo2_c.sum(), vco2_c.sum()
         # arterial blood is the perfusion-weighted mix, then shunt admixture
-        ca_o2_new = (1 - shunt) * float(q_w @ cc_o2_c) + shunt * cv_o2
-        ca_co2_new = (1 - shunt) * float(q_w @ cc_co2_c) + shunt * cv_co2
+        ca_o2_new = (1 - shunt) * float(w_open @ cc_o2_c) + shunt * cv_o2
+        ca_co2_new = (1 - shunt) * float(w_open @ cc_co2_c) + shunt * cv_co2
 
         # ---- nitrogen: sum of three perfusion-limited compartments --------
         pan2 = frac[2] * p_dry

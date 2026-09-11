@@ -6,3 +6,4 @@ result.png
 
 # parity test scratch
 .parity_tmp/
+dist/

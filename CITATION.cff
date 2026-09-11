@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: >-
+  This is unpublished research software, all rights reserved. Cite it as
+  below, and see LICENSE: any use in a publication needs prior written
+  permission from the author.
+title: "Apnoeic oxygenation model"
+abstract: >-
+  A computational model of gas exchange during apnoea after intravenous
+  induction, comparing a patent airway against complete obstruction and
+  quantifying the effect of buccal oxygen delivery. Twenty parallel
+  ventilation/perfusion compartments with emergent shunt, a coupled
+  circulation, and benchmarks against clinical measurement. Implemented
+  twice, in Python and JavaScript, held to agreement within 1%.
+type: software
+authors:
+  - family-names: Heard
+    given-names: A. M. B.
+version: "a3ca735d25b19dd0673c26356fff5ab60584ddc7"
+date-released: "2026-09-11"
+license-url: "LICENSE"
+keywords:
+  - apnoeic oxygenation
+  - airway obstruction
+  - buccal oxygen
+  - physiological modelling
+  - anaesthesia
