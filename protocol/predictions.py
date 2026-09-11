@@ -1,3 +1,6 @@
+# Copyright (c) 2026 A. M. B. Heard. All rights reserved.
+# Unpublished research software. See LICENSE: use in any publication
+# requires prior written permission. Cite as in CITATION.cff.
 """Regenerate every number quoted in protocol/study.html.
 
 The protocol registers its predictions as coming from "the model at a recorded

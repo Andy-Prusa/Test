@@ -1,3 +1,6 @@
+# Copyright (c) 2026 A. M. B. Heard. All rights reserved.
+# Unpublished research software. See LICENSE: use in any publication
+# requires prior written permission. Cite as in CITATION.cff.
 """
 test_validation.py — every benchmark this model has been checked against,
 as executable tests.

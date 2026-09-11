@@ -129,6 +129,8 @@ font-variant-numeric:tabular-nums}
 margin-top:-4px}
 .legend{display:flex;gap:15px;font-size:12px;color:var(--dim);margin-top:14px;flex-wrap:wrap}
 .sw{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+.credit{color:var(--dim);font-size:11px;line-height:1.45;margin-top:10px;max-width:78ch;
+ opacity:.85}
 .foot{color:var(--dim);font-size:12px;line-height:1.5;margin-top:16px;max-width:78ch;
 border-top:1px solid var(--rule);padding-top:12px}
 .busy{color:var(--co2);font-size:12px}
@@ -156,6 +158,8 @@ body.zen .arm{padding:8px;min-height:0;overflow:hidden}
 body.zen .armhead{padding-bottom:4px;margin-bottom:5px}
 body.zen .armname{font-size:clamp(13px,2.2vh,19px)}
 body.zen .armnote{font-size:clamp(9px,1.4vh,12px)}
+body.zen .credit{margin:0;font-size:clamp(8px,1.15vh,11px);opacity:.75;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none}
 body.zen .big{font-size:clamp(26px,7.5vh,76px)}
 body.zen .biglab{font-size:clamp(8px,1.3vh,11px)}
 body.zen .ecg{height:clamp(26px,7vh,74px);margin-top:4px}
@@ -223,9 +227,16 @@ parameterised, not fitted to source data.</p>
 <span><i class="sw" style="background:var(--inert)"></i>nitrogen and CO&#8322;</span>
 <span><i class="sw" style="background:#0a1218;border:1px solid var(--rule2)"></i>vacuum</span></div>
 
+<p class="credit">&copy; 2026 A. M. B. Heard. All rights reserved. Unpublished research model
+&mdash; not a medical device, not for patient care. Reproduction or use in any publication
+requires the author's written permission.</p>
+
 </div>
 </div>
 <script>
+// Copyright (c) 2026 A. M. B. Heard. All rights reserved.
+// Unpublished research software. See LICENSE: use in any publication
+// requires prior written permission. Cite as in CITATION.cff.
 // model.js — browser port of bloodgas.py + apnoea_core.py.
 // Bisection replaces brentq; otherwise the equations are identical.
 // Verified against the Python reference in verify_port.py.

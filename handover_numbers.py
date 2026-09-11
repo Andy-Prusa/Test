@@ -1,3 +1,6 @@
+# Copyright (c) 2026 A. M. B. Heard. All rights reserved.
+# Unpublished research software. See LICENSE: use in any publication
+# requires prior written permission. Cite as in CITATION.cff.
 """Regenerate every number quoted in HANDOVER.md, and fail if any has drifted.
 
 HANDOVER.md carries several numeric tables that were computed once and typed in.

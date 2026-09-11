@@ -1,3 +1,6 @@
+// Copyright (c) 2026 A. M. B. Heard. All rights reserved.
+// Unpublished research software. See LICENSE: use in any publication
+// requires prior written permission. Cite as in CITATION.cff.
 // model.js — browser port of bloodgas.py + apnoea_core.py.
 // Bisection replaces brentq; otherwise the equations are identical.
 // Verified against the Python reference in verify_port.py.
