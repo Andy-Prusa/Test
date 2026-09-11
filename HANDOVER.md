@@ -81,13 +81,16 @@ the section is not.
 |---|---|---|
 | widen the Stock band to the literature 3–5 | not done | `test_validation.py` still asserts 2.4–4.4. Eger & Severinghaus put the range at 3–5, so the narrow band is ours, not theirs. Widening it would let the held Haldane patch (4.7) through — which is the argument for doing it and the reason to be careful about when |
 | benchmark the PATENT 1–5 min slope | not done | would **fail** at 1.70 against a classical 3–5. Adding it turns an untested weakness into a red suite, so it lands with the fix, not before |
+| model the jet insufflation protocol | not started | You set the order at "chase the co2 till we get it right, then look at jet insufflation", and answered the one open design question with **"discrete release for all time between boluses"** — the cannula open to atmosphere for the whole inter-bolus interval. Nothing was built. It needs an **outflow branch the model does not have**: `inflow` is clamped non-negative in both implementations (`apnoea_core.py:827`, `model.js:283`), so gas can only ever enter. `test_icsm_jet_2026` benchmarks the apnoea BEFORE cricothyroidotomy, not the jetting. The CO2 defect above is still open, so the order you set still holds — but the decision was made and had no home |
 
 Add a row when something is agreed and not immediately built. Delete the row
 when it is built, naming the commit — not when it is merely started.
 
 ### Waiting on
 
-**Kelman 1967 and 1968** (critical path), Eger & Severinghaus 1961, Stock 1989.
+**Kelman 1967 and 1968** (critical path), Eger & Severinghaus 1961, Stock 1989,
+**Douglas 1988** — whose constants `bloodgas.py` carries from memory, and which
+`protocol/evidence.md` still lists as not obtained.
 See `protocol/evidence.md` for what each would settle.
 
 **Toner's tracheal O2 traces** — Andy believes these still exist. Ask for the
