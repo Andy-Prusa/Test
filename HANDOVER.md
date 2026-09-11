@@ -68,6 +68,23 @@ real defect elsewhere.
 | "Ebata shows our CO2→CO gain 1.8x too strong" | **RETRACTED.** Their baseline was 45, on dopamine, hypothermic, brain-dead |
 | the six model comparators | **ONE simulator.** All Hardman/Nottingham |
 
+### Agreed, not yet built
+
+Things decided in conversation that no file yet carries. A decision that lives
+only in a chat transcript is lost at the next compaction — this section exists
+because the lungs-and-head visualisation was agreed, recorded in a summary as
+"deferred by the user" when the transcript says "lets try", and only noticed
+weeks later when the user asked where it had gone. It is built now (`ebe55b9`);
+the section is not.
+
+| agreed | state | why not done |
+|---|---|---|
+| widen the Stock band to the literature 3–5 | not done | `test_validation.py` still asserts 2.4–4.4. Eger & Severinghaus put the range at 3–5, so the narrow band is ours, not theirs. Widening it would let the held Haldane patch (4.7) through — which is the argument for doing it and the reason to be careful about when |
+| benchmark the PATENT 1–5 min slope | not done | would **fail** at 1.70 against a classical 3–5. Adding it turns an untested weakness into a red suite, so it lands with the fix, not before |
+
+Add a row when something is agreed and not immediately built. Delete the row
+when it is built, naming the commit — not when it is merely started.
+
 ### Waiting on
 
 **Kelman 1967 and 1968** (critical path), Eger & Severinghaus 1961, Stock 1989.
