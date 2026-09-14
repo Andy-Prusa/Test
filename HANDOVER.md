@@ -88,6 +88,41 @@ Tuning `v_tis_co2_fast`, `stiff_below_rv`, `vq_log_sd` or `tau_mix` to make
 Stock pass. Each works; none has a mechanism. `vq_log_sd` 0.55 is now known to
 be a move AWAY from measurement by about a factor of two.
 
+### The strongest lead we have, awaiting a decision
+
+`patches/kelman-1968-haldane-buffer-shift.patch` — **verified in both
+languages, parity holds, every benchmark passes, and it moves the open defect
+in the right direction.** Not applied only because it replaces one formulation
+of the acid-base Haldane limb with another and that is a judgement call, not a
+bug fix.
+
+Kelman 1968 p.264 states the reduced-haemoglobin buffer shift explicitly:
+
+    dpH = 0.003 * Hb(g/dL) * (1 - saturation)
+
+citing Siggaard-Andersen 1964 and, as measurement, Rossi & Roughton 1962's
+**+0.048 +- 0.008 pH on complete reduction of blood from five normal
+subjects**. Our Siggaard-Andersen oxygen term delivers **+0.0249 at Hb 15** —
+about half the measured shift.
+
+Applying Kelman's form instead:
+
+| | now | with Kelman | target |
+|---|---|---|---|
+| obstructed a-A gap at 300 s | 7.01 | **5.83** | — (this is the defect) |
+| Stock obstructed 1-5 min slope | 4.34 | **4.03** | 3.4 measured |
+| Toner sham, whole-apnoea rise | 2.74 | **2.59** | 2.63 measured in that trial |
+| Toner buccal, whole-apnoea rise | 3.02 | 3.02 | 2.29 measured |
+| patent terminal slope | 1.64 | 1.61 | — |
+
+The signature is exactly right: it acts only where saturation falls, so the
+buccal arm is untouched and the obstructed arm moves most. It is a sourced
+correction to a measured value, not a parameter fitted to a benchmark.
+
+**It does not rescue the per-compartment patch.** With both applied, Stock goes
+to 4.89 and the a-A gap to 8.66 — worse than either alone, and the suite fails.
+So the two are not two halves of one fix.
+
 ### Held, written but not applied
 
 `patches/haldane-per-compartment-ph.patch` — corrects a real inconsistency (the
