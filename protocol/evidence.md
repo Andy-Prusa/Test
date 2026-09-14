@@ -30,7 +30,7 @@ missing pairing is the one that matters most.
 | H alone | yes | large |
 | **P + H** | **yes** | Wright 2023 (n=19); Condos 1987 (n=10) |
 | **C + H** | **yes** | Ebata 1991 (n=9), patent airway |
-| **P + C** | **NOT FOUND** | — |
+| **P + C** | **patent airway only** | The buccal trial measured airway pressure and CO2 rise in the same 19 patients (summary spreadsheet, not in this repository). Sham mean +0.56 cmH2O, buccal +0.23. Under OBSTRUCTION it remains **NOT FOUND** — Stock 1989, the best candidate, recorded no pressure |
 | P + C + H | **NOT FOUND** | — |
 
 So the protocol's premise survives, but its statement of the gap must change.
@@ -312,6 +312,6 @@ conclusions. What remains:
 | Condos, Circulation 1987;76:1020 | **Obtained and read** |
 | Ebata, Can J Anaesth 1991;38:436 | **Obtained and read** |
 | Koshino, Circ Cardiovasc Imaging 2010;3:282 | Not obtained. Reports strain, not stroke volume, so low priority |
-| Douglas, J Appl Physiol 1988;65:473 | Not obtained |
+| Douglas, J Appl Physiol 1988;65:473 | **Obtained and read 2026-09-14.** Eq 6 verified; `[Hb]` is in g/100 mL, and reading it as mmol/L was a real error in our code, now fixed |
 | Tokics, J Appl Physiol 1996;81:1822 | **Obtained and read.** Settles the V/Q spread: log QSD 0.65 awake, 1.18 anaesthetised by MIGET, 0.80 by isotope, n=10 paralysed supine |
-| Stock, J Clin Anesth 1989;1:328 | Not obtained. **The one that matters** |
+| Stock, J Clin Anesth 1989;1:328 | **Obtained and read 2026-09-14.** n=14, enflurane, tubes clamped. **No airway pressure was recorded** — pulse oximetry and ECG only. Table 2 separates terminal from linear CO2 rise, which resolves the "classical 3-5" |

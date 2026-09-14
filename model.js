@@ -32,9 +32,11 @@ const phFromPco2Be=(pco2,be,hb,so2,T)=>{
     return (1-0.0143*hbm)*((hco3-24.8)+(9.5+1.63*hbm)*(pH-7.4))
            -0.2*hbm*(1-so2)-be;},4.5,10.5,34);};
 const co2Content=(pco2,pH,so2,hb,T)=>{
-  const hbm=hb*0.6206;
+  // Douglas 1988 eq 6 takes [Hb] in g/100 mL, not mmol/L -- see the note in
+  // bloodgas.py's co2_content. phFromPco2Be above DOES use mmol/L, because
+  // Siggaard-Andersen's cHb genuinely is in mmol/L; the two are different.
   const pl=co2Sol(T)*pco2*(1+Math.pow(10,pH-pkPrime(pH,T)));
-  return pl*(1-(0.0289*hbm)/((3.352-0.456*so2)*(8.142-pH)))*MLCO2/10;};
+  return pl*(1-(0.0289*hb)/((3.352-0.456*so2)*(8.142-pH)))*MLCO2/10;};
 const arterialState=(cco2,be,hb,o2c,T)=>{
   const st=pco2=>{let so2=0.9,pH=0,po2=0;
     for(let i=0;i<8;i++){pH=phFromPco2Be(pco2,be,hb,so2,T);

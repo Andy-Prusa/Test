@@ -118,13 +118,19 @@ check("stiff_below_rv 2.00: Stock slope",
 # ---------------------------------------------------------------------------
 print("\nThe CO2 dissociation curve -- its CURVATURE drives the a-A gap")
 import bloodgas as bg  # noqa: E402
-for pco2, want in ((40, 50.96), (60, 59.15), (80, 65.43), (100, 70.63)):
+for pco2, want in ((40, 46.54), (60, 54.83), (80, 61.14), (100, 66.35)):
     ph = bg.ph_from_pco2_be(pco2, 0.0, 15.0, so2=0.97, temp=37.0)
     check(f"CCO2 at PCO2 {pco2:3d}, SO2 0.97, Hb 15",
           bg.co2_content(pco2, ph, 0.97, 15.0, 37.0), want, 0.15, " mL/dL")
-print("    (textbook arterial anchor is about 48 mL/dL at PCO2 40; we read high,")
-print("     which bloodgas.py records. The CURVATURE has never been checked --")
-print("     that needs Kelman 1967.)")
+print("    Kelman 1967 and Douglas 1988 were obtained on 2026-09-14 and both")
+print("    limbs are now VERIFIED against the papers. A real error was found:")
+print("    Douglas takes [Hb] in g/100 mL and we were passing mmol/L, which put")
+print("    content 8.7% high. These four values moved by about 4.3 mL/dL each.")
+print("    At Hb 14 the arterial anchor is now 47.50 mL/dL against a textbook")
+print("    ~48; before the fix it was 51.65.")
+print("    The CURVATURE was the reason Kelman was called the critical path.")
+print("    Correcting the curve moved every CO2 SLOPE by under 0.05 mmHg/min,")
+print("    so the curve is NOT the cause of the a-A over-sensitivity.")
 
 # ---------------------------------------------------------------------------
 print("\nPharyngeal FO2 -- what Toner's tracheal traces would settle")

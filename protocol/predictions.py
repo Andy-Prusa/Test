@@ -87,7 +87,7 @@ for s in (30, 60, 120, 180):
 
 i180 = at(rec, 180)
 check("Paw at 180 s", rec['palv_cmh2o'][i180], -15.6, 0.2, " cmH2O")
-check("PaCO2 at 180 s", rec['paco2'][i180], 58.8, 0.3, " mmHg")
+check("PaCO2 at 180 s", rec['paco2'][i180], 58.5, 0.3, " mmHg")
 check("SaO2 at 180 s", rec['sao2'][i180], 98.4, 0.2, " %")
 check("entrained volume at 180 s", ent[i180], 739.0, 6.0, " mL")
 check("entrained volume at 120 s", ent[at(rec, 120)], 494.0, 6.0, " mL")
