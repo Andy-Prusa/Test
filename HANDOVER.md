@@ -88,6 +88,52 @@ Tuning `v_tis_co2_fast`, `stiff_below_rv`, `vq_log_sd` or `tau_mix` to make
 Stock pass. Each works; none has a mechanism. `vq_log_sd` 0.55 is now known to
 be a move AWAY from measurement by about a factor of two.
 
+### A structural gap the tracheal data exposes
+
+Toner's trial measured **tracheal oxygen** as well as saturation, in the same
+patients (summary spreadsheet, not in this repository). It is an independent
+channel: every Toner benchmark we carry is SpO2 timing, i.e. the blood side.
+This tests the gas side. Two things fall out, and the model fails both.
+
+**1. The deadspace never mixes.** `vd_anat` is a stack of `vd_segments`
+laminae advected by the net inflow, with NO exchange between the airway and
+the alveoli. So in the sham arm it flushes to room air and stays there:
+
+| | 60 s | 120 s | 180 s | 240 s |
+|---|---|---|---|---|
+| model, mouth lamina | 21.0 | 21.0 | 21.0 | 21.0 |
+| model, carina lamina | 25.0 | 21.0 | 21.0 | 21.0 |
+| model, alveolar | 79.2 | 67.1 | 55.4 | 43.9 |
+| **measured tracheal** | — | — | **~66 (54-72)** | — |
+
+A 58-point step across one lamina boundary at 60 s is not a gas physics the
+airway has. Hardman's model carries an explicit anatomical deadspace
+gas-mixing module alongside its cardiogenic oscillations (2026 supplement);
+ours has cardiogenic mixing BETWEEN COMPARTMENTS (`tau_mix`) and nothing at
+all between airway and alveolus.
+
+**2. Alveolar oxygen is independently too low.** Tracheal gas in the sham arm
+can only be a mixture of alveolar gas and room air, so alveolar O2 >= tracheal
+O2. The measurement puts a floor of ~66% at 180 s and 70% at 180-210 s. The
+model gives **55.4% at 180 s**. No single gas-side dial clears it:
+
+    as shipped                55.4        VO2 -20%              63.3
+    FRC x1.25                 62.7        preoxygenation 0.90   58.6
+    FRC x1.5                  67.2        preoxygenation 0.95   63.8
+
+The one caveat on the floor: our `pao2_alv` is a mixed alveolar value, and gas
+leaving high-V/Q units is richer, so a sampled trachea could read above the
+mixed mean. That could absorb some of the 11-point gap but is unlikely to
+absorb all of it.
+
+**The buccal arm cannot discriminate**, which is now on firmer ground than
+when it was first argued: with a 100% O2 pharynx, tracheal gas is a mixture of
+alveolar gas and 100% O2, so it reads high whatever the model does.
+
+This is a gas-side defect and is unrelated to the CO2 over-sensitivity above.
+A benchmark asserting sham tracheal O2 >= 70% at 180 s would fail today, so by
+this project's convention it lands with the fix rather than before it.
+
 ### The strongest lead we have, awaiting a decision
 
 `patches/kelman-1968-haldane-buffer-shift.patch` — **verified in both
