@@ -73,15 +73,17 @@ study periods. So the "classical 3-5" is a terminal 3-3.4 and a linear 3.2-5,
 and our 1.70 was being measured against the wrong one. The terminal figures are
 also OBSTRUCTED, where ours is 4.34.
 
-On the like-for-like comparison the model does well. In Toner's own
-configuration our patent arm gives a linear rise of **2.74** (sham) and 3.02
-(buccal); the trial's own summary spreadsheet — not in this repository — gives
-**2.63** sham and 2.29 buccal, n=19, SD 0.54.
+On the like-for-like comparison the model looks far better than the old entry
+suggested. In Toner's configuration our patent arm gives a LINEAR rise of
+**2.74** (sham) and 3.02 (buccal), against published linear estimates of
+3.2 (Frumin) to 5 (Holmdahl) — the same kind of quantity, and the right order.
+The old 1.70 was a terminal slope being compared against linear figures.
 
 What remains true: nothing in the suite tests the patent slope at all.
 `test_cardiac_output` uses a 15-minute average the first-minute jump dominates,
-so it reads 2.38 and passes. Whether a new benchmark should assert the terminal
-or the linear figure now has a clear answer, and the trial gives the target.
+so it reads 2.38 and passes. A benchmark should assert the LINEAR rise, since
+that is what the published patent-airway values are, and Frumin 3.2 over a long
+study period is the closest published comparator.
 
 ### Refused four times, each with reasons below
 
@@ -89,51 +91,38 @@ Tuning `v_tis_co2_fast`, `stiff_below_rv`, `vq_log_sd` or `tau_mix` to make
 Stock pass. Each works; none has a mechanism. `vq_log_sd` 0.55 is now known to
 be a move AWAY from measurement by about a factor of two.
 
-### A structural gap the tracheal data exposes
+### A structural gap in the dead space — found, not yet sourced
 
-Toner's trial measured **tracheal oxygen** as well as saturation, in the same
-patients (summary spreadsheet, not in this repository). It is an independent
-channel: every Toner benchmark we carry is SpO2 timing, i.e. the blood side.
-This tests the gas side. Two things fall out, and the model fails both.
+This is a statement about our own code and needs no outside data to make.
 
-**1. The deadspace never mixes.** `vd_anat` is a stack of `vd_segments`
-laminae advected by the net inflow, with NO exchange between the airway and
-the alveoli. So in the sham arm it flushes to room air and stays there:
+`vd_anat` is a stack of `vd_segments` laminae advected by the net inflow, with
+**no exchange at all between the airway and the alveoli**. It is pure plug
+flow. In a patent-airway room-air apnoea that produces this:
 
 | | 60 s | 120 s | 180 s | 240 s |
 |---|---|---|---|---|
-| model, mouth lamina | 21.0 | 21.0 | 21.0 | 21.0 |
-| model, carina lamina | 25.0 | 21.0 | 21.0 | 21.0 |
-| model, alveolar | 79.2 | 67.1 | 55.4 | 43.9 |
-| **measured tracheal** | — | — | **~66 (54-72)** | — |
+| mouth lamina | 21.0 | 21.0 | 21.0 | 21.0 |
+| carina lamina | 25.0 | 21.0 | 21.0 | 21.0 |
+| alveolar | 79.2 | 67.1 | 55.4 | 43.9 |
 
-A 58-point step across one lamina boundary at 60 s is not a gas physics the
-airway has. Hardman's model carries an explicit anatomical deadspace
-gas-mixing module alongside its cardiogenic oscillations (2026 supplement);
-ours has cardiogenic mixing BETWEEN COMPARTMENTS (`tau_mix`) and nothing at
-all between airway and alveolus.
+A 58-point oxygen step across one lamina boundary at 60 s is not a gradient the
+airway can hold. The heart stirs gas across every airway face on every beat,
+and molecular diffusion does the rest. Hardman's model carries an explicit
+anatomical dead-space gas-mixing module alongside its cardiogenic oscillations
+(2026 supplement); ours has cardiogenic mixing BETWEEN COMPARTMENTS (`tau_mix`)
+and nothing between airway and alveolus.
 
-**2. Alveolar oxygen is independently too low.** Tracheal gas in the sham arm
-can only be a mixture of alveolar gas and room air, so alveolar O2 >= tracheal
-O2. The measurement puts a floor of ~66% at 180 s and 70% at 180-210 s. The
-model gives **55.4% at 180 s**. No single gas-side dial clears it:
+**BLOCKED, and deliberately so.** The mechanism is easy to write — equal-volume
+swaps across each face, conserving gas and moving only composition. The problem
+is the rate. Adding a new degree of freedom with no published measurement to
+set it against would make the model less trustworthy, not more, and the obvious
+calibration target is data we have decided not to use. So nothing goes in until
+there is a PUBLISHED source for airway gas mixing during apnoea. A prototype
+was written and discarded; it is not in this repository and its parameter was
+never chosen.
 
-    as shipped                55.4        VO2 -20%              63.3
-    FRC x1.25                 62.7        preoxygenation 0.90   58.6
-    FRC x1.5                  67.2        preoxygenation 0.95   63.8
-
-The one caveat on the floor: our `pao2_alv` is a mixed alveolar value, and gas
-leaving high-V/Q units is richer, so a sampled trachea could read above the
-mixed mean. That could absorb some of the 11-point gap but is unlikely to
-absorb all of it.
-
-**The buccal arm cannot discriminate**, which is now on firmer ground than
-when it was first argued: with a 100% O2 pharynx, tracheal gas is a mixture of
-alveolar gas and 100% O2, so it reads high whatever the model does.
-
-This is a gas-side defect and is unrelated to the CO2 over-sensitivity above.
-A benchmark asserting sham tracheal O2 >= 70% at 180 s would fail today, so by
-this project's convention it lands with the fix rather than before it.
+Do not "fix" this by picking a plausible-looking mixing rate. That is the
+failure this file exists to prevent.
 
 ### The Kelman buffer shift — APPLIED 2026-09-15
 
@@ -156,8 +145,8 @@ Applying Kelman's form instead:
 |---|---|---|---|
 | obstructed a-A gap at 300 s | 7.01 | **5.83** | — (this is the defect) |
 | Stock obstructed 1-5 min slope | 4.34 | **4.03** | 3.4 measured |
-| Toner sham, whole-apnoea rise | 2.74 | **2.59** | 2.63 measured in that trial |
-| Toner buccal, whole-apnoea rise | 3.02 | 3.02 | 2.29 measured |
+| Toner sham, whole-apnoea rise | 2.74 | **2.59** | published linear 3.2-5 |
+| Toner buccal, whole-apnoea rise | 3.02 | 3.02 | — |
 | patent terminal slope | 1.64 | 1.61 | — |
 | Stock slope at measured V/Q 0.80 | 5.02 | 4.67 | 3.4 — **still far out** |
 | Stock slope at measured V/Q 1.18 | 7.44 | 6.74 | 3.4 — **still far out** |

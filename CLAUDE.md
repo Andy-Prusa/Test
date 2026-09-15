@@ -35,6 +35,16 @@ a value has drifted. If you add a table to HANDOVER, add it there too. The
 Ellis comparator rows are the cautionary example: recorded, never scripted, and
 now unreproducible.
 
+**Only published data goes in this repository.** Not unpublished trial results,
+not a collaborator's spreadsheet, not numbers derived from either — including
+derived numbers in prose, in a commit message, or as the value of a parameter.
+`make_package.sh` builds from `git archive HEAD`, so everything tracked here
+travels in every package. This rule exists because trial figures reached
+HANDOVER.md and protocol/evidence.md before anyone had decided they could be
+used, and had to be redacted. If unpublished data suggests a finding, the
+finding can only be recorded once it stands on a published source, or on
+something internal to this code.
+
 **Do not tune a parameter to pass a benchmark.** This has been proposed and
 refused four times, each recorded in HANDOVER with the reasoning. A change
 needs a mechanism, not a fit. If a correction makes a benchmark WORSE, that is

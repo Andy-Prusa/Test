@@ -30,7 +30,7 @@ missing pairing is the one that matters most.
 | H alone | yes | large |
 | **P + H** | **yes** | Wright 2023 (n=19); Condos 1987 (n=10) |
 | **C + H** | **yes** | Ebata 1991 (n=9), patent airway |
-| **P + C** | **patent airway only** | The buccal trial measured airway pressure and CO2 rise in the same 19 patients (summary spreadsheet, not in this repository). Sham mean +0.56 cmH2O, buccal +0.23. Under OBSTRUCTION it remains **NOT FOUND** — Stock 1989, the best candidate, recorded no pressure |
+| **P + C** | **NOT FOUND** | Confirmed against the best candidate: Stock 1989 clamped the tracheal tube but **recorded no airway pressure at all** — pulse oximetry and ECG only. No published study measures airway pressure and CO2 rise in the same apnoeic patients |
 | P + C + H | **NOT FOUND** | — |
 
 So the protocol's premise survives, but its statement of the gap must change.
