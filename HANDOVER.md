@@ -258,6 +258,45 @@ than the patency one.
 **Nothing in `editorial.md` has been edited.** It is the author's prose; these
 are findings about it.
 
+### Open decisions awaiting the author — 2026-09-15
+
+None of these is blocked on work; they are blocked on a choice. Listed here
+because a session that ends takes its conversation with it.
+
+| decision | state |
+|---|---|
+| **which buccal paper first** | the only thing blocking substantive work. The dose-response/stratification one is the argument, because the anaemia null and the sub-millimetre aperture threshold are both novel and need no new data |
+| **correcting `editorial.md`** | three errors found (see the audit above). The file is the author's prose and has NOT been edited. Corrected paragraphs can be drafted on request |
+| **the stale protocol artifact** | its published version predates both the Douglas units fix and the Kelman shift, so its PaCO2 column is wrong. Republishing to the same URL was offered twice and never decided |
+| **`editorial.md` in the shared package** | currently included and labelled as a draft. Exclude it? |
+| **the slider sweep as a test** | it found the FRC-below-RV problem (see below) and exists only as a scratch script. Add it so it runs every commit? |
+| **a note recording the leave-history-alone decision** | drafted, reverted, not committed |
+
+### Hosting the simulator privately — plan, not yet done
+
+The page is one self-contained 61 KB file that makes no network call at
+runtime except Google Fonts. **Cloudflare Pages + Cloudflare Access** fits it,
+and both are free at this scale — checked 2026-09-15: Zero Trust's free plan
+covers up to 50 users, Pages static hosting is unmetered for bandwidth with a
+25 MiB per-file cap. Access gives viewers a one-time PIN by email, so there are
+no accounts to create.
+
+Three things to get right, in order of importance:
+
+1. **Do NOT connect the GitHub repository to Pages.** Auto-deploy on push is
+   convenient and would grant Cloudflare read access to this whole repository —
+   HANDOVER, the protocol, the editorial draft. Upload the single HTML file
+   instead, by drag-and-drop or `wrangler pages deploy`.
+2. **Inline the fonts before deploying.** As shipped the page calls
+   fonts.googleapis.com, so every viewer's browser tells Google they opened it.
+   Inlining as base64 costs a few hundred KB and makes the page fully offline.
+3. **Add a `_headers` file with `X-Robots-Tag: noindex`.** Access blocks
+   crawlers anyway; this covers the window before the policy is live.
+
+The outstanding question is the Access policy: a list of named colleagues, or
+anyone with an email at a given institution. That decides the policy shape and
+nothing else.
+
 ### Agreed, not yet built
 
 Things decided in conversation that no file yet carries. A decision that lives
