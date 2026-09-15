@@ -154,6 +154,47 @@ print("    tested that falls BELOW Toner's IQR. The buccal arm holds to 750 s")
 print("    anywhere at or above 0.70, so its traces would settle nothing.")
 
 # ---------------------------------------------------------------------------
+print("\nThe anthropometry sliders run the model past its own assumptions")
+print("Found 2026-09-11 by sweeping every dial on the page to its ends.\n")
+_BA = dict(age=45, frc_ref=2500, frc_drop=400, cc_at_20=1800, cc_per_year=20,
+           cc_per_bmi=45, cc_k=1.5, vo2_ref=250, co_ref=5, crs=85, v_art=1.0,
+           v_ven=2.0, v_tis_o2=1.5, rv=1100, p_collapse=-50, n_vq=20)
+_DA = dict(height=1.75, hb=14.0, max_closed=0.25, vq_log_sd=0.70,
+           tau_mix=45, inflow_mech_frac=0.18, tilt_deg=25)
+for _w, _want in ((107, 1586.0), (130, 1111.0), (180, 587.0)):
+    check(f"FRC at induction, {_w} kg", Patient(weight=_w, **_BA, **_DA).frc_anaes(),
+          _want, 6.0, " mL")
+print(f"    The model's own residual volume is {_BA['rv']} mL. FRC at induction")
+print("    falls BELOW it at about 131 kg (BMI 42.8) -- the top third of the")
+print("    weight slider -- and below 1.65 m at the default weight. A lung")
+print("    cannot start below its residual volume.")
+for _w, _want in ((107, 0.0), (140, -15.4), (180, -50.0)):
+    _r = simulate(Patient(weight=_w, **_BA, **_DA),
+                  [AirwayEpoch(60, resistance=np.inf, fgo2=0.21)],
+                  dt=0.05, feo2_start=0.87, stop_sao2=0.0)
+    check(f"alveolar pressure at t=0, {_w} kg", _r['palv_cmh2o'][0], _want, 1.0,
+          " cmH2O")
+print("    At 180 kg the lung STARTS on the -50 cmH2O collapse floor, before a")
+print("    second of apnoea. Every pressure-derived quantity is then a constant")
+print("    rather than a computation. Both findings trace to the BMI-FRC")
+print("    relation, which apnoea_core.py already labels a PLACEHOLDER: it is")
+print("    being extrapolated far past anything it could be calibrated for.")
+print()
+print("    TWO PORT DEFECTS the sliders reach and test_parity.py does not:")
+print("    1. The FRC floor differs -- max(400.0, ...) in Python against")
+print("       Math.max(300, ...) in model.js. Reachable: weight 180 with")
+print("       frcScale 0.55 gives 323 mL, which the JS honours and Python")
+print("       would floor to 400. Parity misses it because frcScale is pinned")
+print("       at 1.0 there.")
+print("    2. k_frc_bmi is a Patient field in Python and a hard-coded 0.0417 in")
+print("       model.js. They agree today, but js_params() never sends it, so a")
+print("       change in Python would not reach the page and parity would not")
+print("       notice.")
+print("    Also, at weight 180 the two differ by 2.26% at the page's dt=0.1,")
+print("    converging to 0.08% at dt=0.01 -- integration error in a small stiff")
+print("    lung rather than a port difference, but the page runs at 0.1.")
+
+# ---------------------------------------------------------------------------
 print("\nNOT REPRODUCIBLE, and recorded as such")
 print("    Ellis 2022 pregnancy comparator: HANDOVER quotes 18.1 and 5.8 min")
 print("    against their 25.4 and 9.9. The configuration behind those two")
