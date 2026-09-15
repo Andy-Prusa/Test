@@ -29,11 +29,11 @@ Douglas 1988 were obtained on 2026-09-14. Both limbs are verified against the
 papers, and a real error was found: Douglas eq 6 takes `[Hb]` in **g/100 mL**
 and we were passing mmol/L, which made the red-cell correction too weak and put
 whole-blood content 8.7% high — the "51 vs 48" `bloodgas.py` had recorded as
-unexplained. Fixed in both implementations; arterial content is now 47.36 mL/dL
-against a textbook ~48, at Hb 14, BE 0, PCO2 40 and SO2 0.97. This entry used to
-quote 47.50; that figure's configuration was never recorded and it does not
-reproduce at the one above, so `handover_numbers.py` now checks the anchor at a
-stated configuration instead.
+unexplained. Fixed in both implementations; arterial content is now 47.50 mL/dL
+against a textbook ~48, at Hb 14, pH 7.40, PCO2 40 and SO2 0.97 — the
+configuration `bloodgas.py`'s NOTE_DOUGLAS states. `handover_numbers.py` now
+CHECKS that anchor rather than printing it. The pH there is given, not solved
+from base excess; at BE 0 the same anchor is 47.36.
 
 Correcting it moved the absolute content by 4.2 mL/dL and **every CO2 slope by
 under 0.05 mmHg/min**, because the error was close to a uniform scaling and the
