@@ -72,36 +72,36 @@ def gap(r, t):
     return at(r, 'paco2', t) - at(r, 'paco2_alv', t)
 
 
-check("obstructed PaCO2 slope 60-300 s", slope(ro), 4.35, 0.10, " mmHg/min")
+check("obstructed PaCO2 slope 60-300 s", slope(ro), 4.03, 0.10, " mmHg/min")
 check("obstructed PACO2 slope", (at(ro, 'paco2_alv', 300) - at(ro, 'paco2_alv', 60)) / 4, 2.63, 0.10)
-check("obstructed PvCO2 slope", (at(ro, 'pvco2', 300) - at(ro, 'pvco2', 60)) / 4, 2.01, 0.10)
+check("obstructed PvCO2 slope", (at(ro, 'pvco2', 300) - at(ro, 'pvco2', 60)) / 4, 1.70, 0.10)
 check("patent PaCO2 slope 60-300 s", slope(rp), 1.70, 0.10, " mmHg/min")
 check("patent PvCO2 slope", (at(rp, 'pvco2', 300) - at(rp, 'pvco2', 60)) / 4, 1.80, 0.10)
-check("obstructed a-A gap growth", (gap(ro, 300) - gap(ro, 60)) / 4, 1.72, 0.10)
+check("obstructed a-A gap growth", (gap(ro, 300) - gap(ro, 60)) / 4, 1.50, 0.10)
 check("patent a-A gap growth", (gap(rp, 300) - gap(rp, 60)) / 4, -0.04, 0.10)
 for t, g, sh, sa in ((60, -0.2, 0.058, 100.0), (180, 1.3, 0.103, 98.5),
-                     (240, 6.3, 0.140, 93.1), (300, 6.7, 0.181, 84.9)):
+                     (240, 5.9, 0.140, 93.1), (300, 5.8, 0.181, 84.9)):
     check(f"obstructed a-A gap at {t:3.0f} s", gap(ro, t), g, 0.4, " mmHg")
     check(f"obstructed shunt at {t:3.0f} s", 100 * at(ro, 'shunt', t), 100 * sh, 1.0, " %")
 
 # ---------------------------------------------------------------------------
 print("\nWhat the coupling is NOT")
 check("shunt suppressed (max_closed 0.02): slope",
-      slope(run(max_closed=0.02)), 4.50, 0.15, " mmHg/min")
+      slope(run(max_closed=0.02)), 4.21, 0.15, " mmHg/min")
 check("hb 18, desaturation delayed: slope",
-      slope(run(hb=18.0)), 3.91, 0.15, " mmHg/min")
+      slope(run(hb=18.0)), 3.64, 0.15, " mmHg/min")
 check("p_collapse floor removed (-200): slope",
-      slope(run(p_collapse=-200.0)), 4.29, 0.15, " mmHg/min")
+      slope(run(p_collapse=-200.0)), 3.98, 0.15, " mmHg/min")
 
 # ---------------------------------------------------------------------------
 print("\ntau_mix -- the lever that acts on the a-A gap")
-for tm, want in ((25.0, 5.77), (45.0, 4.35), (60.0, 3.85), (90.0, 2.99)):
+for tm, want in ((25.0, 5.44), (45.0, 4.03), (60.0, 3.56), (90.0, 2.70)):
     check(f"tau_mix {tm:5.1f}: Stock 1-5 min slope",
           slope(run(tau_mix=tm)), want, 0.12, " mmHg/min")
 
 # ---------------------------------------------------------------------------
 print("\nvq_log_sd against Tokics 1996 (measured 0.80 isotope / 1.18 inert gas)")
-for sd, want in ((0.50, 3.07), (0.70, 4.35), (0.80, 5.02), (1.18, 7.44)):
+for sd, want in ((0.50, 2.89), (0.70, 4.03), (0.80, 4.67), (1.18, 6.74)):
     check(f"vq_log_sd {sd:4.2f}: Stock 1-5 min slope",
           slope(run(vq_log_sd=sd)), want, 0.15, " mmHg/min")
 check("baseline shunt (Tokics measured 7.0 +- 1.3%)",
@@ -109,11 +109,11 @@ check("baseline shunt (Tokics measured 7.0 +- 1.3%)",
 
 # ---------------------------------------------------------------------------
 print("\nsv_itp_gain -- nearly inert on the knot (human data give 0.0033-0.00476)")
-for g_, want in ((0.0025, 4.35), (0.00476, 4.24)):
+for g_, want in ((0.0025, 4.03), (0.00476, 3.93)):
     check(f"sv_itp_gain {g_:.5f}: Stock slope",
           slope(run(sv_itp_gain=g_)), want, 0.12, " mmHg/min")
 check("stiff_below_rv 2.00: Stock slope",
-      slope(run(stiff_below_rv=2.0)), 5.15, 0.15, " mmHg/min")
+      slope(run(stiff_below_rv=2.0)), 4.77, 0.15, " mmHg/min")
 
 # ---------------------------------------------------------------------------
 print("\nThe CO2 dissociation curve -- its CURVATURE drives the a-A gap")

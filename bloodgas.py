@@ -164,11 +164,23 @@ def ph_from_pco2_be(pco2, be, hb, so2=0.97, temp=37.0):
         s = _co2_solubility(temp)
         hco3 = s * pco2 * 10.0 ** (pH - _pk_prime(pH, temp))
         be_calc = ((1 - 0.0143 * hb_mm)
-                   * ((hco3 - 24.8) + (9.5 + 1.63 * hb_mm) * (pH - 7.4))
-                   - 0.2 * hb_mm * (1.0 - so2))
+                   * ((hco3 - 24.8) + (9.5 + 1.63 * hb_mm) * (pH - 7.4)))
         return be_calc - be
 
-    return brentq(resid, 4.5, 10.5, xtol=1e-9)
+    # The acid-base limb of the HALDANE effect, as Kelman 1968 p.264 applies
+    # it: dpH = 0.003 * Hb(g/dL) * (1 - saturation). He cites
+    # Siggaard-Andersen 1964, and as measurement Rossi & Roughton 1962's
+    # +0.048 +- 0.008 pH on complete reduction of blood from five normal
+    # subjects. This REPLACED the Siggaard-Andersen oxygen term that used to
+    # sit inside resid() as -0.2 * cHb * (1 - sO2), which delivered only
+    # +0.0249 at Hb 15 -- about half the measured shift.
+    #
+    # Applied 2026-09-15 after the numbers were put side by side in HANDOVER:
+    # it moves the obstructed a-A gap 7.01 -> 5.83 and the Stock slope
+    # 4.34 -> 4.03 against a measured 3.4, and leaves the buccal arm
+    # untouched, which is the correct signature for a term that only acts as
+    # saturation falls. Sourced, not fitted.
+    return brentq(resid, 4.5, 10.5, xtol=1e-9) + 0.003 * hb * (1.0 - so2)
 
 
 # ---------------------------------------------------------------------------

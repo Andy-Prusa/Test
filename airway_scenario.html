@@ -262,11 +262,16 @@ const po2FromO2Content=(c,hb,pH,pco2,T)=>{
 const co2Sol=T=>{const d=37-T;return 0.0307+0.00057*d+0.00002*d*d;};
 const pkPrime=(pH,T)=>6.086+0.042*(7.4-pH)+(38-T)*(0.00472+0.00139*(7.4-pH));
 const phFromPco2Be=(pco2,be,hb,so2,T)=>{
+  // Kelman 1968 p.264 applies the reduced-haemoglobin buffer shift explicitly
+  // as dpH = 0.003 * Hb(g/dL) * (1 - saturation), citing Siggaard-Andersen
+  // 1964 and Rossi & Roughton's measured +0.048 +- 0.008 pH on complete
+  // reduction of normal blood. The Siggaard-Andersen oxygen term this
+  // replaces gave only 0.0249 at Hb 15 -- about half the measured shift.
   const hbm=hb*0.6206;
   return bisect(pH=>{
     const hco3=co2Sol(T)*pco2*Math.pow(10,pH-pkPrime(pH,T));
     return (1-0.0143*hbm)*((hco3-24.8)+(9.5+1.63*hbm)*(pH-7.4))
-           -0.2*hbm*(1-so2)-be;},4.5,10.5,34);};
+           -be;},4.5,10.5,34) + 0.003*hb*(1-so2);};
 const co2Content=(pco2,pH,so2,hb,T)=>{
   // Douglas 1988 eq 6 takes [Hb] in g/100 mL, not mmol/L -- see the note in
   // bloodgas.py's co2_content. phFromPco2Be above DOES use mmol/L, because
