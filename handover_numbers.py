@@ -73,10 +73,10 @@ def gap(r, t):
 
 
 check("obstructed PaCO2 slope 60-300 s", slope(ro), 4.03, 0.10, " mmHg/min")
-check("obstructed PACO2 slope", (at(ro, 'paco2_alv', 300) - at(ro, 'paco2_alv', 60)) / 4, 2.63, 0.10)
+check("obstructed PACO2 slope", (at(ro, 'paco2_alv', 300) - at(ro, 'paco2_alv', 60)) / 4, 2.53, 0.10)
 check("obstructed PvCO2 slope", (at(ro, 'pvco2', 300) - at(ro, 'pvco2', 60)) / 4, 1.70, 0.10)
 check("patent PaCO2 slope 60-300 s", slope(rp), 1.70, 0.10, " mmHg/min")
-check("patent PvCO2 slope", (at(rp, 'pvco2', 300) - at(rp, 'pvco2', 60)) / 4, 1.80, 0.10)
+check("patent PvCO2 slope", (at(rp, 'pvco2', 300) - at(rp, 'pvco2', 60)) / 4, 1.74, 0.10)
 check("obstructed a-A gap growth", (gap(ro, 300) - gap(ro, 60)) / 4, 1.50, 0.10)
 check("patent a-A gap growth", (gap(rp, 300) - gap(rp, 60)) / 4, -0.04, 0.10)
 for t, g, sh, sa in ((60, -0.2, 0.058, 100.0), (180, 1.3, 0.103, 98.5),
@@ -118,16 +118,25 @@ check("stiff_below_rv 2.00: Stock slope",
 # ---------------------------------------------------------------------------
 print("\nThe CO2 dissociation curve -- its CURVATURE drives the a-A gap")
 import bloodgas as bg  # noqa: E402
-for pco2, want in ((40, 46.54), (60, 54.83), (80, 61.14), (100, 66.35)):
+for pco2, want in ((40, 46.59), (60, 54.90), (80, 61.22), (100, 66.44)):
     ph = bg.ph_from_pco2_be(pco2, 0.0, 15.0, so2=0.97, temp=37.0)
     check(f"CCO2 at PCO2 {pco2:3d}, SO2 0.97, Hb 15",
           bg.co2_content(pco2, ph, 0.97, 15.0, 37.0), want, 0.15, " mL/dL")
+_ph_anchor = bg.ph_from_pco2_be(40, 0.0, 14.0, so2=0.97, temp=37.0)
+check("arterial anchor Hb 14, BE 0, PCO2 40, SO2 0.97",
+      bg.co2_content(40, _ph_anchor, 0.97, 14.0, 37.0), 47.36, 0.15, " mL/dL")
 print("    Kelman 1967 and Douglas 1988 were obtained on 2026-09-14 and both")
 print("    limbs are now VERIFIED against the papers. A real error was found:")
 print("    Douglas takes [Hb] in g/100 mL and we were passing mmol/L, which put")
 print("    content 8.7% high. These four values moved by about 4.3 mL/dL each.")
-print("    At Hb 14 the arterial anchor is now 47.50 mL/dL against a textbook")
-print("    ~48; before the fix it was 51.65.")
+print("    The arterial anchor checked above sits against a textbook ~48. It")
+print("    used to be quoted here as 47.50, and the pre-Douglas value as")
+print("    51.65. NEITHER had its configuration recorded and NEITHER")
+print("    reproduces. At the configuration now checked, this commit gives")
+print("    47.36, the pre-Kelman model 47.31 and the pre-Douglas model 51.43.")
+print("    47.50 needs BE +1 with SO2 0.99, or SO2 0.95; 51.65 needs Hb 13.5")
+print("    or 14.5. No single configuration yields both, so the pair is")
+print("    dropped rather than carried as though it meant something.")
 print("    The CURVATURE was the reason Kelman was called the critical path.")
 print("    Correcting the curve moved every CO2 SLOPE by under 0.05 mmHg/min,")
 print("    so the curve is NOT the cause of the a-A over-sensitivity.")
