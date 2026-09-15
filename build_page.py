@@ -1,4 +1,19 @@
-model = open('model.js').read().split("if(typeof module")[0]
+# Copyright (c) 2026 A. M. B. Heard. All rights reserved.
+# Unpublished research software. See LICENSE: use in any publication
+# requires prior written permission. Cite as in CITATION.cff.
+import os
+import sys
+
+# Paths are relative to this file, not to the shell's working directory, so
+# that "re-run build_page.py after any change to model.js" (HANDOVER.md) works
+# from anywhere and lands in the repo. It previously wrote to an absolute
+# /mnt/user-data/outputs path left over from the machine it was written on,
+# which meant it silently did not update the page it is supposed to build.
+HERE = os.path.dirname(os.path.abspath(__file__))
+MODEL_JS = os.path.join(HERE, 'model.js')
+OUT_HTML = os.path.join(HERE, 'airway_scenario.html')
+
+model = open(MODEL_JS).read().split("if(typeof module")[0]
 
 HTML = """<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -8,7 +23,7 @@ HTML = """<!DOCTYPE html>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{--screen:#060a0d;--panel:#0d151b;--rule:#16242e;--rule2:#223743;
---spo2:#4fd8e8;--co2:#e8d54a;--ecg-line:#4ade5e;--alarm:#ff4d3d;--o2:#a8ecff;--inert:#41586a;
+--spo2:#4fd8e8;--co2:#dda23c;--ecg-line:#4ade5e;--sat:#ecdf49;--alarm:#ff4d3d;--o2:#a8ecff;--inert:#41586a;
 --ink:#c8d6de;--dim:#6b8494}
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -22,18 +37,33 @@ font-family:Barlow,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
   display:grid;grid-template-columns:minmax(300px,24%) minmax(0,1fr);
   gap:16px;align-items:stretch}
  .side{overflow-y:auto;min-height:0;padding-right:4px}
- .main{display:flex;flex-direction:column;min-height:0;gap:8px}
+ /* The sliders panel folds away to the left, giving its width to the
+    patients. Animating the grid column rather than translating the panel
+    means the arms actually grow into the space instead of being overlapped. */
+ .wrap{transition:grid-template-columns .28s ease}
+ body.sidehid .wrap{grid-template-columns:0 minmax(0,1fr)}
+ body.sidehid .side{opacity:0;pointer-events:none;overflow:hidden;padding-right:0}
+ .main{display:flex;flex-direction:column;min-height:0;gap:6px}
  .arms{flex:1 1 auto;min-height:0}
+ .main .transport,.main .steps,.main .track,.main .caption{flex:none}
+ .main .caption{margin-bottom:0}
  .arm{min-height:0;overflow-y:auto}
  .dials{grid-template-columns:1fr;gap:9px 0}
  .transport{gap:8px}
  .transport button{padding:5px 12px;font-size:15px}
  #scrub{width:100%;flex:1 1 100%;min-width:0}
- .steps{height:52px}
+ /* One icon and a label need 34px, not 62. The old rule here said 52 and
+    never applied: a later base rule of the same specificity overrode it, so
+    the compact height had been written but was dead. Scoping to .main is what
+    makes it win. */
+ .main .steps{height:34px;margin-bottom:0}
+ .main .transport{margin-bottom:2px}
+ .main .track{margin-bottom:2px}
  .stage{grid-template-columns:auto minmax(0,1fr);margin-top:8px}
  .stage canvas:not(.ecg){height:clamp(150px,30vh,400px);width:auto}
  .ecg{height:clamp(38px,7vh,80px)}
- .foot{margin-top:8px;padding-top:9px;font-size:11.5px;max-width:none}
+ .plethw{height:clamp(24px,4.5vh,54px)}
+ .foot{margin-top:14px;padding-top:11px;font-size:11.5px;max-width:none}
  .legend{margin-top:8px}
 }
 h1{font-family:'Barlow Condensed',sans-serif;font-weight:600;
@@ -73,6 +103,10 @@ font-variant-numeric:tabular-nums;font-weight:500}
 .dial input{width:100%}
 .reset{grid-column:1/-1;justify-self:start}
 
+.side{transition:opacity .18s ease}
+/* Below the two-column breakpoint the panel simply goes away; there is no
+   column for it to fold into. */
+@media(max-width:1049px){body.sidehid .side{display:none}}
 .arms{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .arm{background:var(--panel);border:1px solid var(--rule);padding:12px}
 .armhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
@@ -80,16 +114,25 @@ border-bottom:1px solid var(--rule);padding-bottom:7px;margin-bottom:10px}
 .armname{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:500;
 white-space:nowrap}
 .armnote{font-size:11.5px;color:var(--dim);text-align:right;line-height:1.2}
-.vitals{display:flex;align-items:flex-end;gap:12px}
+.chan{display:flex;align-items:stretch;gap:10px;margin-top:6px}
+.chan canvas{flex:1;min-width:0;margin-top:0}
+.num{flex:none;width:98px;display:flex;flex-direction:column;justify-content:center;
+align-items:flex-end;line-height:1;border-left:1px solid var(--rule);padding-left:9px}
+.numlab{font-size:10.5px;color:var(--dim);letter-spacing:.04em;text-transform:uppercase}
+.num .big{font-size:clamp(26px,3.2vw,46px)}
+.numunit{font-size:10px;color:var(--dim);margin-top:2px}
 .big{font-family:'Barlow Condensed',sans-serif;font-variant-numeric:tabular-nums;
-font-size:clamp(34px,6vw,62px);line-height:.85}
+font-size:clamp(34px,6vw,62px);line-height:.85;color:var(--sat)}
 .biglab{font-size:11px;color:var(--dim);margin-bottom:-2px}
 .ecg{width:100%;height:44px;display:block;margin-top:6px;background:#050a0d}
-.pleth{flex:1;height:6px;background:var(--rule);overflow:hidden;margin-bottom:9px}
-.pleth i{display:block;height:100%;background:var(--spo2);transition:width .2s linear}
+.plethw{width:100%;height:30px;display:block;margin-top:2px;background:#050a0d}
 .stage{display:grid;grid-template-columns:126px minmax(0,1fr);gap:12px;align-items:start;
 margin-top:10px}
-@media(max-width:620px){.stage{grid-template-columns:82px minmax(0,1fr);gap:8px}}
+@media(max-width:620px){.stage{grid-template-columns:82px minmax(0,1fr);gap:8px}
+ /* two arms share a phone screen, so the numeric gives width back to the
+    trace, which needs it more than the digits do */
+ .chan{gap:6px} .num{width:58px;padding-left:6px} .num .big{font-size:25px}
+ .numlab,.numunit{font-size:9px}}
 canvas{width:100%;height:auto;display:block}
 .row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--rule);
 padding:3px 0;font-size:12.5px}
@@ -103,6 +146,8 @@ font-variant-numeric:tabular-nums}
 margin-top:-4px}
 .legend{display:flex;gap:15px;font-size:12px;color:var(--dim);margin-top:14px;flex-wrap:wrap}
 .sw{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+.credit{color:var(--dim);font-size:11px;line-height:1.45;margin-top:10px;max-width:78ch;
+ opacity:.85}
 .foot{color:var(--dim);font-size:12px;line-height:1.5;margin-top:16px;max-width:78ch;
 border-top:1px solid var(--rule);padding-top:12px}
 .busy{color:var(--co2);font-size:12px}
@@ -115,6 +160,7 @@ body.zen{overflow:hidden}
 body.zen h1,body.zen .sub,body.zen .dials,body.zen .legend,body.zen .foot,
 body.zen .steps,body.zen .track{display:none}
 body.zen .side{display:none}
+body.zen #sidebtn{display:none}
 body.zen .wrap{grid-template-columns:1fr}
 body.zen .main{display:flex;flex-direction:column;min-height:0;height:100%}
 body.zen .wrap{max-width:100%;height:100vh;height:100dvh;padding:6px 8px;
@@ -129,29 +175,39 @@ body.zen .arm{padding:8px;min-height:0;overflow:hidden}
 body.zen .armhead{padding-bottom:4px;margin-bottom:5px}
 body.zen .armname{font-size:clamp(13px,2.2vh,19px)}
 body.zen .armnote{font-size:clamp(9px,1.4vh,12px)}
+body.zen .credit{margin:0;font-size:clamp(8px,1.15vh,11px);opacity:.75;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none}
 body.zen .big{font-size:clamp(26px,7.5vh,76px)}
 body.zen .biglab{font-size:clamp(8px,1.3vh,11px)}
 body.zen .ecg{height:clamp(26px,7vh,74px);margin-top:4px}
+body.zen .plethw{height:clamp(17px,4.5vh,50px)}
 body.zen .stage{grid-template-columns:auto minmax(0,1fr);gap:9px;margin-top:6px}
 body.zen .stage canvas:not(.ecg){height:clamp(110px,32vh,330px);width:auto}
 body.zen .row{font-size:clamp(10px,1.65vh,15px);padding:clamp(1px,0.35vh,5px) 0}
 body.zen .row b{font-size:clamp(12px,2vh,19px)}
 body.zen .flat{font-size:clamp(9px,1.3vh,12px);padding:2px 0}
 </style></head><body><div class="wrap">
-<div class="side">
+<div class="side" id="side">
 <h1>Every time the airway opens, something rushes in</h1>
 <p class="sub">Obstructed from induction. Both arms are physically identical until 7:10 &mdash;
-the only difference is what sits in the pharynx when each inrush happens. The bottle is the
-lung: bright is oxygen, dull is nitrogen and CO&#8322;, the dark gap is the vacuum obstruction
-creates. Move the sliders and the whole simulation re-runs. Collapsibility defaults to
+the only difference is what sits in the pharynx when each inrush happens. In the lungs,
+bright is oxygen, dull is nitrogen and CO&#8322;, the dark gap is the vacuum obstruction
+creates, and the bases go violet as they collapse. The head turns blue on deoxygenated
+haemoglobin rather than saturation, so an anaemic patient never looks as bad as they are. Move the sliders and the whole simulation re-runs. Collapsibility defaults to
 the calibrated median; the patients who desaturate despite good tracheal oxygen sit near
 the top of its range.</p>
 
-<div class="steps" id="steps"></div>
-<div class="track" id="track"></div>
-<div class="caption" id="cap"></div>
+<div class="dials" id="dials"></div>
+<p class="foot">Modelled, not measured. Saturation carries a pulse oximeter delay. There is no
+end-tidal CO&#8322; because there is no ventilation; the CO&#8322; and pH shown are arterial model
+values you would not have at the bedside. Each arm stops where the model's fixed cardiac
+output stops being defensible. Closing capacity and the FRC&ndash;BMI relation are
+parameterised, not fitted to source data.</p>
+</div>
 
+<div class="main">
 <div class="transport">
+<button id="sidebtn" aria-controls="side" aria-expanded="true">Hide sliders</button>
 <button id="runbtn">Run simulation</button>
 <button id="play">Play</button><button id="rew">Restart</button>
 <button id="fs">Expand</button>
@@ -160,36 +216,38 @@ the top of its range.</p>
 <input type="range" id="scrub" min="0" max="900" value="0" step="1" aria-label="Time">
 <span class="busy" id="busy"></span>
 </div>
-
-<div class="dials" id="dials"></div>
-</div>
-
-<div class="main">
+<div class="steps" id="steps"></div>
+<div class="track" id="track"></div>
+<div class="caption" id="cap"></div>
 <div class="arms">
 <div class="arm"><div class="armhead"><span class="armname">No buccal oxygen</span>
 <span class="armnote">pharynx holds room air</span></div>
-<div class="vitals"><div><div class="biglab">SpO&#8322; %</div><div class="big" id="sA">--</div>
-<div class="stoplab" id="tA"></div></div>
-<div class="pleth"><i id="pA"></i></div></div>
-<canvas class="ecg" id="eA" width="600" height="88"></canvas>
+<div class="chan"><canvas class="ecg" id="eA" width="600" height="88"></canvas>
+<div class="num"><div class="numlab">ECG</div><div class="big" id="hA">--</div>
+<div class="numunit">bpm</div></div></div>
+<div class="chan"><canvas class="plethw" id="wA" width="600" height="60"></canvas>
+<div class="num"><div class="numlab">SpO&#8322;</div><div class="big" id="sA">--</div>
+<div class="numunit">%<span class="stoplab" id="tA"></span></div></div></div>
 <div class="stage"><canvas id="bA" width="252" height="404"></canvas><div class="rows" id="mA"></div></div></div>
 <div class="arm"><div class="armhead"><span class="armname">Buccal oxygen</span>
 <span class="armnote" id="noteB">pharynx at 100% O&#8322;</span></div>
-<div class="vitals"><div><div class="biglab">SpO&#8322; %</div><div class="big" id="sB">--</div>
-<div class="stoplab" id="tB"></div></div>
-<div class="pleth"><i id="pB"></i></div></div>
-<canvas class="ecg" id="eB" width="600" height="88"></canvas>
+<div class="chan"><canvas class="ecg" id="eB" width="600" height="88"></canvas>
+<div class="num"><div class="numlab">ECG</div><div class="big" id="hB">--</div>
+<div class="numunit">bpm</div></div></div>
+<div class="chan"><canvas class="plethw" id="wB" width="600" height="60"></canvas>
+<div class="num"><div class="numlab">SpO&#8322;</div><div class="big" id="sB">--</div>
+<div class="numunit">%<span class="stoplab" id="tB"></span></div></div></div>
 <div class="stage"><canvas id="bB" width="252" height="404"></canvas><div class="rows" id="mB"></div></div></div>
 </div>
 
 <div class="legend"><span><i class="sw" style="background:var(--o2)"></i>oxygen in the lung</span>
 <span><i class="sw" style="background:var(--inert)"></i>nitrogen and CO&#8322;</span>
 <span><i class="sw" style="background:#0a1218;border:1px solid var(--rule2)"></i>vacuum</span></div>
-<p class="foot">Modelled, not measured. Saturation carries a pulse oximeter delay. There is no
-end-tidal CO&#8322; because there is no ventilation; the CO&#8322; and pH shown are arterial model
-values you would not have at the bedside. Each arm stops where the model's fixed cardiac
-output stops being defensible. Closing capacity and the FRC&ndash;BMI relation are
-parameterised, not fitted to source data.</p>
+
+<p class="credit">&copy; 2026 A. M. B. Heard. All rights reserved. Unpublished research model
+&mdash; not a medical device, not for patient care. Reproduction or use in any publication
+requires the author's written permission.</p>
+
 </div>
 </div>
 <script>
@@ -207,7 +265,7 @@ const STEPS=[[0,'syringe','Induction'],[120,'mask','Facemask ventilation fails']
 [130,'lma','LMA inserted'],[220,'syringe','Rocuronium given'],
 [280,'blade','Laryngoscopy']];
 const EVENTS=[[0,'Induction. Airway obstructs immediately.'],
-[120,'Facemask off, LMA going in \\u2014 airway briefly open'],
+[120,'Facemask off, LMA going in'],
 [130,'LMA in place but no patent airway'],
 [160,'LMA out. Laryngospasm. Drawing up rocuronium.'],
 [220,'Rocuronium given. 60 s to work.'],
@@ -219,6 +277,7 @@ const DIALS=[
  ['height','Height',1.45,2.05,0.01,1.75,null],
  ['frcScale','FRC',0.55,1.5,0.01,1.0,null],
  ['bmrScale','Metabolic rate',0.6,1.7,0.01,1.0,null],
+ ['hb','Haemoglobin',4.0,18.0,0.5,14.0,null],
  ['ccScale','Closing capacity',0.6,1.6,0.01,1.0,null],
  ['maxClosed','Lung collapsibility',0.10,0.65,0.01,0.25,null],
  ['vqLogSd','V/Q spread',0.0,1.4,0.02,0.70,null],
@@ -232,7 +291,7 @@ const STARTS=[[0,'From induction'],[120,'After mask ventilation fails'],
  [160,'After the LMA fails'],[280,'At laryngoscopy'],
  [370,'After failed intubation attempts']];
 
-const BASE={age:45,hb:14,lmaOpens:true,frcRef:2500,frcDrop:400,tiltDeg:25,
+const BASE={age:45,lmaOpens:true,frcRef:2500,frcDrop:400,tiltDeg:25,
  ccAt20:1800,ccPerYear:20,ccPerBmi:45,ccK:1.5,vo2Ref:250,coRef:5,crs:85,
  vArt:1.0,vVen:2.0,vTisO2:1.5,feo2:0.87,rv:1100,pCollapse:-50,nVq:20};
 const P=Object.assign({},BASE);
@@ -266,7 +325,7 @@ lmaBtn.onclick=()=>{P.lmaOpens=!P.lmaOpens;
  dirty();};
 dialsEl.appendChild(lmaBtn);dialsEl.appendChild(rb);
 
-const cvs={A:bA,B:bB},mon={A:mA,B:mB},sN={A:sA,B:sB},pl={A:pA,B:pB},tL={A:tA,B:tB};
+const cvs={A:bA,B:bB},mon={A:mA,B:mB},sN={A:sA,B:sB},hN={A:hA,B:hB},tL={A:tA,B:tB};
 const css=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
 const OBS=Infinity;
 // Airway resistance by time, and the pharyngeal oxygen fraction switched on
@@ -292,18 +351,70 @@ let D={},T=0,playing=false,last=0,pend=null,SPEED=4;
 const ecgCv={A:document.getElementById('eA'),B:document.getElementById('eB')};
 const trace={A:new Float32Array(600),B:new Float32Array(600)};
 const phase={A:0,B:0};
+const plethCv={A:document.getElementById('wA'),B:document.getElementById('wB')};
+const plethTrace={A:new Float32Array(600),B:new Float32Array(600)};
+const SR=220;   // trace sample rate, samples per second of wall clock
+const acc={A:0,B:0};   // fractional sample carried between frames
 function ecgWave(p){
   const g=(c,w,a)=>a*Math.exp(-((p-c)*(p-c))/(2*w*w));
   return g(0.15,0.022,0.12)+g(0.29,0.007,-0.14)+g(0.315,0.009,1.0)
        +g(0.345,0.011,-0.28)+g(0.52,0.042,0.26);
 }
+// ---- plethysmograph --------------------------------------------------------
+// The pulse oximeter's own trace, the waveform an anaesthetist reads the SpO2
+// number off. It is driven from the SAME cardiac phase as the ECG, delayed by
+// a pulse transit time, so every upstroke follows its own QRS and the two can
+// never drift apart however the rate changes.
+//
+// As with the ECG, only the RATE carries information. The morphology is
+// decorative: a real pleth's amplitude tracks peripheral pulse volume, and
+// this model has no peripheral vascular bed to predict that from. Do not read
+// the shape as anything. What IS honest is the rhythm, and the flatline - it
+// stops when the modelled heart stops, at the same instant as the ECG.
+const R_WAVE=0.315;   // phase of the R peak in ecgWave()
+const PTT=0.22;       // s, pulse transit time to a finger probe: the delay
+                      // from the R wave to the FOOT of the pulse. Held in
+                      // absolute time rather than as a fraction of the cycle,
+                      // because that is what it is - a fraction would stretch
+                      // to most of a second at the terminal escape rates and
+                      // put the pulse nowhere near its own QRS.
+const PLETH_NORM=1.243;   // peak of the unnormalised sum, so this returns 0-1
+function plethWave(p,hr){
+  const q=(p-R_WAVE-PTT*hr/60+2)%1;
+  // fast systolic upstroke into a rounded peak, the dicrotic wave after the
+  // notch, then a diastolic runoff that carries through to the next upstroke
+  // so the trace never sits dead flat between beats
+  const s=q<0.11?0.048:0.095;
+  const peak=Math.exp(-((q-0.11)*(q-0.11))/(2*s*s));
+  const dicrotic=0.28*Math.exp(-((q-0.35)*(q-0.35))/(2*0.058*0.058));
+  const runoff=0.34*Math.exp(-q/0.50)*(1-Math.exp(-q/0.05));
+  return (peak+dicrotic+runoff)/PLETH_NORM;
+}
 function ecgStep(k,hr,wall){
-  const tr=trace[k],N=tr.length;
-  const steps=Math.min(80,Math.max(1,Math.round(wall*220)));
-  const beats=hr>1?hr/60*wall:0;
+  const tr=trace[k],pw=plethTrace[k],N=tr.length;
+  // One sample is 1/SR of a second, so the phase advance PER SAMPLE follows
+  // the heart rate alone. It used to be beats/steps, which spread the whole
+  // interval's beats across however many samples the loop actually ran -- so
+  // whenever the cap below engaged the waveform came out time-compressed
+  // rather than merely truncated. Capping is allowed to drop trace off the
+  // left-hand end; it is not allowed to change the shape of what it draws.
+  const dph=hr>1?hr/60/SR:0;
+  // Carry the fractional sample between frames so the sweep advances at
+  // exactly SR samples per wall second. Rounding it away per frame made the
+  // sweep speed depend on the frame duration -- 250 samples/s at a 16 ms
+  // frame against 212 at 33 ms, a 13.6% error either side of the truth -- and
+  // since the beats are spaced in SAMPLES, the rate you saw inherited it.
+  acc[k]+=wall*SR;
+  let steps=Math.floor(acc[k]);
+  acc[k]-=steps;
+  // Writing more than N samples would only overwrite work already done, so N
+  // is the natural bound. It stops a long stall (a backgrounded tab) from
+  // spinning; the backlog is dropped rather than banked.
+  if(steps>N){ steps=N; acc[k]=0; }
   for(let s=0;s<steps;s++){
-    phase[k]=(phase[k]+beats/steps)%1;
+    phase[k]=(phase[k]+dph)%1;
     tr.copyWithin(0,1); tr[N-1]=hr>1?ecgWave(phase[k]):0;
+    pw.copyWithin(0,1); pw[N-1]=hr>1?plethWave(phase[k],hr):0;
   }
 }
 function ecgDraw(k){
@@ -315,6 +426,24 @@ function ecgDraw(k){
     i?g.lineTo(x,y):g.moveTo(x,y);
   }
   g.stroke();
+}
+function plethDraw(k){
+  const cv=plethCv[k],g=cv.getContext('2d'),W=cv.width,H=cv.height,tr=plethTrace[k];
+  const N=tr.length, base=H*0.93, amp=H*0.78;
+  g.clearRect(0,0,W,H);
+  const path=close=>{
+    g.beginPath();
+    for(let i=0;i<N;i++){
+      const x=i*W/N, y=base-tr[i]*amp;
+      i?g.lineTo(x,y):g.moveTo(x,y);
+    }
+    if(close){ g.lineTo(W,base); g.lineTo(0,base); g.closePath(); }
+  };
+  // trace and numeric carry the same colour, which is what lets you pair them
+  // at a glance -- the SR6000's pleth and its SpO2 are both yellow for exactly
+  // this reason
+  path(true); g.globalAlpha=0.20; g.fillStyle=css('--sat'); g.fill(); g.globalAlpha=1;
+  path(false); g.strokeStyle=css('--sat'); g.lineWidth=1.6; g.stroke();
 }
 
 // ---- pulse oximeter tone ---------------------------------------------------
@@ -350,6 +479,13 @@ function labels(){
    P.height.toFixed(2)+' m \u00b7 BMI '+(P.weight/(P.height*P.height)).toFixed(1);
  document.getElementById('v_vqLogSd').textContent='log SD '+P.vqLogSd.toFixed(2);
  document.getElementById('v_tauMix').textContent=P.tauMix.toFixed(0)+' s';
+ // Below 7 g/dL the resting cardiac output rises to defend delivery, so say
+ // so on the dial: the number on its own does not tell you the circulation
+ // has changed underneath it.
+ {const hb=P.hb, thr=7.0;
+  const f=hb>=thr?1:Math.min(3,Math.pow(thr/Math.max(hb,0.5),1.535));
+  document.getElementById('v_hb').textContent=
+    hb.toFixed(1)+' g/dL'+(f>1.005?' \u00b7 CO \u00d7'+f.toFixed(1):'');}
  document.getElementById('v_fgBuccal').textContent=(P.fgBuccal*100).toFixed(0)+'%';
  if(D.B) document.getElementById('v_inflowMechFrac').textContent=
    'atelectasis '+(D.B.atel[D.B.atel.length-1]*100).toFixed(0)+'%';
@@ -383,9 +519,10 @@ function run(){
    D.B=simulate(P,tl(P.fgBuccal,STARTS[P.buccalIdx][0],true));
    stale=false; T=0;
    busy.textContent=((performance.now()-t0)/1000).toFixed(1)+' s';
-   // prime the ECG with a few resting beats so it reads as a rhythm at rest
-   for(const k of ['A','B']){ phase[k]=0; trace[k].fill(0);
-     ecgStep(k, D[k].hr[0], trace[k].length/220); }
+   // prime both traces with resting beats so they read as a rhythm at rest
+   for(const k of ['A','B']){ phase[k]=0; acc[k]=0;
+     trace[k].fill(0); plethTrace[k].fill(0);
+     ecgStep(k, D[k].hr[0], trace[k].length/SR); }
    runBtn.textContent='Re-run';
   }catch(err){
    busy.textContent='error: '+err.message;
@@ -398,32 +535,131 @@ const at=(a,k,t)=>t>=a.t[a.t.length-1]?a[k][a[k].length-1]:a[k][Math.min(Math.ro
 const alive=(a,t)=>t<=a.t[a.t.length-1];
 const isOpen=(k,t)=>(t>=120&&t<130)||(k==='B'?t>=280:(t>=280&&t<430));
 
-function bottle(k,t){
+// The patient, as the anaesthetist sees them from the head of the table: two
+// lungs beyond, the head in profile nearest, the trachea between. Fill height
+// is gas volume, bright is oxygen, dull is nitrogen and CO2, the dark gap above
+// is the vacuum obstruction creates.
+//
+// Two things here are physiology rather than decoration. The bases go violet as
+// compartments collapse, because collapse starts dependent and the tilt slider
+// moves it. And the head turns blue on DEOXYGENATED HAEMOGLOBIN, not on
+// saturation: cyanosis needs roughly 5 g/dL of it, so at Hb 15 the head starts
+// turning near SpO2 67% while at Hb 4 it can never turn at all, however dead
+// the patient is. That trap falls straight out of the Hb slider.
+const SKIN=[198,158,136], CYAN=[86,100,158], ATEL=[122,74,140];
+function mixc(a,b,f){f=Math.max(0,Math.min(1,f));
+ // parenthesised: without them these are string concatenations, not sums,
+ // and the head renders white at every saturation.
+ const m=i=>Math.round(a[i]+(b[i]-a[i])*f);
+ return 'rgb('+m(0)+','+m(1)+','+m(2)+')';}
+
+// One lung in a normalised box; mirrored for the other side so the concave
+// medial border faces the trachea on both.
+function lungPath(g,x,y,w,h,flip){
+ g.save(); g.translate(x+(flip?w:0),y); g.scale(flip?-1:1,1);
+ g.beginPath();
+ g.moveTo(w*0.66,h*0.02);
+ g.bezierCurveTo(w*0.40,h*0.00, w*0.04,h*0.24, w*0.07,h*0.64);
+ g.bezierCurveTo(w*0.09,h*0.89, w*0.22,h*0.99, w*0.44,h*0.99);
+ g.lineTo(w*0.82,h*0.99);
+ g.bezierCurveTo(w*0.95,h*0.72, w*0.92,h*0.34, w*0.80,h*0.16);
+ g.bezierCurveTo(w*0.75,h*0.06, w*0.71,h*0.02, w*0.66,h*0.02);
+ g.closePath(); g.restore();
+}
+
+// Profile, neck uppermost so the trachea meets it, face to the viewer's left.
+// The facial detail is drawn with straight segments and the cranium with
+// curves; smoothing the nose and lips rounds them away at this size.
+function headPath(g,cx,yN,h){
+ const X=v=>cx+v, Y=u=>yN+u*h;
+ g.beginPath();
+ g.moveTo(X(-17),Y(0.00));
+ g.lineTo(X(-31),Y(0.11));            // jaw angle
+ g.lineTo(X(-41),Y(0.23));            // chin
+ g.lineTo(X(-47),Y(0.30));            // lower lip
+ g.lineTo(X(-43),Y(0.34));            // mouth
+ g.lineTo(X(-48),Y(0.38));            // upper lip
+ g.lineTo(X(-46),Y(0.42));            // nose base
+ g.lineTo(X(-63),Y(0.47));            // nose tip
+ g.lineTo(X(-45),Y(0.54));            // bridge
+ g.lineTo(X(-49),Y(0.61));            // brow
+ g.bezierCurveTo(X(-48),Y(0.76), X(-32),Y(0.94), X(-6),Y(0.98));   // forehead
+ g.bezierCurveTo(X(16),Y(1.01), X(40),Y(0.94), X(48),Y(0.76));     // vertex
+ g.bezierCurveTo(X(55),Y(0.58), X(50),Y(0.34), X(34),Y(0.18));     // occiput
+ g.lineTo(X(25),Y(0.00));             // back of neck
+ g.closePath();
+}
+
+function patient(k,t){
  const cv=cvs[k],a=D[k],g=cv.getContext('2d'),W=cv.width,H=cv.height;
  g.clearRect(0,0,W,H);
- const L=46,R=W-46,top=14,nT=H-96,nB=H-38,nL=W/2-19,nR=W/2+19;
- const path=()=>{g.beginPath();g.moveTo(L,top+14);g.quadraticCurveTo(L,top,L+14,top);
-  g.lineTo(R-14,top);g.quadraticCurveTo(R,top,R,top+14);g.lineTo(R,nT-28);
-  g.quadraticCurveTo(R,nT,nR,nT+6);g.lineTo(nR,nB);g.lineTo(nL,nB);g.lineTo(nL,nT+6);
-  g.quadraticCurveTo(L,nT,L,nT-28);g.closePath();};
- path();g.save();g.clip();
- const vol=at(a,'vol',t),fao2=at(a,'fao2',t),body=nT-top;
- const fill=Math.max(0,Math.min(1,vol/a.frc)),liqTop=top+body*(1-fill);
- g.fillStyle='#0a1218';g.fillRect(0,0,W,H);
- g.fillStyle=css('--inert');g.fillRect(0,liqTop,W,H-liqTop);
- const o2h=(nT-liqTop)*Math.max(0,Math.min(1,fao2));
- g.fillStyle=css('--o2');g.fillRect(0,nT-o2h,W,H-(nT-o2h));
- g.strokeStyle='rgba(255,255,255,.45)';g.lineWidth=1;
- g.beginPath();g.moveTo(0,liqTop+.5);g.lineTo(W,liqTop+.5);g.stroke();
- g.restore();
- path();g.strokeStyle=css('--rule2');g.lineWidth=2;g.stroke();
- const op=isOpen(k,t);
- g.fillStyle=op?css('--o2'):css('--alarm');g.fillRect(nL-6,nB,50,op?7:11);
- g.fillStyle=css('--dim');g.textAlign='center';g.font="13px 'Barlow Condensed',sans-serif";
- g.fillText(op?'airway open':'obstructed',W/2,H-9);
+ const cx=W/2;
+ const lT=14, lB=190, lw=W*0.375, gap=W*0.055;
+ const carina=lB+12, neck=250, headH=H-neck-6;
+
+ const vol=at(a,'vol',t), fao2=at(a,'fao2',t), atel=at(a,'atel',t);
+ const fill=Math.max(0,Math.min(1,vol/a.frc));
+ const liqTop=lT+(lB-lT)*(1-fill);
+
+ // ---- lungs -------------------------------------------------------------
+ for(const flip of [false,true]){
+  const x = flip ? cx+gap : cx-gap-lw;
+  lungPath(g,x,lT,lw,lB-lT,flip);
+  g.save(); g.clip();
+  g.fillStyle='#0a1218'; g.fillRect(x-2,lT-2,lw+4,lB-lT+4);
+  g.fillStyle=css('--inert'); g.fillRect(x-2,liqTop,lw+4,lB-liqTop+2);
+  const o2h=(lB-liqTop)*Math.max(0,Math.min(1,fao2));
+  g.fillStyle=css('--o2'); g.fillRect(x-2,lB-o2h,lw+4,o2h+2);
+  // collapse is dependent: shade upward from the base by the collapsed share
+  if(atel>0.001){
+   const ah=(lB-lT)*Math.min(1,atel*3.2);
+   const grd=g.createLinearGradient(0,lB-ah,0,lB);
+   grd.addColorStop(0,'rgba(122,74,140,0)');
+   grd.addColorStop(1,'rgba(122,74,140,.82)');
+   g.fillStyle=grd; g.fillRect(x-2,lB-ah,lw+4,ah+2);
+  }
+  g.strokeStyle='rgba(255,255,255,.40)'; g.lineWidth=1;
+  g.beginPath(); g.moveTo(x-2,liqTop+.5); g.lineTo(x+lw+2,liqTop+.5); g.stroke();
+  g.restore();
+  lungPath(g,x,lT,lw,lB-lT,flip);
+  g.strokeStyle=css('--rule2'); g.lineWidth=2; g.stroke();
+ }
+
+ // ---- trachea and bronchi ----------------------------------------------
+ const op=isOpen(k,t), tw=15;
+ g.strokeStyle=css('--rule2'); g.lineWidth=2; g.fillStyle=css('--panel');
+ g.beginPath(); g.moveTo(cx-tw,neck); g.lineTo(cx-tw,carina);
+ g.lineTo(cx+tw,carina); g.lineTo(cx+tw,neck); g.closePath();
+ g.fill(); g.stroke();
+ g.beginPath();
+ g.moveTo(cx-tw,carina); g.lineTo(cx-gap-lw*0.30,lB-6);
+ g.moveTo(cx+tw,carina); g.lineTo(cx+gap+lw*0.30,lB-6);
+ g.stroke();
+
+ // the obstruction sits on the trachea, where it does in life
+ g.fillStyle=op?css('--o2'):css('--alarm');
+ g.fillRect(cx-tw-5, carina+16, (tw+5)*2, op?5:12);
+ g.fillStyle=op?css('--dim'):css('--alarm');
+ g.textAlign='left'; g.font="13px 'Barlow Condensed',sans-serif";
+ g.fillText(op?'airway open':'obstructed', cx+tw+12, carina+26);
+
+ // ---- head --------------------------------------------------------------
+ const spo2=at(a,'spo2',t), hb=(P.hb||14);
+ const deoxy=hb*(1-Math.max(0,Math.min(1,spo2/100)));
+ const blue=(deoxy-3.2)/(6.0-3.2);
+ headPath(g,cx,neck-4,headH);
+ g.fillStyle=mixc(SKIN,CYAN,blue); g.fill();
+ g.strokeStyle=css('--rule2'); g.lineWidth=2; g.stroke();
+ // an ear and a closed eye, so it reads as a face at this size
+ g.strokeStyle='rgba(0,0,0,.34)'; g.lineWidth=1.6;
+ g.beginPath(); g.arc(cx+8,neck-4+headH*0.50,8,-0.6,2.2); g.stroke();
+ g.beginPath(); g.moveTo(cx-38,neck-4+headH*0.585);
+ g.lineTo(cx-25,neck-4+headH*0.575); g.stroke();
+
+ // ---- the vacuum, labelled where it lives -------------------------------
  const p=at(a,'palv',t);
- if(p<-0.5&&fill<0.97){g.fillStyle=css('--dim');
-  g.fillText(p.toFixed(1)+' cmH\\u2082O',W/2,top+body*(1-fill)/2+5);}
+ if(p<-0.5&&fill<0.97){g.fillStyle=css('--dim'); g.textAlign='center';
+  g.fillText(p.toFixed(1)+' cmH₂O', cx, lT+(lB-lT)*(1-fill)/2+5);}
 }
 function panel(k,t){
  const a=D[k],live=alive(a,t),s=at(a,'spo2',t);
@@ -431,12 +667,14 @@ function panel(k,t){
  // the comparison is the whole point and it matters most at the end.
  const end=a.t[a.t.length-1];
  sN[k].textContent=s.toFixed(0);
- sN[k].style.color=(!live||s<90)?css('--alarm'):css('--spo2');
- tL[k].textContent=live?'':'asystole at '+Math.floor(end/60)+':'+
+ sN[k].style.color=(!live||s<90)?css('--alarm'):css('--sat');
+ // heart rate sits beside its own trace, coloured to match it
+ const hr=at(a,'hr',t);
+ hN[k].textContent=hr<1?'--':hr.toFixed(0);
+ hN[k].style.color=(!live||hr<45)?css('--alarm'):css('--ecg-line');
+ tL[k].textContent=live?'':' asystole '+Math.floor(end/60)+':'+
    String(Math.round(end%60)).padStart(2,'0');
  mon[k].className='rows'+(live?'':' stopped');
- pl[k].style.width=Math.max(0,(s-40)/60*100)+'%';
- pl[k].style.background=live?css('--spo2'):css('--alarm');
  const r=(l,v,c)=>'<div class="row"><span class="k">'+l+'</span><b'+
   (c?' style="color:'+c+'"':'')+'>'+v+'</b></div>';
  mon[k].innerHTML=r('PaO&#8322;',at(a,'pao2',t).toFixed(0))+
@@ -446,8 +684,6 @@ function panel(k,t){
   r('lung volume',at(a,'vol',t).toFixed(0)+' mL')+
   r('shunt',(at(a,'shunt',t)*100).toFixed(0)+'%')+
   r('atelectasis',(at(a,'atel',t)*100).toFixed(0)+'%')+
-  r('heart rate',at(a,'hr',t).toFixed(0)+' bpm',
-    at(a,'hr',t)<45?'var(--alarm)':null)+
   r('MAP',at(a,'map',t).toFixed(0)+' mmHg',at(a,'map',t)<55?'var(--alarm)':null)+
   r('cardiac output',at(a,'co',t).toFixed(1)+' L/min')+
   r('stroke volume',at(a,'sv',t).toFixed(0)+' mL')+
@@ -457,8 +693,8 @@ function panel(k,t){
 }
 function render(){
  if(!D.A||!D.B) return;
- bottle('A',T);bottle('B',T);panel('A',T);panel('B',T);
- ecgDraw('A');ecgDraw('B');
+ patient('A',T);patient('B',T);panel('A',T);panel('B',T);
+ ecgDraw('A');ecgDraw('B');plethDraw('A');plethDraw('B');
  cvs.A.style.opacity=alive(D.A,T)?1:0.55; cvs.B.style.opacity=alive(D.B,T)?1:0.55;
  document.getElementById('clock').textContent=
   Math.floor(T/60)+':'+String(Math.floor(T%60)).padStart(2,'0');
@@ -466,6 +702,11 @@ function render(){
  head.style.left=(100*T/900)+'%';
  let c=EVENTS[0];for(const e of EVENTS)if(T>=e[0])c=e;
  let txt=c[1];
+ // The 120 s caption is the ONLY place the LMA toggle shows in words, so
+ // the base text above must not state an outcome of its own -- it used to
+ // end '-- airway briefly open', which this then appended to, giving
+ // '...briefly open -- airway stays shut' with the toggle off. The button
+ // was working; the sentence said it was not.
  if(c[0]===120) txt+=P.lmaOpens?' \u2014 airway briefly open':' \u2014 airway stays shut';
  document.getElementById('cap').textContent=txt;
  let cur=STEPS[0];for(const s of STEPS)if(T>=s[0])cur=s;
@@ -493,6 +734,31 @@ document.getElementById('play').onclick=e=>{
  e.target.textContent=playing?'Pause':'Play';last=0;if(playing)requestAnimationFrame(loop);};
 document.getElementById('rew').onclick=()=>{T=0;render();};
 document.getElementById('scrub').oninput=e=>{T=+e.target.value;render();};
+// ---- sliders panel ---------------------------------------------------------
+// Folds itself away after ten seconds so the patients get the whole width,
+// which is the point of the page. Any use of the panel cancels the countdown
+// and leaving it starts it again, so it cannot close under your hand while you
+// are dragging a slider.
+const SIDE_HIDE_MS=10000;
+const sideEl=document.getElementById('side'),sideBtn=document.getElementById('sidebtn');
+let sideTimer=null;
+function setSide(hidden){
+ document.body.classList.toggle('sidehid',hidden);
+ sideBtn.textContent=hidden?'Sliders':'Hide sliders';
+ sideBtn.setAttribute('aria-expanded',String(!hidden));
+}
+function armSide(){
+ clearTimeout(sideTimer);
+ if(document.body.classList.contains('sidehid')) return;   // already away
+ sideTimer=setTimeout(()=>setSide(true),SIDE_HIDE_MS);
+}
+sideBtn.onclick=()=>{setSide(!document.body.classList.contains('sidehid'));armSide();};
+['pointerenter','pointermove','input','focusin','wheel'].forEach(ev=>
+ sideEl.addEventListener(ev,()=>clearTimeout(sideTimer),{passive:true}));
+['pointerleave','focusout'].forEach(ev=>
+ sideEl.addEventListener(ev,armSide,{passive:true}));
+armSide();
+
 const sndBtn=document.getElementById('snd');
 sndBtn.onclick=()=>{
  if(!actx){ try{actx=new (window.AudioContext||window.webkitAudioContext)();}
@@ -526,5 +792,25 @@ document.addEventListener('fullscreenchange',()=>{
 labels(); run();
 </script></body></html>"""
 
-open('/mnt/user-data/outputs/airway_scenario.html','w').write(HTML.replace('__MODEL__', model))
-print("built")
+page = HTML.replace('__MODEL__', model)
+
+# --check compares without writing, so the pre-commit hook can refuse a commit
+# that changes model.js and leaves the embedded copy in the HTML behind. The
+# page is a single self-contained file with the model inlined; nothing else
+# notices when the two fall out of step.
+if '--check' in sys.argv:
+    current = open(OUT_HTML).read() if os.path.exists(OUT_HTML) else None
+    if current == page:
+        print(f"up to date: {os.path.basename(OUT_HTML)} matches model.js")
+        sys.exit(0)
+    if current is None:
+        print(f"{OUT_HTML} does not exist; run: python3 build_page.py")
+    else:
+        print(f"STALE: {os.path.basename(OUT_HTML)} does not match model.js.")
+        print("       The page embeds its own copy of the model, so it is now")
+        print("       running different physics from the file next to it.")
+        print("       Rebuild with: python3 build_page.py")
+    sys.exit(1)
+
+open(OUT_HTML, 'w').write(page)
+print(f"built {OUT_HTML}")

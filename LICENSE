@@ -1,0 +1,42 @@
+Copyright (c) 2026 A. M. B. Heard. All rights reserved.
+
+This software, the model it implements, its documentation, its study
+protocol and its accompanying prose are unpublished work.
+
+PERMITTED WITHOUT ASKING
+
+  Reading the source, running the model, opening the visualisation, and
+  evaluating any of it for your own private assessment.
+
+NOT PERMITTED WITHOUT PRIOR WRITTEN PERMISSION FROM THE COPYRIGHT HOLDER
+
+  Copying, publishing, redistributing or hosting this work or any part of
+  it, including modified or derivative versions.
+
+  Incorporating its equations, parameters, calibrations, benchmark set or
+  figures into any publication, preprint, thesis, poster, presentation,
+  grant application, regulatory submission or commercial product.
+
+  Training or fine-tuning a machine-learning model on it.
+
+  Presenting any output, figure or screenshot of it without attribution.
+
+ATTRIBUTION
+
+  Where permission has been given, cite it as set out in CITATION.cff.
+
+NO WARRANTY
+
+  This is a research model. It is not a medical device, it has not been
+  approved by any regulator, and it must not be used to guide the care of
+  any patient. It is provided "as is", without warranty of any kind. The
+  copyright holder accepts no liability for any use of it.
+
+  README.md sets out what in it is validated against clinical measurement
+  and what is not. Several quantities it computes are explicitly recorded
+  as unvalidated. Read that before quoting any number it produces.
+
+CONTACT
+
+  Permission requests, and any discussion of authorship on work that uses
+  this model, to the copyright holder.
