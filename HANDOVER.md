@@ -185,6 +185,79 @@ real defect elsewhere.
 | "Ebata shows our CO2→CO gain 1.8x too strong" | **RETRACTED.** Their baseline was 45, on dopamine, hypothermic, brain-dead |
 | the six model comparators | **ONE simulator.** All Hardman/Nottingham |
 
+### The buccal work — where the model actually earns its keep — 2026-09-15
+
+Every number below regenerates from `buccal_numbers.py`, which fails if one
+drifts. Published configurations only: Toner 2019 (lean) and Heard 2017
+(obese). **These two trials are the model's strongest ground** — nothing was
+ever tuned to them, deliberately (see the `vq_log_sd` note below), and the
+defects that dominate this file are all in the OBSTRUCTED CO2 limb, which no
+buccal claim touches.
+
+**The mechanism, quantified.** Aventilatory mass flow draws ~250 mL/min into
+the lung whether or not buccal oxygen is running. What changes is what it
+carries. By 300 s the lean patient has drawn in **298 mL of oxygen on room air
+and 1011 mL with the pharynx at 100%**. Same flow, different gas. No trial can
+produce this number.
+
+**Benefit grows with BMI**, i.e. with risk: room air time falls 570 s at BMI 22
+to 181 s at BMI 45, while buccal holds past the trials' ceiling throughout.
+
+**Anaemia does NOT shorten time to desaturation** — 394 s at Hb 8 against 402 s
+at Hb 15. SpO2 is a saturation, not a content: the anaemic patient has a
+smaller oxygen store but needs proportionally less removed to fall the same
+distance, and the two cancel. The cardiac-output response is inert above Hb 7
+and is not doing this. Clinical intuition runs the other way, so it is worth
+publishing as a null.
+
+**Occlusion, and why the technique is not a CICO intervention.** With the
+airway occluded, buccal oxygen does **exactly nothing**: 256 s (lean) and 198 s
+(obese) to SpO2 <95%, identical whether the pharynx holds room air or 100%
+oxygen. It acts at the MOMENT THE AIRWAY OPENS, by deciding what rushes in.
+An obese patient obstructed from induction and relieved at laryngoscopy at
+300 s is at 73.4%; two minutes later, **56.8% on room air against 99.8% with
+buccal**. Room air gives a bump, buccal gives a rescue.
+
+**How narrow a channel will do.** `R = 394*(1/d mm)^4`, anchored on
+`AirwayEpoch`'s documented 1 mm <-> 1.3 cmH2O at 3.3 mL/s:
+
+| aperture | lean SpO2 at 30 min | obese |
+|---|---|---|
+| 0.8 mm | **90.0** | 69.1 |
+| 0.6 mm | **64.2** | 34.4 |
+
+A 0.2 mm change takes the lean patient from 90% to 64%. Patency is effectively
+binary and **the threshold is sub-millimetre** — which is the argument that
+matters clinically, because no laryngoscopic scoring system resolves anything
+like that finely. POGO and Cormack-Lehane both score how much glottis is
+visible IN ORDER TO INTUBATE; neither scores whether a gas conduit existed,
+which is a threshold perhaps a thousandfold coarser. **The published view-rate
+literature therefore systematically understates how often the airway is
+adequate for buccal oxygen to work.** No study reporting that endpoint was
+found.
+
+### Corrections to `editorial.md`, found 2026-09-15
+
+The draft carries model numbers whose configurations were never recorded.
+Checked against the current model:
+
+| claim | status |
+|---|---|
+| 0.8 mm holds >90% for 30 min in a LEAN patient | **reproduces exactly** (90.0) |
+| ...and in an obese patient | **WRONG.** 69.1, and no aperture fixes it |
+| complete occlusion fails at 402 s (lean) | **mislabelled.** 402 s is the PATENT room-air figure to the second; occlusion is 256 s |
+| complete occlusion fails at 264 s (obese) | occlusion is 198, patent room air 288. Model has moved since; not resolvable |
+| 50-70 s of buccal benefit in a CICO progression | **NOT REPRODUCIBLE.** No progression specified. Buccal buys zero once occluded, so it must be banked beforehand — from what timeline is unrecorded |
+| alveolar PN2 395 mmHg in "the morbidly obese" | **not checkable.** No weight given; at the Heard configuration it is 246 |
+
+The obese 30-minute ceiling is **not** an aperture limit and **not** nitrogen:
+with the airway wide open and alveolar PO2 above 350 mmHg, saturation is still
+86.4%. That is SHUNT, and it belongs in the closing-capacity paragraph rather
+than the patency one.
+
+**Nothing in `editorial.md` has been edited.** It is the author's prose; these
+are findings about it.
+
 ### Agreed, not yet built
 
 Things decided in conversation that no file yet carries. A decision that lives

@@ -57,8 +57,8 @@ blocks on failure. It takes 5-15 minutes; run commits in the background and
 wait. `./setup-hooks.sh` once per clone. `git commit --no-verify` exists but
 say in the message which benchmark is broken and why.
 
-`protocol/predictions.py` and `handover_numbers.py` are deliberately NOT in the
-hook. They check claims about the world, not invariants of the code, and are
+`protocol/predictions.py`, `handover_numbers.py` and `buccal_numbers.py` are
+deliberately NOT in the hook. They check claims about the world, not invariants of the code, and are
 expected to move when the model is corrected — the point is that they must not
 move silently.
 
@@ -72,5 +72,6 @@ move silently.
 | `test_validation.py` | benchmarks as pass/fail. The arbiter |
 | `test_parity.py` | the two implementations against each other |
 | `handover_numbers.py` | regenerates the numbers quoted in HANDOVER |
+| `buccal_numbers.py` | regenerates the buccal-oxygen numbers, and the audit of `editorial.md` |
 | `protocol/` | the three-way study, its predictions and its evidence map |
 | `patches/` | written but unapplied changes, with the reason in HANDOVER |
