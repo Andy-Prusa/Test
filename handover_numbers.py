@@ -104,8 +104,12 @@ print("\nvq_log_sd against Tokics 1996 (measured 0.80 isotope / 1.18 inert gas)"
 for sd, want in ((0.50, 2.89), (0.70, 4.03), (0.80, 4.67), (1.18, 6.74)):
     check(f"vq_log_sd {sd:4.2f}: Stock 1-5 min slope",
           slope(run(vq_log_sd=sd)), want, 0.15, " mmHg/min")
-check("baseline shunt (Tokics measured 7.0 +- 1.3%)",
+check("baseline shunt (Tokics Table 3 measured 5.0 +- 1.3%)",
       100 * ro['shunt'][0], 5.0, 0.5, " %")
+print("    Tokics' inert-gas shunt under anaesthesia is 5.0 +- 1.3% (Table 3,")
+print("    read from the page 2026-09-16). HANDOVER used to record it as 7.0,")
+print("    one of nine values transposed 5-for-7. We LAND on the measurement,")
+print("    we do not sit under it.")
 
 # ---------------------------------------------------------------------------
 print("\nsv_itp_gain -- nearly inert on the knot (human data give 0.0033-0.00476)")
@@ -114,6 +118,23 @@ for g_, want in ((0.0025, 4.03), (0.00476, 3.93)):
           slope(run(sv_itp_gain=g_)), want, 0.12, " mmHg/min")
 check("stiff_below_rv 2.00: Stock slope",
       slope(run(stiff_below_rv=2.0)), 4.77, 0.15, " mmHg/min")
+
+# ---------------------------------------------------------------------------
+print("\nn_vq convergence -- and arterial CO2 going the WRONG WAY at n_vq 20")
+print("  CO2 cannot leave a clamped lung, so PaCO2 must rise monotonically.")
+print("  At the default n_vq it does not. This is a discretisation artefact")
+print("  and it is the reason the benchmarked slope is below the converged one.")
+for n_, want_slope, want_falls in ((20, 4.03, 19), (40, 4.13, 0),
+                                   (80, 4.11, 0), (160, 4.10, 0)):
+    r_ = run(n_vq=n_)
+    falls = int((np.diff(r_['paco2']) < -1e-9).sum())
+    check(f"n_vq {n_:3d}: Stock 1-5 min slope", slope(r_), want_slope, 0.15,
+          " mmHg/min")
+    check(f"n_vq {n_:3d}: steps where PaCO2 FALLS", float(falls),
+          float(want_falls), 2.0, " steps")
+print("    The 20 -> 160 slope move is 1.7%, inside the working tolerance.")
+print("    The SIGN error is not a tolerance question. test_validation.py")
+print("    checks timestep convergence and has never checked this one.")
 
 # ---------------------------------------------------------------------------
 print("\nThe CO2 dissociation curve -- its CURVATURE drives the a-A gap")

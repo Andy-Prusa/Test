@@ -43,6 +43,35 @@ exonerated and **the cause of the over-sensitivity is once again unknown.**
 Kelman was the critical path on the hypothesis that curvature explained the
 gap; that hypothesis is now dead and the search is open.
 
+### A second defect: arterial CO2 FALLS inside a sealed lung — 2026-09-16
+
+At the default `n_vq` of 20, which every benchmark in the suite uses, PaCO2 is
+**not monotonic** during a clamped-airway apnoea. There are 19 steps where it
+decreases, the first at t=284 s, and the instantaneous rate reaches
+**-41.7 mmHg/min**. CO2 has no route out of a sealed lung. The sign is wrong.
+
+It is a discretisation artefact, and it goes away when the compartments are
+refined:
+
+| n_vq | Stock 1-5 min slope | steps where PaCO2 falls |
+|---|---|---|
+| 20 (default, all benchmarks) | 4.03 | 19 |
+| 40 | 4.13 | 0 |
+| 80 | 4.11 | 0 |
+| 160 | 4.10 | 0 |
+
+The likely mechanism is that compartments close one at a time as the lung
+shrinks, so with 20 of them each closure steps the shunt by ~5% of perfusion
+and jolts arterial CO2. That has NOT been confirmed and no fix is attempted
+here.
+
+**Two consequences.** The benchmarked 4.03 is 1.7% below the converged 4.10, so
+the recorded gap to Stock's 3.4 is slightly understated — 18.5% as benchmarked
+against 20.6% converged. And `test_validation.py` checks timestep convergence
+(`test_timestep_stability`) but has never checked compartment-count
+convergence. The size is inside the 5% working tolerance; the SIGN is not a
+tolerance question, which is why this is recorded rather than waved through.
+
 ### Established by measurement
 
 | finding | how |
@@ -55,7 +84,7 @@ gap; that hypothesis is now dead and the search is open.
 | cardiac output carries ~28% | +0.22 of +0.80 for a matched CO change |
 | `sv_itp_gain` 0.0025 is conservative | human Mueller: 0.0033 (Condos), 0.00476 (Wright) |
 | and nearly inert on the knot | 4.03 → 3.93 across that whole range |
-| Stock is not an outlier | Eger & Severinghaus give 3–5 mmHg/min; we sit inside |
+| Stock is not an outlier | Stock's Table 2: terminal rise 3 (Eger & Severinghaus), 3.4 (Stock), 3 (Belsh). **We do NOT sit inside** — see below |
 
 ### Larger problem — and it is smaller than it looked
 
@@ -66,8 +95,20 @@ interchangeably:
 
 | | what it is | values in Stock's Table 2 |
 |---|---|---|
-| **terminal rise** | the slope AFTER the first minute | Eger & Severinghaus 3, Stock 3.4, Welsh (brain-dead) 3 |
+| **terminal rise** | the slope AFTER the first minute | Eger & Severinghaus 3, Stock 3.4, Belsh (brain-dead) 3 |
 | **linear rise** | (end - start)/duration, first minute included | Frumin 3.2, Payne 4.6, Holmdahl 5 |
+
+**The paper was read in full on 2026-09-16 and Table 2 transcribed from the
+page.** All six values above are confirmed exactly. Two corrections came out of
+it. The brain-death row is **Belsh** et al. (Arch Intern Med 1986;146:2385-8),
+not Welsh. And Table 2 gives Eger & Severinghaus a terminal rise of **3**, a
+single value, with an initial rise of **13** — not the "10-12 then 3-5" this
+file carried from secondary sources. Stock's own summary is that "the terminal
+slope of 3-4 mmHg/min was consistent" across studies.
+
+**That kills the 3–5 range.** Our obstructed slope is 4.03, which sits inside
+3–5 and outside 3–4. The widening proposal below rested on a range the one
+source we have actually read does not support.
 
 Stock says so explicitly: a linear estimate "would tend to be larger than the
 true terminal rate of rise because the more rapid early increase would be
@@ -272,7 +313,7 @@ the section is not.
 
 | agreed | state | why not done |
 |---|---|---|
-| widen the Stock band to the literature 3–5 | not done | `test_validation.py` still asserts 2.4–4.4. Eger & Severinghaus put the range at 3–5, so the narrow band is ours, not theirs. Widening it would let the held Haldane patch (4.7) through — which is the argument for doing it and the reason to be careful about when |
+| ~~widen the Stock band to the literature 3–5~~ | **WITHDRAWN 2026-09-16** | The 3–5 range came from secondary sources. Stock's Table 2, now read from the page, gives Eger & Severinghaus a terminal rise of 3 and the consistent range as 3–4. There is no 3–5 to widen to, and widening would have let the held Haldane patch (4.7) through on a range that does not exist. `test_validation.py` keeps 2.4–4.4 |
 | benchmark the PATENT 1–5 min slope | not done | would **fail** at 1.70 against a classical 3–5. Adding it turns an untested weakness into a red suite, so it lands with the fix, not before |
 | model the jet insufflation protocol | not started | You set the order at "chase the co2 till we get it right, then look at jet insufflation", and answered the one open design question with **"discrete release for all time between boluses"** — the cannula open to atmosphere for the whole inter-bolus interval. Nothing was built. It needs an **outflow branch the model does not have**: `inflow` is clamped non-negative in both implementations (`apnoea_core.py:827`, `model.js:283`), so gas can only ever enter. `test_icsm_jet_2026` benchmarks the apnoea BEFORE cricothyroidotomy, not the jetting. The CO2 defect above is still open, so the order you set still holds — but the decision was made and had no home |
 
@@ -860,25 +901,35 @@ distribution in anaesthetised adults -- MIGET data.
 Cederlund T, Lundquist H, Strandberg A. V/Q distribution and correlation to
 atelectasis in anesthetized paralyzed humans. J Appl Physiol 1996;81:1822-33.**
 n=10, anaesthetised, PARALYSED, supine -- our patient exactly -- measured awake
-and then anaesthetised in the same people, by MIGET and by SPECT. Table 2,
-means +- SE:
+and then anaesthetised in the same people, by MIGET and by SPECT. **Table 3**
+(not Table 2), means +- SE, n=10. Re-transcribed from the page 2026-09-16:
 
                        awake        anaesthesia      anaesthesia
                                     (inert gas)      (isotope)
-    shunt Qs, %      0.2 +- 0.1     7.0 +- 1.3       6.9 +- 1.9
-    Qlow, %          1.2 +- 0.7     5.1 +- 1.8       3.6 +- 0.8
-    log QSD          0.65 +- 0.05   1.18 +- 0.12     0.80 +- 0.04
-    log VSD          0.74 +- 0.06   0.62 +- 0.07     0.58 +- 0.04
-    VD, %            30 +- 7        32 +- 3          7.3 +- 1.6
+    shunt Qs, %      0.2 +- 0.1     5.0 +- 1.3       6.9 +- 1.9
+    Qlow, %          1.2 +- 0.5     7.1 +- 1.8       3.6 +- 0.8
+    log QSD          0.67 +- 0.07   1.18 +- 0.12     0.80 +- 0.04
+    log VSD          0.54 +- 0.06   0.62 +- 0.05     0.78 +- 0.04
+    VD, %            30 +- 5.0      32 +- 3          5.3 +- 1.6
+
+**Nine values in the previous transcription were wrong, every one of them a 5
+and a 7 exchanged.** The three log QSD figures the V/Q argument rests on were
+correct and are unchanged. Two independent checks confirm the shunt value
+before the table was read: the paper's own regression between techniques,
+Qs_iso = 0.29 + 1.26*Qs_gas, maps 5.0 to 6.6 (close to the measured 6.9) and
+7.0 to 9.1 (nothing like it); and the paper states log VSD was HIGHER by
+isotope than by inert gas, true of 0.78 vs 0.62 and false of the old 0.58.
 
 The convention matches ours: MIGET calls perfusion below V/Q 0.005 SHUNT and
 reports it separately, so log QSD is the spread of the NON-shunt distribution,
 which is what `vq_log_sd` is. Directly comparable.
 
 **Our 0.70 is below the measured anaesthetised value on both techniques**
-(0.80 isotope, 1.18 inert gas) and barely above the AWAKE value of 0.65. Our
-baseline shunt of 5.0% sits just under their 7.0 +- 1.3% and inside their
-range of 0.4-12.2%.
+(0.80 isotope, 1.18 inert gas) and barely above the AWAKE value of 0.67. Our
+baseline shunt of 5.0% **lands on their measured 5.0 +- 1.3%**, not under it,
+and inside their range of 0.4-12.2%. The old entry said it "sits just under
+their 7.0"; that was the transposition above. Only ONE V/Q parameter is below
+measurement, not two.
 
 **And setting the spread to the measured value breaks Stock badly:**
 

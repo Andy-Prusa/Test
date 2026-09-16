@@ -105,7 +105,8 @@ def test_oloughlin_2020():
 
 
 def test_stock_1989():
-    """Stock MC, Downs JB, McDonald JS et al. J Clin Anesth 1989;1:328-32.
+    """Stock MC, Schisler JQ, McSweeney TD. The PaCO2 rate of rise in
+    anesthetized patients with airway obstruction. J Clin Anesth 1989;1:328-32.
     CLINICAL. 14 healthy adults, enflurane-O2, TRACHEAL TUBE CLAMPED, so this
     is complete obstruction with no fresh gas at all. A logarithmic function
     fitted the PaCO2 rise best; quoted piecewise as 12 mmHg over the first
