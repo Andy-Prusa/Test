@@ -107,22 +107,28 @@ for fg, want in ((0.21, 56.8), (1.00, 99.8)):
 print("\nHow narrow a channel will do? R = 394*(1/d mm)^4, anchored on the")
 print("1 mm <-> 1.3 cmH2O at 3.3 mL/s in AirwayEpoch's docstring.")
 R1MM = 1.3 / 0.0033
-for d, lean, obese in ((0.8, 90.0, 69.1), (0.6, 64.2, 34.4)):
+for d, lean, obese in ((0.8, 83.4, 35.0), (0.6, 35.8, 34.2)):
     R = R1MM * (1.0 / d) ** 4
     for name, kw, want in (('lean', LEAN, lean), ('obese', OBESE, obese)):
         r = sim(kw, [AirwayEpoch(1860, resistance=R, fgo2=1.00)])
         check(f"{name}, {d} mm aperture, SpO2 at 30 min",
               at(r, 'spo2', 1800), want, 2.0, " %")
-print("    A 0.2 mm change takes the lean patient from 90% to 64%. Patency is")
+print("    A 0.2 mm change takes the lean patient from 83% to 36%. Patency is")
 print("    effectively binary, and the threshold is SUB-MILLIMETRE -- far below")
-print("    anything POGO or Cormack-Lehane resolves.")
+print("    anything POGO or Cormack-Lehane resolves. That conclusion survives")
+print("    the compliance unit fix of 2026-09-17; the numbers it rests on do")
+print("    not. Before the fix these were 90.0 / 69.1 at 0.8 mm and 64.2 /")
+print("    34.4 at 0.6 mm. Sub-millimetre apertures are now WORSE, not better.")
 
 r = sim(OBESE, [AirwayEpoch(1860, resistance=2.0, fgo2=1.00)])
-check("obese, airway WIDE OPEN, SpO2 at 30 min", at(r, 'spo2', 1800), 86.4, 2.0, " %")
+check("obese, airway WIDE OPEN, SpO2 at 30 min", at(r, 'spo2', 1800), 86.5, 2.0, " %")
 print("    The obese 30-minute ceiling is NOT an aperture limit. Wide open, with")
 print("    alveolar PO2 above 350 mmHg, saturation is still 86%. That is SHUNT.")
-print("    editorial.md's claim that 0.8 mm holds >90% for 30 min in BOTH a lean")
-print("    and an obese patient is a LEAN-ONLY result.")
+print("    editorial.md's claim that 0.8 mm holds >90% for 30 min NO LONGER")
+print("    REPRODUCES FOR EITHER PATIENT. Until the compliance unit fix of")
+print("    2026-09-17 the lean figure was 90.0 and matched the claim exactly;")
+print("    it is now 83.4. The audit entry in HANDOVER that recorded the claim")
+print("    as reproducing is superseded by this line.")
 
 # ---------------------------------------------------------------------------
 print()

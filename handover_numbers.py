@@ -72,36 +72,36 @@ def gap(r, t):
     return at(r, 'paco2', t) - at(r, 'paco2_alv', t)
 
 
-check("obstructed PaCO2 slope 60-300 s", slope(ro), 4.03, 0.10, " mmHg/min")
-check("obstructed PACO2 slope", (at(ro, 'paco2_alv', 300) - at(ro, 'paco2_alv', 60)) / 4, 2.53, 0.10)
-check("obstructed PvCO2 slope", (at(ro, 'pvco2', 300) - at(ro, 'pvco2', 60)) / 4, 1.70, 0.10)
-check("patent PaCO2 slope 60-300 s", slope(rp), 1.70, 0.10, " mmHg/min")
+check("obstructed PaCO2 slope 60-300 s", slope(ro), 4.75, 0.10, " mmHg/min")
+check("obstructed PACO2 slope", (at(ro, 'paco2_alv', 300) - at(ro, 'paco2_alv', 60)) / 4, 2.61, 0.10)
+check("obstructed PvCO2 slope", (at(ro, 'pvco2', 300) - at(ro, 'pvco2', 60)) / 4, 1.80, 0.10)
+check("patent PaCO2 slope 60-300 s", slope(rp), 1.68, 0.10, " mmHg/min")
 check("patent PvCO2 slope", (at(rp, 'pvco2', 300) - at(rp, 'pvco2', 60)) / 4, 1.74, 0.10)
-check("obstructed a-A gap growth", (gap(ro, 300) - gap(ro, 60)) / 4, 1.50, 0.10)
+check("obstructed a-A gap growth", (gap(ro, 300) - gap(ro, 60)) / 4, 2.13, 0.10)
 check("patent a-A gap growth", (gap(rp, 300) - gap(rp, 60)) / 4, -0.04, 0.10)
-for t, g, sh, sa in ((60, -0.2, 0.058, 100.0), (180, 1.3, 0.103, 98.5),
-                     (240, 5.9, 0.140, 93.1), (300, 5.8, 0.181, 84.9)):
+for t, g, sh, sa in ((60, -0.17, 0.0585, 100.0), (180, 1.52, 0.1033, 98.5),
+                     (240, 6.48, 0.1406, 93.1), (300, 8.37, 0.1824, 84.9)):
     check(f"obstructed a-A gap at {t:3.0f} s", gap(ro, t), g, 0.4, " mmHg")
     check(f"obstructed shunt at {t:3.0f} s", 100 * at(ro, 'shunt', t), 100 * sh, 1.0, " %")
 
 # ---------------------------------------------------------------------------
 print("\nWhat the coupling is NOT")
 check("shunt suppressed (max_closed 0.02): slope",
-      slope(run(max_closed=0.02)), 4.21, 0.15, " mmHg/min")
+      slope(run(max_closed=0.02)), 4.97, 0.15, " mmHg/min")
 check("hb 18, desaturation delayed: slope",
-      slope(run(hb=18.0)), 3.64, 0.15, " mmHg/min")
+      slope(run(hb=18.0)), 4.24, 0.15, " mmHg/min")
 check("p_collapse floor removed (-200): slope",
-      slope(run(p_collapse=-200.0)), 3.98, 0.15, " mmHg/min")
+      slope(run(p_collapse=-200.0)), 4.75, 0.15, " mmHg/min")
 
 # ---------------------------------------------------------------------------
 print("\ntau_mix -- the lever that acts on the a-A gap")
-for tm, want in ((25.0, 5.44), (45.0, 4.03), (60.0, 3.56), (90.0, 2.70)):
+for tm, want in ((25.0, 6.09), (45.0, 4.75), (60.0, 4.04), (90.0, 3.04)):
     check(f"tau_mix {tm:5.1f}: Stock 1-5 min slope",
           slope(run(tau_mix=tm)), want, 0.12, " mmHg/min")
 
 # ---------------------------------------------------------------------------
 print("\nvq_log_sd against Tokics 1996 (measured 0.80 isotope / 1.18 inert gas)")
-for sd, want in ((0.50, 2.89), (0.70, 4.03), (0.80, 4.67), (1.18, 6.74)):
+for sd, want in ((0.50, 3.19), (0.70, 4.75), (0.80, 5.29), (1.18, 7.40)):
     check(f"vq_log_sd {sd:4.2f}: Stock 1-5 min slope",
           slope(run(vq_log_sd=sd)), want, 0.15, " mmHg/min")
 check("baseline shunt (Tokics Table 3 measured 5.0 +- 1.3%)",
@@ -113,28 +113,31 @@ print("    we do not sit under it.")
 
 # ---------------------------------------------------------------------------
 print("\nsv_itp_gain -- nearly inert on the knot (human data give 0.0033-0.00476)")
-for g_, want in ((0.0025, 4.03), (0.00476, 3.93)):
+for g_, want in ((0.0025, 4.75), (0.00476, 4.65)):
     check(f"sv_itp_gain {g_:.5f}: Stock slope",
           slope(run(sv_itp_gain=g_)), want, 0.12, " mmHg/min")
 check("stiff_below_rv 2.00: Stock slope",
-      slope(run(stiff_below_rv=2.0)), 4.77, 0.15, " mmHg/min")
+      slope(run(stiff_below_rv=2.0)), 5.30, 0.15, " mmHg/min")
 
 # ---------------------------------------------------------------------------
 print("\nn_vq convergence -- and arterial CO2 going the WRONG WAY at n_vq 20")
 print("  CO2 cannot leave a clamped lung, so PaCO2 must rise monotonically.")
 print("  At the default n_vq it does not. This is a discretisation artefact")
 print("  and it is the reason the benchmarked slope is below the converged one.")
-for n_, want_slope, want_falls in ((20, 4.03, 19), (40, 4.13, 0),
-                                   (80, 4.11, 0), (160, 4.10, 0)):
+for n_, want_slope, want_falls in ((20, 4.75, 24), (40, 4.74, 8),
+                                   (80, 4.72, 0), (160, 4.71, 0)):
     r_ = run(n_vq=n_)
     falls = int((np.diff(r_['paco2']) < -1e-9).sum())
     check(f"n_vq {n_:3d}: Stock 1-5 min slope", slope(r_), want_slope, 0.15,
           " mmHg/min")
     check(f"n_vq {n_:3d}: steps where PaCO2 FALLS", float(falls),
           float(want_falls), 2.0, " steps")
-print("    The 20 -> 160 slope move is 1.7%, inside the working tolerance.")
+print("    The 20 -> 160 slope move is 0.8%, inside the working tolerance.")
 print("    The SIGN error is not a tolerance question. test_validation.py")
 print("    checks timestep convergence and has never checked this one.")
+print("    The compliance unit fix of 2026-09-17 made the falls WORSE and")
+print("    pushed them further up: 19 -> 24 at n_vq 20, and 0 -> 8 at n_vq 40,")
+print("    which used to be clean. It now takes n_vq 80 to remove them.")
 
 # ---------------------------------------------------------------------------
 print("\nThe CO2 dissociation curve -- its CURVATURE drives the a-A gap")

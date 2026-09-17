@@ -558,7 +558,18 @@ def _solve_obstructed_volume(n_dry, frc, crs_ml_per_mmhg, rv, stiff, floor):
 # ---------------------------------------------------------------------------
 def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
              stop_sao2=0.20):
-    crs_mmhg = pt.crs / 1.35951
+    # crs is mL/cmH2O; _recoil works in mmHg, so the compliance must be
+    # expressed as mL/mmHg. Compliance is volume PER pressure, so converting it
+    # between pressure units uses the RECIPROCAL of the pressure factor: one
+    # mmHg is 1.35951 cmH2O, so a compliance of 85 mL/cmH2O is 85 * 1.35951 =
+    # 115.6 mL/mmHg. This line used to DIVIDE, which is the conversion for a
+    # pressure (as `p_collapse` below correctly does) and is wrong for a
+    # compliance. The error was squared on the round trip out of _recoil and
+    # made the respiratory system 1.35951^2 = 1.85x stiffer than the parameter
+    # said: an effective 46 mL/cmH2O, below the 60-75 Rothen 1993 measured.
+    # Both implementations had it identically, which is why test_parity.py
+    # never caught it -- parity tests agreement, not correctness.
+    crs_mmhg = pt.crs * 1.35951
     frc = pt.frc_anaes()
     cc = pt.closing_capacity()
     vo2 = pt.vo2_anaes()
