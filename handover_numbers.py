@@ -140,6 +140,44 @@ print("    refinement will remove it. test_validation.py checks timestep")
 print("    convergence and has never checked compartment-count convergence.")
 
 # ---------------------------------------------------------------------------
+print("\nStock 1989 measured OXYGEN too -- and the model fails it badly")
+print("  Table 1 has a PaO2 column and the Results text says, verbatim:")
+print("  'Pulse oximeter and laboratory SaO2 remained above 0.92 at all")
+print("  times.' Nothing in test_validation.py has ever tested oxygen under")
+print("  OBSTRUCTION -- Toner, Heard, O'Loughlin and ICSM are all patent")
+print("  airway or rescue -- and the first time it is tested we are wrong.")
+print("  Read from the page 2026-09-18. N falls 14 -> 7 across the table and")
+print("  one stopping rule WAS SaO2 0.93, so the late rows are conditioned on")
+print("  not having desaturated. That bias flatters Stock and cannot carry it.")
+_stock_o2 = simulate(Patient(weight=70, height=1.75, age=45, hb=15.0),
+                     [AirwayEpoch(360, resistance=OBS, fgo2=0.21)],
+                     dt=DT, feo2_start=0.87, stop_sao2=0.0)
+print(f"    {'t':>5}{'model PaO2':>12}{'Stock PaO2':>16}{'model SaO2':>12}")
+for t_, po2, sd_ in ((0, 412, 108), (20, 423, 136), (40, 452, 69),
+                     (60, 402, 16), (120, 385, 163), (180, 383, 84),
+                     (240, 332, 93), (300, 314, 87)):
+    print(f"    {t_:5d}{at(_stock_o2,'pao2',t_):12.0f}"
+          f"{po2:11d} +-{sd_:<3d}{at(_stock_o2,'sao2',t_):12.1f}")
+check("Stock oxygen: model PaO2 at   0 s (Stock 412 +- 108)",
+      at(_stock_o2, 'pao2', 0), 512.0, 3.0, " mmHg")
+check("Stock oxygen: model PaO2 at 180 s (Stock 383 +-  84)",
+      at(_stock_o2, 'pao2', 180), 135.0, 3.0, " mmHg")
+check("Stock oxygen: model PaO2 at 300 s (Stock 314 +-  87)",
+      at(_stock_o2, 'pao2', 300), 61.0, 3.0, " mmHg")
+check("Stock oxygen: model SaO2 at 300 s (Stock: NEVER below 92)",
+      at(_stock_o2, 'sao2', 300), 85.3, 0.6, " %")
+print("    The model tracks to 120 s and then COLLAPSES. Not a preoxygenation")
+print("    artefact: at feo2_start 0.80 and 0.70, where the baseline matches")
+print("    Stock better, SaO2 at 300 s is 82.9 and 77.1 -- the same or worse.")
+print("    It loses oxygen too fast under obstruction wherever it starts,")
+print("    because the sealed lung is shrinking and the shunt is rising.")
+print("    Their fitted CO2 equation, also from the page, for anyone testing")
+print("    the SHAPE rather than the slope:")
+print("      PaCO2 = (PaCO2)0 + 0.044(t) + 2.72[ln(t)],  t in seconds")
+print("    Two unmodelled design differences: their patients had NO")
+print("    neuromuscular blockade, and were 36 +- 14 yr where we run 45.")
+
+# ---------------------------------------------------------------------------
 print("\nvq_log_sd is a VOLUME dispersion, not a V/Q dispersion")
 print("  It appears exactly once in apnoea_core.py, and its only product is")
 print("  the gas-VOLUME share. Inflow follows volume, so specific ventilation")

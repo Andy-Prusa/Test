@@ -279,6 +279,116 @@ It is also free of the mechanics: the separability table above has `vq_log_sd`
 moving the Moreault pressure by 0.0%, so this can be worked without reopening
 the pressure limb.
 
+### "35 of 36 pass" is a weak statement — 2026-09-18
+
+Verified by running the suite: **35 PASS, 1 FAIL, 36 checks.** The count is
+right. As a measure of the model's health it is close to meaningless, and this
+file has been leaning on it. What the 36 actually contains:
+
+- **Five of them are one assertion counted five times.** `no cardiac response
+  at Hb 15 / 14 / 10 / 8 / 7 (must be inert)` is a loop, each iteration
+  expecting exactly 1.0-1.0 and each returning 1.0.
+- **Two pass by not happening.** `Toner buccal, held to 750 s` and
+  `Heard buccal, held to 750 s` both report **9999.0** against a band of 750 to
+  1e9. That is `time_to`'s "never reached" sentinel. True, but it is an
+  absence, not an agreement, and neither can fail from above.
+- **Four test the integrator, not the physiology** — dt convergence, oxygen
+  balance closing, stroke volume constant within a run, aventilatory mass flow.
+  The file says so itself: "if this fails the integrator is unstable, not the
+  physiology."
+- **Several bands are wide enough to swallow large error:**
+
+| check | band | value |
+|---|---|---|
+| oxygen balance closes | -200 to +900 mL | 2.4 |
+| O'Loughlin venous PCO2 rate | 50-350 Pa/min | 213.2 |
+| ICSM rescue not sustained | 0-60 % | 33.1 |
+| Moreault, subatmospheric | -50 to -12 cmH2O | -17.7 |
+
+- **They are not independent.** Three tilt checks from one limb, four ICSM jet
+  checks from one scenario, four Toner/Heard checks from two.
+
+Strip the duplicates, the sentinels and the self-checks and there are roughly
+**sixteen distinct claims against measured data**, not thirty-six.
+
+Two more things about how to read it. `Stock obstructed, first minute` passes
+at 12.0 against a band of 9-15 — exact, but that band is +-25%, so it would
+pass on a badly wrong model. And the Moreault check only became a LIVE check on
+2026-09-17: before the compliance fix the value sat pinned at the -50
+`p_collapse` floor, which is the band's own lower edge, so it could not fail
+from below.
+
+**The honest sentence is not "35 of 36 pass".** It is: the CO2 limb is the most
+heavily tested thing in the suite and it fails the one check with a tight band
+against a real measurement. Everything else either passes comfortably, passes
+inside a band too wide to discriminate, or is not testing the model against the
+world at all.
+
+### Stock 1989 also measured OXYGEN, and we never used it — 2026-09-18
+
+Re-read on 2026-09-18 looking for SaO2 under complete obstruction. It was in
+our hands the whole time. **Table 1 has a PaO2 column**, and the Results text
+says, verbatim: *"Pulse oximeter and laboratory SaO2 remained above 0.92 at all
+times."*
+
+Table 1, read from the page (mean ± SD):
+
+| apnoea t (s) | N | pH | PaCO2 | PaO2 |
+|---|---|---|---|---|
+| 0 | 14 | 7.42 ± 0.06 | 39 ± 5 | 412 ± 108 |
+| 20 | 13 | 7.38 ± 0.07 | 44 ± 7 | 423 ± 136 |
+| 40 | 14 | 7.35 ± 0.06 | 48 ± 8 | 452 ± 69 |
+| 60 | 14 | 7.34 ± 0.07 | 50 ± 7 | 402 ± 16 |
+| 120 | 13 | 7.32 ± 0.06 | 53 ± 6 | 385 ± 163 |
+| 180 | 11 | 7.31 ± 0.05 | 56 ± 6 | 383 ± 84 |
+| 240 | 6 | 7.28 ± 0.05 | 59 ± 7 | 332 ± 93 |
+| 300 | 7 | 7.26 ± 0.06 | 63 ± 9 | 314 ± 87 |
+
+Their fitted equation, also from the page:
+
+    PaCO2 = (PaCO2)0 + 0.044(t) + 2.72[ln(t)],  t in seconds
+
+**Against it, at the shipped `feo2_start` 0.87:**
+
+| t (s) | model PaO2 | Stock PaO2 | model SaO2 |
+|---|---|---|---|
+| 0 | 512 | 412 ± 108 | 100.0 |
+| 60 | 461 | 402 ± 16 | 100.0 |
+| 120 | 329 | 385 ± 163 | 99.9 |
+| 180 | **135** | 383 ± 84 | 98.7 |
+| 240 | **80** | 332 ± 93 | 93.3 |
+| 300 | **61** | 314 ± 87 | **85.3** |
+
+**The model tracks to 120 s and then collapses, and Stock does not.** At 300 s
+we are at PaO2 61 with SaO2 85.3%, against a measured 314 and an explicit
+statement that no patient was ever below 0.92.
+
+**It is not a preoxygenation-assumption artefact.** Tried at `feo2_start` 0.80
+and 0.70, where the baseline matches Stock better (462 and 392 against 412 ±
+108), the collapse is the same or faster: SaO2 at 300 s is 82.9% and 77.1%. The
+model loses oxygen too fast under obstruction wherever it starts, because the
+sealed lung is shrinking and the shunt is rising.
+
+**Read the late rows with care.** N falls 14 → 7, and one of the three stopping
+rules WAS SaO2 reaching 0.93, so the 240 and 300 s rows are conditioned on not
+having desaturated — survivor bias, in the direction that flatters Stock. But
+the bias cannot carry it: if the model were right almost nobody would reach
+300 s above 0.92, and half of them did. The ±16 SD at 60 s is also anomalous
+beside ±108, ±136 and ±163 elsewhere in the column; it is transcribed as
+printed and should be treated with suspicion.
+
+Two design differences from our Stock reference patient, both unmodelled:
+their patients had **no neuromuscular blockade** (enflurane deep enough to
+abolish effort), so chest wall tone is not a paralysed one; and they were
+36 ± 14 yr where we run 45.
+
+**This is a second, independent line of evidence on the same limb.** Every
+oxygen benchmark in the suite — Toner, Heard, O'Loughlin, ICSM — uses a patent
+airway or a rescue. **Nothing in the suite has ever tested oxygen under
+obstruction**, which is the regime the whole project is about, and the first
+time it is tested the model is badly wrong. Regenerated by
+`handover_numbers.py`.
+
 ### A second defect: arterial CO2 FALLS inside a sealed lung — 2026-09-16
 
 At the default `n_vq` of 20, which every benchmark in the suite uses, PaCO2 is
