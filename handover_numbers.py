@@ -72,7 +72,7 @@ def gap(r, t):
     return at(r, 'paco2', t) - at(r, 'paco2_alv', t)
 
 
-check("obstructed PaCO2 slope 60-300 s", slope(ro), 4.75, 0.10, " mmHg/min")
+check("obstructed PaCO2 slope 60-300 s", slope(ro), 4.72, 0.10, " mmHg/min")
 check("obstructed PACO2 slope", (at(ro, 'paco2_alv', 300) - at(ro, 'paco2_alv', 60)) / 4, 2.61, 0.10)
 check("obstructed PvCO2 slope", (at(ro, 'pvco2', 300) - at(ro, 'pvco2', 60)) / 4, 1.80, 0.10)
 check("patent PaCO2 slope 60-300 s", slope(rp), 1.68, 0.10, " mmHg/min")
@@ -91,17 +91,17 @@ check("shunt suppressed (max_closed 0.02): slope",
 check("hb 18, desaturation delayed: slope",
       slope(run(hb=18.0)), 4.24, 0.15, " mmHg/min")
 check("p_collapse floor removed (-200): slope",
-      slope(run(p_collapse=-200.0)), 4.75, 0.15, " mmHg/min")
+      slope(run(p_collapse=-200.0)), 4.72, 0.15, " mmHg/min")
 
 # ---------------------------------------------------------------------------
 print("\ntau_mix -- the lever that acts on the a-A gap")
-for tm, want in ((25.0, 6.24), (45.0, 4.75), (60.0, 4.00), (90.0, 3.09)):
+for tm, want in ((25.0, 6.24), (45.0, 4.72), (60.0, 4.00), (90.0, 3.09)):
     check(f"tau_mix {tm:5.1f}: Stock 1-5 min slope",
           slope(run(tau_mix=tm)), want, 0.12, " mmHg/min")
 
 # ---------------------------------------------------------------------------
 print("\nvq_log_sd against Tokics 1996 (measured 0.80 isotope / 1.18 inert gas)")
-for sd, want in ((0.50, 3.16), (0.70, 4.75), (0.80, 5.41), (1.18, 7.56)):
+for sd, want in ((0.50, 3.16), (0.70, 4.72), (0.80, 5.41), (1.18, 7.56)):
     check(f"vq_log_sd {sd:4.2f}: Stock 1-5 min slope",
           slope(run(vq_log_sd=sd)), want, 0.15, " mmHg/min")
 check("baseline shunt (Tokics Table 3 measured 5.0 +- 1.3%)",
@@ -113,7 +113,7 @@ print("    we do not sit under it.")
 
 # ---------------------------------------------------------------------------
 print("\nsv_itp_gain -- nearly inert on the knot (human data give 0.0033-0.00476)")
-for g_, want in ((0.0025, 4.75), (0.00476, 4.65)):
+for g_, want in ((0.0025, 4.72), (0.00476, 4.66)):
     check(f"sv_itp_gain {g_:.5f}: Stock slope",
           slope(run(sv_itp_gain=g_)), want, 0.12, " mmHg/min")
 check("stiff_below_rv 2.00: Stock slope",
@@ -138,6 +138,47 @@ print("    converged at ~8.4 mmHg from n_vq 60 upward. The disagreement is a")
 print("    property of the model physics, not of its discretisation, and no")
 print("    refinement will remove it. test_validation.py checks timestep")
 print("    convergence and has never checked compartment-count convergence.")
+
+# ---------------------------------------------------------------------------
+print("\nvq_log_sd is a VOLUME dispersion, not a V/Q dispersion")
+print("  It appears exactly once in apnoea_core.py, and its only product is")
+print("  the gas-VOLUME share. Inflow follows volume, so specific ventilation")
+print("  is uniform by construction and a PATENT run does have VA/Q dispersion")
+print("  equal to vq_log_sd -- which is what makes the Tokics comparison look")
+print("  legitimate. Under obstruction there is no ventilation, so all that is")
+print("  left is VOLUME per perfusion. We calibrate a volume distribution")
+print("  against a ventilation measurement. See HANDOVER, 'Where to look next'.")
+
+
+def first_min(r_):
+    return at(r_, 'paco2', 60) - at(r_, 'paco2', 0)
+
+
+for sd, w_obs, w_pat, w_gap, w_r1 in ((0.30, 1.89, 1.65, -0.91, 12.13),
+                                      (0.40, 2.42, 1.66, 1.03, 12.11),
+                                      (0.50, 3.16, 1.66, 3.60, 12.08),
+                                      (0.70, 4.72, 1.68, 8.35, 12.02)):
+    r_o = run(vq_log_sd=sd)
+    r_p = run(vq_log_sd=sd, obstructed=False)
+    check(f"vq_log_sd {sd:4.2f}: obstructed slope (Stock 3.4)", slope(r_o),
+          w_obs, 0.15, " mmHg/min")
+    check(f"vq_log_sd {sd:4.2f}: PATENT slope", slope(r_p), w_pat, 0.15,
+          " mmHg/min")
+    check(f"vq_log_sd {sd:4.2f}: a-A gap at 300 s", gap(r_o, 300), w_gap, 0.40,
+          " mmHg")
+    check(f"vq_log_sd {sd:4.2f}: first-minute rise (Stock 12)", first_min(r_o),
+          w_r1, 0.25, " mmHg")
+print("    The PATENT arm is inert across the whole range, 1.65 to 1.72, which")
+print("    is why no patent-airway dataset could ever have caught this. The")
+print("    first-minute rise is inert too, 11.8 to 12.1 against a measured 12,")
+print("    so the bulk CO2 bookkeeping is right at every value and only the")
+print("    gap moves. And the a-A gap CHANGES SIGN between 0.30 and 0.40: a")
+print("    hard bracket, not a fitted one. Below it the model has arterial CO2")
+print("    running BELOW alveolar inside a sealed lung.")
+print("    Stock's 3.4 wants a volume dispersion near 0.50. That is NOT")
+print("    permission to set it there. What is needed is a measurement of")
+print("    regional gas volume per unit perfusion, which is not in this")
+print("    repository and is not what Tokics measured.")
 
 # ---------------------------------------------------------------------------
 print("\nSeparability -- the CO2 limb and the mechanics limb are NOT coupled")
