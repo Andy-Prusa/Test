@@ -95,13 +95,13 @@ check("p_collapse floor removed (-200): slope",
 
 # ---------------------------------------------------------------------------
 print("\ntau_mix -- the lever that acts on the a-A gap")
-for tm, want in ((25.0, 6.09), (45.0, 4.75), (60.0, 4.04), (90.0, 3.04)):
+for tm, want in ((25.0, 6.24), (45.0, 4.75), (60.0, 4.04), (90.0, 3.04)):
     check(f"tau_mix {tm:5.1f}: Stock 1-5 min slope",
           slope(run(tau_mix=tm)), want, 0.12, " mmHg/min")
 
 # ---------------------------------------------------------------------------
 print("\nvq_log_sd against Tokics 1996 (measured 0.80 isotope / 1.18 inert gas)")
-for sd, want in ((0.50, 3.19), (0.70, 4.75), (0.80, 5.29), (1.18, 7.40)):
+for sd, want in ((0.50, 3.19), (0.70, 4.75), (0.80, 5.29), (1.18, 7.56)):
     check(f"vq_log_sd {sd:4.2f}: Stock 1-5 min slope",
           slope(run(vq_log_sd=sd)), want, 0.15, " mmHg/min")
 check("baseline shunt (Tokics Table 3 measured 5.0 +- 1.3%)",
@@ -120,10 +120,10 @@ check("stiff_below_rv 2.00: Stock slope",
       slope(run(stiff_below_rv=2.0)), 5.30, 0.15, " mmHg/min")
 
 # ---------------------------------------------------------------------------
-print("\nn_vq convergence -- and arterial CO2 going the WRONG WAY at n_vq 20")
+print("\nn_vq convergence -- arterial CO2 went the WRONG WAY below n_vq 80")
 print("  CO2 cannot leave a clamped lung, so PaCO2 must rise monotonically.")
-print("  At the default n_vq it does not. This is a discretisation artefact")
-print("  and it is the reason the benchmarked slope is below the converged one.")
+print("  Below 80 compartments it did not. The default was raised 20 -> 80 on")
+print("  2026-09-18 for exactly that reason. These rows keep the evidence.")
 for n_, want_slope, want_falls in ((20, 4.75, 24), (40, 4.74, 8),
                                    (80, 4.72, 0), (160, 4.71, 0)):
     r_ = run(n_vq=n_)
@@ -132,12 +132,12 @@ for n_, want_slope, want_falls in ((20, 4.75, 24), (40, 4.74, 8),
           " mmHg/min")
     check(f"n_vq {n_:3d}: steps where PaCO2 FALLS", float(falls),
           float(want_falls), 2.0, " steps")
-print("    The 20 -> 160 slope move is 0.8%, inside the working tolerance.")
-print("    The SIGN error is not a tolerance question. test_validation.py")
-print("    checks timestep convergence and has never checked this one.")
-print("    The compliance unit fix of 2026-09-17 made the falls WORSE and")
-print("    pushed them further up: 19 -> 24 at n_vq 20, and 0 -> 8 at n_vq 40,")
-print("    which used to be clean. It now takes n_vq 80 to remove them.")
+print("    Raising the default bought CORRECTNESS, not accuracy. The slope")
+print("    moves 4.75 -> 4.72 against a measured 3.4, and the a-A gap is")
+print("    converged at ~8.4 mmHg from n_vq 60 upward. The disagreement is a")
+print("    property of the model physics, not of its discretisation, and no")
+print("    refinement will remove it. test_validation.py checks timestep")
+print("    convergence and has never checked compartment-count convergence.")
 
 # ---------------------------------------------------------------------------
 print("\nThe CO2 dissociation curve -- its CURVATURE drives the a-A gap")

@@ -100,7 +100,7 @@ function simulate(P, epochs, dt=0.1){
   let vA=frc-150;
   const fo2=P.feo2, fco2=40/PDRY, fn2=Math.max(0,1-fo2-fco2);
   const ntot=vA*PDRY/GASK;
-  const NC=P.nVq||16, SD=P.vqLogSd===undefined?0.70:P.vqLogSd;
+  const NC=P.nVq||80, SD=P.vqLogSd===undefined?0.70:P.vqLogSd;
   const TAUMIX=P.tauMix===undefined?45:P.tauMix;
   const dist=vqDist(NC,SD), qw=dist.q, vw=dist.v;
   // n[3i]=O2, n[3i+1]=CO2, n[3i+2]=N2 for compartment i, mL STPD

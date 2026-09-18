@@ -63,7 +63,7 @@ print("what follows IF the fraction is x, not what a device delivers.\n")
 # The lean patient at FO2 0.70 desaturates at 824 s -- past the ceiling, but
 # only by 74 s, and nothing like indefinitely. Only FO2 1.00 runs past 20 min.
 for fg, lean, obese in ((0.21, 402.3, 288.4), (0.60, 669.0, 462.2),
-                        (0.70, 823.7, 562.4), (0.90, 9999.0, 1030.2)):
+                        (0.70, 823.7, 562.4), (0.90, 9999.0, 1041.9)):
     check(f"lean, pharyngeal FO2 {fg:.2f}", t95(LEAN, fg), lean, 6.0, " s")
     check(f"obese, pharyngeal FO2 {fg:.2f}", t95(OBESE, fg), obese, 6.0, " s")
 check("lean, pharyngeal FO2 1.00 (runs past 20 min)", t95(LEAN, 1.00),
@@ -107,7 +107,7 @@ for fg, want in ((0.21, 56.8), (1.00, 99.8)):
 print("\nHow narrow a channel will do? R = 394*(1/d mm)^4, anchored on the")
 print("1 mm <-> 1.3 cmH2O at 3.3 mL/s in AirwayEpoch's docstring.")
 R1MM = 1.3 / 0.0033
-for d, lean, obese in ((0.8, 83.4, 35.0), (0.6, 35.8, 34.2)):
+for d, lean, obese in ((0.8, 83.4, 37.3), (0.6, 35.8, 34.2)):
     R = R1MM * (1.0 / d) ** 4
     for name, kw, want in (('lean', LEAN, lean), ('obese', OBESE, obese)):
         r = sim(kw, [AirwayEpoch(1860, resistance=R, fgo2=1.00)])

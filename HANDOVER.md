@@ -93,25 +93,36 @@ At the default `n_vq` of 20, which every benchmark in the suite uses, PaCO2 is
 **not monotonic** during a clamped-airway apnoea. CO2 has no route out of a
 sealed lung. The sign is wrong.
 
-It is a discretisation artefact, and it goes away when the compartments are
-refined — but the compliance unit fix made it WORSE and pushed it further up,
-so n_vq 40 is no longer clean:
+**FIXED 2026-09-18 by raising the default `n_vq` from 20 to 80.** It is a
+discretisation artefact; 80 is the first compartment count with none of it.
 
-| n_vq | Stock 1-5 min slope | steps where PaCO2 falls | was, pre-unit-fix |
+| n_vq | Stock 1-5 min slope | steps where PaCO2 falls | a-A gap at 300 s |
 |---|---|---|---|
-| 20 (default, all benchmarks) | 4.75 | 24 | 4.03 / 19 |
-| 40 | 4.74 | 8 | 4.13 / 0 |
-| 80 | 4.72 | 0 | 4.11 / 0 |
-| 160 | 4.71 | 0 | 4.10 / 0 |
+| 20 (the old default) | 4.75 | 24 | 8.37 |
+| 40 | 4.74 | 8 | 8.46 |
+| 60 | 4.72 | 2 | 8.36 |
+| **80 (the default now)** | **4.72** | **0** | **8.35** |
+| 100 | 4.71 | 0 | 8.40 |
+| 200 | 4.71 | 0 | 8.26 |
 
 The likely mechanism is that compartments close one at a time as the lung
 shrinks, so with 20 of them each closure steps the shunt by ~5% of perfusion
 and jolts arterial CO2. That has NOT been confirmed and no fix is attempted
 here.
 
-**Two consequences.** The benchmarked 4.75 is 0.8% below the converged 4.71, so
-the recorded gap to Stock's 3.4 is slightly understated. And
-`test_validation.py` checks timestep convergence
+**It bought CORRECTNESS, not accuracy, and that is the useful part.** The
+slope moves 4.75 -> 4.72 against a measured 3.4, and the a-A gap is converged
+at about 8.4 mmHg from 60 compartments upward. **The disagreement with Stock is
+a property of the model's physics, not of its discretisation**, so no amount of
+refinement will remove it. The mechanism has to change. Cost: about 80% more
+runtime, so the pre-commit gate goes from roughly eight minutes to fifteen.
+
+The first-minute rise is 12.02 at every compartment count, completely
+insensitive. That is the bulk-store term, and it is the cleanest statement of
+where the model is sound and where it is not: the CO2 bookkeeping is right, the
+heterogeneity term is wrong.
+
+And `test_validation.py` checks timestep convergence
 (`test_timestep_stability`) but has never checked compartment-count
 convergence. The size is inside the 5% working tolerance; the SIGN is not a
 tolerance question, which is why this is recorded rather than waved through.

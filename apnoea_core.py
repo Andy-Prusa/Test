@@ -108,9 +108,21 @@ class Patient:
     # volume relative to its perfusion exhausts its oxygen first and becomes
     # shunt, progressively, WITHOUT any airway closure. Aventilatory mass flow
     # then distributes by mechanics rather than by perfusion, so the mismatch
-    # worsens as the apnoea goes on. ICSM uses 100 compartments; 20 captures
-    # most of the behaviour at a fraction of the cost.
-    n_vq: int = 20
+    # worsens as the apnoea goes on. ICSM uses 100 compartments.
+    #
+    # Raised from 20 to 80 on 2026-09-18. At 20 the model did something
+    # PHYSICALLY IMPOSSIBLE: arterial CO2 fell 24 times during a clamped-airway
+    # apnoea, reaching -41.7 mmHg/min, when CO2 has no route out of a sealed
+    # lung. Compartments close one at a time as the lung shrinks, so with few
+    # of them each closure steps the shunt and jolts arterial CO2. The falls
+    # go 24 -> 8 -> 2 -> 0 at n_vq 20, 40, 60, 80; 80 is the first clean value.
+    #
+    # It buys correctness, NOT accuracy. The Stock 1-5 min slope is 4.75 at
+    # n_vq 20 and 4.72 at 80, against a measured 3.4, and the a-A CO2 gap is
+    # converged at ~8.4 mmHg from 60 upward. The disagreement is a property of
+    # the model's physics, not of its discretisation, and no refinement will
+    # remove it. Costs about 80% more runtime.
+    n_vq: int = 80
     vq_log_sd: float = 0.70      # log SD of the perfusion distribution
     # Cardiogenic mixing. The beating heart displaces gas within the alveoli
     # and tracheobronchial tree with every systole, stirring the compartments
