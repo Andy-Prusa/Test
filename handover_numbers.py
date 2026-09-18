@@ -181,6 +181,63 @@ print("    regional gas volume per unit perfusion, which is not in this")
 print("    repository and is not what Tokics measured.")
 
 # ---------------------------------------------------------------------------
+print("\nvq_log_sd is NOT the log QSD it is compared against")
+print("  The z grid is linspace(-2.2, 2.2, n). Truncating a Gaussian at 2.2")
+print("  sigma discards the tails, so the discrete distribution has SD 0.9206")
+print("  and model log QSD = 0.9206 * vq_log_sd. Tokics Table 3 also reports")
+print("  log VSD, which this file used to ignore; the model forces the two")
+print("  equal, so it can represent the ISOTOPE lung (0.80 / 0.78) and cannot")
+print("  represent the MIGET lung (1.18 / 0.62) at all.")
+
+
+def log_moments(sd, n=None):
+    """Perfusion- and ventilation-weighted SD of ln(VA/Q) over the grid."""
+    q = Patient(weight=70, height=1.75, age=45, hb=15.0, vq_log_sd=sd,
+                **({'n_vq': n} if n else {}))
+    w, vol = q.vq_distribution()
+    zz = np.linspace(-2.2, 2.2, q.n_vq)
+    lr = sd * zz
+
+    def lsd(wt):
+        wt = wt / wt.sum()
+        return float(np.sqrt(wt @ (lr - float(wt @ lr)) ** 2))
+
+    return lsd(w), lsd(vol)
+
+
+_z = np.linspace(-2.2, 2.2, 80)
+_w = _z * 0 + np.exp(-0.5 * _z * _z)
+_w = _w / _w.sum()
+check("truncation factor at n_vq 80 (would be 1.0 untruncated)",
+      float(np.sqrt(_w @ (_z - float(_w @ _z)) ** 2)), 0.9206, 0.002, "")
+for sd, w_q, w_v in ((0.50, 0.460, 0.448), (0.70, 0.644, 0.612),
+                     (0.869, 0.800, 0.739), (1.282, 1.180, 1.002)):
+    q_, v_ = log_moments(sd)
+    check(f"vq_log_sd {sd:5.3f}: model log QSD", q_, w_q, 0.006, "")
+    check(f"vq_log_sd {sd:5.3f}: model log VSD", v_, w_v, 0.006, "")
+print("    Tokics 1996 Table 3, read from the page 2026-09-18:")
+print("      awake, inert gas          log QSD 0.67 +- 0.07  log VSD 0.54 +- 0.06")
+print("      anaesthetised, inert gas  log QSD 1.18 +- 0.12  log VSD 0.62 +- 0.05")
+print("      anaesthetised, isotope    log QSD 0.80 +- 0.04  log VSD 0.78 +- 0.04")
+print("    The shipped 0.70 DELIVERS 0.644 -- below even the awake 0.67. This")
+print("    file used to say we pass because 0.70 is 'below measurement'. It is")
+print("    further below it than that.")
+for sd, want, lab in ((0.869, 5.85, "isotope log QSD 0.80"),
+                      (1.282, 8.25, "inert-gas log QSD 1.18")):
+    check(f"at the TRUE {lab}: Stock slope", slope(run(vq_log_sd=sd)), want,
+          0.15, " mmHg/min")
+print("    Correcting the comparison makes the benchmark WORSE: 5.41 -> 5.85")
+print("    and 7.56 -> 8.25 against a measured 3.4. Recorded, not compensated.")
+print("    The grid was NOT widened. Truncating at 2.2 sigma is a legitimate")
+print("    discretisation; comparing the PARAMETER to a measured log QSD was")
+print("    the error. Widening to 3 or 4 sigma would move every benchmark in")
+print("    the suite, so it is a decision and it is left open.")
+print("    Neither Tokics nor Rothen measures regional gas VOLUME against")
+print("    regional perfusion, which is what would settle the block above.")
+print("    Tokics' only volume figure is whole-lung: 'the calculated mean gas")
+print("    volume (FRC) approximates 2.0 liters', against our 2012 mL.")
+
+# ---------------------------------------------------------------------------
 print("\nSeparability -- the CO2 limb and the mechanics limb are NOT coupled")
 print("  HANDOVER said the compliance fix exposed a trade-off that 'every lung")
 print("  volume lever produces'. That was asserted, not tested. These rows are")
