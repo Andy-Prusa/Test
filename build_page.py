@@ -462,7 +462,7 @@ function beep(spo2){
   o.start(); o.stop(actx.currentTime+0.15);
 }
 
-// The lung is 20 parallel compartments, so a full run takes a second or two.
+// The lung is 80 parallel compartments, so a full run takes a few seconds.
 // Compute once on demand, then play back. This runs on the main thread on
 // purpose: a Worker built from a blob URL is blocked in sandboxed embeds,
 // which left the page stuck on "computing" with no way to recover.
