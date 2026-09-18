@@ -95,13 +95,13 @@ check("p_collapse floor removed (-200): slope",
 
 # ---------------------------------------------------------------------------
 print("\ntau_mix -- the lever that acts on the a-A gap")
-for tm, want in ((25.0, 6.24), (45.0, 4.75), (60.0, 4.04), (90.0, 3.04)):
+for tm, want in ((25.0, 6.24), (45.0, 4.75), (60.0, 4.00), (90.0, 3.09)):
     check(f"tau_mix {tm:5.1f}: Stock 1-5 min slope",
           slope(run(tau_mix=tm)), want, 0.12, " mmHg/min")
 
 # ---------------------------------------------------------------------------
 print("\nvq_log_sd against Tokics 1996 (measured 0.80 isotope / 1.18 inert gas)")
-for sd, want in ((0.50, 3.19), (0.70, 4.75), (0.80, 5.29), (1.18, 7.56)):
+for sd, want in ((0.50, 3.16), (0.70, 4.75), (0.80, 5.41), (1.18, 7.56)):
     check(f"vq_log_sd {sd:4.2f}: Stock 1-5 min slope",
           slope(run(vq_log_sd=sd)), want, 0.15, " mmHg/min")
 check("baseline shunt (Tokics Table 3 measured 5.0 +- 1.3%)",
@@ -117,7 +117,7 @@ for g_, want in ((0.0025, 4.75), (0.00476, 4.65)):
     check(f"sv_itp_gain {g_:.5f}: Stock slope",
           slope(run(sv_itp_gain=g_)), want, 0.12, " mmHg/min")
 check("stiff_below_rv 2.00: Stock slope",
-      slope(run(stiff_below_rv=2.0)), 5.30, 0.15, " mmHg/min")
+      slope(run(stiff_below_rv=2.0)), 5.20, 0.15, " mmHg/min")
 
 # ---------------------------------------------------------------------------
 print("\nn_vq convergence -- arterial CO2 went the WRONG WAY below n_vq 80")
@@ -138,6 +138,54 @@ print("    converged at ~8.4 mmHg from n_vq 60 upward. The disagreement is a")
 print("    property of the model physics, not of its discretisation, and no")
 print("    refinement will remove it. test_validation.py checks timestep")
 print("    convergence and has never checked compartment-count convergence.")
+
+# ---------------------------------------------------------------------------
+print("\nSeparability -- the CO2 limb and the mechanics limb are NOT coupled")
+print("  HANDOVER said the compliance fix exposed a trade-off that 'every lung")
+print("  volume lever produces'. That was asserted, not tested. These rows are")
+print("  the test: the Moreault pressure against the Stock slope, one lever at")
+print("  a time. Mixing and dispersion move the slope by a factor of two and")
+print("  the pressure by a tenth of a percent.")
+from apnoea_core import PB, PH2O  # noqa: E402
+
+
+def moreault_p(ml=1008.0, **kw):
+    """Airway pressure once `ml` of gas, measured at atmospheric, has gone.
+
+    The same construction as test_validation.test_moreault_2021: their
+    volumes were read at atmospheric pressure, and the lung shrinks by less
+    than the gas that leaves it because the remainder rarefies.
+    """
+    q = Patient(weight=70, height=1.75, age=45, hb=14.0, **kw)
+    r_ = simulate(q, [AirwayEpoch(420.0, resistance=OBS, fgo2=0.21)],
+                  dt=0.1, stop_sao2=0.0)
+    n_atm = r_['va'] * (PB + r_['palv_cmh2o'] / 1.35951 - PH2O) / (PB - PH2O)
+    lost = n_atm[0] - n_atm
+    assert lost[-1] >= ml, f"only {lost[-1]:.0f} mL absorbed in 420 s"
+    return float(r_['palv_cmh2o'][int(np.argmax(lost >= ml))])
+
+
+_base_p = moreault_p()
+check("baseline Moreault P at 1008 mL", _base_p, -17.7, 0.4, " cmH2O")
+for lab, kw, want_s, want_p in (
+        ("tau_mix 25", dict(tau_mix=25.0), 6.24, -17.7),
+        ("tau_mix 90", dict(tau_mix=90.0), 3.09, -17.7),
+        ("vq_log_sd 0.50", dict(vq_log_sd=0.50), 3.16, -17.7),
+        ("vq_log_sd 1.18", dict(vq_log_sd=1.18), 7.56, -17.7),
+        ("crs 60", dict(crs=60.0), 4.37, -24.2),
+        ("crs 110", dict(crs=110.0), 4.92, -14.0),
+        ("stiff_below_rv 0.05", dict(stiff_below_rv=0.05), 4.11, -27.3),
+        ("rv 900", dict(rv=900.0), 5.17, -11.7),
+        ("rv 1300", dict(rv=1300.0), 4.27, -32.0)):
+    check(f"{lab}: Stock slope", slope(run(**kw)), want_s, 0.15, " mmHg/min")
+    check(f"{lab}: Moreault P at 1008 mL", moreault_p(**kw), want_p, 0.5,
+          " cmH2O")
+print("    Neither CO2 lever moves the pressure at all. The mechanics levers")
+print("    move the slope by about 10%, so the coupling runs ONE WAY and")
+print("    weakly. The two red limbs are separable and can be worked apart.")
+print("    tau_mix 90 and vq_log_sd 0.50 each put the Stock slope back inside")
+print("    its 2.4-4.4 band on their own, with the mechanics untouched, which")
+print("    is exactly why neither may be set there. A fit is not a mechanism.")
 
 # ---------------------------------------------------------------------------
 print("\nThe CO2 dissociation curve -- its CURVATURE drives the a-A gap")

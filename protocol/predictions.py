@@ -14,6 +14,15 @@ any later commit, to see whether the registered predictions still hold.
 The scenario throughout is a preoxygenated, paralysed adult whose tracheal tube
 is occluded at end-expiration: a single AirwayEpoch at infinite resistance,
 FgO2 0.87, from an anaesthetised FRC.
+
+EVERY PRESSURE AND FLOW HERE CHANGED ON 2026-09-17. `simulate()` had been
+dividing the respiratory compliance by 1.35951 where it must multiply, so the
+model ran at 1.85x the stiffness its parameter stated. Corrected, the lung is
+almost twice as compliant, the same absorbed gas develops about half the
+vacuum, and the release inrush it drives is about half as fast and takes about
+twice as long. The volumes barely moved, because they are set by the gas
+balance rather than by the pressure. See HANDOVER.md, "THE COMPLIANCE UNIT
+ERROR".
 """
 import os
 import sys
@@ -22,6 +31,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import apnoea_core as ac  # noqa: E402
 from apnoea_core import (GASK, PB, PH2O, AirwayEpoch, Patient,  # noqa: E402
                          simulate)
 
@@ -73,6 +83,10 @@ def at(rec, seconds):
 
 # --------------------------------------------------------------------------
 print(__doc__.strip().splitlines()[0])
+# The protocol claims its predictions come from "the model at a recorded
+# commit". Say which file that was, so the claim is checkable from the output
+# alone and not from where someone happened to run this.
+print(ac.provenance())
 print()
 
 print("2.3  Pre-specified predictions -- 70 kg, 1.75 m")
@@ -86,11 +100,11 @@ for s in (30, 60, 120, 180):
           f" {ent[i]:11.0f}")
 
 i180 = at(rec, 180)
-check("Paw at 180 s", rec['palv_cmh2o'][i180], -15.6, 0.2, " cmH2O")
+check("Paw at 180 s", rec['palv_cmh2o'][i180], -8.6, 0.2, " cmH2O")
 check("PaCO2 at 180 s", rec['paco2'][i180], 58.5, 0.3, " mmHg")
-check("SaO2 at 180 s", rec['sao2'][i180], 98.4, 0.2, " %")
-check("entrained volume at 180 s", ent[i180], 739.0, 6.0, " mL")
-check("entrained volume at 120 s", ent[at(rec, 120)], 494.0, 6.0, " mL")
+check("SaO2 at 180 s", rec['sao2'][i180], 98.6, 0.2, " %")
+check("entrained volume at 180 s", ent[i180], 742.0, 6.0, " mL")
+check("entrained volume at 120 s", ent[at(rec, 120)], 496.0, 6.0, " mL")
 check("entrained volume at 60 s", ent[at(rec, 60)], 235.0, 6.0, " mL")
 check("entrained volume at 30 s", ent[at(rec, 30)], 100.0, 6.0, " mL")
 
@@ -100,12 +114,12 @@ scale = rec['va'] / PDRY                     # mL of gas per mmHg, at 1 atm
 d_o2 = -(scale[0] * rec['pao2_alv'][0] - scale[i180] * rec['pao2_alv'][i180])
 d_co2 = -(scale[0] * rec['paco2_alv'][0] - scale[i180] * rec['paco2_alv'][i180])
 d_n2 = -(scale[0] * rec['pan2'][0] - scale[i180] * rec['pan2'][i180])
-check("oxygen removed", d_o2, -840.0, 8.0, " mL")
-check("carbon dioxide added", d_co2, -9.0, 4.0, " mL")
-check("nitrogen returned", d_n2, 110.0, 6.0, " mL")
-check("sum of the three", -(d_o2 + d_co2 + d_n2), 739.0, 8.0, " mL")
-check("chest wall component", dvol[i180], 718.0, 6.0, " mL")
-check("decompression component", ent[i180] - dvol[i180], 21.0, 3.0, " mL")
+check("oxygen removed", d_o2, -842.0, 8.0, " mL")
+check("carbon dioxide added", d_co2, -11.0, 4.0, " mL")
+check("nitrogen returned", d_n2, 111.0, 6.0, " mL")
+check("sum of the three", -(d_o2 + d_co2 + d_n2), 742.0, 8.0, " mL")
+check("chest wall component", dvol[i180], 730.0, 6.0, " mL")
+check("decompression component", ent[i180] - dvol[i180], 11.0, 3.0, " mL")
 check("absorption rate near 180 s",
       (ent[i180] - ent[at(rec, 179)]), 4.0, 0.6, " mL/s")
 
@@ -131,7 +145,7 @@ p3, r3 = run(100, 1.75)
 j = at(r3, 180)
 check("shortfall at BMI 32.7",
       (r3['atelectasis'][j] + r3['collapsed'][j]) * p3.frc_anaes(),
-      161.0, 12.0, " mL")
+      162.0, 12.0, " mL")
 
 # --------------------------------------------------------------------------
 print("\n4.3  The inrush, and why the release goes through a resistor")
@@ -152,15 +166,19 @@ for R in (2.0, 5.0, 10.0, 20.0, 50.0):
     vols[R] = v5
     print(f"  {R:6.1f}  {flow.max():9.2f} L/s {t99s[R]:6.2f} s {v5:11.0f} mL")
 
-check("open-circuit peak flow", peaks[2.0], 7.8, 0.3, " L/s")
-check("peak flow through R = 10", peaks[10.0], 1.56, 0.1, " L/s")
-check("99% delivered by, at R = 10", t99s[10.0], 2.42, 0.1, " s")
+check("open-circuit peak flow", peaks[2.0], 4.3, 0.3, " L/s")
+check("peak flow through R = 10", peaks[10.0], 0.86, 0.1, " L/s")
+check("99% delivered by, at R = 10", t99s[10.0], 3.86, 0.12, " s")
 # The resistor must not change the answer: the endpoint is set by the chest
-# wall returning to its relaxed volume, not by the path the gas took.
-check("volume at R = 2 (open circuit)", vols[2.0], 739.0, 8.0, " mL")
-check("volume at R = 10", vols[10.0], 739.0, 8.0, " mL")
-check("volume at R = 20", vols[20.0], 736.0, 8.0, " mL")
-check("R = 50 is too slow to complete", vols[50.0], 653.0, 15.0, " mL")
+# wall returning to its relaxed volume, not by the path the gas took. That
+# holds only while the release actually finishes inside the window. Since the
+# compliance fix it no longer does at R = 20, which used to complete: the
+# usable range is now 5 to 10, not 5 to 20.
+check("volume at R = 2 (open circuit)", vols[2.0], 742.0, 8.0, " mL")
+check("volume at R = 10", vols[10.0], 741.0, 8.0, " mL")
+check("volume at R = 20 is now INCOMPLETE at 5 s", vols[20.0], 705.0, 8.0,
+      " mL")
+check("R = 50 is far too slow to complete", vols[50.0], 515.0, 15.0, " mL")
 # and the flow route must agree with the gas-balance route
 check("inrush integral vs gas balance", vols[10.0], ent[i180], 10.0, " mL")
 
@@ -168,11 +186,11 @@ check("inrush integral vs gas balance", vols[10.0], ent[i180], 10.0, " mL")
 print("\n5  Safety margins")
 pt5, r5 = run(70, 1.75, duration=420.0)
 check("SaO2 at 185 s, end of the volume manoeuvre",
-      r5['sao2'][at(r5, 185)], 98.2, 0.2, " %")
+      r5['sao2'][at(r5, 185)], 98.3, 0.2, " %")
 check("SpO2 reaches 95%", float(np.argmax(r5['spo2'] < 95.0) * DT),
-      253.0, 4.0, " s")
+      254.0, 4.0, " s")
 check("SpO2 reaches the 94% stopping threshold",
-      float(np.argmax(r5['spo2'] < 94.0) * DT), 261.0, 4.0, " s")
+      float(np.argmax(r5['spo2'] < 94.0) * DT), 263.5, 4.0, " s")
 
 # --------------------------------------------------------------------------
 print()

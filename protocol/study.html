@@ -193,7 +193,7 @@ colour.</div>
       transducer sits, nor on whether small airways have closed between the transducer and the
       alveoli. It therefore constrains the mass balance that generates the pressure in the first
       place, and it is measured on release without delivering any gas. Predicted at 180 s:
-      <code>735–740 mL</code>.</li>
+      <code>738–746 mL</code>.</li>
     <li><strong>Coupling.</strong> Within subjects, does the CO₂ rate covary with the airway
       pressure reached? This is the observation no existing dataset can provide, and the one that
       identifies which limb of the model is at fault.</li>
@@ -205,27 +205,27 @@ colour.</div>
   <div class="tw"><table>
     <thead><tr><th>Time</th><th>Airway pressure</th><th>PaCO₂</th><th>SaO₂</th><th>Cardiac output</th><th>MAP</th><th>Entrained volume<br><span style="font-weight:400;font-size:11px">if released now</span></th></tr></thead>
     <tbody>
-      <tr><td>30 s</td><td class="n">−2.1</td><td class="n">49.2</td><td class="n">100.0</td><td class="n">4.05</td><td class="n">70</td><td class="n">100</td></tr>
-      <tr><td>60 s</td><td class="n">−4.9</td><td class="n">52.3</td><td class="n">100.0</td><td class="n">4.15</td><td class="n">70</td><td class="n">235</td></tr>
-      <tr><td>120 s</td><td class="n">−10.4</td><td class="n">54.2</td><td class="n">99.9</td><td class="n">4.18</td><td class="n">70</td><td class="n">494</td></tr>
-      <tr><td>180 s</td><td class="n">−15.6</td><td class="n">58.5</td><td class="n">98.4</td><td class="n">4.29</td><td class="n">71</td><td class="n">739</td></tr>
+      <tr><td>30 s</td><td class="n">−1.1</td><td class="n">49.3</td><td class="n">100.0</td><td class="n">4.05</td><td class="n">70</td><td class="n">100</td></tr>
+      <tr><td>60 s</td><td class="n">−2.7</td><td class="n">52.4</td><td class="n">100.0</td><td class="n">4.16</td><td class="n">71</td><td class="n">235</td></tr>
+      <tr><td>120 s</td><td class="n">−5.7</td><td class="n">54.3</td><td class="n">99.9</td><td class="n">4.21</td><td class="n">71</td><td class="n">496</td></tr>
+      <tr><td>180 s</td><td class="n">−8.6</td><td class="n">58.5</td><td class="n">98.6</td><td class="n">4.34</td><td class="n">72</td><td class="n">742</td></tr>
     </tbody>
   </table></div>
   <p style="font-size:13px;color:var(--ink3)">Units: cmH₂O, mmHg, %, L·min⁻¹, mmHg, mL. The model
   additionally predicts a strong dependence on body habitus — at BMI 32.7 it reaches its pressure
-  floor by 120 s with SaO₂ 83.9% at 180 s — which is the basis for the BMI limit in §3.2.</p>
+  floor at 170 s with SaO₂ 84.2% at 180 s — which is the basis for the BMI limit in §3.2.</p>
 
   <h3><span class="n">2.4</span> What the entrained volume is made of</h3>
   <p>The entrained volume is not an independent quantity bolted on to the other three — it is the
   same gas balance seen from the other side, and that is what makes it useful. At 180 s the model
-  puts it at 739 mL, of which:</p>
+  puts it at 742 mL, of which:</p>
   <div class="tw"><table>
     <thead><tr><th>Component</th><th>Change in alveolar<br>content by 180 s</th><th>What it is</th></tr></thead>
     <tbody>
-      <tr><td>Oxygen</td><td class="n">−840</td><td>Cumulative alveolar uptake; 232 mL·min⁻¹ at this patient's anaesthetised VO₂</td></tr>
-      <tr><td>Carbon dioxide</td><td class="n">−9</td><td>Almost exactly nil, for an instructive reason: PACO₂ rises 43% while the lung shrinks 36%, so the two nearly cancel and the alveolus ends up holding slightly <em>less</em> CO₂ than it started with. This is the CO₂ question of §2.2(1) seen as a volume</td></tr>
-      <tr><td>Nitrogen</td><td class="n">+110</td><td>Returned from the tissue stores by perfusion; this is what splints the lung and sets the volume floor</td></tr>
-      <tr><td><strong>Net</strong></td><td class="n"><strong>−739</strong></td><td>The gas the lung has lost, and therefore the <strong>739 mL</strong> that must be put back on release — ≈ 250 mL·min⁻¹, or 88% of cumulative oxygen uptake</td></tr>
+      <tr><td>Oxygen</td><td class="n">−842</td><td>Cumulative alveolar uptake; 232 mL·min⁻¹ at this patient's anaesthetised VO₂</td></tr>
+      <tr><td>Carbon dioxide</td><td class="n">−11</td><td>Almost exactly nil, for an instructive reason: PACO₂ rises 42% while the lung shrinks 36%, so the two nearly cancel and the alveolus ends up holding slightly <em>less</em> CO₂ than it started with. This is the CO₂ question of §2.2(1) seen as a volume</td></tr>
+      <tr><td>Nitrogen</td><td class="n">+111</td><td>Returned from the tissue stores by perfusion; this is what splints the lung and sets the volume floor</td></tr>
+      <tr><td><strong>Net</strong></td><td class="n"><strong>−742</strong></td><td>The gas the lung has lost, and therefore the <strong>742 mL</strong> that must be put back on release — ≈ 247 mL·min⁻¹, or 88% of cumulative oxygen uptake</td></tr>
     </tbody>
   </table></div>
   <p>So the measurement is, in effect, a direct <em>in vivo</em> measurement of apnoeic oxygen
@@ -240,7 +240,7 @@ colour.</div>
     the passive inrush generates — which is what Rothen's data imply, since 20 cmH₂O barely moved
     atelectasis and 30–40 cmH₂O were needed to clear it — the measured volume falls short of the
     predicted volume by the trapped volume.</p>
-    <p>Predicted shortfall if nothing reopens: <b>125 mL at BMI 22.9, 161 mL at BMI 32.7</b> —
+    <p>Predicted shortfall if nothing reopens: <b>125 mL at BMI 22.9, 162 mL at BMI 32.7</b> —
     17 to 23% of the entrained volume. The model cannot produce a shortfall of any size, so
     observing one refutes its recruitment limb outright, without needing to argue about the
     pressure at all.</p>
@@ -294,8 +294,8 @@ colour.</div>
   sequences.</p>
   <p>The entrained volume is the best-powered of the secondary outcomes, and it is the measurement
   method rather than the sample size that determines whether it is worth making. The discriminant
-  is the 125–161 mL recruitment shortfall of §2.4. Released through the resistor of §4.3 and
-  integrated on a calibrated head at ±3%, the error on a 739 mL volume is ±22 mL — so the shortfall
+  is the 125–162 mL recruitment shortfall of §2.4. Released through the resistor of §4.3 and
+  integrated on a calibrated head at ±3%, the error on a 742 mL volume is ±22 mL — so the shortfall
   is resolved in a single participant, and twenty give it with certainty. Released into an open
   circuit instead, where the flow head is working outside its linear range on a 0.2 s transient, a
   realistic ±10% gives ±74 mL: enough to detect the shortfall on the group mean, not enough to
@@ -355,9 +355,9 @@ colour.</div>
   nothing is injected. The manoeuvre adds about five seconds to the apnoea.</p>
 
   <p><b>Why a resistor.</b> Released into an open circuit the inrush is violent — the model puts
-  peak flow at <b>7.8 L·s⁻¹</b> with 90% of the volume arriving in <b>0.20 s</b>. That is at or
+  peak flow at <b>4.3 L·s⁻¹</b> with 90% of the volume arriving in <b>0.39 s</b>. That is at or
   beyond the linear range of a common adult flow head, and worse, integrating a transient with most
-  of its volume inside a fifth of a second demands a frequency response and freedom from phase lag
+  of its volume inside four tenths of a second demands a frequency response and freedom from phase lag
   that ordinary clinical equipment does not have. A resistor in the release path slows it to
   something any calibrated head measures well, and — this is the point — <em>does not change the
   answer</em>, because the endpoint is set by the mechanics of the chest wall returning to its
@@ -366,17 +366,20 @@ colour.</div>
   <div class="tw"><table>
     <thead><tr><th>Release resistance<br><span style="font-weight:400;font-size:11px">cmH₂O/(L·s⁻¹)</span></th><th>Peak flow</th><th>99% delivered by</th><th>Volume measured</th></tr></thead>
     <tbody>
-      <tr><td class="n">2 <span style="color:var(--ink3)">(open circuit)</span></td><td class="n">7.80 L·s⁻¹</td><td class="n">0.48 s</td><td class="n">739 mL</td></tr>
-      <tr><td class="n">5</td><td class="n">3.12</td><td class="n">1.24 s</td><td class="n">739 mL</td></tr>
-      <tr><td class="n"><strong>10</strong></td><td class="n"><strong>1.56</strong></td><td class="n"><strong>2.42 s</strong></td><td class="n"><strong>739 mL</strong></td></tr>
-      <tr><td class="n">20</td><td class="n">0.78</td><td class="n">4.08 s</td><td class="n">736 mL</td></tr>
-      <tr><td class="n">50</td><td class="n">0.31</td><td class="n">—</td><td class="n">653 mL <span style="color:var(--stop)">incomplete</span></td></tr>
+      <tr><td class="n">2 <span style="color:var(--ink3)">(open circuit)</span></td><td class="n">4.30 L·s⁻¹</td><td class="n">0.85 s</td><td class="n">742 mL</td></tr>
+      <tr><td class="n">5</td><td class="n">1.72</td><td class="n">2.16 s</td><td class="n">742 mL</td></tr>
+      <tr><td class="n"><strong>10</strong></td><td class="n"><strong>0.86</strong></td><td class="n"><strong>3.86 s</strong></td><td class="n"><strong>741 mL</strong></td></tr>
+      <tr><td class="n">20</td><td class="n">0.43</td><td class="n">—</td><td class="n">705 mL <span style="color:var(--stop)">incomplete</span></td></tr>
+      <tr><td class="n">50</td><td class="n">0.17</td><td class="n">—</td><td class="n">515 mL <span style="color:var(--stop)">incomplete</span></td></tr>
     </tbody>
   </table></div>
-  <p><b>10 cmH₂O/(L·s⁻¹) is specified</b>, giving a 1.56 L·s⁻¹ peak over about two and a half
-  seconds. The value is not critical anywhere between 5 and 20 and should be matched to whichever
-  flow head is used; above about 50 the manoeuvre becomes slow enough that continuing absorption
-  eats into it and the measured volume falls short. The resistor is calibrated in series with the
+  <p><b>10 cmH₂O/(L·s⁻¹) is specified</b>, giving a 0.86 L·s⁻¹ peak over about four
+  seconds. <b>The usable range is 5 to 10, not 5 to 20.</b> It was 5 to 20 until the compliance
+  correction of 2026-09-17, which nearly doubled the modelled compliance: the same absorbed gas
+  now develops about half the vacuum, so the inrush is about half as fast and takes about twice as
+  long. At 20 the release no longer finishes inside the five-second window — it delivers 705 of
+  742 mL and is still flowing. Within 5 to 10 the value is not critical and should be matched to
+  whichever flow head is used. The resistor is calibrated in series with the
   tracheal tube, and its resistance is measured rather than assumed.</p>
 
   <ul>
@@ -393,13 +396,13 @@ colour.</div>
       water displacement once and subtracted.</li>
   </ul>
 
-  <p><b>Expected precision.</b> A calibrated head at ±3% of a 739 mL volume gives ±22 mL, against a
-  recruitment discriminant of 125–161 mL. The shortfall of §2.4 is therefore resolved in a single
+  <p><b>Expected precision.</b> A calibrated head at ±3% of a 742 mL volume gives ±22 mL, against a
+  recruitment discriminant of 125–162 mL. The shortfall of §2.4 is therefore resolved in a single
   participant, not merely on the group mean.</p>
 
   <p><b>Pressure through the manoeuvre.</b> While gas is flowing, pressure at the tube is not
-  alveolar pressure — the resistive drop across the orifice at 1.56 L·s⁻¹ accounts for the whole of
-  the 15.6 cmH₂O available. Alveolar pressure is recovered either by computation,
+  alveolar pressure — the resistive drop across the orifice at 0.86 L·s⁻¹ accounts for the whole of
+  the 8.6 cmH₂O available. Alveolar pressure is recovered either by computation,
   <code>P<sub>alv</sub> = P<sub>tube</sub> − R·V̇</code> with R from the orifice calibration, or
   directly by interrupting the inflow briefly two or three times and reading the static plateau at
   each. The interrupter route is preferred where it can be done, because it yields quasi-static
@@ -433,9 +436,9 @@ colour.</div>
     <thead><tr><th>Risk</th><th>Assessment</th><th>Mitigation</th></tr></thead>
     <tbody>
       <tr><td><strong>Hypoxaemia</strong></td>
-          <td>Predicted SaO₂ at 180 s is 98.4% after preoxygenation to ETO₂ ≥ 0.85. The model
-              predicts SpO₂ reaches 95% at approximately 253 s and the 94% stopping threshold at
-              approximately 261 s, so the sequence ends more than a minute before the rule fires.</td>
+          <td>Predicted SaO₂ at 180 s is 98.6% after preoxygenation to ETO₂ ≥ 0.85. The model
+              predicts SpO₂ reaches 95% at approximately 254 s and the 94% stopping threshold at
+              approximately 264 s, so the sequence ends more than a minute before the rule fires.</td>
           <td>Preoxygenation to a measured endpoint; continuous SpO₂; stopping rule at 94%, which is
               above the threshold at which any harm is plausible; immediate reconnection to 100% O₂.</td></tr>
       <tr><td><strong>Hypercapnia and acidaemia</strong></td>
@@ -462,9 +465,9 @@ colour.</div>
           <td>Nothing is injected; the release path is open to the circuit at atmospheric pressure
               throughout, so no pressure above zero can be generated.</td></tr>
       <tr><td><strong>Extended apnoea for the volume measurement</strong></td>
-          <td>The manoeuvre of §4.3 adds about 5 s beyond 180 s. Predicted SaO₂ at 185 s is 98.2%
-              against 98.4% at 180 s, and the model does not put SpO₂ at the 94% stopping threshold
-              until approximately 261 s.</td>
+          <td>The manoeuvre of §4.3 adds about 5 s beyond 180 s. Predicted SaO₂ at 185 s is 98.3%
+              against 98.6% at 180 s, and the model does not put SpO₂ at the 94% stopping threshold
+              until approximately 264 s.</td>
           <td>Permitted only from a completed 180 s sequence with SpO₂ ≥ 96% and no stopping
               criterion met, and only with the treating anaesthetist's agreement at that moment;
               abandoned instantly on any change; never attempted after an aborted sequence. It is
@@ -516,7 +519,7 @@ colour.</div>
     <li>CO₂ slope by linear regression within participant, then summarised across.</li>
     <li>Haemodynamic change from baseline by paired comparison at each time point.</li>
     <li>Entrained volume summarised as mean with 95% confidence interval and compared against the
-      registered 739 mL by one-sample <em>t</em> test. The recruitment test is one-sided in the
+      registered 742 mL by one-sample <em>t</em> test. The recruitment test is one-sided in the
       direction of a shortfall, since the model has no mechanism that could produce a surplus; a
       surplus, if observed, is reported as a failure of the mass balance and not interpreted.</li>
     <li>Coupling by within-subject correlation of pressure at 180 s against CO₂ slope, and of
@@ -568,7 +571,7 @@ colour.</div>
       <tr><td>Cardiac output unchanged</td>
           <td>Confirms that the fall seen in animal work is hypoxic and autonomic rather than
               mechanical, and that the mechanical cardiac coupling in the model should be removed.</td></tr>
-      <tr><td>Entrained volume near 739 mL</td>
+      <tr><td>Entrained volume near 742 mL</td>
           <td>The gas balance is right: oxygen uptake, alveolar CO₂ delivery and nitrogen return
               are jointly correct under obstruction, and any error in the CO₂ result must then lie
               in the blood and tissue stores rather than at the alveolus.</td></tr>
