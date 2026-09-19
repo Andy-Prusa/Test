@@ -641,6 +641,32 @@ models against a human measurement under complete obstruction.
 uptake of oxygen, acid-base metabolism, and circulation during prolonged
 apnoea" — the latter titled as carrying circulation during prolonged apnoea.
 
+#### Holmdahl 1956 — SOUGHT 2026-09-19, NOT OBTAINED
+
+**Holmdahl MH. Pulmonary uptake of oxygen, acid-base metabolism, and
+circulation during prolonged apnoea. Acta Chir Scand 1956;212(Suppl):1-128.**
+PMID 13326155. A 128-page Uppsala doctoral thesis.
+
+Could not be retrieved from this environment. Every route is blocked by the
+network egress proxy — PubMed, DiVA (Uppsala's repository), archive.org,
+HathiTrust, Springer, Wiley, Wikipedia, doi.org and LIBRIS all refuse. Only
+keyword search works, and it returns summaries rather than documents.
+
+**It is worth chasing.** By its title it carries oxygen uptake, acid-base AND
+circulation, in humans, during PROLONGED apnoea. That would make it the only
+human dataset we have with haemodynamics during apnoea besides Ebata 1991, and
+it sits in exactly the regime where we and Hardman & Wills diverge most: the
+terminal phase, where our desaturation is three times too slow and theirs is
+driven by a pressure excursion Moreault rules out.
+
+**And a warning, because this is the project's oldest failure mode.** The
+search summary returned while looking for it confidently attributed to Holmdahl
+a PaCO2 rise of "12 mmHg during the first minute and 3.4 mmHg/minute
+thereafter". **Those are Stock 1989's figures**, verified off the page in this
+session. A secondary summary invented a provenance. No number from Holmdahl is
+recorded anywhere in this repository and none may be until the thesis itself is
+read.
+
 ### A second defect: arterial CO2 FALLS inside a sealed lung — 2026-09-16
 
 At the default `n_vq` of 20, which every benchmark in the suite uses, PaCO2 is
