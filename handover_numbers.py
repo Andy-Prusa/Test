@@ -25,7 +25,8 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import apnoea_core as ac  # noqa: E402
-from apnoea_core import AirwayEpoch, Patient, simulate  # noqa: E402
+from apnoea_core import (AirwayEpoch, Patient, simulate,  # noqa: E402
+                         time_to)
 
 OBS = np.inf
 DT = 0.05
@@ -138,6 +139,80 @@ print("    converged at ~8.4 mmHg from n_vq 60 upward. The disagreement is a")
 print("    property of the model physics, not of its discretisation, and no")
 print("    refinement will remove it. test_validation.py checks timestep")
 print("    convergence and has never checked compartment-count convergence.")
+
+# ---------------------------------------------------------------------------
+print("\nEvery paper we hold, every channel it records")
+print("  All 15 uploaded PDFs screened for SaO2, PaO2, PaCO2, pH, CO, HR, MAP.")
+print("  Four record >=2 AND can be configured. Three more record >=2 but")
+print("  cannot: Chen & Scharf 1998 (pigs), Condos 1987 and Wright 2023")
+print("  (voluntary Mueller, seconds long). The rest record fewer than two.")
+
+# Tokics 1996 Table 2, anaesthetised column: VENTILATED steady state, so this
+# is the model's t = 0 and not an apnoea. n=10, 48.7 yr, 175.6 cm, 77.4 kg,
+# FiO2 0.40-0.43. Their +- is SE; the bands below are 1 SD = SE*sqrt(10).
+_tk = simulate(Patient(weight=77.4, height=1.756, age=49, hb=14.0),
+               [AirwayEpoch(60, resistance=2.0, fgo2=0.40)],
+               dt=DT, feo2_start=0.40, paco2_start=35.7, stop_sao2=0.0)
+check("Tokics ventilated t=0: CO    (meas 5.7)", _tk['co'][0], 4.04, 0.10,
+      " L/min")
+check("Tokics ventilated t=0: HR    (meas 79)", _tk['hr'][0], 70.0, 1.0, " bpm")
+check("Tokics ventilated t=0: MAP   (meas 81)", _tk['map'][0], 72.8, 1.0,
+      " mmHg")
+check("Tokics ventilated t=0: PaO2  (meas 159)", _tk['pao2'][0], 194.0, 3.0,
+      " mmHg")
+check("Tokics ventilated t=0: PaCO2 (meas 35.7)", _tk['paco2'][0], 35.8, 0.4,
+      " mmHg")
+
+# Ebata 1991 Table II. Ten-minute apnoea test, PATENT airway, O2 insufflated
+# 6 L/min via a 2.1 mm catheter above the carina. NINE BRAIN-DEAD patients,
+# 53.4 yr, mean body temp 36.0 C, ALL on dopamine (two also dobutamine) --
+# so their HR of 100 is pharmacologically driven and our shortfall there is
+# expected rather than a defect.
+_eb = simulate(Patient(weight=70, height=1.75, age=53, hb=14.0, temp=36.0),
+               [AirwayEpoch(600, resistance=2.0, fgo2=1.0)],
+               dt=DT, feo2_start=0.90, paco2_start=45.0, stop_sao2=0.0)
+check("Ebata 10 min apnoeic ox: PaCO2 (meas 78 +- 3)", at(_eb, 'paco2', 600),
+      75.3, 0.5, " mmHg")
+check("Ebata 10 min apnoeic ox: pH    (meas 7.17)", at(_eb, 'ph', 600),
+      7.20, 0.02, "")
+check("Ebata 10 min apnoeic ox: PaO2  (meas 332 +- 38)", at(_eb, 'pao2', 600),
+      375.3, 4.0, " mmHg")
+check("Ebata 10 min apnoeic ox: CO    (meas 5.7 +- 0.8)", at(_eb, 'co', 600),
+      5.03, 0.10, " L/min")
+check("Ebata 10 min apnoeic ox: MAP   (meas 81 +- 7)", at(_eb, 'map', 600),
+      76.2, 1.0, " mmHg")
+check("Ebata 10 min apnoeic ox: HR    (meas 100 +- 7)", at(_eb, 'hr', 600),
+      81.1, 1.0, " bpm")
+print(f"    Ebata's PaCO2 rate is (78-45)/10 = 3.30 mmHg/min on a PATENT")
+print(f"    airway. Ours is {(at(_eb,'paco2',600)-45)/10:.2f}. Stock's")
+print("    OBSTRUCTED rate is 3.4, so the two measurements put patent and")
+print("    obstructed almost on top of each other, where we separate them.")
+
+# Laviola 2026 Table S5, end of apnoea = the cricothyroidotomy moment, defined
+# as SaO2 40% after complete upper airway obstruction. MODEL comparator.
+_lv = simulate(Patient(weight=70, height=1.75, age=45, hb=14.0),
+               [AirwayEpoch(1400, resistance=OBS, fgo2=0.21)],
+               dt=DT, stop_sao2=0.0)
+_t40 = time_to(_lv, 'sao2', 40)
+_i = int(np.searchsorted(_lv['t'], _t40))
+check("Laviola CICO: time to SaO2 40% (theirs ~510)", float(_t40), 502.0, 6.0,
+      " s")
+check("Laviola CICO: CO  (theirs 2.7 +- 0.1)", float(_lv['co'][_i]), 1.90,
+      0.08, " L/min")
+check("Laviola CICO: MAP (theirs 57.4 +- 2.4)", float(_lv['map'][_i]), 28.4,
+      1.0, " mmHg")
+print("    THE CO2 LIMB IS THE BEST-AGREEING CHANNEL IN THE WHOLE SET: PaCO2")
+print("    within 10% of all four, pH within hundredths. The red check in")
+print("    test_validation.py is a SLOPE error, not broken bookkeeping.")
+print("    THE OXYGEN ERROR APPEARS ONLY UNDER COMPLETE OBSTRUCTION: PaO2 is")
+print("    +22%, +13% and -1% on the other three and -81% on Stock. Laviola's")
+print("    -1% is near-automatic -- their endpoint IS SaO2 40%, so we sample")
+print("    at matched saturation and the curve forces PaO2 to agree. But the")
+print("    TIMING agrees too, 502 s against ~510. So two independently built")
+print("    models agree with each other on the desaturation rate under")
+print("    obstruction and BOTH disagree with the one human measurement.")
+print("    THE HAEMODYNAMICS RUN LOW EVERYWHERE: CO -29/-12/-30%, MAP")
+print("    -10/-6/-50%, HR -11/-19%. Never high, at any condition.")
 
 # ---------------------------------------------------------------------------
 print("\nStock 1989 measured OXYGEN too -- and the model fails it badly")
@@ -352,8 +427,6 @@ print("    so the curve is NOT the cause of the a-A over-sensitivity.")
 
 # ---------------------------------------------------------------------------
 print("\nPharyngeal FO2 -- what Toner's tracheal traces would settle")
-from apnoea_core import time_to  # noqa: E402
-
 _pt = Patient(weight=70, height=1.75, age=45, hb=15, tilt_deg=0)
 
 
