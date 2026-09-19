@@ -694,6 +694,35 @@ models against a human measurement under complete obstruction.
 uptake of oxygen, acid-base metabolism, and circulation during prolonged
 apnoea" — the latter titled as carrying circulation during prolonged apnoea.
 
+#### Anesth Analg 2000;90:614-8 — SOUGHT 2026-09-19, NOT OBTAINED
+
+**Hardman JG, Wills JS, Aitkenhead AR. Investigating hypoxaemia during apnoea:
+validation of a set of physiological models. Anesth Analg 2000;90(3):614-8.**
+**PMID 10702446. DOI 10.1097/00000539-200003000-00021.** Its companion, the
+"Factors determining" paper, is PMID 10702447 / DOI ...-00022 — adjacent, which
+is consistent.
+
+This is **the** paper in the chain above. Could not be retrieved: every route
+is blocked by this environment's egress proxy (publisher, PubMed, OpenAlex,
+Crossref, Semantic Scholar, CORE, the Nottingham repository, ResearchGate —
+all refuse). Only keyword search reaches the network, and it returns prose, not
+documents.
+
+**A search summary claims it validated the NPS "by reproducing the
+methodologies and results of four published clinical studies" and that it
+"tested with both open airway and obstructed airway conditions". TREAT BOTH AS
+UNVERIFIED AND DO NOT RECORD THEM AS FACT.** The identical search tool, minutes
+earlier, confidently attributed Stock 1989's figures to Holmdahl 1956 (see
+below). The obstructed-airway claim in particular is exactly the claim that
+would change the conclusion of the chain above, which is the strongest possible
+reason to insist on reading the paper itself.
+
+**What to check first when it is obtained:** whether any of its comparator
+studies is a human measurement under COMPLETE airway obstruction, and if so
+which. That single fact decides whether "nothing we have read validates any of
+these simulators against a human measurement under complete obstruction" stays
+true once we have read it.
+
 #### Holmdahl 1956 — SOUGHT 2026-09-19, NOT OBTAINED
 
 **Holmdahl MH. Pulmonary uptake of oxygen, acid-base metabolism, and
