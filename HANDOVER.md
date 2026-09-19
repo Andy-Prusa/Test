@@ -541,6 +541,106 @@ gases. If it does it would be a fifth entry in the cross-study table above and
 the only one besides Ebata with haemodynamics during apnoea. Not in this
 repository.
 
+### Hardman & Wills 2006: the obstruction effect has the WRONG SIGN — 2026-09-19
+
+**Hardman JG, Wills JS. The development of hypoxaemia during apnoea in
+children: a computational modelling investigation. Br J Anaesth
+2006;97:564-70.** MODEL, not measurement. Nottingham Physiology Simulator
+(NPS), the lineage ICSM is built on.
+
+**The first comparator we hold that runs BOTH open and closed airway.** Their
+18-yr-old is the entry closest to our adult: 170 cm, 54 kg, Hb 140 g/L, Crs
+144 mL/cmH2O, CO 5100 mL/min, VO2 250 mL/min, FRC 1769 mL.
+
+Matched by setting `feo2_start` to reproduce their stated post-preoxygenation
+PaO2 (62 kPa at 1 min, 81 kPa at 3 min), so the comparison is of apnoea
+dynamics and not of how each model preoxygenates. Minutes from start of apnoea:
+
+| airway | preO2 | early (to 90%) ours / theirs | late (90→40%) ours / theirs | total ours / theirs |
+|---|---|---|---|---|
+| closed | none | 0.55 / 0.74 | 2.42 / 1.72 | 2.97 / 2.46 |
+| closed | 1 min | 4.95 / 5.11 | **4.40 / 1.62** | 9.35 / 6.73 |
+| closed | 3 min | 5.60 / 6.54 | **5.07 / 1.56** | 10.67 / 8.10 |
+| open | none | 0.57 / 0.82 | 2.55 / 1.91 | 3.12 / 2.73 |
+| open | 1 min | 7.78 / 6.32 | 3.10 / 2.09 | 10.88 / 8.41 |
+| open | 3 min | 9.25 / 8.40 | 3.22 / 2.20 | 12.47 / 10.60 |
+
+**The early phase agrees within about 15%.** The terminal phase does not.
+
+| terminal rate, SaO2 90→40% | ours | theirs |
+|---|---|---|
+| closed airway | **9.9 %/min** | 32.1 %/min (they state 33 across ages) |
+| open airway | **15.5 %/min** | 22.7 %/min (they state 26 across ages) |
+
+**And the sign of the obstruction effect is INVERTED.** Closing the airway
+makes their patient desaturate FASTER (33 against 26 %/min); it makes ours
+desaturate **SLOWER** (9.9 against 15.5). That is not a magnitude disagreement,
+it is a direction disagreement, and it is the first one this project has found.
+
+#### The mechanism is the depressurization floor, and the human measurement is on our side
+
+Their stated mechanism is explicit: *"the alveolar oxygen tension is the
+product of the intra-alveolar pressure and the alveolar oxygen fraction"*, so
+a closed lung's PaO2 crashes because the **pressure** crashes.
+
+Their Table 4, intrathoracic pressure when SaO2 reaches 40%, closed airway,
+18-yr-old: **100.01 kPa** (no preO2), **72.50** (1 min), **44.34** (3 min).
+Those read as absolute pressures — the no-preO2 value is atmospheric. So their
+3-min-preoxygenated patient reaches about **-57 kPa gauge, which is roughly
+-580 cmH2O**.
+
+Ours cannot go below `p_collapse` = **-50 cmH2O**, about an order of magnitude
+less. That single parameter explains the inverted sign: their closed lung loses
+half its absolute pressure and ours loses 5% of it.
+
+**Moreault 2021 MEASURED -20 (5) and -31 (10) cmH2O in human lungs.** We give
+-17.7. Whatever is wrong with our terminal desaturation, **the NPS
+depressurization is an order of magnitude beyond anything anyone has measured
+in a human thorax**, and our mechanics limb is the one sitting near the
+measurement. Both models cannot be right, and this is the sharpest fork in the
+whole comparison set:
+
+- their desaturation rate may match their validation (which we do not hold),
+  but it is produced by a pressure excursion that Moreault rules out;
+- our pressure matches Moreault, and our terminal desaturation is 3x too slow.
+
+**That is the thing to work on next.** It is a single, well-posed question:
+what makes a sealed lung desaturate fast WITHOUT a pressure excursion that
+human measurement forbids?
+
+Note on their units: Table 4 is headed "intrathoracic pressure" while the text
+discusses "intra-alveolar pressure". Read here as absolute because the
+no-preoxygenation value is atmospheric. Transcribed as printed.
+
+#### Correction to "How ICSM validated itself" below
+
+That section said ICSM's apnoea validation rests on patent-airway oxygen
+delivery. **That is accurate about what the Laviola 2026 supplement cites, and
+incomplete about the lineage.** Hardman & Wills 2006 cites, as NPS apnoea
+validation:
+
+- ref 1: Hardman, Wills, Aitkenhead. **Investigating hypoxaemia during apnoea:
+  validation of a set of physiological models.** Anesth Analg 2000;90:614-8
+- ref 2: McNamara, Hardman. Hypoxaemia during **open-airway** apnoea.
+  Anaesthesia 2005;60:741-6
+
+and states the NPS "is a validated predictor of the course of hypoxaemia in
+adults during apnoea and has been used successfully to predict the effects of
+preoxygenation, functional residual capacity, oxygen consumption, **airway
+patency**, pulmonary deadspace and shunt during apnoea."
+
+So there IS an apnoea validation paper in the lineage, and the Laviola 2026
+supplement did not list it among its validation refs 2-7. **Neither has been
+read here.** Ref 2 is titled open-airway. Hardman & Wills also report "specific
+validation of the NPS for this investigation" in an online Appendix 1 we do not
+hold. The narrower claim stands: nothing we have read validates any of these
+models against a human measurement under complete obstruction.
+
+**Leads, unread:** Anesth Analg 2000;90:614-8 (the validation), and their refs
+28-29, Frumin 1959 "Apnoeic oxygenation in man" and Holmdahl 1956 "Pulmonary
+uptake of oxygen, acid-base metabolism, and circulation during prolonged
+apnoea" — the latter titled as carrying circulation during prolonged apnoea.
+
 ### A second defect: arterial CO2 FALLS inside a sealed lung — 2026-09-16
 
 At the default `n_vq` of 20, which every benchmark in the suite uses, PaCO2 is

@@ -141,6 +141,49 @@ print("    refinement will remove it. test_validation.py checks timestep")
 print("    convergence and has never checked compartment-count convergence.")
 
 # ---------------------------------------------------------------------------
+print("\nHardman & Wills 2006 -- the obstruction effect has the WRONG SIGN")
+print("  BJA 2006;97:564-70. MODEL, not measurement. Nottingham Physiology")
+print("  Simulator, the lineage ICSM is built on. The first comparator we")
+print("  hold that runs BOTH open and closed airway. Their 18-yr-old: 170 cm,")
+print("  54 kg, Hb 140 g/L, Crs 144 mL/cmH2O, CO 5100, VO2 250, FRC 1769.")
+print("  feo2_start is matched to their stated post-preoxygenation PaO2 (81")
+print("  kPa at 3 min), so this compares apnoea dynamics and not how each")
+print("  model preoxygenates.")
+_hw = Patient(weight=54.0, height=1.70, age=18, hb=14.0)
+
+
+def _hw_run(obstructed):
+    ep = AirwayEpoch(1800.0, resistance=OBS if obstructed else 2.0, fgo2=0.21)
+    return simulate(_hw, [ep], dt=DT, feo2_start=0.98, stop_sao2=0.0)
+
+
+for _obst, _lab, _we, _wl, _tr in ((True, "closed", 5.60, 5.07, 32.1),
+                                   (False, "open", 9.25, 3.22, 22.7)):
+    _r = _hw_run(_obst)
+    _t90, _t40 = time_to(_r, 'sao2', 90), time_to(_r, 'sao2', 40)
+    _e, _tot = _t90 / 60.0, _t40 / 60.0
+    check(f"H&W 3min preO2 {_lab}: to SaO2 90% (theirs "
+          f"{6.54 if _obst else 8.40})", _e, _we, 0.15, " min")
+    check(f"H&W 3min preO2 {_lab}: SaO2 90->40% (theirs "
+          f"{1.56 if _obst else 2.20})", _tot - _e, _wl, 0.15, " min")
+    print(f"      terminal rate: ours {50.0/(_tot-_e):5.1f} %/min, "
+          f"theirs {_tr:4.1f}")
+print("    Closing the airway makes THEIR patient desaturate FASTER (33 vs 26")
+print("    %/min) and makes OURS desaturate SLOWER (9.9 vs 15.5). That is a")
+print("    DIRECTION disagreement, the first this project has found.")
+print("    Their mechanism is explicit: alveolar PO2 is the product of")
+print("    intra-alveolar PRESSURE and oxygen fraction. Their Table 4 has the")
+print("    3-min-preoxygenated 18-yr-old at 44.34 kPa absolute when SaO2")
+print("    reaches 40% -- about -57 kPa gauge, roughly -580 cmH2O. Ours")
+print("    cannot pass p_collapse = -50 cmH2O, an order of magnitude less.")
+print("    MOREAULT 2021 MEASURED -20 (5) and -31 (10) cmH2O IN HUMANS, and")
+print("    we give -17.7. So their desaturation is driven by a pressure")
+print("    excursion human measurement forbids, and our pressure is the one")
+print("    near the measurement while our terminal desaturation is 3x slow.")
+print("    Both cannot be right. The well-posed question is what makes a")
+print("    sealed lung desaturate fast WITHOUT that pressure excursion.")
+
+# ---------------------------------------------------------------------------
 print("\nEvery paper we hold, every channel it records")
 print("  All 15 uploaded PDFs screened for SaO2, PaO2, PaCO2, pH, CO, HR, MAP.")
 print("  Four record >=2 AND can be configured. Three more record >=2 but")
