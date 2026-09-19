@@ -856,6 +856,70 @@ Two smaller differences, recorded: their oxygen carrying capacity is **1.36
 mL/g** against our `HUFNER` 1.34, and their saturation comes from **Thomas's
 equation** where ours uses Severinghaus.
 
+### The acid-base lever is REFUTED, and the sweep found a latent defect — 2026-09-19
+
+The Hardman 1998 read made the strength of the acid-base response the untested
+lever on the CO2 limb. Swept it. **It is not the answer.**
+
+The lever is the Siggaard-Andersen non-bicarbonate buffer capacity in
+`ph_from_pco2_be`, `(9.5 + 1.63*cHb)` mmol/L per pH unit — **24.7 at Hb 15**,
+the in-vitro whole-blood value. Hardman 1998 Appendix 2 uses
+`BE_ecf = [HCO3-] - 11.6*(7.4 - pH) - 24`, i.e. **11.6 flat**, the
+extracellular-fluid value. A factor of 2.13 apart, and a real modelling
+question rather than a knob: CO2 loaded during apnoea distributes through the
+whole extracellular space, not only blood. Baseline is preserved across the
+sweep because the `(pH - 7.4)` term vanishes at pH 7.40, so only the RESPONSE
+moves.
+
+| buffer capacity | beta | Stock (3.4) | patent | a-A at 300 s | 1st min (12) | pH at 300 s | Moreault |
+|---|---|---|---|---|---|---|---|
+| x0.8 | 19.7 | 4.68 | 1.91 | 6.82 | **13.29** | 7.216 | — |
+| **x1.0 shipped** | **24.7** | **4.72** | **1.68** | **8.35** | **12.02** | **7.231** | **-17.7** |
+| x1.5 | 37.0 | 4.85 | 1.35 | 10.27 | 10.04 | 7.257 | — |
+| x2.0 | 49.3 | 5.02 | 1.17 | 11.77 | 8.89 | 7.273 | — |
+
+**Over a 2.5-fold span of buffering the Stock slope moves 4.68 to 5.02 — 7% —
+while the first-minute rise swings 13.29 to 8.89, a 50% move on the quantity
+that currently matches Stock's measured 12 almost exactly.** It is a weak lever
+on what fails and a strong lever on what works, and the direction that helps
+the slope is the direction that breaks the rise. Refuted.
+
+Moreault is -17.7 at every buffering level, so separability holds here too.
+
+#### And the low-buffering half of the sweep is INACCESSIBLE — a latent defect
+
+At beta 19.7 and above the sweep is valid. At 14.8, 11.6 and 9.9 every run
+returned Stock 0.00, first-minute 0.00, a-A gap around -70 and pH 8.2-8.3.
+**That is not physiology, it is the Douglas red-cell pole.**
+
+`co2_content`'s RBC correction has a pole at pH 8.142. At BE 0 and Hb 15 with
+shipped buffering:
+
+| PCO2 | content |
+|---|---|
+| 3.0 | **-11.46 mL/dL** |
+| 3.935 | **0.00 — the zero crossing**, at pH 7.993 |
+| 10.0 | 20.81 |
+| 40.0 | 46.59 |
+
+`bloodgas.py`'s own note says the pole is reached by "any PCO2 below about 2.4
+mmHg". **Measured, the content is already negative at 3.0 mmHg — and 3.0 is
+exactly where `pco2_from_co2_content` sets its lower bracket `lo`.** In the
+shipped configuration content rises monotonically from 3 upward so `brentq`
+still finds the right root, which is why this has never bitten. It is one sign
+change away from biting.
+
+At ECF buffering it bites immediately: pH at PCO2 3 becomes 8.261, **past** the
+pole, and content wraps round to +74.86. The inverse's `resid(lo) > 0` test then
+fires and clamps PaCO2 to 3.0 mmHg for the whole run — which is precisely the
+0.00 rows above.
+
+**So we cannot currently represent Hardman's buffer capacity at all.** Whether
+11.6 or 24.7 is right for a whole apnoeic patient is a real open question, and
+answering it needs the bracket and the pole handled first. Recorded as a
+defect, not fixed here: fixing it changes no benchmark in the accessible range
+and should be done deliberately rather than folded into a sweep.
+
 ### A second defect: arterial CO2 FALLS inside a sealed lung — 2026-09-16
 
 At the default `n_vq` of 20, which every benchmark in the suite uses, PaCO2 is

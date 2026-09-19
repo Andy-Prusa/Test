@@ -21,6 +21,7 @@ import os
 import sys
 
 import numpy as np
+from scipy.optimize import brentq
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -141,6 +142,49 @@ print("    refinement will remove it. test_validation.py checks timestep")
 print("    convergence and has never checked compartment-count convergence.")
 
 # ---------------------------------------------------------------------------
+import bloodgas as _bg  # noqa: E402
+print("\nThe Douglas red-cell pole sits ON the inverse's lower bracket")
+print("  co2_content's RBC correction has a pole at pH 8.142. bloodgas.py's")
+print("  own note says it is reached by 'any PCO2 below about 2.4 mmHg'.")
+print("  Measured at BE 0 / Hb 15 the content is already NEGATIVE at 3.0 --")
+print("  and 3.0 is exactly where pco2_from_co2_content sets its lower")
+print("  bracket. Content rises monotonically from there in the shipped")
+print("  configuration so brentq still finds the right root, which is why")
+print("  this has never bitten. It is one sign change away from biting: at")
+print("  the ECF buffer capacity Hardman 1998 uses, pH at PCO2 3 goes PAST")
+print("  the pole and content wraps to +74.86, the inverse clamps PaCO2 to")
+print("  3.0 for the whole run, and every CO2 result becomes 0.00.")
+_zf = (lambda pp: _bg.co2_content(
+    pp, _bg.ph_from_pco2_be(pp, 0.0, 15.0, so2=0.97, temp=37.0),
+    0.97, 15.0, 37.0))
+check("CO2 content at PCO2 3.0, BE 0, Hb 15", _zf(3.0), -11.46, 0.30, " mL/dL")
+check("PCO2 where CO2 content crosses ZERO",
+      float(brentq(_zf, 2.0, 8.0, xtol=1e-9)), 3.935, 0.02, " mmHg")
+print("    Recorded as a defect, not fixed: fixing it changes no benchmark in")
+print("    the accessible range and should be done deliberately.")
+
+# ---------------------------------------------------------------------------
+print("\nThe acid-base lever is REFUTED")
+print("  Hardman 1998 made the strength of the acid-base response the")
+print("  untested lever on the CO2 limb. Swept it; it is not the answer.")
+print("  Lever: the Siggaard-Andersen non-bicarbonate buffer capacity in")
+print("  ph_from_pco2_be, (9.5 + 1.63*cHb), which is 24.7 at Hb 15 -- the")
+print("  IN VITRO whole-blood value. Hardman 1998 uses 11.6 flat, the")
+print("  EXTRACELLULAR FLUID value, a factor of 2.13 apart.")
+print("    buffer   beta   Stock   patent    a-A   1st min")
+print("      x0.8   19.7    4.68     1.91    6.82    13.29")
+print("      x1.0   24.7    4.72     1.68    8.35    12.02   <- shipped")
+print("      x1.5   37.0    4.85     1.35   10.27    10.04")
+print("      x2.0   49.3    5.02     1.17   11.77     8.89")
+print("    Over a 2.5-fold span the Stock slope moves 7% while the")
+print("    first-minute rise swings 50% -- and the rise is the quantity that")
+print("    currently matches Stock's measured 12 almost exactly. Weak lever")
+print("    on what fails, strong lever on what works, and the direction that")
+print("    helps the slope is the direction that breaks the rise.")
+print("    Moreault stays -17.7 at every level, so separability holds here")
+print("    too. Below beta 19.7 the sweep is INVALID -- see the pole above.")
+
+# ---------------------------------------------------------------------------
 print("\nThe CO2 curve's CURVATURE IS the acid-base response, and the a-A")
 print("gap scales with it BACKWARDS")
 print("  Hardman 1998 Appendix 2 gives the NPS CO2 content equation as")
@@ -149,7 +193,6 @@ print("  Linear in PaCO2: no bicarbonate curve, no pH term, no haemoglobin,")
 print("  no saturation, so no Haldane. At FIXED pH our own law is already")
 print("  exactly that form -- strictly proportional -- so the entire curvature")
 print("  of the physiological curve is the acid-base response.")
-import bloodgas as _bg  # noqa: E402
 _c40 = _bg.co2_content(40.0, 7.40, 0.97, 15.0, 37.0)
 check("at pH 7.40 FIXED, dC/dP over 40-50", 
       (_bg.co2_content(50.0, 7.40, 0.97, 15.0, 37.0) - _c40) / 10.0,
