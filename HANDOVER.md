@@ -486,6 +486,59 @@ ventilated, Laviola is a model.
 Checked 2026-09-19 in the Laviola 2026 supplement (S3), which is the only
 description of the ICSM simulator we hold.
 
+**The chain, drawn out.** Reconstructed and checked 2026-09-19 because it is
+easy to get lost in; "held" means the document is in this session.
+
+```
+Laviola 2026  (CICO jet, COMPLETE OBSTRUCTION)          <- HELD, read
+  |  "ICSM ... based upon the Nottingham Physiology Simulator"
+  |
+  +- "widely validated in numerous previous investigations 2-7"
+  |    2 Hardman 1998   mechanical ventilation          <- not held
+  |    3 Hardman 2003   CO2 elimination / deadspace     <- not held
+  |    4 McCahon 2008   ARDS oxygenation indices        <- not held
+  |    5 Hardman 2010   a PaO2 prediction formula       <- not held
+  |    6 Das 2011       systems-engineering validation  <- not held
+  |    7 Saffaran 2017  paediatric ARDS                 <- not held
+  |        -> none is apnoea, let alone obstruction
+  |
+  +- apnoea modules "validated against clinical investigations 34-37"
+       34 Fraioli 1973     apnoeic oxygenation          <- not held
+       35 Berthoud 1991    preoxygenation               <- not held
+       36 Baraka 2007      nasopharyngeal insufflation  <- not held
+       37 Gustafsson 2017  THRIVE                       <- not held
+            -> three of the four require a PATENT airway by construction
+
+Hardman & Wills 2006  (children, open AND closed)       <- HELD, read
+  |  same simulator lineage (NPS)
+  |
+  +- "a validated predictor ... during apnoea ... including airway patency"
+  |    ref 1  Anesth Analg 2000;90:614-8                <- not held
+  |           "VALIDATION of a set of physiological models"
+  |    ref 2  Anaesthesia 2005;60:741-6                 <- not held
+  |           "Hypoxaemia during OPEN-AIRWAY apnoea"
+  |
+  +- its own "specific validation for this investigation",
+     online Appendix 1                                  <- not held
+```
+
+**There is a genuine trap in the source material.** Anesthesia & Analgesia 2000
+volume 90 carries TWO adjacent Hardman/Wills/Aitkenhead papers:
+
+- **614-618** — "...**validation** of a set of physiological models"
+- **619-624** — "**Factors determining** the onset and course of hypoxaemia"
+
+**Laviola 2026 cites 619-624** (the use, under "used to study apnea) and **does
+not cite 614-618 anywhere**. Hardman & Wills 2006 cites 614-618 as the
+validation. So the apnoea validation paper exists in the lineage but the CICO
+paper we compare ourselves against does not point at it.
+
+**And neither document cites Stock 1989.** Checked both reference lists; the
+only "Stock" in Hardman & Wills is *Stocks J*, on infant FRC. So the single
+human measurement of gas exchange under complete tracheal occlusion — the paper
+our one red benchmark is built on — is absent from the validation chain of the
+simulator being used to model complete obstruction.
+
 **The supplement contains no validation data of its own.** Searched it for
 "compared with", "agreement", "calibrated", "tuned", "fitted to": zero hits.
 The entire claim is one sentence of citation:
