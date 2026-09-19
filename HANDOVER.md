@@ -1061,6 +1061,40 @@ literature, and the three-way study's core justification is intact.
 **SHAM** arm and the **first 120 s**; the buccal traces would settle nothing.
 Reasoning and the sensitivity table are in Open work item 2.
 
+**Three documents in the ICSM/NPS chain, and the person who has all of them.**
+Sought 2026-09-19, all blocked from this environment. Andy is a **co-author of
+Laviola 2026** (Laviola, Dinsmore, Lacquiere, Niklas, **Heard**, Hardman), and
+**Jonathan Hardman is senior author of every item on this list**:
+
+| document | what it would settle |
+|---|---|
+| Anesth Analg 2000;90:614-8, PMID 10702446 | whether the NPS was ever validated against human data under COMPLETE obstruction |
+| Hardman & Wills BJA 2006, **online Appendix 1** | their own apnoea-in-children validation, not held |
+| McNamara & Hardman, Anaesthesia 2005;60:741-6 | the open-airway half of the apnoea validation |
+
+`j.hardman@nottingham.ac.uk` (corresponding author line of the 2006 paper).
+
+**Better asked than inferred.** Three commits here triangulate from reference
+lists what he can answer in two sentences. Two questions worth putting to him
+directly:
+
+1. Has the NPS been validated against human measurement under complete airway
+   obstruction, and if so against what?
+2. **What does the NPS do about a pressure floor?** His 2006 Table 4 reaches
+   about -580 cmH2O in a 3-min-preoxygenated 18-yr-old, and Moreault 2021
+   measured -20 (5) and -31 (10) in human lungs. That is a real discrepancy
+   between two models, not a literature question, and it is the mechanism
+   behind the inverted sign recorded above.
+
+Failing that: Royal Perth Hospital library has Ovid/Wolters Kluwer access to
+Anesth Analg well past 2000 — quote PMID 10702446. The BJA appendix is
+supplementary material on the article record at academic.oup.com and is often
+ungated. ResearchGate's "request full-text" reaches Hardman in one click.
+
+**Holmdahl 1956** is a different problem — a Swedish doctoral thesis, on no
+publisher platform. Uppsala University Library holds its own theses and LIBRIS
+does document delivery. Hardman cites it, so he may simply have a scan.
+
 ## Start here
 
 ```
