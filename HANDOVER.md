@@ -1091,9 +1091,31 @@ Anesth Analg well past 2000 — quote PMID 10702446. The BJA appendix is
 supplementary material on the article record at academic.oup.com and is often
 ungated. ResearchGate's "request full-text" reaches Hardman in one click.
 
-**Holmdahl 1956** is a different problem — a Swedish doctoral thesis, on no
-publisher platform. Uppsala University Library holds its own theses and LIBRIS
-does document delivery. Hardman cites it, so he may simply have a scan.
+**Holmdahl 1956 is NOT really a thesis hunt, and asking for it as one will
+send you to rare books.** It was published as **Acta Chirurgica Scandinavica,
+Supplementum 212 (1956), pp 1-128**. Acta Chir Scand ran to 1992 and medical
+libraries hold it in bound journal runs WITH the supplements, so this is an
+ordinary document-supply request.
+
+| route | how to ask |
+|---|---|
+| **RPH library** | word it "Acta Chirurgica Scandinavica, 1956, Supplementum 212, pages 1-128, Holmdahl MH" — a routine ILL their system knows. Check Trove / Libraries Australia; the older medical school libraries (Melbourne, Sydney, UWA) likely hold bound 1950s runs |
+| **Uppsala University Library** | their "Request a digital copy" service scans page by page and delivers an OCR'd PDF, per their site in about ten business days. Their own alumnus and later vice-chancellor, so holdings are certain. 128 pages may attract a fee |
+| **Hedenstierna, Uppsala** | see below |
+| **Hardman** | cites Holmdahl in the 2006 paper, so may have a scan — same email as the three documents above |
+| **LIBRIS** (libris.kb.se) | Swedish national union catalogue; lists every Swedish holding and supports international ILL if RPH needs a supplying library named |
+
+**The Uppsala connection is closer than it looks.** **Göran Hedenstierna,
+Department of Clinical Physiology, University Hospital of Uppsala, is a
+co-author of TWO papers already in our set** — Tokics 1996 and Rothen 1993 —
+at the same institution as Holmdahl and the direct academic descendant of his
+department.
+
+And there is a reason to contact him independent of the scan: **Tokics 1996
+Table 3 is what `vq_log_sd` is calibrated against**, and it reports log Q̇SD and
+log V̇SD separately (1.18 and 0.62 on inert gas) where our construction forces
+them equal, so we cannot match both. See "`vq_log_sd` is NOT the log QSD it is
+compared against". That is a question for the person who measured them.
 
 ## Start here
 
