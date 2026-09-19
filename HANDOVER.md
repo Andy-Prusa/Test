@@ -1100,10 +1100,19 @@ ordinary document-supply request.
 | route | how to ask |
 |---|---|
 | **RPH library** | word it "Acta Chirurgica Scandinavica, 1956, Supplementum 212, pages 1-128, Holmdahl MH" — a routine ILL their system knows. Check Trove / Libraries Australia; the older medical school libraries (Melbourne, Sydney, UWA) likely hold bound 1950s runs |
-| **Uppsala University Library** | their "Request a digital copy" service scans page by page and delivers an OCR'd PDF, per their site in about ten business days. Their own alumnus and later vice-chancellor, so holdings are certain. 128 pages may attract a fee |
+| **Uppsala University Library** | <https://www.uu.se/en/library/borrow-and-request/request-a-digital-copy> — scanned page by page, OCR'd PDF by email. **SEK 100 start fee + SEK 3/page, so about SEK 484 for the 128 pages**, credit card, normally ten business days. Their own alumnus and later vice-chancellor, so holdings are certain |
 | **Hedenstierna, Uppsala** | see below |
 | **Hardman** | cites Holmdahl in the 2006 paper, so may have a scan — same email as the three documents above |
-| **LIBRIS** (libris.kb.se) | Swedish national union catalogue; lists every Swedish holding and supports international ILL if RPH needs a supplying library named |
+| **LIBRIS** (<https://libris.kb.se>) | Swedish national union catalogue; lists every Swedish holding and supports international ILL if RPH needs a supplying library named |
+
+Try RPH first — a bound run costs nothing and is faster than SEK 484 — with
+Uppsala as the guaranteed fallback. Uppsala's page carries a copyright note
+about works still in protection needing the rightsholder's authorisation; it
+reads as aimed at reproduction and publication rather than a single research
+copy, and 1956 is still in copyright (life + 70). Say in the request that it is
+a single copy for private research. **None of these pages could be loaded from
+this environment — every library domain is egress-blocked — so the fees and
+turnaround above are from search results, not from the pages themselves.**
 
 **The Uppsala connection is closer than it looks.** **Göran Hedenstierna,
 Department of Clinical Physiology, University Hospital of Uppsala, is a
