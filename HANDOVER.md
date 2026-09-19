@@ -1198,8 +1198,25 @@ Anesth Analg well past 2000 — quote PMID 10702446. The BJA appendix is
 supplementary material on the article record at academic.oup.com and is often
 ungated. ResearchGate's "request full-text" reaches Hardman in one click.
 
-**Holmdahl 1956 is NOT really a thesis hunt, and asking for it as one will
-send you to rare books.** It was published as **Acta Chirurgica Scandinavica,
+**PRIORITY, revised 2026-09-19: do not buy this yet.** The Hardman 1998 read
+made the acid-base response the untested lever on the CO2 limb, and **that
+experiment needs no paper at all** — it is runnable from this repository today.
+Until it is done we do not know whether the acid-base limb is the culprit, and
+if it is not, Holmdahl's acid-base chapter answers a question we have stopped
+asking. Run the experiment, then decide.
+
+Holmdahl's value if the experiment does implicate the buffering: its title
+carries **acid-base metabolism AND circulation during PROLONGED apnoea**, which
+is two of our three open defects. Our only haemodynamic-during-apnoea dataset
+is Ebata's nine brain-dead patients at 36 C on dopamine, too confounded to tell
+a model defect from a drug effect, and our haemodynamics run low at every
+condition. What it will NOT settle: it is almost certainly patent-airway, since
+1956 prolonged-apnoea work was diffusion oxygenation, so **Stock remains the
+only human measurement under complete obstruction and no paper will change
+that.**
+
+**When you do want it: it is NOT really a thesis hunt, and asking for it as one
+will send you to rare books.** It was published as **Acta Chirurgica Scandinavica,
 Supplementum 212 (1956), pp 1-128**. Acta Chir Scand ran to 1992 and medical
 libraries hold it in bound journal runs WITH the supplements, so this is an
 ordinary document-supply request.
