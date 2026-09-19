@@ -1,0 +1,27 @@
+# Python dependencies.
+#
+#     pip install -r requirements.txt
+#
+# Nothing here was declared anywhere before, which mattered once the
+# pre-commit hook started gating commits on the benchmarks: on a machine
+# without these, every commit is refused for what looks like a model failure
+# but is really a missing import. The hook now names this file when that
+# happens.
+#
+# Versions are floors, not pins. These are mature libraries and the model does
+# not depend on anything version-specific, but the combination the benchmarks
+# were last verified green against is recorded beside each one so a numerical
+# disagreement can be bisected against a known-good set.
+
+numpy>=1.24          # verified 2.4.6 — the model's arrays throughout
+scipy>=1.10          # verified 1.17.1 — brentq, the blood-gas inverses
+matplotlib>=3.6      # verified 3.11.1 — run.py's plots only, not the model
+
+# Optional. Both test files run standalone under python3 with no test runner;
+# pytest is only needed if you prefer `pytest test_validation.py -v`.
+pytest>=7.0          # verified 9.1.1
+
+# JavaScript has no dependencies at all. model.js and parity_driver.js use
+# only the standard library, which is what lets airway_scenario.html be a
+# single self-contained file. Node 22 was used; anything with Float64Array
+# and arrow functions will do.
