@@ -920,6 +920,60 @@ answering it needs the bracket and the pole handled first. Recorded as a
 defect, not fixed here: fixing it changes no benchmark in the accessible range
 and should be done deliberately rather than folded into a sweep.
 
+### Stock's pH column is a buffer measurement, and the defect switches on at 200 s — 2026-09-19
+
+The acid-base sweep could not reach the low-buffer half of the range. **It did
+not need to: Stock 1989 Table 1 already measured it.** The table pairs pH with
+PaCO2 at eight times, in humans, under complete obstruction. Paired, those two
+columns ARE the CO2 titration line, `dpH/dlog10(PCO2)` — a direct measurement
+of effective in-vivo buffer capacity, in our own regime. We had only ever
+checked pH as a single point at 300 s.
+
+| | dpH/dlog10(PCO2) |
+|---|---|
+| **Stock 1989**, complete obstruction, n=14 | **-0.758** (8 points), -0.768 (endpoints) |
+| **Ebata 1991**, patent airway, n=9 | **-0.837** |
+| **ours** | **-0.669** (8 points) |
+| in-vitro whole blood | about -0.55 |
+| whole-body / extracellular fluid | about -0.75 to -0.80 |
+
+**Both human measurements land on the in-vivo value; we sit between the two,
+closer to in-vitro.** Our buffering is measurably too strong, in exactly the
+direction Hardman 1998's ECF capacity of 11.6 implies — and toward the region
+the Douglas pole currently blocks.
+
+**It is sourced, and it is not the cause of the failing slope.** The sweep
+above already showed the Stock slope moves 7% over a 2.5-fold span of
+buffering, and the direction that steepens the titration line toward -0.76 is
+the direction that pushes the first-minute rise from 12.02 to 13.29, away from
+Stock's measured 12. So this is a correction that makes one benchmark slightly
+better and another slightly worse — recorded, not compensated for.
+
+#### And the CO2 defect switches on at about 200 s
+
+| t (s) | Stock PaCO2 | ours |
+|---|---|---|
+| 0 | 39 | 39.1 |
+| 20 | 44 | 44.4 |
+| 40 | 48 | 49.6 |
+| 60 | 50 | 50.9 |
+| 120 | 53 | 52.6 |
+| 180 | 56 | **56.4** |
+| 240 | 59 | **63.5** |
+| 300 | 63 | **69.4** |
+
+**We track Stock to within about 1 mmHg all the way to 180 s and then diverge
+in the final two minutes**, ending +6.4 out. That is a far sharper
+localisation than "the 1-5 min slope is wrong", and it kills any explanation
+that acts uniformly in time — including the buffering, the dissociation curve
+and the stores, all of which act from t = 0.
+
+**What starts at 200 s is the lung having shrunk far enough for the shunt to
+climb.** The a-A gap over the same window goes -0.17 at 60 s to 8.37 at 300 s
+and the shunt 5.9% to 18.2%. The defect is in that coupling, which is where
+the perfusion-weighted-content against volume-weighted-fraction asymmetry
+lives — still the one thing never tested.
+
 ### A second defect: arterial CO2 FALLS inside a sealed lung — 2026-09-16
 
 At the default `n_vq` of 20, which every benchmark in the suite uses, PaCO2 is

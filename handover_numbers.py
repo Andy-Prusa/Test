@@ -142,6 +142,46 @@ print("    refinement will remove it. test_validation.py checks timestep")
 print("    convergence and has never checked compartment-count convergence.")
 
 # ---------------------------------------------------------------------------
+print("\nStock's pH column is a BUFFER MEASUREMENT, and we never used it")
+print("  Table 1 pairs pH with PaCO2 at eight times, in humans, under")
+print("  COMPLETE OBSTRUCTION. Paired, they are the CO2 titration line")
+print("  dpH/dlog10(PCO2) -- a direct measurement of effective in-vivo buffer")
+print("  capacity in our own regime. We had only ever checked pH at 300 s.")
+_ST_T = np.array([0, 20, 40, 60, 120, 180, 240, 300], float)
+_ST_P = np.array([39, 44, 48, 50, 53, 56, 59, 63], float)
+_ST_H = np.array([7.42, 7.38, 7.35, 7.34, 7.32, 7.31, 7.28, 7.26])
+_titr = lambda pc, ph: float(np.polyfit(np.log10(pc), ph, 1)[0])
+check("Stock's measured titration line (8 points)", _titr(_ST_P, _ST_H),
+      -0.758, 0.004, " per decade")
+_tr = simulate(Patient(weight=70, height=1.75, age=45, hb=15.0),
+               [AirwayEpoch(360, resistance=OBS, fgo2=0.21)],
+               dt=DT, feo2_start=0.87, paco2_start=39.0, stop_sao2=0.0)
+_mp = np.array([at(_tr, 'paco2', t) for t in _ST_T])
+_mh = np.array([at(_tr, 'ph', t) for t in _ST_T])
+check("our titration line at the same points", _titr(_mp, _mh),
+      -0.669, 0.006, " per decade")
+print("    In vitro whole blood titrates near -0.55 per decade; whole-body /")
+print("    extracellular fluid near -0.75 to -0.80. Stock measures -0.758 and")
+print("    Ebata -0.837, so BOTH human datasets land on the in-vivo value and")
+print("    we sit between the two, closer to in-vitro. Our buffering is")
+print("    measurably too strong, in the direction of Hardman 1998's ECF 11.6")
+print("    -- the region the Douglas pole blocks. Sourced, and NOT the cause")
+print("    of the failing slope: the sweep moves it 7% over a 2.5-fold span,")
+print("    and steepening toward -0.76 pushes the first-minute rise to 13.29.")
+print("  AND THE CO2 DEFECT SWITCHES ON AT ABOUT 200 s")
+print("      t    Stock    ours")
+for _i, _t in enumerate(_ST_T):
+    print(f"    {_t:4.0f}    {_ST_P[_i]:5.0f}   {_mp[_i]:6.1f}")
+check("we track Stock to within ~1 mmHg at 180 s", _mp[5] - _ST_P[5],
+      0.4, 0.5, " mmHg")
+check("and are +6.4 out by 300 s", _mp[7] - _ST_P[7], 6.4, 0.5, " mmHg")
+print("    That kills any explanation acting uniformly in time -- the")
+print("    buffering, the dissociation curve and the stores all act from t=0.")
+print("    What starts at 200 s is the lung having shrunk far enough for the")
+print("    shunt to climb, which is where the perfusion-weighted-content")
+print("    against volume-weighted-fraction asymmetry lives.")
+
+# ---------------------------------------------------------------------------
 import bloodgas as _bg  # noqa: E402
 print("\nThe Douglas red-cell pole sits ON the inverse's lower bracket")
 print("  co2_content's RBC correction has a pole at pH 8.142. bloodgas.py's")
