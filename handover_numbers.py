@@ -160,8 +160,17 @@ check("Tokics ventilated t=0: MAP   (meas 81)", _tk['map'][0], 72.8, 1.0,
       " mmHg")
 check("Tokics ventilated t=0: PaO2  (meas 159)", _tk['pao2'][0], 194.0, 3.0,
       " mmHg")
-check("Tokics ventilated t=0: PaCO2 (meas 35.7)", _tk['paco2'][0], 35.8, 0.4,
-      " mmHg")
+# NOT a check of anything: the run SETS paco2_start=35.7 from Tokics' own
+# table, so reading 35.8 back is an input echoed to an output. Printed so the
+# circularity is visible, never tabled as agreement.
+print(f"    --   Tokics t=0 PaCO2 is CIRCULAR "
+      f"(set 35.7, read {_tk['paco2'][0]:.1f}) -- not evidence")
+# And CO/HR/MAP at t=0 come straight from the Patient allometry, not from any
+# dynamics. This asserts that, so that if simulate() ever starts moving them
+# the assumption behind the bracketed row in HANDOVER is caught.
+_tkp = Patient(weight=77.4, height=1.756, age=49, hb=14.0)
+check("Tokics t=0 CO is the ALLOMETRY, not the sim",
+      _tk['co'][0] - _tkp.co_anaes(), 0.0, 1e-9, " L/min")
 
 # Ebata 1991 Table II. Ten-minute apnoea test, PATENT airway, O2 insufflated
 # 6 L/min via a 2.1 mm catheter above the carina. NINE BRAIN-DEAD patients,
@@ -171,6 +180,13 @@ check("Tokics ventilated t=0: PaCO2 (meas 35.7)", _tk['paco2'][0], 35.8, 0.4,
 _eb = simulate(Patient(weight=70, height=1.75, age=53, hb=14.0, temp=36.0),
                [AirwayEpoch(600, resistance=2.0, fgo2=1.0)],
                dt=DT, feo2_start=0.90, paco2_start=45.0, stop_sao2=0.0)
+# The patent configuration is genuinely patent: gas flows in at about VO2 and
+# the lung holds its volume. Checked here because the whole Ebata comparison
+# is meaningless if resistance=2.0 were behaving like an obstruction.
+check("Ebata run is PATENT: O2 drawn in over 600 s",
+      float(_eb['cum_o2_in'][-1]), 2098.0, 25.0, " mL")
+check("Ebata run is PATENT: alveolar volume held",
+      float(_eb['va'][-1] - _eb['va'][0]), 0.0, 5.0, " mL")
 check("Ebata 10 min apnoeic ox: PaCO2 (meas 78 +- 3)", at(_eb, 'paco2', 600),
       75.3, 0.5, " mmHg")
 check("Ebata 10 min apnoeic ox: pH    (meas 7.17)", at(_eb, 'ph', 600),

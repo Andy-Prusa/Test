@@ -407,14 +407,37 @@ Three more record two or more but cannot be configured: **Chen & Scharf 1998**
 Rothen 1993, Wei 2020, Venegas 1998, Moreault 2021, Ellis 2022, both Kelman
 papers and Douglas record fewer than two of the seven.
 
-**Signed divergence, model minus measured:**
+**Signed divergence, model minus measured** (Tokics caveats below the table):
 
 | study | SaO2 | PaO2 | PaCO2 | pH | CO | HR | MAP |
 |---|---|---|---|---|---|---|---|
-| Tokics (ventilated) | — | +22% | +0% | — | **-29%** | -11% | -10% |
+| Tokics (ventilated) | — | +22% | ~~+0%~~ | — | (-29%) | (-11%) | (-10%) |
 | Stock (obstructed) | -11% | **-81%** | +10% | -0% | — | — | — |
 | Ebata (apnoeic ox.) | — | +13% | -3% | +0% | -12% | -19% | -6% |
 | Laviola (CICO) | — | -1% | -9% | — | **-30%** | — | **-50%** |
+
+**Read the Tokics row with care — corrected 2026-09-19.** It is the model's
+t = 0, and t = 0 is not a simulation.
+
+- **Its PaCO2 cell is CIRCULAR and is struck through.** The run sets
+  `paco2_start=35.7` from Tokics' own table and reads 35.8 back out. That is an
+  input echoed to an output and it was wrong to table it as agreement.
+- **CO, HR and MAP are in brackets because they test the ALLOMETRY, not the
+  simulator.** Verified: `pt.co_anaes()` and `r['co'][0]` are both 4.044. The
+  -29% is a statement about `co_anaes()` at 77.4 kg, with no dynamics in it.
+- **Only PaO2 carries information**, because it is derived from `feo2_start`
+  through the gas equation and the shunt rather than set directly.
+
+The other three rows are genuine simulation outputs at the stated times.
+
+**And the two patent configurations really are patent.** Checked by running
+Ebata's configuration both ways. Patent: 2,098 mL of O2 drawn in over 600 s,
+mean inflow 211 mL/min (which is about VO2, as aventilatory mass flow should
+be), alveolar volume 2012 -> 2011 mL, pressure -0.01 cmH2O. The same patient
+obstructed: zero inflow, volume 2012 -> 372 mL, pressure pinned at the -50
+floor, PaO2 375 -> 26, PaCO2 75.3 -> 96.4. The model separates the regimes
+sharply, which is what makes the Stock disagreement a statement about the
+obstructed branch specifically.
 
 Three patterns, and they localise the faults better than anything else here.
 
