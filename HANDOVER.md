@@ -458,6 +458,66 @@ measurement under complete obstruction — the regime the project is about — a
 it is the one we disagree with most. Ebata is patent-airway, Tokics is
 ventilated, Laviola is a model.
 
+### How ICSM validated itself, and why our agreement with it means less than it looked — 2026-09-19
+
+Checked 2026-09-19 in the Laviola 2026 supplement (S3), which is the only
+description of the ICSM simulator we hold.
+
+**The supplement contains no validation data of its own.** Searched it for
+"compared with", "agreement", "calibrated", "tuned", "fitted to": zero hits.
+The entire claim is one sentence of citation:
+
+> "It has been widely validated in numerous previous investigations 2-7"
+
+Refs 2-7 are mechanical ventilation (Hardman 1998), CO2 elimination and dead
+space (Hardman 2003), ARDS oxygenation indices (McCahon 2008), a PaO2
+prediction formula (Hardman 2010), a systems-engineering validation (Das 2011)
+and paediatric ARDS (Saffaran 2017). **None is an airway-obstruction study.**
+
+The apnoea modules are validated separately, against refs **34-37**:
+
+| ref | study |
+|---|---|
+| 34 | Fraioli, Sheffer, Steffenson. Pulmonary and Cardiovascular Effects of **Apneic Oxygenation** in Man. Anesthesiology 1973;39:588-96 |
+| 35 | Berthoud, Peacock, Reilly. Effectiveness of **preoxygenation** in morbidly obese patients. BJA 1991;67:464-6 |
+| 36 | Baraka et al. Supplementation of pre-oxygenation using **nasopharyngeal oxygen insufflation**. Anaesthesia 2007;62:769-73 |
+| 37 | Gustafsson et al. Apnoeic oxygenation using **THRIVE** — a physiological study. BJA 2017;118:610-7 |
+
+**Three of those four cannot be done on an obstructed airway at all**, because
+each delivers gas to the lung: apnoeic oxygenation, nasopharyngeal insufflation
+and THRIVE. The fourth (Berthoud) we have not read and its apnoea airway state
+is not determinable from the citation. **Only the citations were read, not the
+papers.**
+
+**So ICSM's apnoea validation rests on patent-airway oxygen delivery, and its
+use in a CICO paper is an extrapolation into complete obstruction — exactly as
+ours is.**
+
+That reframes the divergence table above. We reach SaO2 40% at 502 s against
+their ~510, and it was tempting to read that as two independent models
+corroborating each other. **It is not corroboration. It is two extrapolations
+from the same kind of patent-airway data, landing in the same place, and both
+landing a long way from Stock 1989** — the one human measurement under complete
+obstruction, where our PaO2 at 300 s is 81% low. Agreement between the models
+carries almost no evidential weight for the obstructed regime.
+
+Two incidental correspondences worth recording, neither of them validation:
+their anatomical dead space is **150 mL**, the same as our `vd_anat`; and their
+alveolar compartment count `N_alv` is **100**, against the 80 we moved to on
+2026-09-18 for the monotonicity reason. Independent arrival at the same order.
+
+Their in-silico cohort is **100 virtual healthy adults, 45-90 kg**, with
+parameters "ranged to fall within normal ranges" from the literature — so the
+SDs in Table S5 are cohort spread by construction and were never measurement
+uncertainty. `test_validation.py` already says that; this confirms it from the
+method section.
+
+**Lead, unread:** Fraioli 1973 is titled as covering the *cardiovascular*
+effects of apnoeic oxygenation in man, so it may carry CO, MAP and HR alongside
+gases. If it does it would be a fifth entry in the cross-study table above and
+the only one besides Ebata with haemodynamics during apnoea. Not in this
+repository.
+
 ### A second defect: arterial CO2 FALLS inside a sealed lung — 2026-09-16
 
 At the default `n_vq` of 20, which every benchmark in the suite uses, PaCO2 is

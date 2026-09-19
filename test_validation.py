@@ -304,6 +304,17 @@ def test_icsm_jet_2026():
     not. Only the gas channels are checked here; the haemodynamic
     disagreement is real and is recorded under Known disagreement rather
     than papered over with a band wide enough to pass.
+
+    DO NOT READ AGREEMENT HERE AS CORROBORATION. Checked 2026-09-19: ICSM's
+    apnoea modules are validated against their refs 34-37, which are Fraioli
+    1973 (apnoeic oxygenation), Berthoud 1991 (preoxygenation), Baraka 2007
+    (nasopharyngeal insufflation) and Gustafsson 2017 (THRIVE). Three of the
+    four cannot be done on an obstructed airway at all, because each delivers
+    gas to the lung. Their simulator is extrapolating into complete
+    obstruction exactly as ours is, so when the two agree they are two
+    extrapolations from the same kind of patent-airway data landing in the
+    same place -- and both land a long way from Stock 1989, the one human
+    measurement in this regime. See HANDOVER.md, "How ICSM validated itself".
     """
     p = Patient(weight=70, height=1.75, age=45, hb=14.0)
     r = simulate(p, [AirwayEpoch(1400, resistance=OBS, fgo2=0.21)],
