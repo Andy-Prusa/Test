@@ -141,6 +141,50 @@ print("    refinement will remove it. test_validation.py checks timestep")
 print("    convergence and has never checked compartment-count convergence.")
 
 # ---------------------------------------------------------------------------
+print("\nThe CO2 curve's CURVATURE IS the acid-base response, and the a-A")
+print("gap scales with it BACKWARDS")
+print("  Hardman 1998 Appendix 2 gives the NPS CO2 content equation as")
+print("    CaCO2 (ml/litre) = PaCO2 x 50.76 / 10^(0.019 x (temp - 37))")
+print("  Linear in PaCO2: no bicarbonate curve, no pH term, no haemoglobin,")
+print("  no saturation, so no Haldane. At FIXED pH our own law is already")
+print("  exactly that form -- strictly proportional -- so the entire curvature")
+print("  of the physiological curve is the acid-base response.")
+import bloodgas as _bg  # noqa: E402
+_c40 = _bg.co2_content(40.0, 7.40, 0.97, 15.0, 37.0)
+check("at pH 7.40 FIXED, dC/dP over 40-50", 
+      (_bg.co2_content(50.0, 7.40, 0.97, 15.0, 37.0) - _c40) / 10.0,
+      1.168, 0.004, " mL/dL/mmHg")
+check("at pH 7.40 FIXED, dC/dP over 50-60",
+      (_bg.co2_content(60.0, 7.40, 0.97, 15.0, 37.0)
+       - _bg.co2_content(50.0, 7.40, 0.97, 15.0, 37.0)) / 10.0,
+      1.168, 0.004, " mL/dL/mmHg")
+check("the same law is PROPORTIONAL: C(40)/40", _c40 / 40.0, 1.168, 0.004, "")
+_cs = {}
+for _p in (40.0, 50.0, 60.0):
+    _ph = _bg.ph_from_pco2_be(_p, 0.0, 15.0, so2=0.97, temp=37.0)
+    _cs[_p] = _bg.co2_content(_p, _ph, 0.97, 15.0, 37.0)
+check("with pH SOLVED from BE 0, dC/dP over 40-50",
+      (_cs[50.0] - _cs[40.0]) / 10.0, 0.450, 0.006, " mL/dL/mmHg")
+check("with pH SOLVED from BE 0, dC/dP over 50-60",
+      (_cs[60.0] - _cs[50.0]) / 10.0, 0.381, 0.006, " mL/dL/mmHg")
+print("    Flat 1.168 at frozen pH against 0.45 falling to 0.38 with pH")
+print("    responding. The plasma algebra contributes NO curvature at all.")
+print("    Substituting the NPS form into our 80-compartment lung (anchored")
+print("    at PCO2 40, which is the same line either way because the fixed-pH")
+print("    law passes through the origin):")
+print("      Stock obstructed slope   4.72 -> 10.38   (measured 3.4)")
+print("      patent slope             1.68 ->  0.55")
+print("      a-A gap at 300 s         8.35 -> 32.81")
+print("      first-minute rise       12.02 ->  4.59   (measured 12)")
+print("    THIS FILE SAID THE a-A GAP 'SCALES WITH THE CURVATURE'. The sign is")
+print("    backwards: removing the curvature QUADRUPLES the gap. Curvature")
+print("    SUPPRESSES it. And it explains why Kelman looked exonerating -- the")
+print("    [Hb] fix changed the curve's LEVEL and never varied the acid-base")
+print("    coupling that generates the curvature, so that hypothesis was")
+print("    untested until now. The untested lever is the STRENGTH of the")
+print("    acid-base response, not the curve's calibration.")
+
+# ---------------------------------------------------------------------------
 print("\nHardman & Wills 2006 -- the obstruction effect has the WRONG SIGN")
 print("  BJA 2006;97:564-70. MODEL, not measurement. Nottingham Physiology")
 print("  Simulator, the lineage ICSM is built on. The first comparator we")
