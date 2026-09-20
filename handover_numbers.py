@@ -142,6 +142,39 @@ print("    refinement will remove it. test_validation.py checks timestep")
 print("    convergence and has never checked compartment-count convergence.")
 
 # ---------------------------------------------------------------------------
+print("\nIS THERE A NEGATIVE PRESSURE THAT PREVENTS CARDIAC OUTPUT? No.")
+print("  Condos 1987, n=10 at cardiac catheterisation, Mueller: mean RIGHT")
+print("  ATRIAL pressure 7 -> -17 mmHg and cardiac output fell only 6.0 ->")
+print("  5.3 L/min (12%), stroke volume 83 -> 74 mL. Their mechanism, echo-")
+print("  confirmed: COLLAPSE OF THE GREAT VENOUS TRUNKS AT THE THORACIC")
+print("  INLETS, which LIMITS venous return without abolishing it and raises")
+print("  the driving pressure downstream of itself. The venous return curve")
+print("  plateaus; it does not fall to zero.")
+_pt_itp = Patient(weight=70, height=1.75, age=45, hb=14.0)
+_G, _F = _pt_itp.sv_itp_gain, _pt_itp.itp_fraction
+check("sv factor at our -50 clamp (pleural -30)",
+      max(0.15, 1.0 + _G * -50.0 * _F), 0.925, 0.002, "")
+check("alveolar cmH2O needed for the max(0.15) floor to bind",
+      (0.15 - 1.0) / _G / _F, -566.7, 1.0, " cmH2O")
+print("    So OUR model also says no -- but with no venous-return curve and")
+print("    nothing representing caval collapse. The term is pure afterload,")
+print("    fitted at -30 cmH2O and extrapolated as a straight line. The floor")
+print("    needs -567 cmH2O to bind, about where Hardman & Wills' NPS goes.")
+_itpr = simulate(_pt_itp, [AirwayEpoch(900, resistance=OBS, fgo2=0.21)],
+                 dt=0.1, stop_sao2=0.0)
+check("CO at 240 s (baseline 3.75) -- it RISES", at(_itpr, 'co', 240),
+      4.51, 0.08, " L/min")
+check("pleural pressure at 240 s", at(_itpr, 'palv_cmh2o', 240) * _F,
+      -9.1, 0.4, " cmH2O")
+print("    CO climbs 20% to 240 s while pleural pressure falls to -9:")
+print("    hypercapnic inotropy and tachycardia outrun the ITP penalty, and")
+print("    the eventual collapse is hypoxic bradycardia, not mechanics.")
+print("    CONDOS'S SUBJECTS WERE NORMOCAPNIC, so their 12% is the ITP effect")
+print("    clean. We have NO comparator anywhere for negative ITP PLUS")
+print("    hypercapnia -- the actual apnoea case, and exactly the combination")
+print("    our model resolves in favour of the inotropy. Unvalidated.")
+
+# ---------------------------------------------------------------------------
 print("\nWHY PaO2 DOES NOT FOLLOW STOCK: the alveolus is fine, the step to")
 print("the artery is not")
 
