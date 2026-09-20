@@ -153,11 +153,11 @@ _ST_H = np.array([7.42, 7.38, 7.35, 7.34, 7.32, 7.31, 7.28, 7.26])
 _titr = lambda pc, ph: float(np.polyfit(np.log10(pc), ph, 1)[0])
 check("Stock's measured titration line (8 points)", _titr(_ST_P, _ST_H),
       -0.758, 0.004, " per decade")
-_tr = simulate(Patient(weight=70, height=1.75, age=45, hb=15.0),
+_stock_titr = simulate(Patient(weight=70, height=1.75, age=45, hb=15.0),
                [AirwayEpoch(360, resistance=OBS, fgo2=0.21)],
                dt=DT, feo2_start=0.87, paco2_start=39.0, stop_sao2=0.0)
-_mp = np.array([at(_tr, 'paco2', t) for t in _ST_T])
-_mh = np.array([at(_tr, 'ph', t) for t in _ST_T])
+_mp = np.array([at(_stock_titr, 'paco2', t) for t in _ST_T])
+_mh = np.array([at(_stock_titr, 'ph', t) for t in _ST_T])
 check("our titration line at the same points", _titr(_mp, _mh),
       -0.669, 0.006, " per decade")
 print("    In vitro whole blood titrates near -0.55 per decade; whole-body /")
@@ -284,7 +284,7 @@ def _hw_run(obstructed):
     return simulate(_hw, [ep], dt=DT, feo2_start=0.98, stop_sao2=0.0)
 
 
-for _obst, _lab, _we, _wl, _tr in ((True, "closed", 5.60, 5.07, 32.1),
+for _obst, _lab, _we, _wl, _rate in ((True, "closed", 5.60, 5.07, 32.1),
                                    (False, "open", 9.25, 3.22, 22.7)):
     _r = _hw_run(_obst)
     _t90, _t40 = time_to(_r, 'sao2', 90), time_to(_r, 'sao2', 40)
@@ -294,7 +294,7 @@ for _obst, _lab, _we, _wl, _tr in ((True, "closed", 5.60, 5.07, 32.1),
     check(f"H&W 3min preO2 {_lab}: SaO2 90->40% (theirs "
           f"{1.56 if _obst else 2.20})", _tot - _e, _wl, 0.15, " min")
     print(f"      terminal rate: ours {50.0/(_tot-_e):5.1f} %/min, "
-          f"theirs {_tr:4.1f}")
+          f"theirs {_rate:4.1f}")
 print("    Closing the airway makes THEIR patient desaturate FASTER (33 vs 26")
 print("    %/min) and makes OURS desaturate SLOWER (9.9 vs 15.5). That is a")
 print("    DIRECTION disagreement, the first this project has found.")
@@ -427,6 +427,20 @@ check("Stock oxygen: model PaO2 at 300 s (Stock 314 +-  87)",
       at(_stock_o2, 'pao2', 300), 61.0, 3.0, " mmHg")
 check("Stock oxygen: model SaO2 at 300 s (Stock: NEVER below 92)",
       at(_stock_o2, 'sao2', 300), 85.3, 0.6, " %")
+# The haemodynamic error SCALES WITH SEVERITY, which the by-study tables hide.
+# Ebata's patients are mildly stressed and Laviola's are at SaO2 40%.
+print("    THE HAEMODYNAMIC ERROR SCALES WITH SEVERITY. Ebata (PaCO2 78,")
+print("    PaO2 332, saturation normal): CO -12%, MAP -6%. Laviola (SaO2")
+print("    40%): CO -30%, MAP -50%. A gradient, not a constant offset -- the")
+print("    sicker the patient, the worse we get. That points at the")
+print("    cardiovascular RESPONSE to extreme hypoxia, hypercapnia and")
+print("    negative intrathoracic pressure, not at the baseline allometry,")
+print("    which the circular Tokics row shows we have never tested.")
+# _stock_titr, not _stock_o2: it carries paco2_start=39.0, Stock's own measured
+# baseline, where _stock_o2 takes the 40.0 default. The pH differs between
+# them, which is exactly what this check caught on first writing.
+check("Stock: pH at 300 s (measured 7.26 +- 0.06)",
+      at(_stock_titr, 'ph', 300), 7.238, 0.006, "")
 print("    The model tracks to 120 s and then COLLAPSES. Not a preoxygenation")
 print("    artefact: at feo2_start 0.80 and 0.70, where the baseline matches")
 print("    Stock better, SaO2 at 300 s is 82.9 and 77.1 -- the same or worse.")

@@ -413,7 +413,74 @@ Three more record two or more but cannot be configured: **Chen & Scharf 1998**
 Rothen 1993, Wei 2020, Venegas 1998, Moreault 2021, Ellis 2022, both Kelman
 papers and Douglas record fewer than two of the seven.
 
-**Signed divergence, model minus measured** (Tokics caveats below the table):
+#### CONSOLIDATED SCORECARD — rebuilt 2026-09-20
+
+Supersedes the table immediately below, which predated Hardman & Wills 2006
+and Hardman 1998. Every row marked MEASURED or MODEL, and by regime, because
+those decide how much weight a disagreement carries.
+
+| comparator | kind | regime | channel | ours | theirs | diff |
+|---|---|---|---|---|---|---|
+| **Stock 1989** | MEASURED | **obstructed** | PaCO2 at 180 s | 56.37 | 56 (6) | **+0.7%** |
+| | | | PaCO2 at 300 s | 69.39 | 63 (9) | +10.1% |
+| | | | pH at 300 s | 7.24 | 7.26 (0.06) | -0.3% |
+| | | | titration slope | -0.67 | **-0.758** | +11.7% |
+| | | | **PaO2 at 300 s** | **60.5** | **314 (87)** | **-80.7%** |
+| | | | SaO2 at 300 s | 85.3 | >92 stated | -11.1% |
+| **Ebata 1991** | MEASURED | patent | PaCO2 at 600 s | 75.29 | 78 (3) | -3.5% |
+| | | | pH at 600 s | 7.20 | 7.17 (0.02) | +0.4% |
+| | | | PaO2 at 600 s | 375.3 | 332 (38) | +13.0% |
+| | | | CO | 5.03 | 5.7 (0.8) | -11.7% |
+| | | | MAP | 76.2 | 81 (7) | -5.9% |
+| | | | HR | 81.1 | 100 (7) | -18.9% |
+| **Tokics 1996** | MEASURED | ventilated | PaO2 at t=0 | 194.0 | 159.1 (31.9) | +21.9% |
+| **Hardman & Wills** | MODEL | closed | to SaO2 90% | 5.60 | 6.54 | -14.4% |
+| | | | **SaO2 90->40%** | **5.07** | **1.56** | **+225%** |
+| | | open | to SaO2 90% | 9.25 | 8.40 | +10.1% |
+| | | | SaO2 90->40% | 3.22 | 2.20 | +46.2% |
+| **Laviola 2026** | MODEL | obstructed | time to SaO2 40% | 502 s | ~510 s | -1.6% |
+| | | | PaCO2 | 77.4 | 84.6 (4.4) | -8.6% |
+| | | | CO | 1.90 | 2.7 (0.1) | -29.6% |
+| | | | **MAP** | **28.5** | **57.4 (2.4)** | **-50.4%** |
+
+Tokics' PaCO2, CO, HR and MAP are excluded: the PaCO2 is circular (we set
+`paco2_start` from their table) and the three haemodynamics are the `Patient`
+allometry, not a simulation. Only PaO2 is informative there.
+
+**By channel:**
+
+| | across comparators |
+|---|---|
+| PaCO2 | Stock +1% / +10%, Ebata -3%, Laviola -9% |
+| pH | Stock -0%, Ebata +0% — but the SLOPE is 12% shallow |
+| PaO2 | **Stock -81%**, Ebata +13%, Tokics +22%, Laviola -1% |
+| SaO2 | Stock -11% |
+| CO | Ebata **-12%**, Laviola **-30%** |
+| MAP | Ebata **-6%**, Laviola **-50%** |
+| HR | Ebata -19% (dopamine-driven, expected) |
+
+Four readings, one of them new.
+
+1. **CO2 is sound except in the last two minutes of obstruction.** +0.7% at
+   180 s, -3% on Ebata, -9% against an independent model. The red benchmark is
+   a late-window failure, not a broken limb.
+2. **pH level is exact; the pH SLOPE is not.** -0.3% and +0.4% on the values,
+   12% shallow on the titration line. Our buffering is too strong — a
+   level-versus-slope distinction the single-point checks could never see.
+3. **The oxygen defect is obstruction-specific.** -81% obstructed against
+   +13% and +22% patent and ventilated. Nothing that acts in all regimes can
+   explain it.
+4. **NEW — the haemodynamic error SCALES WITH SEVERITY.** Ebata's patients
+   are mildly stressed (PaCO2 78, PaO2 332, saturation normal) and we are
+   -12% on CO and -6% on MAP. Laviola's are at SaO2 40% and we are **-30% and
+   -50%**. That is a gradient, not a constant offset: **the sicker the
+   patient, the worse we get.** It points at the cardiovascular RESPONSE to
+   extreme hypoxia, hypercapnia and negative intrathoracic pressure, not at
+   the baseline allometry — which the Tokics exclusion above shows we have
+   never actually tested anyway.
+
+**Signed divergence, model minus measured** (superseded by the scorecard
+above; kept because the by-study layout is easier to scan):
 
 | study | SaO2 | PaO2 | PaCO2 | pH | CO | HR | MAP |
 |---|---|---|---|---|---|---|---|
