@@ -332,6 +332,62 @@ configured". True for a TIME COURSE — a Mueller manoeuvre is 5-15 s. **False
 as a blanket statement**: both already source `sv_itp_gain`, and for the
 ITP-to-stroke-volume coupling they are the best human data in the set.
 
+### THE p_collapse CLAMP IS PHYSICALLY INCOHERENT — found 2026-09-20
+
+The argument that found it: **if the patient still has a cardiac output, gas
+is still being absorbed. In a sealed lung that gas has to come out of volume
+or out of pressure. So the pressure must keep falling.** Ours does not.
+
+`_recoil` returns `max(p, floor)`. The PRESSURE is clamped at `p_collapse`.
+Nothing clamps the VOLUME — it is set by the gas that is left, and it keeps
+falling. So past 361 s the model reports a pressure its own recoil function
+contradicts:
+
+| t | volume (mL) | CO | P reported | **P its own recoil implies** |
+|---|---|---|---|---|
+| 300 | 846 | 4.50 | -33.6 | -33.6 |
+| 360 | 667 | 4.22 | -49.7 | -49.7 |
+| 420 | 523 | 3.73 | **-50.0** | **-62.8** |
+| 480 | 448 | 2.47 | **-50.0** | **-69.5** |
+| 540 | 430 | 0.69 | **-50.0** | **-71.2** |
+| 590 | 429 | 0.02 | **-50.0** | **-71.3** |
+
+**The volume falls 846 -> 429 mL while the reported pressure sits frozen.**
+By 590 s the model's own state says -71.3 and it reports -50.0, a 21 cmH2O
+contradiction, over a window that is a third of the survivable time.
+
+#### What it costs, in order
+
+1. **Gas tensions: almost nothing.** PAO2 is the alveolar fraction times the
+   DRY pressure, and -50 against -71.3 cmH2O is 676 against 661 mmHg — about
+   2%. PAO2 at 590 s is 20.6 as modelled against 20.1 unclamped. **This is
+   NOT the oxygen defect**, which is anyway at 300 s, before the clamp binds,
+   and which `p_collapse` -200 was already shown not to touch.
+2. **The ITP to stroke-volume term: 3.2 percentage points** of stroke volume
+   never charged, because `itp` is computed from the clamped pressure.
+3. **Any statement about the PRESSURE ITSELF is wrong past 361 s.** The lung
+   does not reach -50 and stop. It reaches -71 by 590 s and would keep going
+   while there is a cardiac output. The pressure chart's flat tail is an
+   artefact.
+
+#### What this actually is
+
+`p_collapse` was put in as a guard against runaway. **But the runaway is real
+physics** — a sealed lung losing gas must keep losing pressure. What stops it
+in a real patient is one of: units closing so they stop absorbing, the chest
+wall or mediastinum reaching a hard limit, or blood flow stopping. **We model
+none of those. The clamp stands in for all three by fiat**, and reports a
+number that the model's own mechanics contradict.
+
+That makes it worse than a modelling choice. A choice would clamp the STATE;
+this clamps the REPORT while letting the state run on underneath.
+
+**Not fixed here.** Removing the clamp changes the late window of every
+obstructed run and needs deciding deliberately — most likely by giving closed
+units a real stop-absorbing rule rather than by moving the floor. Recorded so
+that nobody reads the flat tail as physiology, and so the pressure chart
+carries the caveat.
+
 ### The one open defect
 
 **Arterial CO2 is far too sensitive to V/Q spread.** Tokics 1996 measures

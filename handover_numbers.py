@@ -142,6 +142,49 @@ print("    refinement will remove it. test_validation.py checks timestep")
 print("    convergence and has never checked compartment-count convergence.")
 
 # ---------------------------------------------------------------------------
+print("\nTHE p_collapse CLAMP IS PHYSICALLY INCOHERENT")
+print("  If the patient still has a cardiac output, gas is still being")
+print("  absorbed, and in a sealed lung that gas must come out of volume or")
+print("  out of pressure. _recoil returns max(p, floor): the PRESSURE is")
+print("  clamped, the VOLUME is not. So the model reports a pressure its own")
+print("  recoil function contradicts.")
+_cl = Patient(weight=70, height=1.75, age=45, hb=14.0)
+
+
+def _recoil_unclamped(v):
+    """What _recoil would return without the max(p, floor), in cmH2O."""
+    _p = (v - _cl.frc_anaes()) / (_cl.crs * 1.35951)
+    if v < _cl.rv:
+        _p += (v - _cl.rv) / (_cl.crs * 1.35951 * _cl.stiff_below_rv)
+    return _p * 1.35951
+
+
+_clr = simulate(_cl, [AirwayEpoch(900, resistance=OBS, fgo2=0.21)],
+                dt=0.1, stop_sao2=0.0)
+check("volume at 300 s, before the clamp binds", at(_clr, 'va', 300),
+      846.0, 8.0, " mL")
+check("volume at 540 s, well past it", at(_clr, 'va', 540), 430.0, 8.0, " mL")
+check("pressure REPORTED at 540 s", at(_clr, 'palv_cmh2o', 540), -50.0, 0.1,
+      " cmH2O")
+check("pressure its own RECOIL implies at 540 s",
+      _recoil_unclamped(at(_clr, 'va', 540)), -71.2, 1.0, " cmH2O")
+print("    The volume falls 846 -> 430 mL while the reported pressure sits")
+print("    frozen: a 21 cmH2O contradiction over a third of the survivable")
+print("    time. Costs, in order: gas tensions almost nothing (2% of dry")
+print("    pressure, and this is NOT the oxygen defect, which is at 300 s")
+print("    before the clamp binds); the ITP stroke-volume term 3.2 points")
+print("    never charged; and any statement about the PRESSURE past 361 s is")
+print("    simply wrong -- the flat tail on the pressure chart is an artefact.")
+print("    p_collapse guards against a runaway that is REAL PHYSICS. What")
+print("    stops it in a patient is units closing and ceasing to absorb, a")
+print("    chest-wall limit, or flow stopping. We model none of those; the")
+print("    clamp stands in for all three and clamps the REPORT while letting")
+print("    the state run on underneath. NOT FIXED: removing it changes the")
+print("    late window of every obstructed run and should be decided")
+print("    deliberately, most likely by giving closed units a stop-absorbing")
+print("    rule rather than by moving the floor.")
+
+# ---------------------------------------------------------------------------
 print("\nIS THERE A NEGATIVE PRESSURE THAT PREVENTS CARDIAC OUTPUT? No.")
 print("  Condos 1987, n=10 at cardiac catheterisation, Mueller: mean RIGHT")
 print("  ATRIAL pressure 7 -> -17 mmHg and cardiac output fell only 6.0 ->")
