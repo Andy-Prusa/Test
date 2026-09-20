@@ -142,49 +142,112 @@ print("    refinement will remove it. test_validation.py checks timestep")
 print("    convergence and has never checked compartment-count convergence.")
 
 # ---------------------------------------------------------------------------
-print("\nTHE p_collapse CLAMP IS PHYSICALLY INCOHERENT")
-print("  If the patient still has a cardiac output, gas is still being")
-print("  absorbed, and in a sealed lung that gas must come out of volume or")
-print("  out of pressure. _recoil returns max(p, floor): the PRESSURE is")
-print("  clamped, the VOLUME is not. So the model reports a pressure its own")
-print("  recoil function contradicts.")
+print("\nTHE RECOIL FLOOR: WAS INCOHERENT, NOW INERT BY RULING")
+print("  The argument that found it: if the patient still has a cardiac")
+print("  output, gas is still being absorbed, and in a sealed lung that gas")
+print("  must come out of volume or out of pressure. _recoil returns")
+print("  max(p, floor): at p_collapse = -50 the PRESSURE was clamped and the")
+print("  VOLUME was not, so from 361 s the model reported a pressure its own")
+print("  recoil function contradicted by up to 21 cmH2O.")
+print("  RULING (A.H., 2026-09-20): there is no data below about -20 cmH2O")
+print("  and there never will be, so put the floor at minus the systolic")
+print("  pressure and move on. That is a convention, not a derivation.")
 _cl = Patient(weight=70, height=1.75, age=45, hb=14.0)
+_clr = simulate(_cl, [AirwayEpoch(900, resistance=OBS, fgo2=0.21)],
+                dt=0.1, stop_sao2=0.0)
+check("floor = -SBP_SUPINE * 1.35951", ac.P_COLLAPSE, -149.5461, 0.001,
+      " cmH2O")
+check("shipped Patient carries it", _cl.p_collapse, -149.5461, 0.001, " cmH2O")
 
 
 def _recoil_unclamped(v):
-    """What _recoil would return without the max(p, floor), in cmH2O."""
+    """What _recoil returns WITHOUT the max(p, floor), in cmH2O."""
     _p = (v - _cl.frc_anaes()) / (_cl.crs * 1.35951)
     if v < _cl.rv:
         _p += (v - _cl.rv) / (_cl.crs * 1.35951 * _cl.stiff_below_rv)
     return _p * 1.35951
 
 
-_clr = simulate(_cl, [AirwayEpoch(900, resistance=OBS, fgo2=0.21)],
-                dt=0.1, stop_sao2=0.0)
-check("volume at 300 s, before the clamp binds", at(_clr, 'va', 300),
-      846.0, 8.0, " mL")
-check("volume at 540 s, well past it", at(_clr, 'va', 540), 430.0, 8.0, " mL")
-check("pressure REPORTED at 540 s", at(_clr, 'palv_cmh2o', 540), -50.0, 0.1,
-      " cmH2O")
-check("pressure its own RECOIL implies at 540 s",
-      _recoil_unclamped(at(_clr, 'va', 540)), -71.2, 1.0, " cmH2O")
-print("    The volume falls 846 -> 430 mL while the reported pressure sits")
-print("    frozen: a 21 cmH2O contradiction over a third of the survivable")
-print("    time. Costs, in order: gas tensions almost nothing (2% of dry")
-print("    pressure, and this is NOT the oxygen defect, which is at 300 s")
-print("    before the clamp binds); the ITP stroke-volume term 3.2 points")
-print("    never charged; and any statement about the PRESSURE past 361 s is")
-print("    simply wrong -- the flat tail on the pressure chart is an artefact.")
-print("    p_collapse guards against a runaway that is REAL PHYSICS. What")
-print("    stops it in a patient is units closing and ceasing to absorb, a")
-print("    chest-wall limit, or flow stopping. We model none of those; the")
-print("    clamp stands in for all three and clamps the REPORT while letting")
-print("    the state run on underneath. NOT FIXED: removing it changes the")
-print("    late window of every obstructed run and should be decided")
-print("    deliberately, most likely by giving closed units a stop-absorbing")
-print("    rule rather than by moving the floor.")
+print("    The contradiction is gone: reported pressure IS the recoil now.")
+for _t, _v, _pw in ((300, 845.4, -33.69), (420, 529.9, -62.15),
+                    (540, 439.1, -70.35), (590, 438.1, -70.44)):
+    check(f"volume at {_t} s", at(_clr, 'va', _t), _v, 3.0, " mL")
+    check(f"pressure REPORTED at {_t} s", at(_clr, 'palv_cmh2o', _t), _pw,
+          0.6, " cmH2O")
+    check(f"pressure its own RECOIL implies at {_t} s",
+          _recoil_unclamped(at(_clr, 'va', _t)), _pw, 0.6, " cmH2O")
 
-# ---------------------------------------------------------------------------
+# The floor is INERT. Not "small" -- bit-identical to having no floor at all.
+_nof = simulate(Patient(weight=70, height=1.75, age=45, hb=14.0,
+                        p_collapse=-1e6),
+                [AirwayEpoch(900, resistance=OBS, fgo2=0.21)],
+                dt=0.1, stop_sao2=0.0)
+print("    Against a run with NO floor at all (p_collapse -1e6), the largest")
+print("    difference in any output over the whole 900 s:")
+for _k in ('va', 'palv_cmh2o', 'pao2', 'paco2', 'sao2', 'ph', 'co', 'map'):
+    check(f"max |shipped - no floor|, {_k}",
+          float(np.abs(_clr[_k] - _nof[_k]).max()), 0.0, 1e-9, "")
+
+print("    And nothing comes near it. Minimum pressure reached, floor set to")
+print("    -1e6 so it cannot bind, across the configurations that push the")
+print("    lung hardest:")
+for _name, _kw, _fg, _want in (
+        ("default air seal", {}, 0.21, -70.44),
+        ("preoxygenated seal", {}, 1.0, -70.44),
+        ("obese 120 kg / 1.70 m", dict(weight=120, height=1.70), 0.21, -68.60),
+        ("vo2_ref 400", dict(vo2_ref=400.0), 0.21, -70.65),
+        ("no terminal bradycardia", dict(hr_term_sao2=0.0), 0.21, -71.51),
+        ("no bradycardia + vo2_ref 400",
+         dict(hr_term_sao2=0.0, vo2_ref=400.0), 0.21, -73.31)):
+    _k2 = dict(_kw)
+    _p2 = Patient(weight=_k2.pop('weight', 70), height=_k2.pop('height', 1.75),
+                  age=45, hb=14.0, p_collapse=-1e6, **_k2)
+    _r2 = simulate(_p2, [AirwayEpoch(900, resistance=OBS, fgo2=_fg)],
+                   dt=0.1, stop_sao2=0.0)
+    check(f"min P, {_name}", float(_r2['palv_cmh2o'].min()), _want, 0.6,
+          " cmH2O")
+print("    Every one asymptotes near -70, roughly 78 cmH2O clear of the")
+print("    floor. THE RUNAWAY p_collapse WAS GUARDING AGAINST DOES NOT")
+print("    EXIST. The model already had its own terminator and nobody had")
+print("    looked: the absorption gradient closes. Alveolar PO2 falls to")
+print("    mixed venous PO2 and there is nothing left to take up, while CO2")
+print("    coming out of blood holds the residual volume. Below, with the")
+print("    heart forced to keep beating for 1800 s so nothing else can stop")
+print("    it:")
+_pz = Patient(weight=70, height=1.75, age=45, hb=14.0, p_collapse=-1e6,
+              hr_term_sao2=0.0)
+_rz = simulate(_pz, [AirwayEpoch(1800, resistance=OBS, fgo2=0.21)],
+               dt=0.1, stop_sao2=0.0)
+for _t, _pa, _pv in ((300, 375.50, 40.72), (540, 21.03, 12.84),
+                     (900, 1.43, 0.0), (1790, 0.0, 0.0)):
+    check(f"alveolar PO2 at {_t} s", at(_rz, 'pao2_alv', _t), _pa, 1.5,
+          " mmHg")
+    check(f"mixed venous PO2 at {_t} s", at(_rz, 'pvo2', _t), _pv, 1.5,
+          " mmHg")
+check("alveolar PCO2 at 1790 s, holding the volume up",
+      at(_rz, 'paco2_alv', 1790), 74.59, 1.5, " mmHg")
+check("min pressure over 1800 s, unclamped", float(_rz['palv_cmh2o'].min()),
+      -71.62, 0.6, " cmH2O")
+check("min volume over 1800 s, unclamped", float(_rz['va'].min()), 425.0,
+      4.0, " mL")
+print("    What the move COSTS, since it is not free: the ITP stroke-volume")
+print("    term is now charged over the whole fall instead of being frozen")
+print("    at the old clamp. At the -70.4 asymptote the factor is 0.892")
+print("    against 0.925 at -50 -- the 3.2 points the clamp was not")
+print("    charging. Gas tensions move by about 2% of dry pressure, which is")
+print("    NOT the oxygen defect: that is at 300 s, before the old clamp")
+print("    ever bound, and is unchanged to 0.01 mmHg by this.")
+_G2, _F2 = _cl.sv_itp_gain, _cl.itp_fraction
+check("sv factor at the -70.4 asymptote",
+      max(0.15, 1.0 + _G2 * -70.44 * _F2), 0.8943, 0.002, "")
+check("sv factor at the old -50 clamp",
+      max(0.15, 1.0 + _G2 * -50.0 * _F2), 0.925, 0.002, "")
+print("    STILL NOT MODELLED, and the floor is now the only thing standing")
+print("    in for them: units closing and ceasing to absorb, a chest-wall or")
+print("    mediastinal hard limit, and flow stopping. The difference is that")
+print("    the floor no longer touches any result, so those absences are now")
+print("    visible instead of being absorbed into a clamped number.")
+
 print("\nIS THERE A NEGATIVE PRESSURE THAT PREVENTS CARDIAC OUTPUT? No.")
 print("  Condos 1987, n=10 at cardiac catheterisation, Mueller: mean RIGHT")
 print("  ATRIAL pressure 7 -> -17 mmHg and cardiac output fell only 6.0 ->")
@@ -445,7 +508,12 @@ print("    Their mechanism is explicit: alveolar PO2 is the product of")
 print("    intra-alveolar PRESSURE and oxygen fraction. Their Table 4 has the")
 print("    3-min-preoxygenated 18-yr-old at 44.34 kPa absolute when SaO2")
 print("    reaches 40% -- about -57 kPa gauge, roughly -580 cmH2O. Ours")
-print("    cannot pass p_collapse = -50 cmH2O, an order of magnitude less.")
+print("    asymptotes near -70 cmH2O, EIGHT TIMES LESS. That number is the")
+print("    model's own mechanics now, not a clamp: the recoil floor sits at")
+print("    -149.5 and is never reached (see the recoil-floor section above,")
+print("    where removing it entirely changes nothing at all). This used to")
+print("    read 'ours cannot pass p_collapse = -50', which credited the")
+print("    disagreement to a parameter. It was never the parameter.")
 print("    MOREAULT 2021 MEASURED -20 (5) and -31 (10) cmH2O IN HUMANS, and")
 print("    we give -17.7. So their desaturation is driven by a pressure")
 print("    excursion human measurement forbids, and our pressure is the one")
@@ -524,12 +592,33 @@ _lv = simulate(Patient(weight=70, height=1.75, age=45, hb=14.0),
                dt=DT, stop_sao2=0.0)
 _t40 = time_to(_lv, 'sao2', 40)
 _i = int(np.searchsorted(_lv['t'], _t40))
-check("Laviola CICO: time to SaO2 40% (theirs ~510)", float(_t40), 502.0, 6.0,
+check("Laviola CICO: time to SaO2 40% (theirs ~510)", float(_t40), 504.0, 6.0,
       " s")
-check("Laviola CICO: CO  (theirs 2.7 +- 0.1)", float(_lv['co'][_i]), 1.90,
+check("Laviola CICO: PaO2 (theirs 28.3 +- 0.4)", float(_lv['pao2'][_i]),
+      27.65, 0.6, " mmHg")
+check("Laviola CICO: PaCO2 (theirs 84.6 +- 4.4)", float(_lv['paco2'][_i]),
+      73.35, 1.2, " mmHg")
+check("Laviola CICO: CO  (theirs 2.7 +- 0.1)", float(_lv['co'][_i]), 1.79,
       0.08, " L/min")
-check("Laviola CICO: MAP (theirs 57.4 +- 2.4)", float(_lv['map'][_i]), 28.4,
+check("Laviola CICO: MAP (theirs 57.4 +- 2.4)", float(_lv['map'][_i]), 27.4,
       1.0, " mmHg")
+print("    These four MOVED on 2026-09-20 when the recoil floor went to minus")
+print("    systolic, and one of them BROKE A BENCHMARK. PaCO2 was 77.36 on")
+print("    the old -50 floor, inside test_validation's 75.8-93.4 band by 1.6")
+print("    mmHg; unclamped it is 73.35 and FAILS by 2.4. The floor sweep, at")
+print("    the cricothyroidotomy moment: -50 gives 77.36, -60 gives 75.25,")
+print("    -70 gives 73.35, and everything below -70 gives 73.35 because the")
+print("    lung never gets there. The mechanism is not subtle -- a deeper")
+print("    vacuum is a lower alveolar PCO2 for the same quantity of gas, so")
+print("    more CO2 leaves the blood and arterial PCO2 falls.")
+print("    RECORDED, NOT COMPENSATED, per CLAUDE.md. The band is not moving")
+print("    and no parameter is being reached for. Two things make this an")
+print("    acceptable loss: it is a MODEL comparator, not a measurement, and")
+print("    HANDOVER already records that ICSM's obstructed numbers are an")
+print("    extrapolation from patent-airway validation just as ours are; and")
+print("    the correction it came from is one the model's own mechanics")
+print("    demanded. A benchmark that only passed because a reported pressure")
+print("    contradicted its own recoil function was not passing for a reason.")
 print("    THE CO2 LIMB IS THE BEST-AGREEING CHANNEL IN THE WHOLE SET: PaCO2")
 print("    within 10% of all four, pH within hundredths. The red check in")
 print("    test_validation.py is a SLOPE error, not broken bookkeeping.")
@@ -728,15 +817,23 @@ for lab, kw, want_s, want_p in (
         ("vq_log_sd 1.18", dict(vq_log_sd=1.18), 7.56, -17.7),
         ("crs 60", dict(crs=60.0), 4.37, -24.2),
         ("crs 110", dict(crs=110.0), 4.92, -14.0),
-        ("stiff_below_rv 0.05", dict(stiff_below_rv=0.05), 4.11, -27.3),
+        ("stiff_below_rv 0.05", dict(stiff_below_rv=0.05), 3.94, -27.3),
         ("rv 900", dict(rv=900.0), 5.17, -11.7),
         ("rv 1300", dict(rv=1300.0), 4.27, -32.0)):
     check(f"{lab}: Stock slope", slope(run(**kw)), want_s, 0.15, " mmHg/min")
     check(f"{lab}: Moreault P at 1008 mL", moreault_p(**kw), want_p, 0.5,
           " cmH2O")
 print("    Neither CO2 lever moves the pressure at all. The mechanics levers")
-print("    move the slope by about 10%, so the coupling runs ONE WAY and")
-print("    weakly. The two red limbs are separable and can be worked apart.")
+print("    move the slope by 4-17%, so the coupling runs ONE WAY and weakly.")
+print("    The two red limbs are separable and can be worked apart.")
+print("    stiff_below_rv 0.05 moved 4.11 -> 3.94 on 2026-09-20 with the")
+print("    recoil floor. It is the ONLY row that moved, and for a reason: it")
+print("    was the one setting soft enough to drive the pressure onto the old")
+print("    -50 floor, so its lever was being clipped. That was flagged when")
+print("    the sweep was first run -- it was comparing two mechanical regimes")
+print("    -- and is now gone. The conclusion is unchanged and slightly")
+print("    stronger: the strongest mechanics lever moves the slope 17% where")
+print("    the WEAKEST CO2 lever moves it 32%.")
 print("    tau_mix 90 and vq_log_sd 0.50 each put the Stock slope back inside")
 print("    its 2.4-4.4 band on their own, with the mechanics untouched, which")
 print("    is exactly why neither may be set there. A fit is not a mechanism.")

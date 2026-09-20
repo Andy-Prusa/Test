@@ -150,7 +150,7 @@ function simulate(P, epochs, dt=0.1){
     for(let c=0;c<NC;c++){ nc[c]=n[3*c]+n[3*c+1]+n[3*c+2]; nd+=nc[c]; }
     let vv,pabs;
     { // recoil: linear, stiffening below RV, floored where units collapse
-      const rv=Math.max(200,(P.rv||1100)*hf-150), stiff=0.15, fl=(P.pCollapse||-50)/1.35951;
+      const rv=Math.max(200,(P.rv||1100)*hf-150), stiff=0.15, fl=(P.pCollapse||-149.5461)/1.35951;
       const rec=v=>{let p=(v-(frc-150))/crs; if(v<rv) p+=(v-rv)/(crs*stiff);
                     return Math.max(p,fl);};
       let lo=1,hi=frc+4000;

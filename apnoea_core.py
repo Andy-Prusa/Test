@@ -65,6 +65,33 @@ PH2O = 47.0
 PDRY = PB - PH2O
 GASK = 863.0
 
+# ---------------------------------------------------------------------------
+# The floor on recoil pressure, and why it is where it is.
+#
+# There is no measurement of what a human lung does below about -20 cmH2O, and
+# there probably never will be: the experiment is a sealed airway in a
+# conscious subject past the point of tolerance. Everything below that edge is
+# extrapolation of the recoil curve, and the model needs SOME terminator.
+#
+# RULING (A.H., 2026-09-20): put it at minus the systolic pressure. This is a
+# convention, not a derivation, and is recorded as one. Its only defence is
+# that it is the pressure scale at which the thorax stops being a gas
+# compartment at all -- a transmural gradient that size cannot leave blood in
+# the pulmonary vessels -- so nothing the gas model says past it is meaningful
+# anyway.
+#
+# It replaces a -50 cmH2O floor that was ACTIVE from 361 s in a sealed run and
+# was therefore shaping results. That floor was found on 2026-09-20 to clamp
+# the REPORTED pressure while leaving the volume free, so the model returned a
+# pressure its own recoil function contradicted by up to 21 cmH2O. At minus
+# systolic the floor is INERT: see handover_numbers.py, which checks that no
+# configuration tested comes within 75 cmH2O of it, and that results are
+# identical to running with no floor at all. What actually stops the pressure
+# falling is not a floor but the absorption gradient closing -- alveolar PO2
+# reaching mixed venous PO2, at which point there is nothing left to absorb.
+SBP_SUPINE = 110.0                            # mmHg, anaesthetised supine
+P_COLLAPSE = -SBP_SUPINE * 1.35951            # = -149.55 cmH2O
+
 
 # ---------------------------------------------------------------------------
 @dataclass
@@ -159,8 +186,10 @@ class Patient:
     crs: float = 85.0            # mL/cmH2O
     rv: float = 1100.0           # mL residual volume, anaesthetised supine
     stiff_below_rv: float = 0.15 # compliance retained below RV
-    p_collapse: float = -50.0    # cmH2O floor: below this units collapse
-                                 # outright rather than holding a vacuum
+    p_collapse: float = P_COLLAPSE   # cmH2O floor on recoil. Minus the
+                                 # systolic pressure, by ruling: see
+                                 # SBP_SUPINE above for why, and why it is
+                                 # deliberately far enough out to be inert.
     shunt_base: float = 0.05
 
     # --- closing capacity (PLACEHOLDER REGRESSION) -------------------------
