@@ -142,6 +142,34 @@ print("    refinement will remove it. test_validation.py checks timestep")
 print("    convergence and has never checked compartment-count convergence.")
 
 # ---------------------------------------------------------------------------
+print("\nWHAT THE DEFECTS DO TO THE ANSWERS -- the obstructed SpO2 milestones")
+print("  Stock measured every one of 14 patients above 92% at all times, with")
+print("  7 completing 300 s. Hardman & Wills put SaO2 90->40% at 1.56 min.")
+print("  The two anchors pull OPPOSITE ways and we sit wrong against both.")
+_ms = simulate(Patient(weight=70, height=1.75, age=45, hb=15.0),
+               [AirwayEpoch(1600.0, resistance=OBS, fgo2=0.21)],
+               dt=DT, feo2_start=0.87, stop_sao2=0.0)
+for _s, _w in ((95, 257.6), (92, 284.6), (90, 300.4), (80, 364.6), (40, 543.8)):
+    check(f"obstructed: SpO2 reaches {_s}%", float(time_to(_ms, 'spo2', _s)),
+          _w, 4.0, " s")
+_t90 = float(time_to(_ms, 'spo2', 90))
+_t40 = float(time_to(_ms, 'spo2', 40))
+check("obstructed: SaO2 90->40% rate (H&W say 33)",
+      50 * 60.0 / (_t40 - _t90), 12.3, 0.3, " %/min")
+print("    We cross 92% at 285 s, where Stock had every patient above it at")
+print("    300 s: TOO EARLY. Then 90->40% takes 4.06 min against their 1.56:")
+print("    THREE TIMES TOO SLOW. The total, 544 s, agrees with Laviola's ~510")
+print("    BY CANCELLATION. So 'when does desaturation start' is pessimistic,")
+print("    'time to critical' is right by luck, and 'once they start dropping,")
+print("    how long have I got' is DANGEROUSLY OPTIMISTIC -- four minutes")
+print("    against the only other model's ninety seconds.")
+print("    The buccal work is NOT contaminated: all four Toner and Heard")
+print("    benchmarks run patent(), and buccal oxygen buys nothing once")
+print("    occluded anyway. Our patent-regime oxygen is +13% and +22%.")
+print("    BEYOND 300 s OF COMPLETE OBSTRUCTION THERE IS NO HUMAN")
+print("    MEASUREMENT AT ALL. Stock's table stops there.")
+
+# ---------------------------------------------------------------------------
 print("\nStock's pH column is a BUFFER MEASUREMENT, and we never used it")
 print("  Table 1 pairs pH with PaCO2 at eight times, in humans, under")
 print("  COMPLETE OBSTRUCTION. Paired, they are the CO2 titration line")

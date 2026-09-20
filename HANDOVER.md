@@ -101,6 +101,88 @@ in duration, and the volumes barely moved, because they are set by the gas
 balance and not by the pressure. One SPECIFICATION changed with them: see "The
 three-way study protocol" below.
 
+### WHAT THE DEFECTS DO TO THE ANSWERS — 2026-09-20
+
+Read this before quoting any number the model produces. Each defect is mapped
+onto the claims it contaminates, with the direction of the error.
+
+#### 1. The buccal work is NOT contaminated. This is the important one.
+
+**All four Toner and Heard benchmarks run `patent(p, ...)` — `resistance=2`, a
+patent airway.** The -81% obstructed PaO2 error does not touch them. In the
+patent and ventilated regimes our oxygen is **+13%** (Ebata) and **+22%**
+(Tokics), and all four checks pass.
+
+And that is not luck: **buccal oxygen requires a patent airway to do anything
+at all.** This file already records that it "buys exactly ZERO once occluded".
+So the regime where the model is worst is the regime where the buccal
+intervention has no effect anyway.
+
+#### 2. The obstructed desaturation SHAPE is wrong in both halves, opposite ways
+
+Obstructed, `feo2_start` 0.87:
+
+| SpO2 | reached at |
+|---|---|
+| 98% | 223 s |
+| 95% | 258 s |
+| **92%** | **285 s** |
+| 90% | 300 s |
+| 80% | 365 s |
+| 40% | 544 s |
+
+**Stock measured every one of 14 patients above 92% at all times, with 7
+completing 300 s. We cross 92% at 285 s.** So we desaturate too early.
+
+**Hardman & Wills put SaO2 90->40% at 1.56 min. We take 4.06 min** — 12.3
+%/min against their 33. So once past 90% we desaturate three times too slowly.
+
+**The total agrees with Laviola (544 s here, ~510 s theirs) BY CANCELLATION.**
+Two errors of opposite sign. So:
+
+| question the model is asked | reliability |
+|---|---|
+| "when does desaturation start?" | **pessimistic — too early** |
+| "how long to critical (SaO2 40%)?" | roughly right, by luck |
+| **"once they start dropping, how long have I got?"** | **DANGEROUSLY OPTIMISTIC** |
+
+That last row is the one that matters clinically. Asked how long between the
+saturation starting to fall and disaster, the model says **four minutes** where
+the only other model of this regime says **ninety seconds**. Do not use it for
+that question.
+
+#### 3. The protocol's safety predictions err in the SAFE direction
+
+`protocol/study.html` occludes the tube and predicts SpO2 94% at about 264 s,
+concluding "the sequence ends more than a minute before the rule fires". Since
+we desaturate too early, **real participants will hold saturation LONGER than
+predicted** — Stock's patients were all above 92% at 300 s. The study is more
+feasible than the protocol claims, and its margin is wider than stated. The
+prediction is wrong; the safety conclusion drawn from it survives.
+
+#### 4. CO2 claims are sound to 180 s and about 10% high at 300 s
+
+We track Stock to within 0.7% at 180 s and are +10% at 300 s. **Short-duration
+hypercapnia claims are reliable; five-minute ones overstate PaCO2 by about
+10%.** The pH LEVEL is right to a few thousandths; the pH SLOPE is 12% shallow,
+so acidosis at high PCO2 is slightly understated.
+
+#### 5. Haemodynamic claims degrade as the patient deteriorates
+
+CO -12% and MAP -6% at Ebata's mild stress; **CO -30% and MAP -50%** at
+Laviola's SaO2 40%. We predict a MORE collapsed circulation than either
+comparator. Conservative for a warning; **wrong if used to argue there is time
+for a rescue**, and wrong in the direction of predicting arrest too early.
+
+#### 6. The boundary of validity
+
+**Beyond about 300 s of complete obstruction there is no human measurement at
+all** — Stock's table stops there. Past that point this model extrapolates, so
+does ICSM, so does NPS, and the two published ones disagree with us by a factor
+of three on the terminal desaturation rate. Any claim past 300 s of complete
+obstruction is unvalidated, and saying so is not a courtesy — nothing in the
+literature can currently settle it.
+
 ### The one open defect
 
 **Arterial CO2 is far too sensitive to V/Q spread.** Tokics 1996 measures
