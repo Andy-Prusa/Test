@@ -142,6 +142,45 @@ print("    refinement will remove it. test_validation.py checks timestep")
 print("    convergence and has never checked compartment-count convergence.")
 
 # ---------------------------------------------------------------------------
+print("\nWHY PaO2 DOES NOT FOLLOW STOCK: the alveolus is fine, the step to")
+print("the artery is not")
+
+
+def _o2run(**kw):
+    q = Patient(weight=70, height=1.75, age=45, hb=15.0, **kw)
+    return simulate(q, [AirwayEpoch(360, resistance=OBS, fgo2=0.21)],
+                    dt=DT, feo2_start=0.87, paco2_start=39.0, stop_sao2=0.0)
+
+
+_o2 = _o2run()
+check("PAO2 at 300 s (ALVEOLAR; Stock's ARTERIAL is 314)",
+      at(_o2, 'pao2_alv', 300), 379.0, 4.0, " mmHg")
+check("PaO2 at 300 s (arterial; Stock 314 +- 87)",
+      at(_o2, 'pao2', 300), 60.5, 1.5, " mmHg")
+print("    The alveolar value sits ABOVE Stock's arterial, which is where an")
+print("    alveolar value belongs. Everything is lost after the alveolus.")
+print("    Four levers, PaO2 at 300 s: p_collapse -200 gives 60.5 (+0%),")
+print("    max_closed 0.02 gives 62.2 (+3%), co_drop_frac 0 gives 67.4")
+print("    (+11%), both circulation levers 67.5 (+12%). Together they buy")
+print("    12% of a gap that needs 400%.")
+print("    AND IT IS NOT THE SAME DEFECT AS THE CO2 GAP. Hypothesis tested")
+print("    and refuted: at the dispersion that ZEROES the CO2 gap, a large")
+print("    oxygen gap remains.")
+for _sd, _wpo2, _wgap in ((0.30, 96.0, 224.0), (0.70, 61.0, 319.0)):
+    _r = _o2run(vq_log_sd=_sd)
+    check(f"vq_log_sd {_sd:.2f}: PaO2 at 300 s", at(_r, 'pao2', 300),
+          _wpo2, 2.0, " mmHg")
+    check(f"vq_log_sd {_sd:.2f}: a-A OXYGEN gap at 300 s",
+          at(_r, 'pao2_alv', 300) - at(_r, 'pao2', 300), _wgap, 4.0, " mmHg")
+print("    CO2 gap is dispersion-driven; the OXYGEN gap has a large")
+print("    dispersion-INDEPENDENT floor. Two different defects.")
+print("    Surviving candidate: the FLATNESS of the oxygen dissociation curve")
+print("    at high PO2 -- end-capillary blood is saturated, so mixing in a")
+print("    little venous blood costs little CONTENT and enormous TENSION.")
+print("    NEXT TEST: sweep shunt_base, not max_closed. max_closed suppresses")
+print("    CLOSURE-driven shunt and was nearly inert, which is consistent.")
+
+# ---------------------------------------------------------------------------
 print("\nWHAT THE DEFECTS DO TO THE ANSWERS -- the obstructed SpO2 milestones")
 print("  Stock measured every one of 14 patients above 92% at all times, with")
 print("  7 completing 300 s. Hardman & Wills put SaO2 90->40% at 1.56 min.")

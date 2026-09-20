@@ -183,6 +183,80 @@ of three on the terminal desaturation rate. Any claim past 300 s of complete
 obstruction is unvalidated, and saying so is not a courtesy — nothing in the
 literature can currently settle it.
 
+### WHY OUR PaO2 DOES NOT FOLLOW STOCK — diagnosed 2026-09-20
+
+Stock: 412 -> 314 over 300 s of complete obstruction, a 24% fall. Ours:
+512 -> 61, an 88% fall. The largest disagreement in the whole comparator set.
+
+**The alveolar oxygen is very nearly right. The crash is entirely in the
+alveolar-to-arterial step.**
+
+| t | Stock PaO2 | our PaO2 | our **PAO2** | FAO2 | volume | shunt | PAN2 |
+|---|---|---|---|---|---|---|---|
+| 0 | 412 | 512 | 620 | 0.870 | 2012 | 5.0% | 54 |
+| 60 | 402 | 461 | 581 | 0.817 | 1783 | 5.8% | 79 |
+| 120 | 385 | 329 | 546 | 0.771 | 1527 | 7.4% | 110 |
+| 180 | 383 | 135 | 507 | 0.717 | 1284 | 10.2% | 145 |
+| 300 | 314 | **61** | **379** | 0.551 | 850 | 18.0% | 248 |
+
+**PAO2 at 300 s is 379 — above Stock's arterial 314, which is where an
+alveolar value should sit.** The lung is doing the right thing. Everything is
+lost between alveolus and artery.
+
+#### What it is NOT. Four levers, tested, PaO2 at 300 s:
+
+| | PaO2 |
+|---|---|
+| shipped | 60.5 |
+| `p_collapse` -200, collapse floor removed | 60.5 (**+0%**) |
+| `max_closed` 0.02, closure shunt suppressed | 62.2 (+3%) |
+| `co_drop_frac` 0, anaesthetic CO drop removed | 67.4 (+11%) |
+| `co_drop_frac` 0 AND `sv_itp_gain` 0 | 67.5 (+12%) |
+
+Not the pressure floor, not the closure shunt, not the circulation. Together
+they buy 12% of a gap that needs 400%.
+
+#### And it is NOT the same defect as the CO2 gap — hypothesis tested, refuted
+
+It was tempting: arterial blood is a PERFUSION-weighted mix while `PAO2` is a
+VOLUME-weighted mean, which is exactly the asymmetry this file has been calling
+the untested cause of the CO2 a-A gap. If the two were one defect, `vq_log_sd`
+would collapse both together. It does not:
+
+| `vq_log_sd` | PaO2 | a-A **O2** gap | a-A **CO2** gap |
+|---|---|---|---|
+| 0.20 | 127 | **178** | -0.81 |
+| 0.30 | 96 | **224** | -0.92 |
+| 0.50 | 71 | 280 | 3.47 |
+| 0.70 shipped | 61 | 319 | 8.27 |
+
+**At the dispersion that zeroes the CO2 gap, a 178 mmHg oxygen gap remains and
+PaO2 is 127 against Stock's 314.** The CO2 gap is dispersion-driven; the oxygen
+gap has a large dispersion-INDEPENDENT floor. Two different defects.
+
+#### What is left, and it is a specific question
+
+A near-homogeneous lung, alveolar PO2 above 300, cardiac output propped up,
+collapse floor removed — and still a 178 mmHg alveolar-to-arterial oxygen gap.
+
+The candidate that survives is **the flatness of the oxygen dissociation curve
+at high PO2**: end-capillary blood is fully saturated, so mixing in even a
+small fraction of venous blood costs little CONTENT but enormous TENSION. That
+is the mirror image of the CO2 curvature question, and it would mean the
+oxygen gap is driven by the SHUNT FRACTION acting on a saturated curve, not by
+V/Q spread — which fits `max_closed` being nearly inert (that lever suppresses
+closure-driven shunt, not the baseline 5%).
+
+**The next test is the baseline shunt**, `shunt_base`, swept against PaO2 at
+300 s — not `max_closed`, which is what was tested and is the wrong lever. If
+the oxygen gap is shunt-on-a-flat-curve, `shunt_base` will move it hard and
+`vq_log_sd` will not. If neither does, the remaining suspect is the
+end-capillary equilibration itself.
+
+Stock's patients were **not paralysed**. Whether a lung with residual muscle
+tone develops less absorption shunt over five minutes than our 18% is the
+physiological question underneath all of this, and nothing we hold measures it.
+
 ### The one open defect
 
 **Arterial CO2 is far too sensitive to V/Q spread.** Tokics 1996 measures
