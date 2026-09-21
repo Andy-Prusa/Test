@@ -156,6 +156,56 @@ entries could not be ordered from a library as written; now they can.
 
 ---
 
+## 2b. Partially read — first page only
+
+**Frumin MJ, Epstein RM, Cohen G. Apneic Oxygenation in Man. *Anesthesiology*
+1959;20(6):789-798.** doi 10.1097/00000542-195911000-00007.
+
+Page 789 seen 2026-09-21 as a screen capture; pages 790-798 **not seen**.
+
+**Verified from that page:**
+
+- The citation is exactly right as `editorial.md` reference [2] gives it.
+- Authors M. Jack Frumin, Robert M. Epstein, Gerald Cohen; Columbia University
+  and the Presbyterian Hospital, New York. Accepted 25 June 1959, presented to
+  the ASA at Miami Beach 9 October 1959.
+- **n = 8**, "essentially healthy patients scheduled for a variety of minor
+  operations". The repository has never recorded a sample size for this paper.
+- **The airway was PATENT with an oxygen reservoir attached, not obstructed.**
+  After denitrogenation the endotracheal tube was left connected to a circle
+  apparatus filled with 100% oxygen, and only the manual ventilation stopped.
+  That is apnoeic oxygenation with a supply, so nothing in it constrains the
+  obstructed regime, which is the regime this project's open defect lives in.
+- Method otherwise: premedication meperidine 50-100 mg and scopolamine 0.4 mg;
+  100% oxygen by circle for five minutes; thiopental then succinylcholine;
+  cuffed endotracheal catheter sealed by cuff inflation; denitrogenation on
+  100% oxygen for at least 30 minutes at 8 L/min or more.
+- **Two lineage facts worth having.** Its introduction credits Bartlett et al.
+  with proposing **"aventilatory mass flow (AVMF)"** — the term
+  `test_validation.py` uses for one of its bands, so that band's vocabulary
+  traces through here. And it names **Holmdahl** as having reviewed the
+  literature and coined "apneic diffusion oxygenation", which is the Holmdahl
+  1956 paper this project has been trying to obtain since 2026-09-19.
+
+**NOT verified, because it is all on pages we do not have.** `editorial.md:43`
+makes four specific claims about this paper — that subjects reached pH below
+7.0 within 30 minutes, a pH nadir of **6.72**, a PaCO2 of **250 mmHg at 53
+minutes**, and saturation held at **98-100% throughout** — and
+`apnoea_core.py` attributes an arterial CO2 rise of **3.0-3.4 mmHg/min** to it.
+None of that appears on page 789. It is Methods and introduction only.
+
+**And our own numbers in the same sentence are checked by nothing.**
+`editorial.md:43` continues "Our model reproduces this: 2.86 mmHg.min-1 and
+pH 7.05 at 30 minutes in a lean adult, but pH 6.95 at 30 minutes in an obese
+one". Those three figures appear in no script — not `handover_numbers.py`, not
+`buccal_numbers.py`, not `protocol/predictions.py`. They are exactly the
+"numbers in markdown rot" case CLAUDE.md warns about, in a tracked document
+that ships.
+
+**What to send:** pages 790-798, or just the results tables.
+
+---
+
 ## 3. Values with no source at all
 
 These carry specific non-round values and no citation. A precise number with no
