@@ -286,6 +286,69 @@ gap has a large dispersion-INDEPENDENT floor. Two different defects.
 > with alveolar PO2 above 360 still produces a 295 mmHg gap. That is the next
 > thing to check, and it is a mechanism question, not a parameter sweep.
 
+#### THE MECHANISM, TRACED — 2026-09-21
+
+Ran with the shunt forced to exactly zero throughout, so nothing below is a
+bypass effect. An instrumented copy of the model was used to look inside the
+80 lung units (provenance printed the scratch path, per CLAUDE.md).
+
+**Inside the lung at 300 s.** The units are BIMODAL, not spread:
+
+| percentile by own PO2 | PO2 | its blood's saturation | O2 content | share of blood flow | share of gas volume |
+|---|---|---|---|---|---|
+| 0 | 38.2 | 39.3% | 8.01 | 1.91% | 1.19% |
+| 25 | 43.6 | 38.3% | 7.82 | 0.24% | 0.06% |
+| 50 | 182.1 | 100.0% | 20.64 | 0.77% | 0.28% |
+| 75 | 379.7 | 99.9% | 21.23 | 1.43% | 2.21% |
+| 100 | 405.1 | 100.0% | 21.30 | 0.23% | 0.77% |
+
+**41% of the blood flow goes to units sitting at mixed-venous PO2** — units
+that have had their oxygen taken and can give none back. They are a shunt in
+everything but name, which is why turning the named shunt off changed nothing.
+Perfusion-weighted mean content is 17.15 mL/dL against 20.10 fully saturated.
+
+**Faster stirring does not fix it.** `tau_mix` is the time constant for
+cardiogenic mixing between units — HANDOVER has always called it "not well
+characterised". Sweeping it 180× with the shunt off:
+
+| `tau_mix` (s) | PAO2 | PaO2 | a-A gap |
+|---|---|---|---|
+| 1 | 282.8 | 99.6 | **183.1** |
+| 45 shipped | 365.5 | 70.1 | 295.4 |
+| 180 | 390.6 | 60.9 | 329.8 |
+
+At near-instant stirring a **183 mmHg gap survives**. So the gap is not simply
+"units that have not had time to equilibrate with each other".
+
+#### AND THE HEADLINE "PaO2 81% LOW" OVERSTATES IT — this is the part that matters
+
+**PaO2 is a hypersensitive readout above about 150 mmHg**, because the oxygen
+dissociation curve is flat there: the blood is already saturated, so a
+negligible content change moves PaO2 enormously. Going from 99% to 100%
+saturation costs 0.20 mL/dL of content and takes PaO2 from 158 mmHg to
+unbounded. The same disagreement with Stock, stated three ways:
+
+| | Stock, measured | ours | difference |
+|---|---|---|---|
+| PaO2 | 314.0 | 60.5 | **-80.7%** |
+| SaO2 | 99.87% | 85.34% | **-14.5%** |
+| arterial O2 content | 21.02 mL/dL | 17.34 mL/dL | **-17.5%** |
+
+**The model is 17.5% low on arterial oxygen content.** That is a serious
+disagreement and it is still the largest in the project — but it is an ordinary
+one, not the 81% catastrophe the PaO2 framing implies, and the difference is
+not rhetorical. It changes three things:
+
+1. **This limb should be judged on content or saturation, not PaO2.** Every
+   scorecard row and every future band for it. PaO2 above 150 mmHg carries
+   almost no information about oxygen carriage and enormous numerical leverage.
+2. **It puts the oxygen and CO2 limbs on the same scale.** CO2 is out by about
+   10% at 300 s; oxygen by 17.5% on content. Comparable, one mechanism, and
+   the CO2 limb no longer looks like the only real problem.
+3. **It makes the "81%" entries above overstatements** wherever they appear in
+   this file. They are not struck, because -80.7% on PaO2 is arithmetically
+   true; but it is the wrong denominator and should not be quoted alone again.
+
 #### What is left, and it is a specific question
 
 A near-homogeneous lung, alveolar PO2 above 300, cardiac output propped up,

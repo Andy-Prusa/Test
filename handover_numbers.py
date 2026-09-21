@@ -941,6 +941,56 @@ print("    by high inspired oxygen where true shunt is not, yet a zero-shunt")
 print("    lung with alveolar PO2 above 360 still shows a 295 mmHg gap.")
 
 # ---------------------------------------------------------------------------
+print("\nTHE MECHANISM TRACED, AND WHY 'PaO2 81% LOW' OVERSTATES IT")
+print("  Faster cardiogenic stirring between lung units does NOT close the gap.")
+print("  tau_mix is that stirring's time constant; HANDOVER has always called")
+print("  it 'not well characterised'. Swept 180x with the shunt at zero:")
+for _tm, _wa, _wp in ((1.0, 282.8, 99.6), (45.0, 365.5, 70.1),
+                      (180.0, 390.6, 60.9)):
+    _r = _obs(tau_mix=_tm, **_NS)
+    check(f"tau_mix {_tm:5.1f} s: alveolar PO2", at(_r, 'pao2_alv', 300), _wa,
+          3.0, " mmHg")
+    check(f"tau_mix {_tm:5.1f} s: arterial PaO2", at(_r, 'pao2', 300), _wp,
+          2.0, " mmHg")
+print("    A 183 mmHg gap survives NEAR-INSTANT stirring, so the gap is not")
+print("    just units that have not had time to equilibrate with each other.")
+print("    Looking inside the 80 units at 300 s (instrumented copy, shunt 0)")
+print("    they are BIMODAL: 41% of the BLOOD FLOW goes to units sitting at")
+print("    mixed-venous PO2 (38-44 mmHg, 38% saturated) which have had their")
+print("    oxygen taken and can give none back -- a shunt in all but name,")
+print("    which is why turning the named shunt off changed nothing.")
+print("    NOW THE PART THAT MATTERS. PaO2 is a hypersensitive readout above")
+print("    ~150 mmHg because the dissociation curve is FLAT there. The same")
+print("    disagreement with Stock, stated three ways:")
+_S_PO2, _O_PO2, _PH, _PC = 314.0, 60.5, 7.24, 70.0
+_s_st = bg.so2_from_po2(_S_PO2, _PH, _PC, 37.0)
+_s_us = bg.so2_from_po2(_O_PO2, _PH, _PC, 37.0)
+_c_st = bg.HUFNER * 15.0 * _s_st + bg.O2_SOL * _S_PO2
+_c_us = bg.HUFNER * 15.0 * _s_us + bg.O2_SOL * _O_PO2
+check("Stock PaO2 314 implies arterial O2 content", _c_st, 21.02, 0.05,
+      " mL/dL")
+check("our PaO2 60.5 implies arterial O2 content", _c_us, 17.34, 0.05,
+      " mL/dL")
+check("disagreement stated as PaO2", 100 * (_O_PO2 - _S_PO2) / _S_PO2, -80.7,
+      0.3, " %")
+check("disagreement stated as SATURATION", 100 * (_s_us - _s_st) / _s_st,
+      -14.5, 0.3, " %")
+check("disagreement stated as OXYGEN CONTENT", 100 * (_c_us - _c_st) / _c_st,
+      -17.5, 0.3, " %")
+check("PaO2 needed for SaO2 99% -- the flatness, quantified",
+      brentq(lambda x: bg.so2_from_po2(x, _PH, _PC, 37.0) - 0.99, 10, 700),
+      158.1, 1.0, " mmHg")
+print("    Going 99% -> 100% saturation costs 0.20 mL/dL of content and takes")
+print("    PaO2 from 158 mmHg to unbounded. So the model is 17.5% LOW ON")
+print("    ARTERIAL OXYGEN CONTENT -- serious, still the largest disagreement")
+print("    in the project, but an ORDINARY one, not the 81% catastrophe the")
+print("    PaO2 framing implies. Three consequences: judge this limb on")
+print("    CONTENT or SATURATION, never PaO2 above 150; it puts oxygen (17.5%)")
+print("    and CO2 (~10%) on the same scale, one mechanism; and the '81%'")
+print("    entries elsewhere in HANDOVER are the wrong denominator and should")
+print("    not be quoted alone again.")
+
+# ---------------------------------------------------------------------------
 print("\nTHE STOP-ABSORBING RULE IS ALREADY IN THE MODEL -- verified 2026-09-21")
 print("  On 2026-09-20 this file's author proposed 'giving closed units a")
 print("  stop-absorbing rule' as the proper fix for the recoil floor. That was")

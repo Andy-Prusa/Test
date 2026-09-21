@@ -50,6 +50,27 @@ refused four times, each recorded in HANDOVER with the reasoning. A change
 needs a mechanism, not a fit. If a correction makes a benchmark WORSE, that is
 information — record it, do not reach for a compensating parameter.
 
+## How to report back
+
+These are about the reply, not the physics, and they were asked for because the
+default was wrong in both directions.
+
+**End every reply with a list of what the reader has to do.** Split it: what
+only they can decide, what needs something fetched from outside, and what you
+can do next on a word from them. Specific and ordered, not "let me know how
+you'd like to proceed".
+
+**Gloss every code reference in plain language.** `crs = 85.0` means nothing on
+its own — say "respiratory compliance, how stiff the lungs are". Same for file
+names, parameter names and equations. The reader is an anaesthetist, not a
+Python programmer, and a term that is obvious to whoever wrote the line is
+often opaque to whoever has to judge it.
+
+**Lead with the finding, not the method.** What changed, what it means, what is
+still wrong. The working — sweeps, intermediate numbers, what was ruled out —
+belongs in `HANDOVER.md` and `handover_numbers.py`, where it is checkable, not
+in the reply, where it is just volume.
+
 ## Commits
 
 `.githooks/pre-commit` runs `test_validation.py` and `test_parity.py` and
