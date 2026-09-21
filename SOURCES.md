@@ -50,6 +50,7 @@ shortcut this project has been burned by.
 | **Wei J, Gao L, Sun F, Zhang M, Gu W.** Volume of tidal gas movement in the nonventilated lung during one-lung ventilation. *BMC Anesthesiology* 2020;20:20 | nothing — see §4 | held |
 | **Ellis R, et al.** Comparison of apnoeic oxygen techniques in term pregnant subjects: response. *Br J Anaesth* 2023;130:e429-e430 (correspondence) | context | read. Holding the correspondence does **not** verify the 2022 paper's numbers |
 | **Laviola M, Dinsmore J, Lacquiere D, Niklas C, Heard A, Hardman JG.** Jet oxygenation via a narrow-bore cannula in the CICO scenario — **Supplementary Digital Content only** | MODEL comparator state at SaO2 40% | Table S5 read. **The main text is not held** — see §3 |
+| **O'Loughlin CJ, Phyland DJ, Vallance NA, Giddings C, Malkoutzis E, Gunasekera E, Webb A, Barnes R.** Low-flow apnoeic oxygenation for laryngeal surgery: a prospective observational study. *Anaesthesia* 2020;75:1070-1075, doi 10.1111/anae.14959 | four bands in `test_validation.py`, and five claims in `editorial.md` | **Read in full 2026-09-21.** n=64, age 47 (16), BMI 25 (4) — our test configuration is exact. Caught one error: see §5 |
 | **Farmery AD, Roe PG.** A model to describe the rate of oxyhaemoglobin desaturation during apnoea. *Br J Anaesth* 1996;76:284-291 | nothing yet — see §4 | read in full 2026-09-20 |
 
 ---
@@ -67,7 +68,6 @@ is recorded in `HANDOVER.md` as the oldest failure mode here.
 | **Toner AJ, et al.** *Anesth Analg* 2019;128:1154-9 | two bands, the lean patient configuration in `buccal_numbers.py`, one CO2-store anchor, a `README.md` row, `editorial.md` ref [1] | The model gives **403.4 s against a published IQR floor of 405**; it passes only because the band was widened to 380. The sham-arm pharyngeal fraction is a model *input*, not a measurement, and moving it 0.21→0.30 takes the model across most of the published IQR |
 | **Heard A, et al.** *Anesth Analg* 2017;124:1162-7 | a band that **is** the published IQR (244-314 s), and the obese configuration behind every obese number in `buccal_numbers.py` and `editorial.md` | A transcription error moves both band edges at once. Mohanty 2021 contests the buccal figure by about 2× (`HANDOVER.md`) |
 | **The four positioning trials: Lane 2005, Ramkumar 2011, Altermatt 2005, Dixon 2005.** Surnames and years only | `tilt_gain_lean` and `tilt_gain_bmi`, stated in `apnoea_core.py` as "calibrated against four randomised trials", then graded by three bands set from those same four | **Not retrievable as cited, by anyone, including us.** Also a fit graded by its own calibration target (§6). The limb is not confined to the positioning test: the obese buccal configuration runs `tilt_deg=25` |
-| **O'Loughlin CJ, et al.** *Anaesthesia* 2020;75:1070-5 | four bands, and **five unhedged quantitative claims in `editorial.md`** carrying the editorial's central CO2 recommendation | The editorial claims are checkable against nothing held |
 | **The one-lung-ventilation narrative review**, doi 10.3390/jcm15135078. No author or title recorded | `protocol/evidence.md` calls it "obtained and read" and draws an **absence** claim from it | Reasoning from what a document does not contain is the move CLAUDE.md forbids outright. Open access |
 | ***Circulation* 1963;28:346**, "Hemodynamic Effects of Chronic Severe Anemia". **No author recorded** | `hb_co_exp` = 1.535, derived from it; a band in `test_validation.py` | The band grades the fit against the number the fit was made from. Whether it is a paper or a meeting abstract is **unknown**, and that changes whether the "CLINICAL" label is honest |
 | **Varat MA, Adolph RJ, Fowler NO.** *Am Heart J* 1972;83:415-26 | `hb_co_threshold` = 7.0 | A **verbatim quotation in quotation marks** ships in three files from a paper nobody here has read |
@@ -90,6 +90,111 @@ determinable from the citation… Only the citations were read, not the papers."
 `test_validation.py`'s docstring **drops both hedges** and reads "Checked
 2026-09-19", which a reader will take as verification of papers nobody opened.
 The argument is probably right. It is currently made from citations, not papers.
+
+---
+
+## 1b. Obtained 2026-09-21, and what they changed
+
+**Laviola M, Dinsmore J, Lacquiere D, Niklas C, Heard AH, Hardman JG.
+Emergency Jet Oxygenation Via a Narrow-Bore Cannula: A Computational Modelling
+Investigation.** *Anesthesia & Analgesia*, Research Letter, 4 pp.
+**doi 10.1213/ANE.0000000000008194** — the DOI `test_validation.py` asserted is
+CORRECT, now confirmed against the paper.
+
+**THE "~510 s" IN OUR ARBITER DOES NOT EXIST IN EITHER DOCUMENT.** We now hold
+the main text AND the Supplementary Digital Content. `test_validation.py` bands
+time-to-SaO2-40% at 400-620 s and sources it "MODEL comparator; ~510 s
+(8.5 min)". Searched exhaustively: the string "510" appears **zero** times in
+the main text, and every duration in the paper is 3 min (preoxygenation), 30 s
+(insufflation interval), 10 min (protocol length), 60 s and 86 s (peak
+saturation times) and 39 s (time to restore SaO2 >90%). The SDC gives the
+*state* at SaO2 40%, explicitly not the *time* to it. **That band's stated
+source is not in the source.** It must be struck or re-sourced; it cannot stand
+as written.
+
+**What the main text does give us, verified:**
+
+- **PaCO2 rose by a mean of 38.2 (8.2) mmHg over 10 minutes.** This is a real,
+  citable comparator and a far better one than the figure it replaces.
+- Protocol: 3 min preoxygenation, then apnoea with **complete upper airway
+  obstruction**; cricothyroidotomy completed at SaO2 40% with a 14-gauge cannula
+  and a RapidO2 device at 15 L/min (250 mL/s); insufflations every 30 s if SaO2
+  <70%; continued 10 min.
+- SaO2 restored above 90% within **39 s** in all subjects.
+- Peak end-inspiratory pressure limited to **10.5 cmH2O**.
+
+---
+
+**Shamohammadi H, Weaver L, Saffaran S, Tonelli R, Laviola M, Laffey JG,
+Camporota L, Scott TE, Hardman JG, Clini E, Bates DG.** Airway pressures
+generated by high flow nasal cannula in patients with acute hypoxemic
+respiratory failure: a computational study. *Respiratory Research*
+2025;26:9, doi 10.1186/s12931-025-03096-x. Open access.
+
+**This is the Nottingham simulator for the seventh time.** Laviola, Hardman,
+Bates and Saffaran are all on it, and Saffaran is the author of the paediatric
+ARDS paper already in the ICSM validation chain. It is a MODEL, not a
+measurement — "a high-fidelity mechanistic computational model of the
+cardiopulmonary system". It reinforces rather than relieves `HANDOVER.md`'s
+"THESE ARE NOT SIX INDEPENDENT COMPARATORS. THEY ARE ONE SIMULATOR". Nothing in
+our model does high-flow nasal oxygen, so it sets no parameter here; its value
+is as another window on how that simulator is built.
+
+---
+
+**Brown CA III. Buccal Oxygenation During Prolonged Laryngoscopy Prevents
+Desaturation in Obese Patients.** 19 October 2016. **This is a one-page
+commentary on Heard 2017, not the paper.** Useful context; it cannot verify a
+band. **Heard 2017 itself is still not held.**
+
+**`Douglas_AR.docx`** is a reference list, not a source — a page of citations
+including Hardman 1998 BJA 81:327-32, Dale & Rahn 1952 and Crotti 2001. Useful
+for ordering; it verifies nothing.
+
+**Also obtained 2026-09-21, not yet mined:**
+
+- **Hardman JG, Bedforth NM, Ahmed AB, Mahajan RP, Aitkenhead AR.** A physiology
+  simulator: validation of its respiratory components and its ability to predict
+  the patient's response to changes in mechanical ventilation. *Br J Anaesth*
+  1998;81:327-332. **Full text, 6 pp.** Previously held only as screenshots.
+  This is the foundational validation of the Nottingham simulator, so it bears
+  directly on `HANDOVER.md`'s "How ICSM validated itself".
+- **Laviola M, Niklas C, Das A, Bates DG, Hardman JG.** Effect of oxygen
+  fraction on airway rescue: a computational modelling study. *Br J Anaesth*
+  2020. **Full text, 6 pp.** This is the comparator behind
+  `test_icsm_airway_rescue`, and `handover_numbers.py` currently lists its
+  numbers (38.7 vs 42.3 kPa) under "NOT REPRODUCIBLE". Now checkable.
+- **Mohanty R, George LR, George SP, Babu M.** Apnoeic oxygenation during
+  simulated difficult intubation in obese patients: buccal RAE versus nasal
+  cannula. *Anesth Essays Res* 2021;15(4):408-412, doi 10.4103/aer.aer_114_21.
+  **Read.** n=50, ASA I-II, BMI >= 30. Buccal RAE mean apnoea **375.3 (116.6) s**
+  against nasal cannula 316.1 (94.1), P = 0.054. This **verifies exactly** what
+  `HANDOVER.md` records secondhand, and it is the head-to-head that contests
+  Heard's buccal figure.
+
+**Duplicates, no new information:** the second `Rothen_HU.pdf` and the second
+`venegas-et-al-1998` are byte-identical (same MD5) to the copies already held.
+
+---
+
+## NOT FOR THE REPOSITORY — unpublished trial data
+
+**`Glottic01_analysed.xlsx`** (supplied twice, byte-identical) is a **TCM4/40
+transcutaneous monitor export for one identified patient**, ID "glottic01",
+7 March 2017, 2931 rows of second-by-second O2, CO2, SpO2 and pulse over about
+49 minutes, with session and arterialization event marks.
+
+**Nothing from it has entered this repository and nothing will without a
+ruling.** CLAUDE.md: "Only published data goes in this repository. Not
+unpublished trial results, not a collaborator's spreadsheet, not numbers
+derived from either — including derived numbers in prose, in a commit message,
+or as the value of a parameter." That rule exists because trial figures reached
+`HANDOVER.md` and `protocol/evidence.md` once before and had to be redacted.
+
+It may be extremely valuable — a single-patient transcutaneous CO2 trace under
+apnoea is close to what this project has been asking Toner for. But the
+decision to use it is the data owner's, not the model's, and it needs to be
+recorded before any number crosses over.
 
 ---
 
@@ -234,6 +339,26 @@ measured.
 ---
 
 ## 5. Errors this audit found in documents, not in papers
+
+**Caught by actually reading O'Loughlin, 2026-09-21 — the first error a
+newly-obtained paper has exposed.** `editorial.md` said their "own tabulation
+shows arterial studies clustering at **0.40-0.45** kPa.min-1". It does not. The
+paper's stated range is **0.15-0.45** across all studies, and the arterial and
+transcutaneous ones it cites are 0.4 (Frumin), 0.24 (Gustafsson) and 0.30
+(Toner) — a spread, not a cluster. The editorial's central CO2 recommendation
+leaned on that cluster. Corrected.
+
+Everything else in that paragraph verified word for word: the 18.7 (7.2) min
+mean apnoea, the 0.15 (0.10) kPa.min-1 being venous, the explicit statement
+that "peripheral venous and end-tidal carbon dioxide measurements
+significantly underestimate carbon dioxide accumulation", the BMI>45 and
+hypercapnia exclusion criteria, and the conclusion being for "short duration"
+surgery in "non-obese patients". Our test configuration is also exact: n=64,
+mean (SD) age 47 (16), BMI 25 (4).
+
+**This is the argument for getting the other twelve.** Four claims right, one
+wrong, and the wrong one was load-bearing — findable in twenty minutes with
+the paper in hand and not findable at all without it.
 
 Fixed on 2026-09-21 in the same pass that created this file:
 

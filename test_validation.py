@@ -320,8 +320,21 @@ def test_icsm_jet_2026():
     r = simulate(p, [AirwayEpoch(1400, resistance=OBS, fgo2=0.21)],
                  dt=DT, stop_sao2=0.0)
     t40 = time_to(r, 'sao2', 40)
-    check("ICSM jet, time to SaO2 40%", 9999 if t40 is None else t40,
-          400, 620, " s", "MODEL comparator; ~510 s (8.5 min)")
+    # THE SOURCE OF THIS BAND DOES NOT EXIST. Flagged 2026-09-21 after
+    # obtaining the main text. We now hold BOTH the main text and the
+    # Supplementary Digital Content, and "~510 s (8.5 min)" is in neither.
+    # "510" appears zero times in the main text; every duration in the paper is
+    # 3 min preoxygenation, 30 s insufflation interval, 10 min protocol, 60 s
+    # and 86 s peak-saturation times, and 39 s to restore SaO2 above 90%. The
+    # SDC gives the STATE at SaO2 40%, explicitly not the TIME to it.
+    # The band is left in place and failing-visible rather than silently
+    # deleted, because removing it would hide that the suite once graded
+    # against a figure nobody can find. STRIKE OR RE-SOURCE IT -- see
+    # SOURCES.md section 1b.
+    check("ICSM jet, time to SaO2 40% [SOURCE NOT FOUND -- see SOURCES.md]",
+          9999 if t40 is None else t40,
+          400, 620, " s", "MODEL comparator; stated source ~510 s IS NOT IN "
+          "THE PAPER")
     i = int(np.searchsorted(r['t'], t40))
     # Their SD of 0.4 mmHg is the internal spread of a 100-subject in-silico
     # cohort with tightly controlled parameters, not measurement uncertainty,

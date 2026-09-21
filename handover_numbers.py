@@ -1082,6 +1082,44 @@ print("    whose only parameter is unsourced would be grading noise. Read")
 print("    Marshall first -- see SOURCES.md.")
 
 # ---------------------------------------------------------------------------
+print("\nO'LOUGHLIN 2020 OBTAINED AND READ IN FULL -- 2026-09-21")
+print("  Anaesthesia 2020;75:1070-1075, doi 10.1111/anae.14959. Read off the")
+print("  page: n=64 (42 female), mean (SD) age 47 (16) y, BMI 25 (4) kg/m2;")
+print("  10-French tracheal catheter at 0.5-1.0 L/min; apnoea 18.7 (7.2) min;")
+print("  VENOUS PCO2 rate of rise 0.15 (0.10) kPa/min; 62/64 completed; all")
+print("  patients SpO2 98-100% at the start of apnoea. Exclusions: BMI > 45,")
+print("  any condition exacerbated by hypercapnia, severe cardiorespiratory")
+print("  disease, predicted prolonged surgery.")
+check("their apnoea 18.7 min, in seconds", 18.7 * 60.0, 1122.0, 0.5, " s")
+check("their venous rate 0.15 kPa/min, in Pa/min", 0.15 * 1000.0, 150.0, 0.5,
+      " Pa/min")
+check("their venous rate in mmHg/min", 0.15 * 7.50062, 1.125, 0.005,
+      " mmHg/min")
+_ol = simulate(Patient(weight=76.5, height=1.75, age=47, hb=14.0),
+               [AirwayEpoch(1400, resistance=2, fgo2=1.0)],
+               dt=DT, feo2_start=0.92, stop_sao2=0.0)
+check("ours: SpO2 at their mean apnoea of 18.7 min", at(_ol, 'spo2', 1122.0),
+      99.2, 0.6, " %")
+print("    OUR TEST CONFIGURATION IS EXACT -- test_validation.py already used")
+print("    BMI 25 and age 47, and the paper gives 25 (4) and 47 (16).")
+print("    ONE EDITORIAL CLAIM WAS WRONG AND IS NOW FIXED. editorial.md said")
+print("    their 'own tabulation shows arterial studies clustering at")
+print("    0.40-0.45 kPa/min'. The paper's range is 0.15-0.45 ACROSS ALL")
+print("    studies, and the arterial/transcutaneous ones it cites are 0.4")
+print("    (Frumin), 0.24 (Gustafsson) and 0.30 (Toner) -- a spread, not a")
+print("    cluster, and the editorial's CO2 recommendation leaned on it.")
+print("    Four other claims verified word for word: the 18.7 min mean, the")
+print("    0.15 being VENOUS, the explicit statement that venous and end-tidal")
+print("    'significantly underestimate carbon dioxide accumulation', the")
+print("    BMI>45 and hypercapnia exclusions, and the conclusion being for")
+print("    'short duration' surgery in 'non-obese patients'.")
+print("    SECONDHAND, recorded as such: O'Loughlin reports Frumin 1959 as")
+print("    0.4 kPa/min arterial in EIGHT subjects over surgery lasting 18-55")
+print("    min. That corroborates apnoea_core.py's '3.0-3.4 mmHg/min arterial")
+print("    (Frumin)' --", f"{0.4*7.50062:.2f} mmHg/min -- and the n=8 read off")
+print("    Frumin's own page 789. It does NOT verify the pH 6.72 or PaCO2 250.")
+
+# ---------------------------------------------------------------------------
 print("\nTHE FRC REGRESSION -- the largest UNCITED lever in the model")
 print("  Flagged 2026-09-21 by the pre-release source audit (SOURCES.md). The")
 print("  regression apnoea_core.py anchors FRC to --")
