@@ -246,6 +246,46 @@ would collapse both together. It does not:
 PaO2 is 127 against Stock's 314.** The CO2 gap is dispersion-driven; the oxygen
 gap has a large dispersion-INDEPENDENT floor. Two different defects.
 
+> ### THIS REFUTATION IS ITSELF REFUTED — 2026-09-21
+>
+> **The test above left the shunt switched on**, so what it measured as a
+> "dispersion-independent floor" was the shunt. Re-run with the shunt forced to
+> exactly zero (`shunt_base` 0, `perfusion_gain` 0, `inflow_mech_frac` 0,
+> `max_closed` 0 — in plain terms, no blood allowed to bypass gas exchange by
+> any route), the floor is not there:
+>
+> | `vq_log_sd` — how unevenly blood flow and gas volume are matched | a-A O2 gap, shunt ON (old test) | a-A O2 gap, shunt OFF | PaO2, shunt OFF |
+> |---|---|---|---|
+> | 0.01 | — | **-38.7** | **327.5** |
+> | 0.20 | **178** | **42.4** | 252.9 |
+> | 0.50 | 280 | 253.6 | 86.1 |
+> | 0.70 shipped | 319 | 295.4 | 70.1 |
+>
+> The gap **collapses with the dispersion** and goes slightly negative at a
+> near-uniform lung, and PaO2 there is **327.5 against Stock's measured
+> 314 (87)** — inside the measurement. So the oxygen defect and the CO2 defect
+> ARE one defect: blood mixes by CONTENT, which is linear, but is reported as
+> PARTIAL PRESSURE, which is curved, so a perfusion-weighted content average
+> lands low on the curve. The 178 mmHg "floor" was 136 mmHg of shunt plus 42 of
+> residual dispersion.
+>
+> **The shunt is not the actor either, and that was tested separately.** The
+> long-promised `shunt_base` sweep was finally run: taking it from 0.05 to 0.00
+> moves PaO2 only 60.5 -> 64.1, and total shunt is still 0.132 because the
+> per-unit absorption collapse supplies it. Turning off every collapse lever as
+> well reaches shunt exactly 0.000 and PaO2 70.1 — still 295 mmHg below alveolar.
+> Only the dispersion moves it.
+>
+> **This does not license setting `vq_log_sd` low.** Tokics measures the spread
+> WIDER than we use, not narrower, so the fix cannot be the parameter. What the
+> test changes is the question: it is no longer "what is the extra oxygen
+> defect" but "is one shared mechanism — perfusion-weighted content averaging
+> across a V/Q spread — implemented correctly?" One thing that argues it is not:
+> classical teaching is that V/Q inequality is largely CORRECTABLE by a high
+> inspired oxygen fraction while true shunt is not, yet here a zero-shunt lung
+> with alveolar PO2 above 360 still produces a 295 mmHg gap. That is the next
+> thing to check, and it is a mechanism question, not a parameter sweep.
+
 #### What is left, and it is a specific question
 
 A near-homogeneous lung, alveolar PO2 above 300, cardiac output propped up,

@@ -885,6 +885,107 @@ print("    tested that falls BELOW Toner's IQR. The buccal arm holds to 750 s")
 print("    anywhere at or above 0.70, so its traces would settle nothing.")
 
 # ---------------------------------------------------------------------------
+print("\nTHE OXYGEN DEFECT AND THE CO2 DEFECT ARE ONE DEFECT -- 2026-09-21")
+print("  HANDOVER once recorded this hypothesis as REFUTED. That test left the")
+print("  SHUNT ON, so what it called a dispersion-independent floor was the")
+print("  shunt. These rows are the re-test with no blood allowed to bypass gas")
+print("  exchange by any route.")
+_NS = dict(inflow_mech_frac=0.0, perfusion_gain=0.0, shunt_base=0.0,
+           max_closed=0.0)
+
+
+def _obs(**kw):
+    """Stock's reference patient, sealed airway, preoxygenated."""
+    _p = Patient(weight=70, height=1.75, age=45, hb=15.0, **kw)
+    return simulate(_p, [AirwayEpoch(360, resistance=OBS, fgo2=0.21)],
+                    dt=DT, feo2_start=0.87, paco2_start=39.0, stop_sao2=0.0)
+
+
+print("    First: the long-promised shunt_base sweep. It is NOT the actor.")
+for _sb, _w in ((0.00, 64.1), (0.05, 60.5), (0.20, 50.6)):
+    check(f"shunt_base {_sb:.2f}: PaO2 at 300 s", at(_obs(shunt_base=_sb),
+          'pao2', 300), _w, 1.0, " mmHg")
+check("shunt_base 0.00 still leaves total shunt at",
+      at(_obs(shunt_base=0.0), 'shunt', 300), 0.132, 0.01, "")
+print("    Zeroing it moves PaO2 3.6 mmHg against a 254 mmHg gap, and the")
+print("    shunt is still 0.13 because the per-unit absorption collapse")
+print("    supplies it. max_closed was already shown inert. So neither named")
+print("    suspect is the actor.")
+_allof = _obs(**_NS)
+check("every collapse lever off: total shunt", at(_allof, 'shunt', 300), 0.0,
+      1e-9, "")
+check("every collapse lever off: alveolar PO2", at(_allof, 'pao2_alv', 300),
+      365.5, 3.0, " mmHg")
+check("every collapse lever off: arterial PaO2", at(_allof, 'pao2', 300),
+      70.1, 2.0, " mmHg")
+print("    A 295 mmHg gap with the shunt at EXACTLY zero. Now sweep the V/Q")
+print("    spread with the shunt still off -- the gap tracks it, and goes")
+print("    slightly NEGATIVE at a near-uniform lung:")
+for _sd, _wg, _wp in ((0.01, -38.7, 327.5), (0.20, 42.4, 252.9),
+                      (0.50, 253.6, 86.1), (0.70, 295.4, 70.1)):
+    _r = _obs(vq_log_sd=_sd, **_NS)
+    check(f"vq_log_sd {_sd:.2f}, no shunt: a-A O2 gap",
+          at(_r, 'pao2_alv', 300) - at(_r, 'pao2', 300), _wg, 3.0, " mmHg")
+    check(f"vq_log_sd {_sd:.2f}, no shunt: PaO2 (Stock measured 314 +- 87)",
+          at(_r, 'pao2', 300), _wp, 3.0, " mmHg")
+print("    At a near-uniform lung PaO2 is 327.5 against Stock's measured 314,")
+print("    INSIDE the measurement. So both defects are one mechanism: blood")
+print("    mixes by CONTENT, which is linear, and is reported as PARTIAL")
+print("    PRESSURE, which is curved, so a perfusion-weighted content average")
+print("    lands low on the curve.")
+print("    THIS DOES NOT LICENSE SETTING vq_log_sd LOW. Tokics measures the")
+print("    spread WIDER than we use. The question is no longer 'what is the")
+print("    extra oxygen defect' but 'is the shared mechanism implemented")
+print("    correctly'. Against it: V/Q inequality is classically CORRECTABLE")
+print("    by high inspired oxygen where true shunt is not, yet a zero-shunt")
+print("    lung with alveolar PO2 above 360 still shows a 295 mmHg gap.")
+
+# ---------------------------------------------------------------------------
+print("\nTHE STOP-ABSORBING RULE IS ALREADY IN THE MODEL -- verified 2026-09-21")
+print("  On 2026-09-20 this file's author proposed 'giving closed units a")
+print("  stop-absorbing rule' as the proper fix for the recoil floor. That was")
+print("  wrong: it is already there. apnoea_core.py weights each unit's")
+print("  perfusion by (1 - coll_c), so a fully collapsed unit gets ZERO share")
+print("  of blood flow and takes up no gas at all.")
+_sa = simulate(Patient(weight=70, height=1.75, age=45, hb=14.0,
+                       hr_term_sao2=0.0),
+               [AirwayEpoch(1800, resistance=OBS, fgo2=0.21)],
+               dt=0.1, stop_sao2=0.0)
+check("sealed lung volume at 1390 s", at(_sa, 'va', 1390), 425.2, 3.0, " mL")
+check("sealed lung volume at 1790 s", at(_sa, 'va', 1790), 425.0, 3.0, " mL")
+check("volume LOST over those 400 s", at(_sa, 'va', 1390) - at(_sa, 'va', 1790),
+      0.21, 0.3, " mL")
+check("alveolar PO2 at 1790 s", at(_sa, 'pao2_alv', 1790), 0.0, 0.5, " mmHg")
+check("mixed venous PO2 at 1790 s", at(_sa, 'pvo2', 1790), 0.0, 0.5, " mmHg")
+print("    0.2 mL lost in the last 400 s, with the heart forced to keep")
+print("    beating. A lung that kept absorbing would go to zero volume. The")
+print("    terminator is real and already modelled.")
+
+# ---------------------------------------------------------------------------
+print("\nEBATA TABLE II, re-read off the page 2026-09-21")
+print("  protocol/evidence.md proposed PVR +63% as one of 'two candidate")
+print("  benchmarks that ARE clean'. Ebata's own Results say otherwise: 'The")
+print("  SVR was slightly decreased and PVR increased, but the changes were")
+print("  not statistically significant.' Only MPAP and CO reach significance.")
+print("      pH    7.37 (0.01) -> 7.17 (0.02)   P<0.001")
+print("      PaCO2 45 (1)      -> 78 (3)        P<0.001")
+print("      MPAP  11 (1)      -> 17 (2)        P<0.01    <- usable")
+print("      CO    4.8 (0.7)   -> 5.7 (0.8)     P<0.05    <- usable")
+print("      PaO2, MAP, HR, PCWP, RAP, SVR, PVR           all NS")
+_eb = simulate(Patient(weight=70, height=1.75, age=45, hb=14.0),
+               [AirwayEpoch(600, resistance=2, fgo2=1.0)],
+               dt=DT, feo2_start=1.0, stop_sao2=0.0)
+check("ours: mean PAP at 600 s (Ebata 17 +- 2, P<0.01)", at(_eb, 'pap', 600),
+      19.3, 1.5, " mmHg")
+check("ours: cardiac output at 600 s (Ebata 5.7 +- 0.8, P<0.05)",
+      at(_eb, 'co', 600), 5.03, 0.3, " L/min")
+print("    NOT ADDED TO test_validation.py AS A BAND. The pulmonary limb is")
+print("    wholly set by Marshall 1994, which nobody here has read, and PAP")
+print("    swings 54% across that paper's plausible range. Banding a limb")
+print("    whose only parameter is unsourced would be grading noise. Read")
+print("    Marshall first -- see SOURCES.md.")
+
+# ---------------------------------------------------------------------------
 print("\nTHE FRC REGRESSION -- the largest UNCITED lever in the model")
 print("  Flagged 2026-09-21 by the pre-release source audit (SOURCES.md). The")
 print("  regression apnoea_core.py anchors FRC to --")

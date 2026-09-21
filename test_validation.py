@@ -57,7 +57,7 @@ def patent(pt, fg, dur=1200, feo2=0.87, dt=DT):
 
 
 # =====================================================================
-def test_toner_2018():
+def test_toner_2019():
     """Toner AJ et al. Anesth Analg 2019;128:1154-9. CLINICAL.
     Healthy non-obese, prolonged laryngoscopy, supine.
     Sham 447 s (IQR 405-525); buccal 750 s (IQR 750-750), 750 s ceiling."""
@@ -402,7 +402,7 @@ if __name__ == "__main__":
     print("=" * 74)
     print("CLINICAL TARGETS — measurements in patients. These are the arbiters.")
     print("=" * 74)
-    test_toner_2018(); test_heard_2017(); test_oloughlin_2020()
+    test_toner_2019(); test_heard_2017(); test_oloughlin_2020()
     test_positioning_trials(); test_cardiac_output()
     test_anaemia_cardiac_response()
     test_stock_1989(); test_moreault_2021()

@@ -194,10 +194,19 @@ Ebata's regression lines, worth having (x = change in PaCO2, torr):
     halothane     dHR = 0.19x + 2.0      dMAP = 0.09x + 0.9
     brain death   dHR = -0.02x + 0.5     dMAP = -0.02x + 0.9
 
-**Two candidate benchmarks that ARE clean**, because they do not depend on
-sympathetic integrity: mean PAP 11 -> 17 mmHg and PVR 112 -> 183 (+63%) at
-PaCO2 78 / pH 7.17, with the rise in PAP correlating with the rise in PVR
-(r=0.72, P<0.05) -- i.e. hypercapnic pulmonary vasoconstriction, which is a
+**~~Two candidate benchmarks that ARE clean~~ ONE, corrected 2026-09-21.**
+Table II was re-read off the page. **PVR 112 -> 183 (+63%) is NOT SIGNIFICANT
+in Ebata's own analysis**, and so is SVR: the Results say "The SVR was slightly
+decreased and PVR increased, but the changes were not statistically
+significant". Proposing a +63% change the source itself declines to claim would
+have been benchmarking against noise. Table II's P values in full: pH, PaCO2
+and BE at P<0.001; **MPAP 11 -> 17 at P<0.01**; **CO 4.8 -> 5.7 at P<0.05**;
+and PaO2, MAP, HR, PCWP, RAP, SVR and PVR all NS.
+
+So **one** candidate benchmark survives, and it does not depend on sympathetic
+integrity: mean PAP 11 -> 17 mmHg at PaCO2 78 / pH 7.17, with the rise in PAP
+correlating with the rise in PVR (r=0.72, P<0.05) -- i.e. hypercapnic
+pulmonary vasoconstriction, which is a
 direct effect. Our pulmonary limb has almost nothing testing it. This is worth
 adding.
 

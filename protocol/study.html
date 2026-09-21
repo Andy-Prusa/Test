@@ -621,9 +621,16 @@ colour.</div>
 <footer>
   Predictions in §2.3 and §5 are generated from a computational model of apnoeic oxygenation and
   airway obstruction at a fixed, recorded version, and are registered as falsifiable predictions
-  rather than offered as established physiology. The model is validated against 36 benchmarks
-  including the Moreault, Stock and Chen &amp; Scharf sources cited here, and its known
-  disagreements with those sources are the reason for this study. The model's own documentation
-  records that it cannot satisfy all three simultaneously.
+  rather than offered as established physiology. Its test suite contains 36 checks, of which
+  <strong>34 currently pass and 2 fail</strong>; but that count overstates the evidence and the
+  honest figure is <strong>roughly sixteen distinct claims against measured data</strong> — five
+  of the 36 are one assertion counted five times, two pass only by never being reached, and
+  several bands are wide enough to swallow the error they exist to catch. Chen &amp; Scharf is
+  <strong>not</strong> among the benchmarks: it is cited here as background and the model's own
+  checking script records that it cannot be used as one. The two failing checks are the
+  obstructed CO<sub>2</sub> slope against Stock and a comparison against another simulator. Those
+  disagreements, and the fact that no published study records pressure and CO<sub>2</sub> together
+  under obstruction, are the reason for this study. See <code>SOURCES.md</code> in the model
+  repository for which sources have actually been read.
 </footer>
 </div>
