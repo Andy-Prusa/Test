@@ -177,24 +177,40 @@ for ordering; it verifies nothing.
 
 ---
 
-## NOT FOR THE REPOSITORY — unpublished trial data
+## Authorised unpublished data — the Toner transcutaneous trace
 
 **`Glottic01_analysed.xlsx`** (supplied twice, byte-identical) is a **TCM4/40
 transcutaneous monitor export for one identified patient**, ID "glottic01",
 7 March 2017, 2931 rows of second-by-second O2, CO2, SpO2 and pulse over about
 49 minutes, with session and arterialization event marks.
 
-**Nothing from it has entered this repository and nothing will without a
-ruling.** CLAUDE.md: "Only published data goes in this repository. Not
-unpublished trial results, not a collaborator's spreadsheet, not numbers
-derived from either — including derived numbers in prose, in a commit message,
-or as the value of a parameter." That rule exists because trial figures reached
-`HANDOVER.md` and `protocol/evidence.md` once before and had to be redacted.
+**AUTHORISED 2026-09-21 by A. Heard, who owns the data** ("yes we can use
+glottic spreadsheet from toner"). This is the single exception to CLAUDE.md's
+published-data-only rule and it is recorded here so it stays an exception.
 
-It may be extremely valuable — a single-patient transcutaneous CO2 trace under
-apnoea is close to what this project has been asking Toner for. But the
-decision to use it is the data owner's, not the model's, and it needs to be
-recorded before any number crosses over.
+**The file itself does not go into the repository** and is not tracked, because
+`make_package.sh` builds from `git archive HEAD` and would ship it to every
+recipient. What is authorised is USING it.
+
+**Terms, so this does not become the thing the rule was written to prevent:**
+
+1. A finding that rests on this trace is **reported as resting on it, by
+   name** — "the Toner transcutaneous trace, one patient, 7 March 2017" — and
+   never as an unattributed number.
+2. It does not become **the value of a parameter** and it does not become a
+   **band in `test_validation.py`**. It is one patient. It can corroborate,
+   contradict, or suggest; it cannot calibrate.
+3. Anything derived from it that reaches a **publication** needs the study's
+   own authorship and consent position settled first, which is not a modelling
+   question.
+
+**Why it is worth having.** A second-by-second transcutaneous CO2 trace through
+an apnoea is close to what this project has been asking the Toner group for
+since 2026-09-16. Our single most-failing benchmark is the obstructed CO2 rate
+of rise, and the entire case for the three-way study is that no published
+source records pressure and CO2 together. This trace does not record pressure —
+but it is a real CO2 time course in a real patient, which is more than the CO2
+limb has ever been tested against outside Stock's eight sampled points.
 
 ---
 

@@ -45,6 +45,14 @@ used, and had to be redacted. If unpublished data suggests a finding, the
 finding can only be recorded once it stands on a published source, or on
 something internal to this code.
 
+**One authorised exception to the rule above, granted 2026-09-21.** A. Heard,
+who owns the data, authorised use of `Glottic01_analysed.xlsx` — a
+transcutaneous monitor export from the Toner study. The rule is not repealed:
+everything else unpublished stays out. The terms that make this safe are in
+`SOURCES.md`, and the important one is that a finding which rests on this trace
+alone is reported as resting on it, by name, and not laundered into a parameter
+or a benchmark band.
+
 **Do not tune a parameter to pass a benchmark.** This has been proposed and
 refused four times, each recorded in HANDOVER with the reasoning. A change
 needs a mechanism, not a fit. If a correction makes a benchmark WORSE, that is

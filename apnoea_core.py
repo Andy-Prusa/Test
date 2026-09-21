@@ -211,7 +211,31 @@ class Patient:
     # collapse is recoverable without positive pressure.
     recruit_frac: float = 0.65
     tau_recruit: float = 25.0    # s
-    crs: float = 85.0            # mL/cmH2O
+    # COMPLIANCE -- how much the lungs and chest wall expand per unit of
+    # pressure. Question answered against the paper 2026-09-21; the data
+    # exists and we hold it.
+    #
+    # Rothen 1993 Table II, read off the page: anaesthetised adults,
+    # Crs 75 (19) ml/cmH2O in group 1 (n=10) and 60 (15) in group 2 (n=6).
+    # ONE CANDIDATE ESCAPE WAS TESTED AND FAILS. The paper calls it "total
+    # dynamic compliance ... tidal volume divided by end-inspiratory airway
+    # pressure", which sounds like it would sit BELOW a static compliance and
+    # so excuse our higher value. It does not: the same Methods paragraph sets
+    # "the end-inspiratory pause ... at 0.6 s and the end-expiratory pressure
+    # was 0 cm H2O (= ZEEP)". A 0.6 s pause makes that pressure a plateau, and
+    # ZEEP measures it from FRC. So it is a quasi-static compliance about FRC
+    # -- the same quantity this parameter is -- and the comparison is
+    # like-for-like.
+    #
+    # 85 therefore sits ABOVE the mean of both groups. It is inside one SD of
+    # group 1 (75 + 19 = 94), so it is defensible rather than unsupported, but
+    # it is not central and nothing in this file said so until now.
+    #
+    # DO NOT MOVE IT TO FIT. crs 85 -> 60 takes the Stock 1-5 min slope from
+    # 4.72 to 4.37, which PASSES the benchmark that currently fails. That
+    # makes this a CLAUDE.md "do not tune a parameter to pass a benchmark"
+    # decision and it needs a written ruling either way, not a quiet edit.
+    crs: float = 85.0            # mL/cmH2O. Rothen 1993: 75 (19) and 60 (15)
     rv: float = 1100.0           # mL residual volume, anaesthetised supine
     stiff_below_rv: float = 0.15 # compliance retained below RV
     p_collapse: float = P_COLLAPSE   # cmH2O floor on recoil. Minus the
