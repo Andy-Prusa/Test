@@ -143,9 +143,35 @@ is as another window on how that simulator is built.
 ---
 
 **Brown CA III. Buccal Oxygenation During Prolonged Laryngoscopy Prevents
-Desaturation in Obese Patients.** 19 October 2016. **This is a one-page
-commentary on Heard 2017, not the paper.** Useful context; it cannot verify a
-band. **Heard 2017 itself is still not held.**
+Desaturation in Obese Patients.** NEJM Journal Watch, 19 October 2016. One
+page. **This is a commentary ON Heard, not the paper** — but it turned out to
+be worth more than that, and my first assessment of it as unable to verify a
+band was wrong.
+
+It quotes Heard's headline result verbatim: **"750 seconds [range, 389-750]
+versus 296 seconds [range, 244-314]"**, n=40, BMI 30-40, single-centre
+Australian, randomised to usual care or buccal oxygen via a modified 3.5 mm
+RAE tube on the left cheek, doi 10.1213/ANE.0000000000001564. **Both our Heard
+bands are therefore verified secondhand and both are right**, and our patient
+configuration (BMI 34.9) sits mid-range.
+
+**Three things it exposes that only the paper can settle:**
+
+1. It calls those spreads **"range"**; we call them **"IQR"**. Different
+   claims. If 244-314 is the full observed min-max rather than the middle
+   50%, our model landing at 289 s inside it is a considerably weaker result
+   than we have been reporting.
+2. Heard preoxygenated to **end-tidal O2 >= 80%**; our test starts from an
+   alveolar fraction of 0.87. A floor and a starting fraction are not the same
+   quantity.
+3. Heard created **"a deliberate grade III view to mimic partial airway
+   obstruction"** and held it. We model that as the most patent setting the
+   model has. For the control arm probably harmless; for the buccal arm less
+   obviously so, since the question at issue is whether oxygen reaches the
+   trachea past the blade.
+
+**Heard 2017 itself is still not held**, and the file supplied under that name
+— three times now — is this commentary.
 
 **`Douglas_AR.docx`** is a reference list, not a source — a page of citations
 including Hardman 1998 BJA 81:327-32, Dale & Rahn 1952 and Crotti 2001. Useful

@@ -72,8 +72,34 @@ def test_toner_2019():
 
 def test_heard_2017():
     """Heard A et al. Anesth Analg 2017;124:1162-7. CLINICAL.
+    doi 10.1213/ANE.0000000000001564 (e-pub 2016 Sep 20).
     Obese BMI 30-40, ramped, prolonged laryngoscopy.
-    Control 296 s (IQR 244-314); buccal 750 s (IQR 389-750)."""
+    Control 296 s (IQR 244-314); buccal 750 s (IQR 389-750).
+
+    VERIFIED SECONDHAND 2026-09-21, and the paper is still not held. The
+    figures above are confirmed by a NEJM Journal Watch commentary (Brown CA
+    III, 19 Oct 2016), which quotes them exactly: "750 seconds [range,
+    389-750] versus 296 seconds [range, 244-314]", n=40, BMI 30-40, and the
+    same DOI. Our patient config (weight 107, height 1.75 -> BMI 34.9) sits
+    mid-range. So these two bands are right.
+
+    THREE THINGS THE COMMENTARY EXPOSES, none resolvable without the paper:
+
+    1. It calls those spreads "RANGE", we call them "IQR". Those are not the
+       same claim. If 244-314 is the full observed min-max rather than the
+       middle 50%, then a model landing at 289 inside it is a much weaker
+       result than "inside the IQR" implies. The commentary may be loose;
+       only the paper settles it.
+    2. Heard preoxygenated to END-TIDAL O2 >= 80%. `patent()` here starts from
+       feo2 0.87. Close, but a floor and a starting alveolar fraction are
+       different quantities, and 0.87 is an assumption not a match.
+    3. Heard created "a deliberate grade III view to mimic partial airway
+       OBSTRUCTION" and held it. We model that as resistance=2 -- the most
+       patent setting the model has. For the control arm that is probably
+       harmless; for the BUCCAL arm it is not obviously so, because the whole
+       question is whether oxygen tracks past the blade to the trachea, and
+       we are assuming a free path.
+    """
     p = Patient(weight=107, height=1.75, age=45, hb=14, tilt_deg=25)
     t = time_to(patent(p, 0.21), 'spo2', 95)
     check("Heard control, time to SpO2<95%", t, 244, 314, " s",
