@@ -93,6 +93,69 @@ The argument is probably right. It is currently made from citations, not papers.
 
 ---
 
+## 2a. Citations resolved by web search, 2026-09-21 — **RESOLVED, NOT READ**
+
+**Read this header before using anything in this section.**
+
+No paper was obtained. Every publisher domain is blocked on both egress paths
+in this environment — `pmc.ncbi.nlm.nih.gov`, `europepmc.org`, `doi.org`,
+`api.crossref.org`, `api.openalex.org`, `mdpi.com`, `nature.com`,
+`link.springer.com`, `bjanaesthesia.org` and the rest all fail at CONNECT with
+403, and `WebFetch` returns `EGRESS_BLOCKED` for the same hosts. Only GitHub is
+reachable. The Google Drive connector is present but **not connected**. Web
+*search* works, so what follows is bibliographic identity and nothing else.
+
+**These are citations, not readings.** CLAUDE.md is explicit that this project's
+oldest failure came from treating a search result as a source, and a search tool
+has already confabulated an attribution here once — it confidently gave Stock
+1989's numbers to Holmdahl. So:
+
+- **Nothing in this section changes a parameter, a band, or a claim.**
+- No numeric result reported in a search summary has been entered anywhere.
+- Every row below stays in §2 as unread until someone opens the paper.
+
+What this section does is make the unretrievable retrievable. Four of the §2
+entries could not be ordered from a library as written; now they can.
+
+| repo citation | resolved to | identifier |
+|---|---|---|
+| "Lane 2005" | Lane S, et al. A prospective, randomised controlled trial comparing the efficacy of pre-oxygenation in the 20° head-up vs supine position. *Anaesthesia* 2005;60(11):1064-1067 | PMID 16229689, doi 10.1111/j.1365-2044.2005.04374.x |
+| "Ramkumar 2011" | Ramkumar V, Umesh G, Philip FA. Preoxygenation with 20º head-up tilt provides longer duration of non-hypoxic apnea than conventional preoxygenation in non-obese healthy adults. *J Anesth* 2011 | PMID 21293885, doi 10.1007/s00540-011-1098-3 |
+| "Altermatt 2005" | Altermatt FR, Muñoz HR, Delfino AE, Cortínez LI. Pre-oxygenation in the obese patient: effects of position on tolerance to apnoea. *Br J Anaesth* 2005;95(5):706-709 | doi 10.1093/bja/aei231 |
+| "Dixon 2005" | Dixon BJ, Dixon JB, Carden JR, et al. Preoxygenation is more effective in the 25° head-up position than in the supine position in severely obese patients. *Anesthesiology* 2005;102(6):1110-1115 | PMID 15915022 |
+| "Sci Rep 2023 (n=91)", PMCID only | Kaiser HA, Bauer T, Riva T, et al. Carbon dioxide and cardiac output as major contributors to cerebral oxygenation during apnoeic oxygenation. *Sci Rep* **2024;14:3617** | PMC10864331, doi 10.1038/s41598-023-49238-3 |
+| "Chest" — journal name only | **CANDIDATE, unconfirmed:** Kiely DG, Cargill RI, Lipworth BJ. Effects of hypercapnia on hemodynamic, inotropic, lusitropic, and electrophysiologic indices in humans. *Chest* 1996;109(5):1215-21 | PMID 8625670 |
+| *Circulation* 1963;28:346, no author | Roy SB, Bhatia ML, Mathur VS, Virmani S. Hemodynamic Effects of Chronic Severe Anemia. *Circulation* 1963;28(3):346 | PMID 14059454, doi 10.1161/01.CIR.28.3.346 |
+| OLV review, doi only | Byun S-H. Optimizing Lung Collapse During One-Lung Ventilation: Physiological Mechanisms and Clinical Strategies: A Narrative Review. *J Clin Med* 2026;15(13):5078 | PMID 42452539, PMC13363232 |
+| Heard 2017 | (citation already complete) | doi 10.1213/ANE.0000000000001564 |
+| Toner 2019 | (citation already complete) | PMID 31094782, doi 10.1213/ANE.0000000000003810 |
+| Hardman 2000;90:614-8 | (citation already complete) | PMID 10702446. Its companion, Hardman JG, et al. *Factors determining the onset and course of hypoxemia during apnea*, is PMID 10702447 |
+
+### Three things this turned up that need checking when the papers arrive
+
+1. **The Sci Rep citation in the repository may be wrong on two counts.** We record
+   "Sci Rep 2023 (n=91)". The resolved record is **2024, volume 14, article 3617**,
+   and the search summary describes **125 patients recruited**. Either our year and
+   n are wrong, or the 91 is a subgroup with complete cardiac-output data and the
+   year is a typo for the online-first date. **Not resolvable from a summary** —
+   this is precisely the kind of gap that has to be closed by reading. It matters
+   because this paper sets `co_co2_gain` and `sv_co2_gain` and three bands.
+2. **The *Chest* candidate is plausible but unconfirmed.** Kiely 1996 reports
+   hypercapnia's effect on exactly the indices `test_validation.py` names
+   ("HR, SV, CO and MAP all rose"), in humans. That is a good fit and nothing more.
+   Do not write it into `test_validation.py` as the source until someone has the
+   paper in front of them and can confirm the magnitudes the band was set from.
+3. **Roy 1963 looks consistent with what the code already says**, which is mildly
+   reassuring and is not evidence. `apnoea_core.py` derives `hb_co_exp` from
+   "CI 6.3 vs ~3.2 normal = 1.97x" at Hb 4.5; the summary describes a group B of
+   n=25 at Hb 4.5 g/dL with cardiac index 6.3. Consistent — but a search summary
+   agreeing with a remembered number is the weakest possible confirmation, and if
+   anything it raises the question of whether both trace to the same memory.
+
+**None of the above lets any §2 row move to §1.** Reading status is unchanged.
+
+---
+
 ## 3. Values with no source at all
 
 These carry specific non-round values and no citation. A precise number with no
@@ -181,7 +244,9 @@ Documentary, needing no library:
 - [ ] reconcile `airway_scenario.html`'s "parameterised, not fitted to source
       data" against `apnoea_core.py`'s "anchored to the standing predicted-FRC
       regression" — one of them is wrong
-- [ ] complete or strike the `"Chest"` citation
+- [ ] complete or strike the `"Chest"` citation — §2a names a candidate
+      (Kiely 1996, PMID 8625670) which must be **confirmed by reading**, not
+      pasted in
 - [ ] replace the sponsor-facing "36 benchmarks" with the honest count
 - [ ] a written ruling on fit-graded-as-validation (§6.1) and on `crs` (§3)
 - [ ] `editorial.md` carries no hedge in its own text; the "draft, not peer
@@ -189,19 +254,28 @@ Documentary, needing no library:
 - [ ] `test_validation.py` names the function `test_toner_2018` while its own
       docstring cites the 2019 paper
 
-Needing the library, cheapest first:
+Needing the library, cheapest first. **All citations below are now complete
+enough to order** — §2a resolved the four that were not. Nothing here can be
+obtained from this environment: every publisher domain is egress-blocked, so
+these need a machine with library access, or the Google Drive connector
+connected and the PDFs placed there.
 
-- [ ] the OLV review — open access, doi 10.3390/jcm15135078
-- [ ] "Sci Rep 2023" — open access, PMCID PMC10864331. Record author and title
+- [ ] **Byun S-H**, *J Clin Med* 2026;15(13):5078 (the OLV review) — open access,
+      PMC13363232. Record the author and title in `protocol/evidence.md`, which
+      currently cites it by DOI alone
+- [ ] **Kaiser HA, et al.**, *Sci Rep* 2024;14:3617 — open access, PMC10864331.
+      **Check the year and the n against what we record** (see §2a)
 - [ ] Siggaard-Andersen 1977 — doi 10.3109/00365517709098927
 - [ ] Toner 2019, Heard 2017, O'Loughlin 2020 — **record-keeping, not access.**
       The detail already in the repository reads as though someone once had
       these full texts
 - [ ] Varat 1972; *Circulation* 1963;28:346 (establish author, and whether it is
       a paper or an abstract); Flin 2013
-- [ ] the four positioning trials — **the author who fitted the gains must
-      supply full references from their own notes.** Do not reconstruct them
-      from a search summary
+- [ ] the four positioning trials — Lane 2005, Ramkumar 2011, Altermatt 2005
+      and Dixon 2005 are **resolved to full citations in §2a** and can now be
+      ordered. The author who fitted the gains should still confirm these are
+      the four they used, because a search can identify a plausible paper
+      rather than the right one
 - [ ] Laviola 2026 main text; Hardman 2000;90:614-8; Hardman & Wills's online
       Appendix 1 — all via the author route recorded in `HANDOVER.md`
 
