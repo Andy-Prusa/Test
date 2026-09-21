@@ -349,6 +349,62 @@ not rhetorical. It changes three things:
    this file. They are not struck, because -80.7% on PaO2 is arithmetically
    true; but it is the wrong denominator and should not be quoted alone again.
 
+#### ONE MECHANISM, AND AT A UNIFORM LUNG BOTH LIMBS LAND ON STOCK — 2026-09-21
+
+**Not a discretisation artefact.** `n_vq` is how many parallel units the lung is
+chopped into. Refining it 16-fold changes nothing: PaO2 70.1 at 20 units, 70.2
+at 320, the gap 296.2 -> 295.0. Converged. The 41% is a property of the physics
+as modelled.
+
+**The CO2 limb behaves identically**, same zero-shunt condition:
+
+| `vq_log_sd` | a-A **CO2** gap | a-A **O2** gap | PaCO2 | PaO2 |
+|---|---|---|---|---|
+| 0.01 | **-0.39** | **-38.7** | **58.85** | **327.5** |
+| 0.50 | 5.14 | 253.6 | 64.94 | 86.1 |
+| 0.70 shipped | 10.91 | 295.4 | 72.52 | 70.1 |
+| 0.90 | 15.55 | 327.4 | 79.14 | 61.6 |
+
+**At a near-uniform lung both limbs land inside Stock's measurements
+simultaneously** — PaCO2 58.85 against 63 (9), PaO2 327.5 against 314 (87).
+One mechanism, and removing it fixes both at once. That is the strongest
+single result this project has produced about its own failure.
+
+**And it is blocked by the same wall.** Tokics measures the spread WIDER than
+we use, not narrower, so the fix cannot be the parameter. But note precisely
+what Tokics measured: **ventilation/perfusion dispersion in a VENTILATED lung**.
+In apnoea there is no ventilation. The quantity that actually drives this model
+is the dispersion of gas VOLUME against perfusion, which is not the same
+quantity and has never been measured in an apnoeic human. `vq_log_sd` is a
+volume dispersion wearing a ventilation dispersion's name and being judged
+against a ventilation dispersion's measurement.
+
+**That is the open question, and it is a definition question, not a fit.**
+Either the two dispersions are the same number, in which case the model is
+wrong somewhere else entirely; or they are not, in which case the Tokics
+constraint does not apply as written and the honest position is that this
+parameter is unconstrained by any measurement. Nobody here has established
+which, and no sweep can settle it.
+
+#### THE SCORECARD, RESTATED ON OXYGEN CONTENT
+
+Three of the four oxygen rows were the flat-curve artefact, not disagreements:
+
+| comparator | regime | on PaO2 | **on arterial O2 content** |
+|---|---|---|---|
+| Ebata 1991 | patent | +13.0% | **+0.7%** |
+| Tokics 1996 | ventilated | +21.9% | **+0.8%** |
+| Laviola 2026 | obstructed, at SaO2 40% | -2.3% | -3.3% |
+| **Stock 1989** | **obstructed** | **-80.7%** | **-16.7%** |
+
+**On the quantity that matters for oxygen delivery the model agrees with Ebata
+to 0.7% and Tokics to 0.8%.** Laviola is measured on the steep part of the
+curve where PaO2 is informative, so that row was always sound.
+
+This sharpens rather than softens the Stock problem: it is no longer one of
+several oxygen discrepancies of assorted sizes, it is **the only one**, and it
+is obstruction-specific. Everything patent or ventilated is essentially exact.
+
 #### What is left, and it is a specific question
 
 A near-homogeneous lung, alveolar PO2 above 300, cardiac output propped up,

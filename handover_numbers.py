@@ -991,6 +991,52 @@ print("    entries elsewhere in HANDOVER are the wrong denominator and should")
 print("    not be quoted alone again.")
 
 # ---------------------------------------------------------------------------
+print("\nONE MECHANISM: AT A UNIFORM LUNG BOTH LIMBS LAND ON STOCK")
+print("  Not a discretisation artefact. n_vq is how many parallel units the")
+print("  lung is chopped into; refining it 16-fold changes nothing:")
+for _n, _w in ((20, 70.1), (80, 70.1), (320, 70.2)):
+    check(f"n_vq {_n:3d}: PaO2 at 300 s, no shunt", at(_obs(n_vq=_n, **_NS),
+          'pao2', 300), _w, 1.0, " mmHg")
+print("  The CO2 limb behaves identically. Same zero-shunt condition, and at a")
+print("  near-uniform lung BOTH land inside Stock's measurements at once:")
+for _sd, _wco2, _wgap in ((0.01, 58.85, -0.39), (0.50, 64.94, 5.14),
+                          (0.70, 72.52, 10.91), (0.90, 79.14, 15.55)):
+    _r = _obs(vq_log_sd=_sd, **_NS)
+    check(f"vq_log_sd {_sd:.2f}, no shunt: PaCO2 (Stock 63 +- 9)",
+          at(_r, 'paco2', 300), _wco2, 1.0, " mmHg")
+    check(f"vq_log_sd {_sd:.2f}, no shunt: a-A CO2 gap",
+          at(_r, 'paco2', 300) - at(_r, 'paco2_alv', 300), _wgap, 0.6, " mmHg")
+print("    PaCO2 58.85 against a measured 63 (9), and PaO2 327.5 against a")
+print("    measured 314 (87), at the SAME setting. One mechanism, and removing")
+print("    it fixes both at once. BLOCKED BY THE SAME WALL: Tokics measures")
+print("    the spread WIDER, not narrower. But note what Tokics measured --")
+print("    VENTILATION/perfusion dispersion in a VENTILATED lung. In apnoea")
+print("    there is no ventilation, and what drives this model is the")
+print("    dispersion of gas VOLUME against perfusion, which is a different")
+print("    quantity and has never been measured in an apnoeic human. That is")
+print("    a DEFINITION question, not a fit, and no sweep can settle it.")
+
+print("\nTHE SCORECARD OXYGEN ROWS, RESTATED ON CONTENT")
+print("  Three of four were the flat-curve artefact, not disagreements.")
+for _lab, _th, _us, _ph, _pc, _hb, _w in (
+        ("Ebata patent 600 s", 332.0, 375.3, 7.17, 78.0, 14.0, 0.7),
+        ("Tokics ventilated t=0", 159.1, 194.0, 7.40, 40.0, 14.0, 0.8),
+        ("Laviola at SaO2 40%", 28.3, 27.7, 7.20, 84.6, 14.0, -3.3),
+        ("Stock obstructed 300 s", 314.0, 60.5, 7.26, 63.0, 15.0, -16.7)):
+    _st = bg.so2_from_po2(_th, _ph, _pc, 37.0)
+    _us_s = bg.so2_from_po2(_us, _ph, _pc, 37.0)
+    _ct = bg.HUFNER * _hb * _st + bg.O2_SOL * _th
+    _cu = bg.HUFNER * _hb * _us_s + bg.O2_SOL * _us
+    check(f"{_lab}: difference in arterial O2 CONTENT",
+          100.0 * (_cu - _ct) / _ct, _w, 0.4, " %")
+print("    On the quantity that matters for oxygen delivery the model agrees")
+print("    with Ebata to 0.7% and Tokics to 0.8%. Laviola sits on the STEEP")
+print("    part of the curve where PaO2 is informative, so that row was always")
+print("    sound. This SHARPENS the Stock problem: it is no longer one of")
+print("    several oxygen discrepancies, it is the ONLY one, and it is")
+print("    obstruction-specific. Everything patent or ventilated is exact.")
+
+# ---------------------------------------------------------------------------
 print("\nTHE STOP-ABSORBING RULE IS ALREADY IN THE MODEL -- verified 2026-09-21")
 print("  On 2026-09-20 this file's author proposed 'giving closed units a")
 print("  stop-absorbing rule' as the proper fix for the recoil floor. That was")
