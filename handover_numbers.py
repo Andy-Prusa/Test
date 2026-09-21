@@ -885,6 +885,76 @@ print("    tested that falls BELOW Toner's IQR. The buccal arm holds to 750 s")
 print("    anywhere at or above 0.70, so its traces would settle nothing.")
 
 # ---------------------------------------------------------------------------
+print("\nTHE FRC REGRESSION -- the largest UNCITED lever in the model")
+print("  Flagged 2026-09-21 by the pre-release source audit (SOURCES.md). The")
+print("  regression apnoea_core.py anchors FRC to --")
+print("      FRC(L) = 2.34*height(m) + 0.009*age - 1.09")
+print("  -- has NO author, NO journal and NO year anywhere in this repository,")
+print("  and it appears in none of HANDOVER's three provenance tiers, so it was")
+print("  never triaged. These rows exist so the sensitivity cannot rot, and are")
+print("  run at the EXACT test_validation.py configurations.")
+
+
+def _t95(**kw):
+    """time to SpO2 < 95% on a patent airway, room air."""
+    _p = Patient(**kw)
+    _r = simulate(_p, [AirwayEpoch(900, resistance=2, fgo2=0.21)],
+                  dt=DT, stop_sao2=0.0)
+    return time_to(_r, 'spo2', 95)
+
+
+def _heard(**kw):      # test_validation.py test_heard_2017
+    return _t95(weight=107, height=1.75, age=45, hb=14, tilt_deg=25, **kw)
+
+
+def _toner(**kw):      # test_validation.py test_toner_2018
+    return _t95(weight=70, height=1.75, age=45, hb=15, tilt_deg=0, **kw)
+
+
+for _v, _wh, _wt in ((2200.0, 249.5, 346.9), (2500.0, 289.2, 403.4),
+                     (2800.0, 329.8, 460.5)):
+    check(f"frc_ref {_v:.0f}: Heard control [band 244-314]",
+          _heard(frc_ref=_v), _wh, 3.0, " s")
+    check(f"frc_ref {_v:.0f}: Toner sham   [band 380-525]",
+          _toner(frc_ref=_v), _wt, 3.0, " s")
+for _v, _wh in ((0.0300, 344.6), (0.0417, 289.2), (0.0550, 237.1)):
+    check(f"k_frc_bmi {_v:.4f}: Heard control [band 244-314]",
+          _heard(k_frc_bmi=_v), _wh, 3.0, " s")
+check("the quoted age term is NOT implemented: height_factor at age 45",
+      Patient(weight=70, height=1.75, age=45, hb=14).height_factor(), 1.0,
+      1e-9, "")
+check("  ... and identically at age 80",
+      Patient(weight=70, height=1.75, age=80, hb=14).height_factor(), 1.0,
+      1e-9, "")
+print("    A +-12% error in frc_ref (2200 / 2800) takes one or other HEADLINE")
+print("    CLINICAL benchmark out of band, and +-30% in k_frc_bmi walks the")
+print("    obese one out in BOTH directions. For scale, the same audit measured")
+print("    Hufner 1.34->1.39 at under 1% on desaturation. The largest lever in")
+print("    the model is the one with no source. See SOURCES.md section 3.")
+
+# ---------------------------------------------------------------------------
+print("\nMOREAULT'S SPREAD IS SEM, NOT SD -- the sample size was wrong by 10x")
+print("  Read off the paper 2026-09-21: 'The mean (SEM) Pairway became")
+print("  progressively negative ... reaching [-20 (5) and -31 (10) cmH2O]'.")
+print("  39 patients across FOUR groups (two devices x two measurements), so")
+print("  the pressure groups are n ~ 10. protocol/study.html read the 5 as a")
+print("  STANDARD DEVIATION. This block is pure arithmetic and is here so the")
+print("  correction cannot rot back.")
+_SD = 5.0 * np.sqrt(10.0)
+check("implied SD from SEM 5 at n=10", _SD, 15.81, 0.01, " cmH2O")
+check("the giveaway: 5/sqrt(20), quoted as 'standard error of 1.12'",
+      5.0 / np.sqrt(20.0), 1.118, 0.001, "")
+_se20 = _SD / np.sqrt(20.0)
+check("true SE at n=20", _se20, 3.536, 0.005, " cmH2O")
+check("true 95% CI at n=20 (t19 = 2.093)", 2.093 * _se20, 7.40, 0.02,
+      " cmH2O")
+print("    +-7.40 does NOT separate two predictions 5 cmH2O apart. n for 90%")
+print("    power at alpha 0.05 by one-sample t test is 108, not the 11 the")
+print("    protocol claimed. Whether Moreault's between-subject spread even")
+print("    transfers to a clamped tube in BMI<30 patients is a separate")
+print("    judgement and is NOT settled -- see protocol/study.html 3.3.")
+
+# ---------------------------------------------------------------------------
 print("\nNOT REPRODUCIBLE, and recorded as such")
 print("    Ellis 2022 pregnancy comparator: HANDOVER quotes 18.1 and 5.8 min")
 print("    against their 25.4 and 9.9. The configuration behind those two")

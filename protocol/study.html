@@ -285,13 +285,40 @@ colour.</div>
   normal-BMI data exist.</p>
 
   <h3><span class="n">3.3</span> Sample size</h3>
-  <p>The two accounts in §2.1 differ by approximately <strong>5 cmH₂O</strong> at 180 s. Moreault
+  <div class="stopbox"><h4>This section was wrong. Corrected 2026-09-21</h4>
+  <p>The original calculation is retained below, struck, so the error is on the record. <strong>The
+  sample size is not settled, and this protocol must not go to a sponsor until it is.</strong></p></div>
+  <p><s>The two accounts in §2.1 differ by approximately <strong>5 cmH₂O</strong> at 180 s. Moreault
   reports a standard deviation of 5 cmH₂O for a comparable measurement. Twenty participants give a
   standard error of 1.12 and a 95% confidence interval of ±2.19 cmH₂O, which separates the two
-  predictions with a wide margin; 11 would suffice for 90% power at α = 0.05. Twenty is proposed to
-  power the secondary outcomes — for the CO₂ slope it gives a confidence interval of
-  ±0.35 mmHg·min⁻¹ against a 0.9 mmHg·min⁻¹ difference — and to allow for withdrawal or aborted
-  sequences.</p>
+  predictions with a wide margin; 11 would suffice for 90% power at α = 0.05.</s></p>
+  <p><strong>Moreault's 5 is a standard error of the mean, not a standard deviation.</strong> Read
+  off the paper: <em>"The mean (SEM) P<sub>airway</sub> became progressively negative … reaching
+  [−20 (5) and −31 (10) cmH₂O, respectively]"</em>. Thirty-nine patients were analysed across four
+  groups (two devices × two measurements), so the pressure groups are n ≈ 10 and the implied
+  standard deviation is 5·√10 ≈ <strong>15.8 cmH₂O</strong>. The giveaway was in the arithmetic all
+  along: 5/√20 = 1.118, which is exactly the "standard error of 1.12" quoted above — the 5 was
+  divided by √n a second time.</p>
+  <p>On SD 15.8, twenty participants give a standard error of 3.54 and a 95% confidence interval of
+  <strong>±7.40 cmH₂O</strong> (t₁₉). That does not separate two predictions 5 cmH₂O apart.
+  Detecting a 5 cmH₂O difference at 90% power and α = 0.05 by one-sample t test would need
+  <strong>n ≈ 108</strong>, not 11 — a ten-fold error in the direction that matters.</p>
+  <p><strong>What has to happen before this protocol is submitted.</strong> Two judgements, neither
+  of which is a calculation:</p>
+  <ul>
+    <li><strong>Does Moreault's spread transfer?</strong> Their between-subject SD is from airway
+    pressure in the non-ventilated lung during one-lung ventilation, across two isolation devices
+    and open-chest surgery. This study clamps a tracheal tube at end-expiration in ASA I–III adults
+    with BMI &lt; 30 and no thoracic intervention. The true SD here is plausibly smaller, but
+    <em>plausibly</em> is not a sample size, and assuming it would repeat the mistake this section
+    already made once.</li>
+    <li><strong>If it does transfer, the study as designed cannot answer its primary question</strong>
+    and either the design changes (a within-subject comparison would remove most of the
+    between-subject variance) or the primary outcome does.</li>
+  </ul>
+  <p>Twenty remains the proposed number for the secondary outcomes and for withdrawal or aborted
+  sequences — for the CO₂ slope it gives a confidence interval of ±0.35 mmHg·min⁻¹ against a
+  0.9 mmHg·min⁻¹ difference — but it is no longer justified by the primary outcome.</p>
   <p>The entrained volume is the best-powered of the secondary outcomes, and it is the measurement
   method rather than the sample size that determines whether it is worth making. The discriminant
   is the 125–162 mL recruitment shortfall of §2.4. Released through the resistor of §4.3 and

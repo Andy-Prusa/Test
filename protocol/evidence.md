@@ -1,8 +1,12 @@
 # Evidence map for the three linked variables
 
-Searched September 2026. **Status: four papers have now been READ IN FULL**
-(Wright 2023, Condos 1987, Ebata 1991, and the OLV review) because they were
-supplied as files. The rest still rest on abstracts and search summaries: this
+Searched September 2026. **Status, corrected 2026-09-21: the Access status
+table below marks SEVEN as obtained and read**, not the four this line used to
+claim (Wright 2023, Condos 1987, Ebata 1991 and the OLV review) — Douglas 1988,
+Tokics 1996 and Stock 1989 were obtained on 2026-09-14 and this header was never
+updated. One caveat that matters: the OLV review is recorded here as read, but
+it is **not among the files held in this project** and carries no author or
+title, so nothing downstream can check it. See `SOURCES.md`. The rest still rest on abstracts and search summaries: this
 environment allows web *search* but blocks every publisher domain, verified
 across 17 hosts and both fetch tools. Entries are marked READ or ABSTRACT
 ONLY. Nothing marked ABSTRACT ONLY should be entered as a benchmark. The
@@ -203,10 +207,15 @@ adding.
   anesthetized patients with airway obstruction. J Clin Anesth 1989;1(5):328-32**
   (PMID 2516732, doi 10.1016/0952-8180(89)90070-6). Piecewise linear: 12 mmHg
   in the first minute, 3.4 mmHg/min thereafter; a logarithmic function fitted
-  best. **Whether airway pressure was also recorded is still unknown** — the
-  abstract does not say and the full text was not reachable. This is the single
-  most valuable thing left to check, because if those patients had a pressure
-  trace the P+C gap may already be closed.
+  best. ~~**Whether airway pressure was also recorded is still unknown** — the
+  abstract does not say and the full text was not reachable.~~ **ANSWERED
+  2026-09-14, struck 2026-09-21:** the full text was obtained and read.
+  **No airway pressure was recorded.** The monitoring was pulse oximetry, ECG,
+  and an oesophageal and precordial stethoscope; the paper's only mention of
+  pressure is systemic blood pressure. So the P+C gap is NOT closed by Stock,
+  and the three-way study's core justification stands. Note the struck sentence
+  reasoned from what an abstract does not say — the exact move this file's own
+  header warns against.
 - **Schafer & Caronna. Duration of apnea needed to confirm brain death.
   Neurology 1978;28:661.** Mean rate of rise **3.2 mmHg/min** over ten minutes.
   Patent airway.
@@ -279,9 +288,11 @@ Recorded so the same false leads are not followed again.
 Items 2 and 4 of the previous list are DONE and both reversed their provisional
 conclusions. What remains:
 
-1. **Get Stock 1989 full text** and find out whether airway pressure was
+1. ~~**Get Stock 1989 full text** and find out whether airway pressure was
    recorded. Still the highest value of anything here, and now the only
-   remaining route to a P+C pairing that does not require running the study.
+   remaining route to a P+C pairing that does not require running the study.~~
+   **DONE 2026-09-14, struck 2026-09-21. It recorded no airway pressure**, so
+   this route is closed and the study is the only remaining way to the pairing.
 2. **Decide whether to add Ebata's pulmonary benchmarks**: mean PAP 11 -> 17
    and PVR +63% at PaCO2 78. These do not depend on sympathetic integrity, and
    our pulmonary limb is almost untested.
@@ -300,7 +311,10 @@ conclusions. What remains:
    benchmarked, so this is a truth-in-labelling change rather than a fit
    improvement -- and it should not be made without deciding the 15 s versus
    3 min question, since a 15 s manoeuvre may not transfer.
-5. Douglas 1988 full text, for the red-cell CO2 correction. Unchanged.
+5. ~~Douglas 1988 full text, for the red-cell CO2 correction. Unchanged.~~
+   **DONE 2026-09-14, struck 2026-09-21.** Eq 6 verified; the `[Hb]` unit error
+   it exposed is fixed. This item sat twelve lines above the Access status row
+   that already said so.
 6. Pfitzner 2001 and Ko 2009 from the OLV review, for the nitrogen limb.
 
 ## Access status

@@ -1879,7 +1879,17 @@ Two classes of target, and they are not equal. Clinical studies are
 measurements in patients and are the arbiters. ICSM/Nottingham results are
 another group's simulation — useful comparators, not truth.
 
-### Clinical (all currently pass)
+### Clinical — HEADING WAS FALSE, corrected 2026-09-21
+
+This said **"(all currently pass)"**. It does not: `Stock obstructed, 1-5 min
+slope` fails, and the values in this table are pre-2026-09-17, i.e. from before
+the compliance unit fix. Three positioning rows were measured on 2026-09-20 as
+27.47 / 36.95 / 26.03% against the 33 / 40 / 24% recorded here, and they drifted
+in BOTH directions, so this is not one stale run. **The table below is stale and
+is kept only as the historical record.** The authoritative scorecard is
+*CONSOLIDATED SCORECARD* in Current state; the authoritative suite state is
+`python3 test_validation.py`. These rows drifted silently because `tilt_gain_*`
+is checked by no script — see `SOURCES.md`.
 
 | study | target | model |
 |---|---|---|
@@ -2731,9 +2741,15 @@ be compared with Heard's.
   than tuned, deliberately, so the trials stay as validation.
 
 ### Unverified
-- Douglas, Jones & Reed 1988 CO2 content constants were written from memory.
+- ~~Douglas, Jones & Reed 1988 CO2 content constants were written from memory.
   Absolute content runs ~6% high (51 vs 48 mL/dL arterial). Slope is right so
-  dynamics are unaffected, but CHECK AGAINST THE PAPER before publishing.
+  dynamics are unaffected, but CHECK AGAINST THE PAPER before publishing.~~
+  **DONE 2026-09-14, struck 2026-09-21.** The paper was obtained and Eq 6
+  verified against it; `[Hb]` is in g/100 mL and reading it as mmol/L was a real
+  error, now fixed. Arterial content went 51.6544 -> 47.4984 mL/dL. See
+  `bloodgas.py`'s PROVENANCE header. This entry outlived its correction by a
+  week and was still telling readers to check a settled thing — it is the
+  reason `SOURCES.md` now exists as the single place reading status is recorded.
 - The bradycardia curve and the terminal rhythm timings (18/12/6 bpm, ten
   seconds each) are illustrative. Anything below SaO2 ~70% is not predictive.
 

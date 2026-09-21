@@ -37,8 +37,19 @@ python3 handover_numbers.py          # every number quoted in HANDOVER.md
 python3 protocol/predictions.py      # every number quoted in the study protocol
 ```
 
-The first two take several minutes. They were green at the commit in
-`PROVENANCE.txt`.
+The first two take several minutes.
+
+**The suite is currently RED.** 36 checks, **34 pass and 2 fail**, and this is
+deliberate — see CLAUDE.md, which says a correction that makes a benchmark worse
+is recorded rather than compensated for. The two failures are:
+
+| check | model | band | why it fails |
+|---|---|---|---|
+| `Stock obstructed, 1-5 min slope` | 4.72 mmHg/min | 2.4-4.4 | the open defect. Arterial CO2 is too sensitive to V/Q spread; every published measurement of that spread makes it **worse**, not better |
+| `ICSM jet, PaCO2 at cricothyroidotomy` | 73.4 mmHg | 75.8-93.4 | fell out of band on 2026-09-20 when the recoil floor was corrected. A MODEL comparator, not a measurement |
+
+Do not read `PROVENANCE.txt` as a statement that the suite passed at that commit.
+It records which commit was packaged, nothing more. Run the suite yourself.
 
 ---
 
@@ -48,16 +59,28 @@ Read this before quoting anything the model produces.
 
 **Benchmarked against clinical measurement**
 
-| source | what it pins |
-|---|---|
-| Toner 2019 | buccal oxygen, time to desaturation |
-| Heard 2017 | apnoeic oxygenation, obstructed |
-| O'Loughlin 2020 | desaturation timing |
-| Stock 1989 | PaCO2 rise, obstructed |
-| Moreault 2021 | the pressure limb |
-| Lane / Ramkumar / Altermatt / Dixon | positioning |
-| Sci Rep 2023 (n=91) | cardiac output |
-| Varat 1972 | the circulation's response to anaemia |
+The third column is the one to read. It is not a formality: a band transcribed
+from a remembered IQR is not the same kind of evidence as a band read off a page,
+and this table used to make no distinction.
+
+| source | what it pins | read from the page? |
+|---|---|---|
+| Stock 1989 | PaCO2 rise, obstructed | **yes**, 2026-09-14 |
+| Moreault 2021 | the pressure limb | **yes** |
+| Toner 2019 | buccal oxygen, time to desaturation | **no** |
+| Heard 2017 | apnoeic oxygenation, obstructed | **no** |
+| O'Loughlin 2020 | desaturation timing | **no** |
+| Lane / Ramkumar / Altermatt / Dixon | positioning | **no** — and cited by surname and year only, so not retrievable as written |
+| Sci Rep 2023 (n=91) | cardiac output | **no** — identified by PMCID alone, no author or title recorded |
+| Varat 1972 | the circulation's response to anaemia | **no** |
+
+**Six of these eight have not been read by anyone on this project.** Their band
+edges were entered from memory or from abstracts. That does not make them wrong,
+but it does mean the bands are claims about the literature that nobody here has
+checked, and two of them (`Sci Rep 2023` and the positioning set) additionally
+**grade a parameter against the number that parameter was fitted to**. `SOURCES.md`
+lists every source the model depends on, what rests on each, and its reading
+status. Read it before quoting any number from this model in a publication.
 
 **Compared against another simulator, not against patients**
 
@@ -68,17 +91,26 @@ they are not six independent confirmations, and the suite labels them as such.
 **The one open defect**
 
 Arterial CO2 is too sensitive to ventilation/perfusion spread. Tokics 1996
-measures log QSD in anaesthetised paralysed adults at 0.80–1.18; the model runs
-at 0.70, below measurement, and passes the Stock benchmark only because of
-that. The mechanism is the arterial-to-alveolar CO2 gap, whose size depends on
-the curvature of the CO2 dissociation curve — and that curve carries a red-cell
-correction written from memory rather than from the source paper. **Obstructed
-CO2 numbers should be treated as unvalidated** until that is settled.
+measures log QSD in anaesthetised paralysed adults at 0.80–1.18 (and 0.67 even
+awake); the `vq_log_sd` parameter reads 0.70, and the dispersion the model
+actually **delivers is 0.644**, because the ±2.2σ compartment grid truncates the
+Gaussian by a factor of 0.9206. So the model runs below every published
+measurement including the awake one, and it fails the Stock benchmark anyway
+(4.72 against 2.4–4.4). Setting the spread to any measured value makes that
+failure larger.
+
+**Obstructed CO2 numbers should be treated as unvalidated.** Note what the
+cause is **not**: this paragraph used to blame a red-cell correction "written
+from memory rather than from the source paper". Douglas 1988 was obtained and
+verified on 2026-09-14 (`bloodgas.py`, PROVENANCE header), and correcting it
+moved every CO2 slope by under 0.05 mmHg/min. The curve is not the cause. The
+defect is structural and open.
 
 **A weakness nothing currently tests**
 
 The patent-airway PaCO2 slope between 1 and 5 minutes is 1.70 mmHg/min against
-a classical 3–5. No benchmark asserts it, so the suite stays green.
+a classical 3–5. No benchmark asserts it, so nothing in the suite fails on it
+— which is a gap in the suite, not evidence about the model.
 
 **Not modelled at all**
 
@@ -105,6 +137,7 @@ claims still present in the older text.
 | `test_parity.py` | the two implementations against each other |
 | `handover_numbers.py` | regenerates every number quoted in HANDOVER |
 | `HANDOVER.md` | the full history: what was tried, what failed, what was retracted |
+| `SOURCES.md` | **every source the model depends on, and which have actually been read.** Read before quoting any number in a publication |
 | `CLAUDE.md` | the working rules, each one written after it was broken |
 | `protocol/` | the three-way study, its predictions and its evidence map |
 | `patches/` | written but deliberately unapplied changes, with reasons in HANDOVER |
