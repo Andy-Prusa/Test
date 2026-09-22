@@ -24,7 +24,10 @@ print()
 
 OBS = np.inf
 LEAN = dict(weight=70, height=1.75, age=45, hb=15, tilt_deg=0)     # Toner 2019
-OBESE = dict(weight=107, height=1.75, age=45, hb=14, tilt_deg=25)  # Heard 2017
+# Heard 2017, READ FROM THE PAPER 2026-09-22: 105 +- 13 kg, 174 +- 9 cm,
+# 42 +- 14 y, 30 degrees reverse Trendelenburg. Was 107/1.75/45/tilt 25,
+# which was a guess at a cohort we had not read.
+OBESE = dict(weight=105, height=1.74, age=42, hb=14, tilt_deg=30)  # Heard 2017
 FAILED = []
 
 
@@ -36,14 +39,32 @@ def check(name, got, want, tol, unit=""):
           f"   recorded {want}{unit}")
 
 
-def sim(kw, epochs, dt=0.05, feo2=0.87):
+# PREOXYGENATION IS PER COHORT, not a single default. Heard 2017 was read on
+# 2026-09-22 and states its endpoint explicitly: "At the first reading of
+# end-tidal oxygen (EtO2) >= 80%, buccal oxygenation was started". Before that
+# reading, every obese number in this file started from 0.87 -- seven points of
+# alveolar oxygen the trial never gave its patients.
+#
+# The lean value is STILL AN ASSUMPTION. Toner 2019 has been read for its
+# outcomes but not for a preoxygenation endpoint, so 0.87 stays there and is
+# labelled as the assumption it is rather than being quietly matched to Heard.
+FEO2_OBESE = 0.80    # Heard 2017, read from the paper
+FEO2_LEAN = 0.87     # Toner 2019, ASSUMED -- not read from the paper
+
+
+def sim(kw, epochs, dt=0.05, feo2=FEO2_LEAN):
     return simulate(Patient(**kw), epochs, dt=dt, feo2_start=feo2,
                     stop_sao2=0.0)
 
 
-def t95(kw, fg):
-    """Time to SpO2 < 95% with a patent airway. 9999 = past the trials' ceiling."""
-    r = sim(kw, [AirwayEpoch(1200, resistance=2, fgo2=fg)])
+def t95(kw, fg, feo2=FEO2_LEAN):
+    """Time to SpO2 < 95% with a patent airway. 9999 = past the trials' ceiling.
+
+    feo2 is the COHORT's preoxygenation endpoint and must be passed for the
+    obese arm: Heard 2017 preoxygenated to EtO2 >= 80%, not to the 0.87 this
+    file assumes for Toner's lean cohort.
+    """
+    r = sim(kw, [AirwayEpoch(1200, resistance=2, fgo2=fg)], feo2=feo2)
     s = np.asarray(r['spo2'])
     below = np.where(s < 95.0)[0]
     return float(np.asarray(r['t'])[below[0]]) if len(below) else 9999.0
@@ -63,16 +84,17 @@ print("what follows IF the fraction is x, not what a device delivers.\n")
 # The lean patient at FO2 0.70 desaturates at 824 s -- past the ceiling, but
 # only by 74 s, and nothing like indefinitely. Only FO2 1.00 runs past 20 min.
 for fg, lean, obese in ((0.21, 402.3, 288.4), (0.60, 669.0, 462.2),
-                        (0.70, 823.7, 562.4), (0.90, 9999.0, 1041.9)):
+                        (0.70, 823.7, 562.4), (0.90, 9999.0, 1061.8)):
     check(f"lean, pharyngeal FO2 {fg:.2f}", t95(LEAN, fg), lean, 6.0, " s")
-    check(f"obese, pharyngeal FO2 {fg:.2f}", t95(OBESE, fg), obese, 6.0, " s")
+    check(f"obese, pharyngeal FO2 {fg:.2f}", t95(OBESE, fg, FEO2_OBESE),
+          obese, 6.0, " s")
 check("lean, pharyngeal FO2 1.00 (runs past 20 min)", t95(LEAN, 1.00),
       9999.0, 1.0, " s")
 
 # ---------------------------------------------------------------------------
 print("\nWho benefits most: the gain grows with BMI, room air vs buccal")
 for w, want in ((67, 570.0), (138, 181.0)):
-    kw = dict(weight=w, height=1.75, age=45, hb=14, tilt_deg=25)
+    kw = dict(weight=w, height=1.74, age=42, hb=14, tilt_deg=30)
     check(f"BMI {w/1.75**2:.1f}, room air", t95(kw, 0.21), want, 8.0, " s")
 
 print("\nAnaemia does NOT shorten it -- SpO2 is a saturation, not a content")
@@ -89,16 +111,17 @@ for fg, want in ((0.21, 298.0), (1.00, 1011.0)):
 
 # ---------------------------------------------------------------------------
 print("\nComplete occlusion: buccal oxygen can do NOTHING without a conduit")
-for name, kw, want in (('lean', LEAN, 256.0), ('obese', OBESE, 198.0)):
+for name, kw, fe, want in (('lean', LEAN, FEO2_LEAN, 256.0),
+                           ('obese', OBESE, FEO2_OBESE, 198.0)):
     for fg in (0.21, 1.00):
-        r = sim(kw, [AirwayEpoch(600, resistance=OBS, fgo2=fg)])
+        r = sim(kw, [AirwayEpoch(600, resistance=OBS, fgo2=fg)], feo2=fe)
         s = np.asarray(r['spo2']); b = np.where(s < 95.0)[0]
         got = float(np.asarray(r['t'])[b[0]]) if len(b) else 9999.0
         check(f"{name}, occluded, pharynx {fg:.2f}", got, want, 6.0, " s")
 
 print("\nRelieved at laryngoscopy: room air gives a bump, buccal gives a rescue")
 for fg, want in ((0.21, 56.8), (1.00, 99.8)):
-    r = sim(OBESE, [AirwayEpoch(300, resistance=OBS, fgo2=fg),
+    r = sim(OBESE, feo2=FEO2_OBESE, epochs=[AirwayEpoch(300, resistance=OBS, fgo2=fg),
                     AirwayEpoch(600, resistance=2, fgo2=fg)])
     check(f"obese, opened at 300 s, SpO2 120 s later, FO2 {fg:.2f}",
           at(r, 'spo2', 420), want, 2.0, " %")
@@ -109,8 +132,9 @@ print("1 mm <-> 1.3 cmH2O at 3.3 mL/s in AirwayEpoch's docstring.")
 R1MM = 1.3 / 0.0033
 for d, lean, obese in ((0.8, 83.4, 37.3), (0.6, 35.8, 34.2)):
     R = R1MM * (1.0 / d) ** 4
-    for name, kw, want in (('lean', LEAN, lean), ('obese', OBESE, obese)):
-        r = sim(kw, [AirwayEpoch(1860, resistance=R, fgo2=1.00)])
+    for name, kw, fe, want in (('lean', LEAN, FEO2_LEAN, lean),
+                               ('obese', OBESE, FEO2_OBESE, obese)):
+        r = sim(kw, [AirwayEpoch(1860, resistance=R, fgo2=1.00)], feo2=fe)
         check(f"{name}, {d} mm aperture, SpO2 at 30 min",
               at(r, 'spo2', 1800), want, 2.0, " %")
 print("    A 0.2 mm change takes the lean patient from 83% to 36%. Patency is")
@@ -120,7 +144,7 @@ print("    the compliance unit fix of 2026-09-17; the numbers it rests on do")
 print("    not. Before the fix these were 90.0 / 69.1 at 0.8 mm and 64.2 /")
 print("    34.4 at 0.6 mm. Sub-millimetre apertures are now WORSE, not better.")
 
-r = sim(OBESE, [AirwayEpoch(1860, resistance=2.0, fgo2=1.00)])
+r = sim(OBESE, [AirwayEpoch(1860, resistance=2.0, fgo2=1.00)], feo2=FEO2_OBESE)
 check("obese, airway WIDE OPEN, SpO2 at 30 min", at(r, 'spo2', 1800), 86.5, 2.0, " %")
 print("    The obese 30-minute ceiling is NOT an aperture limit. Wide open, with")
 print("    alveolar PO2 above 350 mmHg, saturation is still 86%. That is SHUNT.")

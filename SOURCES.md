@@ -66,7 +66,7 @@ is recorded in `HANDOVER.md` as the oldest failure mode here.
 
 | source | what rests on it | why it matters |
 |---|---|---|
-| **Heard A, et al.** *Anesth Analg* 2017;124:1162-7 | a band that **is** the published IQR (244-314 s), and the obese configuration behind every obese number in `buccal_numbers.py` and `editorial.md` | A transcription error moves both band edges at once. Mohanty 2021 contests the buccal figure by about 2× (`HANDOVER.md`) |
+| ~~**Heard A, et al.** *Anesth Analg* 2017;124:1162-7~~ **OBTAINED AND READ 2026-09-22** | — | **CLOSED.** Moved to §1b. The band is confirmed as an IQR and was right; the configuration was wrong in four ways and is corrected |
 | **The four positioning trials: Lane 2005, Ramkumar 2011, Altermatt 2005, Dixon 2005.** Surnames and years only | `tilt_gain_lean` and `tilt_gain_bmi`, stated in `apnoea_core.py` as "calibrated against four randomised trials", then graded by three bands set from those same four | **Not retrievable as cited, by anyone, including us.** Also a fit graded by its own calibration target (§6). The limb is not confined to the positioning test: the obese buccal configuration runs `tilt_deg=25` |
 | **The one-lung-ventilation narrative review**, doi 10.3390/jcm15135078. No author or title recorded | `protocol/evidence.md` calls it "obtained and read" and draws an **absence** claim from it | Reasoning from what a document does not contain is the move CLAUDE.md forbids outright. Open access |
 | ***Circulation* 1963;28:346**, "Hemodynamic Effects of Chronic Severe Anemia". **No author recorded** | `hb_co_exp` = 1.535, derived from it; a band in `test_validation.py` | The band grades the fit against the number the fit was made from. Whether it is a paper or a meeting abstract is **unknown**, and that changes whether the "CLINICAL" label is honest |
@@ -129,6 +129,18 @@ a benchmark it has to be argued for on its own.
   and a RapidO2 device at 15 L/min (250 mL/s); insufflations every 30 s if SaO2
   <70%; continued 10 min.
 - SaO2 restored above 90% within **39 s** in all subjects.
+
+**WHAT THEY DO NOT GIVE, and it is the thing most often wanted: any arterial
+oxygen tension at a FIXED TIME.** The SDC reports the state at SaO2 40% — an
+endpoint defined by saturation, not a moment on a clock — and the main text
+reports no oxygen time course. So the question "does ICSM agree with Stock
+under obstruction?" **can be answered for CO2 and cannot be answered for
+oxygen**, and a docstring in `test_validation.py` asserted an answer anyway
+until 2026-09-22 (struck; see that file and `handover_numbers.py`). On CO2 at
+10 minutes the answer is that **Stock's own fit, carried forward, sits inside
+Laviola's 1 SD band, and OURS is the outlier 28% below both** — the reverse of
+what was claimed. Any ICSM publication carrying a PaO2 or SaO2 time course
+under complete obstruction would close this.
 - Peak end-inspiratory pressure limited to **10.5 cmH2O**.
 
 ---
@@ -254,6 +266,198 @@ of rise, and the entire case for the three-way study is that no published
 source records pressure and CO2 together. This trace does not record pressure —
 but it is a real CO2 time course in a real patient, which is more than the CO2
 limb has ever been tested against outside Stock's eight sampled points.
+
+---
+
+### Hardman 2000 and McNamara 2005 — READ 2026-09-22, and they overturn a conclusion
+
+**Hardman JG, Wills JS, Aitkenhead AR.** Factors Determining the Onset and
+Course of Hypoxemia During Apnea: An Investigation Using Physiological
+Modelling. *Anesth Analg* 2000;90:619-24. **PMID 10702447.** Held and read.
+
+**McNamara MJ, Hardman JG.** Hypoxaemia during open-airway apnoea: a
+computational modelling analysis. *Anaesthesia* 2005;60:741-6.
+**doi 10.1111/j.1365-2044.2005.04228.x.** Held and read.
+
+**THE NOTTINGHAM SIMULATOR HAS A V/Q DISTRIBUTION. IT ALWAYS DID.** This
+repository concluded from Hardman 1998's Appendix 1 — *"Complete mixing of
+gases within the alveoli is assumed… blood flow… two compartments: shunted and
+non-shunted"* — that ICSM has no V/Q distribution, that our sealed-airway
+mechanism is **structurally absent** from their model, and that **"any future
+use of an ICSM number to argue about V/Q is void."** All three are false.
+
+> Hardman 2000, Methods: the NPS respiratory models include *"anatomical and
+> equipment dead spaces and **100 parallel pulmonary compartments with
+> independent compliance curves and ventilation/perfusion ratios**."*
+
+> McNamara 2005, Methods: *"**Five hundred alveolar compartments** were used in
+> the model… Each of the 500 alveolar compartments has an **independently
+> configured compliance curve and inlet (bronchiolar) resistance**. Each
+> alveolar compartment has an associated pulmonary vessel… with an
+> **independently configured vascular resistance**."*
+
+**100 compartments by 2000, 500 by 2005, against our 80.** The 1998 text
+describes a simpler configuration and does not describe the model used in any
+paper we compare against. The quotation was accurate; the inference from it was
+not, and it was used to dismiss a comparator.
+
+**McNamara's dispersion is narrower than ours.** Their deliberately
+"critically ill" configuration had **mean (SD) V/Q ratio 1.54 (0.84)** — a
+coefficient of variation of 0.545, corresponding if log-normal to a log SD near
+**0.51**, against our 0.70. A lung they built to be pathological is less
+dispersed than our healthy one. Recorded as an observation, not a target.
+
+**HARDMAN 2000 MODELS THE CLOSED AIRWAY EXPLICITLY, which is Stock's regime.**
+70 kg, FRC 2500 mL, VO2 0.25 L/min, Hb 145 g/L, 2 min denitrogenation. Their
+Figure 1 gives arterial oxygen tension against time for three venous admixtures
+with the airway closed. Read at **5 minutes of apnoea**:
+
+| | PaO2 at 5 min |
+|---|---|
+| NPS closed airway, 1% venous admixture | ~55 kPa ≈ 412 mmHg |
+| NPS closed airway, 10% venous admixture | ~45 kPa ≈ 337 mmHg |
+| **Stock 1989, MEASURED in 14 humans** | **314 (87) mmHg** |
+| ours | **61 mmHg** |
+
+**Their 10%-shunt closed-airway curve lands on Stock's measurement.** Ours is a
+fifth of it. Figure values are read off a printed plot, good to perhaps ±5 kPa,
+which is nowhere near enough to matter.
+
+Their Table 1: time to SaO2 50% is **8 min 13 s closed** against 11 min 37 s
+open, so obstruction costs about 3½ minutes in their model. We reach SaO2 40%
+at 8.6 min. **The timing is comparable; the tension is not** — which is exactly
+the signature of a defect in how arterial oxygen is composed from alveolar
+oxygen, not in the oxygen budget.
+
+**NO PRESSURE IN EITHER PAPER.** Hardman 2000 notes only that *"the modelled
+patient made no respiratory efforts during apnea with a closed airway, which
+would otherwise have caused fluctuating intrathoracic pressures"*. Whether ICSM
+floors intrathoracic pressure remains undeterminable from anything we hold.
+
+**Other things worth having from McNamara 2005:** oxygen extracted at
+250 mL/min with CO2 added at 10 mL/min gives a **net gaseous flow from alveoli
+to blood of 240 mL/min** (our aventilatory-mass-flow benchmark sits at 224);
+only about **5% of produced CO2 enters the lungs**, consistent with Holmdahl's
+90% dissolving in body water.
+
+---
+
+### Laviola 2020 — WE HELD THE OXYGEN TIME COURSE ALL ALONG
+
+**Laviola M, Niklas C, Das A, Bates DG, Hardman JG.** Effect of oxygen
+fraction on airway rescue: a computational modelling study. *Br J Anaesth*
+2020;125(1):e69-e74. **doi 10.1016/j.bja.2020.01.004.** Held and read.
+
+**A CORRECTION TO THIS FILE, 2026-09-22.** Earlier the same day it was
+recorded here and in `test_validation.py` that no ICSM oxygen value existed at
+a time Stock also measured. That was reached by searching the **2026** paper's
+SDC and main text and inferring absence. **It was wrong, and the data was in a
+paper already on the shelf.** Figure 1 of this 2020 paper gives PaO2 at
+**one-minute intervals** through obstructed apnoea, for three supraglottic
+oxygen fractions. Reasoning from what a document does not contain is the move
+CLAUDE.md forbids, and this is the second time it has cost something here.
+
+Read off the FO2 21% panel, apnoea beginning at their 3 min mark:
+
+| min of apnoea | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|---|---|---|---|---|---|---|---|---|
+| ICSM PaO2 (kPa) | 74 | 67 | 59.5 | 50 | 38.5 | **26.5** | 14.5 | 8 |
+| ours (kPa) | 68 | 61 | 44 | 18 | 11 | **8.1** | — | — |
+
+**At Stock's five minutes: Stock 314 (87) mmHg measured, ICSM ~199 mmHg,
+ours 61 mmHg.** ICSM sits 37% below the measurement; we sit 81% below. At
+199 mmHg their saturation is essentially 100%, consistent with Stock's "every
+one of 14 above 92%". Ours is 85.3% and is not.
+
+**This kills the "two extrapolations landing in the same place" story.** The
+curves start together — 68 against 74 kPa — and diverge from about two
+minutes. Values are read off a printed figure, good to perhaps ±2 kPa, which
+is nowhere near enough to matter.
+
+**NO PRESSURE APPEARS ANYWHERE IN THE PAPER.** Searched in full: not one
+cmH2O figure. Only the qualitative *"a single, passive inhalation (caused by
+intrathoracic hypobaric pressure)"* and *"the sub-atmospheric intrathoracic
+pressure was relieved by inflow via the newly opened airway"*. The passive
+inhalation **volume** is not reported either, which would have let their
+pressure be backed out from their compliance. **So whether ICSM floors
+intrathoracic pressure, and at what value, is not determinable from what we
+hold** — a question worth asking, because our own sealed lung reaches about
+−79 cmH2O and the floor that used to guard it was shown to be inert.
+
+Their protocol, verified: 100 virtual subjects, 65–75 kg, FRC 2.1–2.3 L, 3 min
+of 100% oxygen, then apnoea with complete upper airway obstruction; rescue at
+SaO2 20%, 40% or 60% to supraglottic FO2 of 100%, 60% or 21%; no positive
+pressure at any point.
+
+---
+
+### Heard 2017 — OBTAINED AND READ 2026-09-22, and it moved four things
+
+**Heard A, Toner AJ, Evans JR, Aranda Palacios AM, Lauer S.** Apneic
+Oxygenation During Prolonged Laryngoscopy in Obese Patients: A Randomized,
+Controlled Trial of Buccal RAE Tube Oxygen Administration. *Anesth Analg*
+2017;124(4):1162-7. **doi 10.1213/ANE.0000000000001564.** Read in full.
+
+This is the paper three earlier sends were not — those were the Brown
+commentary on it. Every figure below is read off the page.
+
+**THE BAND WAS RIGHT, and it is an IQR.** Verbatim: *"Median (interquartile
+range [IQR]) apnea times with SpO2 ≥ 95% were prolonged in this group; 750
+(389–750) versus 296 (244–314) seconds, P < .0001."* The commentary called
+these "range" and this file recorded the ambiguity as unresolvable without the
+paper. It is resolved: **IQR**. Landing inside 244-314 is the stronger
+reading, not the weaker one.
+
+**THE CONFIGURATION WAS WRONG IN FOUR WAYS. Three are now fixed.**
+
+| | we had | the paper |
+|---|---|---|
+| weight | 107 kg | **105 ± 13** (83–132) |
+| height | 1.75 m | **174 ± 9 cm** (160–191) |
+| age | 45 y | **42 ± 14** (19–66) |
+| position | tilt 25° | **30° reverse Trendelenburg** |
+| preoxygenation | `feo2_start` 0.87 | **EtO2 ≥ 80%** |
+| airway | `resistance=2`, fully patent | **deliberate grade 3 view**, "simulating the partially obstructed airway" |
+
+The first five are corrected. **The sixth is not**, and it is recorded as a
+known over-estimate of airway patency: we model a deliberately obstructed
+laryngoscopy as the most patent setting the model has. It matters more for the
+buccal arm than the control arm, because the whole question there is whether
+oxygen tracks past the blade.
+
+**THE BENCHMARK SURVIVES ALL OF IT, and that is the uncomfortable part.**
+Control arm, time to SpO2 <95%, against a measured IQR of 244-314:
+
+| configuration | t95 |
+|---|---|
+| shipped (107/1.75/45, tilt 25, feo2 0.87) | 289.2 s |
+| paper's weight/height/age only | 311.6 s |
+| paper's tilt 30° only | 307.1 s |
+| paper's EtO2 0.80 only | 264.4 s |
+| **paper exact** | **284.5 s** |
+
+Every one passes, and the corrections nearly cancel — which is why four
+mismatches sat there unnoticed. **A benchmark insensitive to a 7-point change
+in starting alveolar oxygen is a weak constraint on the oxygen limb.** That is
+the same conclusion the V/Q work reached by a different route, and it is an
+argument for treating the Heard pass as much softer evidence than a green row
+suggests.
+
+**THREE COMPARATORS IN THE PAPER THAT WE ARE NOT USING:**
+
+- **Peak EtCO2 40 (38–45) mmHg standard care, 44 (39–50) buccal.** We hold no
+  CO2 comparator at all in an obese patent-airway cohort.
+- **Lowest SpO2 97 (92–99) standard versus 91 (89–92) buccal.** The buccal arm
+  went *lower*, which is counterintuitive and unmodelled.
+- **A third of buccal patients did not hold SpO2 ≥ 95% for the full 750 s**,
+  which the authors attribute to atelectasis and shunt in obese patients under
+  anaesthesia. Directly relevant to the collapse limb.
+
+**A REFERENCE WORTH CHASING, from their reference list:** McNamara MJ, Hardman
+JG. *Hypoxaemia during open-airway apnoea: a computational modelling
+analysis.* Anaesthesia 2005;60:741-6. That is the Nottingham simulator applied
+to apnoea — the nearest thing yet to an answer on where ICSM's oxygen sits.
+Note "open-airway", so it may still not cover the obstructed case.
 
 ---
 

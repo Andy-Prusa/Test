@@ -124,7 +124,17 @@ def patent(pt, fg, dur=1200, feo2=0.87, dt=DT):
 def test_toner_2019():
     """Toner AJ et al. Anesth Analg 2019;128:1154-9. CLINICAL.
     Healthy non-obese, prolonged laryngoscopy, supine.
-    Sham 447 s (IQR 405-525); buccal 750 s (IQR 750-750), 750 s ceiling."""
+    Sham 447 s (IQR 405-525); buccal 750 s (IQR 750-750), 750 s ceiling.
+
+    PREOXYGENATION HERE IS THE 0.87 DEFAULT, NOT HEARD'S 0.80, and that is
+    deliberate. Heard 2017 states an endpoint of EtO2 >= 80% and was read on
+    2026-09-22, so the Heard test below uses it. TONER HAS NOT BEEN READ FOR
+    A PREOXYGENATION ENDPOINT, so 0.87 stays here as the assumption it has
+    always been. Do not harmonise the two: one is a figure from a paper and
+    the other is a guess, and making them equal would hide which is which.
+    (On 2026-09-22 an unguarded string replace did exactly that and dropped
+    this benchmark from 403.4 s to 367.1 s, out of band. Caught by the
+    pre-commit hook, which is what it is for.)"""
     p = Patient(weight=70, height=1.75, age=45, hb=15, tilt_deg=0)
     t = time_to(patent(p, 0.21), 'spo2', 95)
     check("Toner sham, time to SpO2<95%", t, 380, 525, " s",
@@ -147,28 +157,51 @@ def test_heard_2017():
     same DOI. Our patient config (weight 107, height 1.75 -> BMI 34.9) sits
     mid-range. So these two bands are right.
 
-    THREE THINGS THE COMMENTARY EXPOSES, none resolvable without the paper:
+    THE PAPER WAS OBTAINED AND READ 2026-09-22. All three questions this
+    docstring used to list as "not resolvable without the paper" are now
+    answered, and the configuration below is corrected to match it.
 
-    1. It calls those spreads "RANGE", we call them "IQR". Those are not the
-       same claim. If 244-314 is the full observed min-max rather than the
-       middle 50%, then a model landing at 289 inside it is a much weaker
-       result than "inside the IQR" implies. The commentary may be loose;
-       only the paper settles it.
-    2. Heard preoxygenated to END-TIDAL O2 >= 80%. `patent()` here starts from
-       feo2 0.87. Close, but a floor and a starting alveolar fraction are
-       different quantities, and 0.87 is an assumption not a match.
-    3. Heard created "a deliberate grade III view to mimic partial airway
-       OBSTRUCTION" and held it. We model that as resistance=2 -- the most
-       patent setting the model has. For the control arm that is probably
-       harmless; for the BUCCAL arm it is not obviously so, because the whole
-       question is whether oxygen tracks past the blade to the trachea, and
-       we are assuming a free path.
+    1. IT IS AN IQR. Verbatim: "Median (interquartile range [IQR]) apnea
+       times with SpO2 >= 95% were prolonged in this group; 750 (389-750)
+       versus 296 (244-314) seconds". The commentary's "range" was loose.
+       So 244-314 is the middle 50%, landing inside it is the STRONGER
+       reading, and the band was right all along.
+    2. THEIR ENDPOINT REALLY IS EtO2 >= 80%: "At the first reading of
+       end-tidal oxygen (EtO2) >= 80%, buccal oxygenation was started at
+       10 L/min". feo2_start is now 0.80, not the 0.87 we had granted
+       ourselves.
+    3. THE AIRWAY IS DELIBERATELY PARTIALLY OBSTRUCTED: laryngoscopy force
+       "reduced to the minimum required to maintain a small space between
+       epiglottis and posterior pharyngeal wall ... (equivalent to a grade 3
+       view), thus simulating the partially obstructed airway". We still
+       model it as resistance=2, the most patent setting we have. THIS ONE
+       IS NOT FIXED -- it is a known over-estimate of airway patency, and it
+       matters more for the buccal arm than the control arm.
+
+    TWO DISCREPANCIES NOBODY HAD NOTICED, both now corrected. The paper
+    positions patients at 30 degrees reverse Trendelenburg and we used 25.
+    Its cohort is 105 +- 13 kg, 174 +- 9 cm, 42 +- 14 y and we used
+    107 kg / 1.75 m / 45 y.
+
+    THE BENCHMARK SURVIVES ALL OF IT, and the corrections very nearly
+    cancel, which is why none of this showed:
+
+        shipped, 107/1.75/45, tilt 25, feo2 0.87      289.2 s
+        paper's weight/height/age only                311.6 s
+        paper's tilt 30 only                          307.1 s
+        paper's EtO2 0.80 only                        264.4 s
+        PAPER EXACT                                   284.5 s
+
+    Every one is inside 244-314. Read that as a warning rather than as
+    reassurance: a benchmark insensitive to a 7-point change in starting
+    alveolar oxygen is a weak constraint on the oxygen limb, which is the
+    same conclusion the V/Q work reached from the other direction.
     """
-    p = Patient(weight=107, height=1.75, age=45, hb=14, tilt_deg=25)
-    t = time_to(patent(p, 0.21), 'spo2', 95)
+    p = Patient(weight=105, height=1.74, age=42, hb=14, tilt_deg=30)
+    t = time_to(patent(p, 0.21, feo2=0.80), 'spo2', 95)
     check("Heard control, time to SpO2<95%", t, 244, 314, " s",
           "clinical; IQR 244-314")
-    tb = time_to(patent(p, 1.00), 'spo2', 95)
+    tb = time_to(patent(p, 1.00, feo2=0.80), 'spo2', 95)
     check("Heard buccal, held to 750 s", 9999 if tb is None else tb,
           750, 1e9, " s", "clinical; IQR 389-750")
 
@@ -435,8 +468,63 @@ def test_icsm_jet_2026():
     gas to the lung. Their simulator is extrapolating into complete
     obstruction exactly as ours is, so when the two agree they are two
     extrapolations from the same kind of patent-airway data landing in the
-    same place -- and both land a long way from Stock 1989, the one human
-    measurement in this regime. See HANDOVER.md, "How ICSM validated itself".
+    same place. See HANDOVER.md, "How ICSM validated itself".
+
+    CORRECTED 2026-09-22, and the correction reverses the claim. This
+    docstring used to end "-- and both land a long way from Stock 1989, the
+    one human measurement in this regime." THAT WAS NOT SUPPORTED, and on the
+    one channel where it can be tested it is BACKWARDS.
+
+    On CO2 the three can be compared directly, at 10 minutes of obstruction:
+
+        Stock's own piecewise fit carried to 10 min   42.6 mmHg
+        Laviola 2026, in silico                       38.2 (8.2)  -> 30.0-46.4
+        OURS                                          27.4 mmHg
+
+    Stock's figure sits INSIDE Laviola's 1 SD band. A human measurement and a
+    simulator with no V/Q distribution land on the same number and WE are the
+    outlier, 28% below both. Two caveats that both tighten rather than loosen
+    that: Stock sampled to 5 min, so 42.6 is his fit extrapolated, and he
+    describes the rise as LOGARITHMIC, so a linear carry-forward
+    over-estimates his own curve; and Laviola's 10 min includes the
+    post-cricothyroidotomy insufflations, so it is not pure obstruction
+    throughout.
+
+    ON OXYGEN, CORRECTED AGAIN the same day, and this one matters more.
+    An earlier version of this note said no ICSM oxygen value existed at a
+    Stock-comparable time. THAT WAS WRONG -- it came from searching the 2026
+    paper's SDC and main text and inferring absence, which is the move
+    CLAUDE.md forbids outright. Laviola M, Niklas C, Das A, Bates DG,
+    Hardman JG, "Effect of oxygen fraction on airway rescue: a computational
+    modelling study", Br J Anaesth 2020;125(1):e69-e74, doi
+    10.1016/j.bja.2020.01.004 -- WHICH THIS REPOSITORY ALREADY HELD --
+    publishes PaO2 at ONE-MINUTE INTERVALS through obstructed apnoea, in its
+    Figure 1. Read off the FO2 21% panel, apnoea starting at their 3 min mark:
+
+        min of apnoea     0    1    2    3    4    5    6    7
+        ICSM PaO2 kPa    74   67  59.5  50  38.5 26.5 14.5    8
+        ours      kPa    68   61   44   18   11   8.1   --   --
+
+    AT STOCK'S 5 MINUTES: Stock measured 314 (87) mmHg, ICSM gives about
+    26.5 kPa = 199 mmHg, and we give 61 mmHg. ICSM is 37% below Stock; we
+    are 81% below. At 199 mmHg their saturation is essentially 100%, which
+    agrees with Stock's "every one of 14 above 92%"; ours is 85.3% and does
+    not.
+
+    SO THE TWO MODELS DO NOT LAND IN THE SAME PLACE. Our curves start
+    together -- 68 against 74 kPa -- and diverge from about two minutes. By
+    three minutes we are at 18 kPa and they are at 50. Figure values are
+    read off a printed plot and are good to perhaps +-2 kPa, which is
+    nowhere near enough to change that.
+
+    NO PRESSURE IS PUBLISHED ANYWHERE IN THAT PAPER. Searched in full: there
+    is no cmH2O figure, only the qualitative "a single, passive inhalation
+    (caused by intrathoracic hypobaric pressure)" and "the sub-atmospheric
+    intrathoracic pressure was relieved by inflow via the newly opened
+    airway". They do not report the passive inhalation volume either, which
+    would have let their pressure be backed out from their compliance. So
+    whether their model floors intrathoracic pressure, and where, is NOT
+    determinable from what we hold.
     """
     p = Patient(weight=70, height=1.75, age=45, hb=14.0)
     r = simulate(p, [AirwayEpoch(1400, resistance=OBS, fgo2=0.21)],
