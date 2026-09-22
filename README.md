@@ -71,13 +71,13 @@ and this table used to make no distinction.
 | Heard 2017 | apnoeic oxygenation, obstructed | **no** |
 | O'Loughlin 2020 | desaturation timing | **no** |
 | Lane / Ramkumar / Altermatt / Dixon | positioning | **no** — and cited by surname and year only, so not retrievable as written |
-| Sci Rep 2023 (n=91) | cardiac output | **no** — identified by PMCID alone, no author or title recorded |
+| Kaiser 2024, *Sci Rep* 14:3617 (n=91) | cardiac output | **no** — identified by PMCID alone, no author or title recorded |
 | Varat 1972 | the circulation's response to anaemia | **no** |
 
 **Six of these eight have not been read by anyone on this project.** Their band
 edges were entered from memory or from abstracts. That does not make them wrong,
 but it does mean the bands are claims about the literature that nobody here has
-checked, and two of them (`Sci Rep 2023` and the positioning set) additionally
+checked, and two of them (`Sci Rep 2024` and the positioning set) additionally
 **grade a parameter against the number that parameter was fitted to**. `SOURCES.md`
 lists every source the model depends on, what rests on each, and its reading
 status. Read it before quoting any number from this model in a publication.

@@ -858,6 +858,89 @@ detail we had to assume, their preoxygenation:
 reproduces. The NOT REPRODUCIBLE entry is struck. **Ellis 2022 remains
 genuinely unreproducible** and stays there.
 
+### THE PATENT-AIRWAY DEFECT IS A 60-SECOND TRANSIENT — 2026-09-22
+
+Toner 2019 and Kaiser 2024 both obtained and read. Between them they locate the
+patent-airway CO2 fault precisely, and they correct two things I wrote
+yesterday.
+
+**Read from Toner 2019** (*Anesth Analg* 128:1154-9, n=20, patent airway,
+prolonged laryngoscopy):
+
+- sham apnoea time with SpO2 >94%: median **447 s, IQR 405-525** — and the
+  paper says "median (interquartile range)", so **it is an IQR**, settling the
+  question the Brown commentary raised about Heard's spreads.
+- buccal: 750 s (750-750).
+- **early CO2 accumulation "linear": buccal 3.16, sham 2.82 mmHg/min**.
+- **prolonged buccal: NONLINEAR, "declined over time", averaging 2.22 mmHg/min.**
+- mean tracheal pressure: buccal **0.21 (SD 0.39)**, sham **0.56 (SD 1.25)** cmH2O.
+
+**Read from Kaiser 2024** (*Sci Rep* 14:3617, n=91): preoxygenated to EtO2 >90%,
+15 min apnoeic oxygenation, arterial samples every 2 min. PaCO2 median **43
+(IQR 10) rising to 73 (IQR 14)**, mean change **2.1 mmHg/min**. Cardiac output
+median **5.0 to 6.5 L/min, +30%**.
+
+#### The finding
+
+| window | SEALED (ours) | PATENT (ours) |
+|---|---|---|
+| **0-1 min** | **11.76** | **12.16** |
+| 1-2 min | 1.75 | 1.38 |
+| 2-5 min | 5.59 | 1.91 |
+| 5-10 min | — | 1.85 |
+| 10-15 min | — | 1.75 |
+
+**The first-minute rise is essentially identical in the two regimes, 11.76
+sealed against 12.16 patent.** Sealed, that is right: Stock measured **12 mmHg
+in the first minute** under obstruction and the suite checks it. Patent, it is
+wrong by nearly **four times**: Toner's early phase is linear at 3.16 mmHg/min,
+so about 3.2 mmHg in the first minute.
+
+**The model applies an obstruction-sized equilibration transient to an open
+airway.** At apnoea onset arterial CO2 jumps toward mixed venous because gas
+exchange stops clearing it. Sealed, it has nowhere to go and the jump is large.
+With a patent airway and fresh gas flowing past, CO2 can still leave the
+alveolus, and the jump should be heavily damped. Ours is barely damped at all.
+
+**This resolves an inconsistency I could not explain yesterday.** Measured over
+a window that INCLUDES the first minute we look too steep — 2.482 against
+Kaiser's 2.1. Measured over a window that EXCLUDES it we look too shallow —
+1.78 against Toner's 2.22 and the Glottic trace's 2.16. Both are symptoms of
+one localised error: a first-minute transient about 4x too large, followed by a
+plateau that is slightly too shallow.
+
+#### Two things I wrote yesterday that are wrong
+
+1. **"Our slope increases with time where Toner's declines" — WRONG.** Ours
+   declines monotonically once the transient is past: 1.92, 1.89, 1.86, 1.82,
+   1.78, 1.72 over successive windows to 15 min. Toner reports the same
+   direction. **The shape agrees.** My earlier claim compared a 1-5 min window
+   against a 2.5-9.25 min window, and the first was contaminated by the
+   transient. Comparing two windows that straddle a transient measures the
+   transient, not the shape.
+2. **The "fast CO2 store smaller than 22" prediction was badly posed.** Kaiser
+   reports a rate, not a store. Deriving a store from their rate through our own
+   model and then using it to correct that model is circular — the exact pattern
+   the source audit flagged for `co_co2_gain`. The prediction cannot be tested
+   by this paper and should not be counted as either confirmed or refuted. What
+   Kaiser does give is a **third independent measurement of the patent rate**,
+   agreeing with Toner and the Glottic trace.
+
+#### Smaller corrections these two papers force
+
+- **Our Sci Rep citation year is wrong: it is 2024, not 2023.** But **n=91 is
+  right** — 91 complete data sets were analysed. Corrected in `SOURCES.md`.
+- **The +30% cardiac output rise is real and correctly transcribed** (5.0 to
+  6.5 L/min). Ours gives +35.9% over the same 15 min. The circularity the audit
+  flagged is unchanged — we fit `co_co2_gain` to that +30% and then grade
+  against it — but at least the target is now verified.
+- **"No published study records pressure and CO2 together during apnoea" needs
+  a qualifier.** Toner records tracheal pressure AND transcutaneous CO2 in the
+  same patients. The pressure is near zero (0.21 and 0.56 cmH2O) because the
+  airway is patent, so it does not touch the obstructed claim the three-way
+  study rests on — but the sentence as written is too broad and should say
+  **under obstruction**.
+
 ### The one open defect
 
 **Arterial CO2 is far too sensitive to V/Q spread.** Tokics 1996 measures

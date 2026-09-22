@@ -51,6 +51,8 @@ shortcut this project has been burned by.
 | **Ellis R, et al.** Comparison of apnoeic oxygen techniques in term pregnant subjects: response. *Br J Anaesth* 2023;130:e429-e430 (correspondence) | context | read. Holding the correspondence does **not** verify the 2022 paper's numbers |
 | **Laviola M, Dinsmore J, Lacquiere D, Niklas C, Heard A, Hardman JG.** Jet oxygenation via a narrow-bore cannula in the CICO scenario — **Supplementary Digital Content only** | MODEL comparator state at SaO2 40% | Table S5 read. **The main text is not held** — see §3 |
 | **O'Loughlin CJ, Phyland DJ, Vallance NA, Giddings C, Malkoutzis E, Gunasekera E, Webb A, Barnes R.** Low-flow apnoeic oxygenation for laryngeal surgery: a prospective observational study. *Anaesthesia* 2020;75:1070-1075, doi 10.1111/anae.14959 | four bands in `test_validation.py`, and five claims in `editorial.md` | **Read in full 2026-09-21.** n=64, age 47 (16), BMI 25 (4) — our test configuration is exact. Caught one error: see §5 |
+| **Toner AJ, Douglas SG, Bailey MA, et al.** Effect of apneic oxygenation on tracheal oxygen levels, tracheal pressure, and carbon dioxide accumulation. *Anesth Analg* 2019;128:1154-1159, PMID 31094782, doi 10.1213/ANE.0000000000003810 | two bands, the lean config, one CO2-store anchor | **READ IN FULL 2026-09-22.** n=20, patent airway. Sham median 447 s, **IQR 405-525, stated as "median (interquartile range)"**. Early CO2 LINEAR at 3.16 buccal / 2.82 sham mmHg/min; prolonged buccal nonlinear, declining, averaging 2.22. Mean tracheal pressure 0.21 (SD 0.39) buccal, 0.56 (SD 1.25) sham cmH2O. **Located the patent-airway defect** |
+| **Kaiser HA, Bauer T, Riva T, et al.** Carbon dioxide and cardiac output as major contributors to cerebral oxygenation during apnoeic oxygenation. *Sci Rep* **2024**;14:3617, PMC10864331, doi 10.1038/s41598-023-49238-3 | `co_co2_gain`, `sv_co2_gain`, three bands | **READ IN FULL 2026-09-22. Our n=91 was RIGHT; the YEAR was wrong, 2024 not 2023.** PaCO2 43 (IQR 10) to 73 (IQR 14) over 15 min, mean change 2.1 mmHg/min; cardiac output 5.0 to 6.5 L/min, **+30% confirmed**. The circularity stands: we fit to that +30% then grade against it |
 | **Farmery AD, Roe PG.** A model to describe the rate of oxyhaemoglobin desaturation during apnoea. *Br J Anaesth* 1996;76:284-291 | nothing yet — see §4 | read in full 2026-09-20 |
 
 ---
@@ -64,8 +66,6 @@ is recorded in `HANDOVER.md` as the oldest failure mode here.
 
 | source | what rests on it | why it matters |
 |---|---|---|
-| **"Sci Rep 2023", PMCID PMC10864331, n=91.** No author, title, volume or DOI recorded anywhere | `co_co2_gain` and `sv_co2_gain` = 0.0045 (`apnoea_core.py`), three bands in `test_validation.py`, a `README.md` row | **Circular.** The coefficient is fitted to a reported +30% and then graded against that same +30%. Calibration presented as validation. Open access — the cheapest item on this list |
-| **Toner AJ, et al.** *Anesth Analg* 2019;128:1154-9 | two bands, the lean patient configuration in `buccal_numbers.py`, one CO2-store anchor, a `README.md` row, `editorial.md` ref [1] | The model gives **403.4 s against a published IQR floor of 405**; it passes only because the band was widened to 380. The sham-arm pharyngeal fraction is a model *input*, not a measurement, and moving it 0.21→0.30 takes the model across most of the published IQR |
 | **Heard A, et al.** *Anesth Analg* 2017;124:1162-7 | a band that **is** the published IQR (244-314 s), and the obese configuration behind every obese number in `buccal_numbers.py` and `editorial.md` | A transcription error moves both band edges at once. Mohanty 2021 contests the buccal figure by about 2× (`HANDOVER.md`) |
 | **The four positioning trials: Lane 2005, Ramkumar 2011, Altermatt 2005, Dixon 2005.** Surnames and years only | `tilt_gain_lean` and `tilt_gain_bmi`, stated in `apnoea_core.py` as "calibrated against four randomised trials", then graded by three bands set from those same four | **Not retrievable as cited, by anyone, including us.** Also a fit graded by its own calibration target (§6). The limb is not confined to the positioning test: the obese buccal configuration runs `tilt_deg=25` |
 | **The one-lung-ventilation narrative review**, doi 10.3390/jcm15135078. No author or title recorded | `protocol/evidence.md` calls it "obtained and read" and draws an **absence** claim from it | Reasoning from what a document does not contain is the move CLAUDE.md forbids outright. Open access |
@@ -289,13 +289,18 @@ entries could not be ordered from a library as written; now they can.
 
 ### Three things this turned up that need checking when the papers arrive
 
-1. **The Sci Rep citation in the repository may be wrong on two counts.** We record
-   "Sci Rep 2023 (n=91)". The resolved record is **2024, volume 14, article 3617**,
-   and the search summary describes **125 patients recruited**. Either our year and
-   n are wrong, or the 91 is a subgroup with complete cardiac-output data and the
-   year is a typo for the online-first date. **Not resolvable from a summary** —
-   this is precisely the kind of gap that has to be closed by reading. It matters
-   because this paper sets `co_co2_gain` and `sv_co2_gain` and three bands.
+1. ~~**The Sci Rep citation in the repository may be wrong on two counts.**~~
+   **ANSWERED 2026-09-22 BY READING THE PAPER, and the answer is split.** We
+   recorded "Sci Rep 2023 (n=91)". The paper says **"Ninety-one complete data
+   sets were analysed"**, so **n=91 is RIGHT** — the 125 in the search summary
+   was the number recruited, not analysed. **The year was WRONG: 2024, not
+   2023**, now corrected in `apnoea_core.py`, `test_validation.py` and
+   `README.md`.
+
+   Worth noting how close this came to going the other way. The search summary
+   offered "125 patients", and had that been written in on the strength of a
+   summary it would have replaced a correct number with a wrong one. The paper
+   settled it; the summary would have corrupted it.
 2. **The *Chest* candidate is plausible but unconfirmed.** Kiely 1996 reports
    hypercapnia's effect on exactly the indices `test_validation.py` names
    ("HR, SV, CO and MAP all rose"), in humans. That is a good fit and nothing more.

@@ -288,7 +288,7 @@ class Patient:
     # relevant population: 91 anaesthetised, paralysed, apnoeic patients on
     # 100% oxygen, continuous cardiac output, arterial gases every 2 min --
     # median CO 5.0 (IQR 4.5-6.0) rising to 6.5 (5.7-7.5) L/min by 15 min with
-    # PaCO2 climbing 2.1 mmHg/min (Sci Rep 2023, PMC10864331). That is +30% CO
+    # PaCO2 climbing 2.1 mmHg/min (Sci Rep 2024, PMC10864331). That is +30% CO
     # for +31 mmHg PaCO2: 0.97% of baseline per mmHg.
     #
     # The coefficient is fitted to the NET observed change, so any direct
@@ -420,7 +420,7 @@ class Patient:
 
     # --- body CO2 stores ---------------------------------------------------
     # Tuned to the MODERN measured arterial rate of rise, ~2.1 mmHg/min
-    # (Sci Rep 2023, n=91; Gustafsson 0.24 kPa/min; Toner 0.30 kPa/min
+    # (Sci Rep 2024, n=91; Gustafsson 0.24 kPa/min; Toner 0.30 kPa/min
     # transcutaneous). Historical series report 3.0-3.4 mmHg/min arterial
     # (Frumin 1959; Eger & Severinghaus; Stock).
     #

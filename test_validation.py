@@ -297,7 +297,7 @@ def test_positioning_trials():
 
 
 def test_cardiac_output():
-    """Sci Rep 2023 (PMC10864331). CLINICAL. n=91 anaesthetised, paralysed,
+    """Sci Rep 2024 (PMC10864331). CLINICAL. n=91 anaesthetised, paralysed,
     apnoeic on 100% O2: CO 5.0 -> 6.5 L/min at 15 min, PaCO2 +2.1 mmHg/min."""
     p = Patient(weight=75, height=1.75, age=45, hb=14, tilt_deg=0)
     r = patent(p, 1.00, dur=900)

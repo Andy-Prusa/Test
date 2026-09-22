@@ -1268,6 +1268,73 @@ print("    PROVENANCE header raises that choice and can now name which model")
 print("    uses which.")
 
 # ---------------------------------------------------------------------------
+print("\nTHE PATENT-AIRWAY DEFECT IS A 60-SECOND TRANSIENT -- 2026-09-22")
+print("  Toner 2019 and Kaiser 2024 both obtained and READ. Toner, n=20,")
+print("  patent airway: early CO2 LINEAR at 3.16 (buccal) / 2.82 (sham)")
+print("  mmHg/min; prolonged buccal NONLINEAR, 'declined over time',")
+print("  averaging 2.22. Sham apnoea median 447 s, IQR 405-525 -- the paper")
+print("  says 'median (interquartile range)', so it IS an IQR. Mean tracheal")
+print("  pressure 0.21 (SD 0.39) buccal, 0.56 (SD 1.25) sham cmH2O.")
+print("  Kaiser, n=91: PaCO2 43 (IQR 10) -> 73 (IQR 14) over 15 min, mean")
+print("  change 2.1 mmHg/min; cardiac output 5.0 -> 6.5 L/min, +30%.")
+
+
+def _co2win(sealed, pc0):
+    _p = Patient(weight=70, height=1.75, age=45, hb=15, tilt_deg=0)
+    return simulate(_p, [AirwayEpoch(1000,
+                    resistance=(OBS if sealed else 2),
+                    fgo2=(0.21 if sealed else 1.00))],
+                    dt=DT, feo2_start=(0.87 if sealed else 0.90),
+                    paco2_start=pc0, stop_sao2=0.0)
+
+
+_rs, _rp = _co2win(True, 39.0), _co2win(False, 43.0)
+for _a, _b, _lab, _wsl, _wpa in ((0, 60, '0-1 min', 11.76, 12.16),
+                                 (60, 120, '1-2 min', 1.75, 1.38),
+                                 (120, 300, '2-5 min', 5.59, 1.91)):
+    check(f"{_lab}: SEALED slope",
+          (at(_rs, 'paco2', _b) - at(_rs, 'paco2', _a)) / ((_b - _a) / 60.0),
+          _wsl, 0.15, " mmHg/min")
+    check(f"{_lab}: PATENT slope",
+          (at(_rp, 'paco2', _b) - at(_rp, 'paco2', _a)) / ((_b - _a) / 60.0),
+          _wpa, 0.15, " mmHg/min")
+print("    THE FIRST-MINUTE RISE IS ESSENTIALLY IDENTICAL IN THE TWO")
+print("    REGIMES: 11.76 sealed against 12.16 patent. Sealed that is RIGHT,")
+print("    Stock measured 12 and the suite checks it. Patent it is wrong by")
+print("    nearly FOUR TIMES -- Toner's early phase is linear at 3.16")
+print("    mmHg/min, so about 3.2 mmHg in the first minute.")
+print("    THE MODEL APPLIES AN OBSTRUCTION-SIZED EQUILIBRATION TRANSIENT TO")
+print("    AN OPEN AIRWAY. At onset, arterial CO2 jumps toward mixed venous")
+print("    because gas exchange stops clearing it. Sealed, it has nowhere to")
+print("    go. With fresh gas flowing past, the jump should be heavily")
+print("    damped. Ours is barely damped at all.")
+print("    IT ALSO RESOLVES AN INCONSISTENCY. Over a window INCLUDING the")
+print("    first minute we look too steep (2.48 against Kaiser's 2.1); over")
+print("    one EXCLUDING it we look too shallow (1.78 against Toner's 2.22).")
+print("    One localised error: a first-minute transient ~4x too large, then")
+print("    a plateau slightly too shallow.")
+print("    AND THE SHAPE AGREES, contrary to what was written on 2026-09-21.")
+for _a, _b, _w in ((120, 240, 1.916), (480, 600, 1.820), (720, 900, 1.723)):
+    check(f"patent slope {_a//60}-{_b//60} min (declining, as Toner reports)",
+          (at(_rp, 'paco2', _b) - at(_rp, 'paco2', _a)) / ((_b - _a) / 60.0),
+          _w, 0.1, " mmHg/min")
+print("    Ours declines monotonically once the transient is past, which is")
+print("    the direction Toner reports. The earlier 'our slope increases'")
+print("    claim compared two windows straddling the transient, so it")
+print("    measured the transient rather than the shape.")
+_ck = _co2win(False, 43.0)
+check("Kaiser window: our mean change over 15 min (theirs 2.1)",
+      (at(_ck, 'paco2', 900) - at(_ck, 'paco2', 0)) / 15.0, 2.482, 0.05,
+      " mmHg/min")
+check("Kaiser window: our cardiac output rise (theirs +30%)",
+      100.0 * (at(_ck, 'co', 900) / at(_ck, 'co', 0) - 1.0), 35.9, 0.6, " %")
+print("    NOTE ON THE 'FAST STORE' PREDICTION of 2026-09-21: it was BADLY")
+print("    POSED and is neither confirmed nor refuted. Kaiser reports a RATE,")
+print("    not a store. Deriving a store from their rate through our own")
+print("    model and then using it to correct that model is circular -- the")
+print("    exact pattern the source audit flagged for co_co2_gain.")
+
+# ---------------------------------------------------------------------------
 print("\nTHE FRC REGRESSION -- the largest UNCITED lever in the model")
 print("  Flagged 2026-09-21 by the pre-release source audit (SOURCES.md). The")
 print("  regression apnoea_core.py anchors FRC to --")
