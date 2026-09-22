@@ -7,3 +7,6 @@ result.png
 # parity test scratch
 .parity_tmp/
 dist/
+
+# vq_chart.py writes this
+vq_comparison.html

@@ -1268,6 +1268,86 @@ print("    PROVENANCE header raises that choice and can now name which model")
 print("    uses which.")
 
 # ---------------------------------------------------------------------------
+print("\nREMOVING THE V/Q SPREAD -- the two arbiters point OPPOSITE WAYS")
+print("  Asked 2026-09-22: what does vq_log_sd actually do to every reported")
+print("  variable? Two runs of THIS model, identical but for that one number.")
+print("  A is the shipped 0.70. B is 0.01 -- one effectively uniform alveolar")
+print("  compartment, which is the STRUCTURE Hardman 1998 Appendix 1")
+print("  describes. B IS OUR CODE EMULATING THEIR STRUCTURE. It is not their")
+print("  model, not their output, and no B number may be reported as an ICSM")
+print("  result. Configuration is test_validation.test_stock_1989 exactly --")
+print("  70 kg, 1.75 m, 45 y, Hb 15.0, tube clamped, room air -- so the")
+print("  comparison with Stock is like-for-like with the benchmark.")
+print("  Drawn by vq_chart.py; ARBITRATED HERE.")
+
+
+def _vqrun(sd):
+    _p = Patient(weight=70, height=1.75, age=45, hb=15.0, vq_log_sd=sd)
+    return simulate(_p, [AirwayEpoch(1400, resistance=OBS, fgo2=0.21)],
+                    dt=DT, stop_sao2=0.0)
+
+
+_vqA, _vqB = _vqrun(0.70), _vqrun(0.01)
+for _k, _lab, _wa, _wb, _tol in (
+        ('pao2',  'PaO2 at 300 s',   60.98, 157.48, 0.60),
+        ('paco2', 'PaCO2 at 300 s',  71.01,  60.09, 0.15),
+        ('sao2',  'SaO2 at 300 s',   85.30,  99.11, 0.30),
+        ('ph',    'pH at 300 s',      7.231,  7.276, 0.005)):
+    check(f"spread ON  0.70: {_lab}", at(_vqA, _k, 300), _wa, _tol)
+    check(f"spread OFF 0.01: {_lab}", at(_vqB, _k, 300), _wb, _tol)
+check("spread ON  0.70: first-minute CO2 rise",
+      at(_vqA, 'paco2', 60) - _vqA['paco2'][0], 12.02, 0.10, " mmHg")
+check("spread OFF 0.01: first-minute CO2 rise",
+      at(_vqB, 'paco2', 60) - _vqB['paco2'][0], 12.16, 0.10, " mmHg")
+check("spread ON  0.70: Stock 1-5 min slope",
+      (at(_vqA, 'paco2', 300) - at(_vqA, 'paco2', 60)) / 4.0, 4.72, 0.05,
+      " mmHg/min")
+check("spread OFF 0.01: Stock 1-5 min slope",
+      (at(_vqB, 'paco2', 300) - at(_vqB, 'paco2', 60)) / 4.0, 1.95, 0.05,
+      " mmHg/min")
+check("spread ON  0.70: SaO2 40% reached at",
+      time_to(_vqA, 'sao2', 40), 513.0, 3.0, " s")
+check("spread OFF 0.01: SaO2 40% reached at",
+      time_to(_vqB, 'sao2', 40), 496.0, 3.0, " s")
+print("    Stock 1989 MEASURED, 14 anaesthetised adults, tube clamped:")
+print("      PaO2 314 (87)   PaCO2 63 (9)   pH 7.26 (0.06)   SaO2 >92% in ALL")
+print("      first minute 12 mmHg, thereafter 3.4 mmHg/min (band 2.4-4.4)")
+print("    ON OXYGEN THE SPREAD IS MOST OF THE DEFECT AND POINTS ONE WAY.")
+print("    Killing it moves PaO2 61 -> 157 against a measured 314, a 2.6x")
+print("    move toward the measurement, and turns a saturation that FAILS")
+print("    Stock's 'every patient above 92%' into one that passes. It does")
+print("    not reach 314, so the spread is not the whole oxygen story.")
+print("    ON CO2 THE SPREAD BRACKETS THE MEASUREMENT RATHER THAN FIXING IT.")
+print("    4.72 is 39% high, 1.95 is 43% low, and Stock's 3.4 sits between.")
+print("    On the ABSOLUTE 300 s value both are inside +-1 SD of 63 (9), so")
+print("    the SLOPE is the only statistic that discriminates. An earlier")
+print("    draft of this finding said B was 'in band' on the 300 s value")
+print("    where A was 'out'. Both are in. That claim was wrong and is")
+print("    struck here rather than quietly dropped.")
+print("    The first-minute rise is INERT to the spread -- 12.02 against")
+print("    12.16, both on a measured 12 -- so the bulk CO2 bookkeeping is")
+print("    right either way and only the a-A gap moves. Same result the")
+print("    dispersion block above reaches by a different route.")
+print("    AND AGAINST LAVIOLA 2026 THE SIGN REVERSES: removing the spread")
+print("    makes agreement WORSE on PaO2, PaCO2, cardiac output and MAP at")
+print("    the SaO2 40% state. So the human measurement wants LESS spread")
+print("    and the other simulator wants MORE.")
+print("    NEITHER ARBITRATES. Laviola's simulator has no V/Q distribution")
+print("    at all (block above), so it cannot be an authority on the")
+print("    parameter; and Stock's two channels disagree with each other.")
+print("    THIS IS NOT PERMISSION TO SPLIT THE DIFFERENCE. vq_log_sd 0.50")
+print("    puts the CO2 slope in band (3.16, recorded above) and would move")
+print("    oxygen too. That is a fit, not a mechanism, and CLAUDE.md forbids")
+print("    it. The parameter stays at 0.70 pending a written ruling.")
+print("    WHAT WOULD SETTLE IT: time-to-desaturation is NEARLY BLIND to")
+print("    this parameter -- 513 s against 496 s, a 3.3% difference across")
+print("    the entire plausible range of the thing that moves PaO2 by 2.6x.")
+print("    So any experiment reading out desaturation TIME cannot decide it.")
+print("    It needs a GAS STATE measured under obstruction, which is Stock")
+print("    and only Stock, or a measurement of regional gas volume against")
+print("    regional perfusion, which nobody in this repository has made.")
+
+# ---------------------------------------------------------------------------
 print("\nTHE PATENT-AIRWAY DEFECT IS A 60-SECOND TRANSIENT -- 2026-09-22")
 print("  Toner 2019 and Kaiser 2024 both obtained and READ. Toner, n=20,")
 print("  patent airway: early CO2 LINEAR at 3.16 (buccal) / 2.82 (sham)")

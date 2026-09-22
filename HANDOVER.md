@@ -3517,6 +3517,74 @@ and widening the band to admit 4.7 would be hiding. Apply it together with
 whatever finally explains the a-A gap, and re-derive any mixing constant AFTER
 it rather than before -- the fix moves the value such a constant would need.
 
+## Removing the V/Q spread — the two arbiters point opposite ways
+
+Asked 2026-09-22: what does `vq_log_sd` actually do to every reported variable?
+`vq_log_sd` is the width of the ventilation-to-perfusion distribution — in
+plain terms, how unevenly air and blood are matched from one region of the lung
+to the next. Two runs of **this** model, identical but for that one number.
+**A** is the shipped 0.70. **B** is 0.01, one effectively uniform alveolar
+compartment, which is the *structure* Hardman 1998 Appendix 1 describes for the
+Nottingham simulator.
+
+**B is our code emulating their structure. It is not their model, not their
+output, and no B number may be reported as an ICSM result.**
+
+Configuration is `test_validation.test_stock_1989` exactly — 70 kg, 1.75 m,
+45 y, Hb 15.0, tracheal tube clamped, room air in the airway — so the Stock
+comparison is like-for-like with the benchmark. Drawn by `vq_chart.py`,
+arbitrated in `handover_numbers.py` under "REMOVING THE V/Q SPREAD".
+
+| at 300 s | A, spread on 0.70 | B, spread off 0.01 | Stock 1989 measured |
+|---|---|---|---|
+| PaO2 | 60.98 | 157.48 | **314 (87)** |
+| SaO2 | 85.30 | 99.11 | **>92% in all 14** |
+| PaCO2 | 71.01 | 60.09 | 63 (9) |
+| pH | 7.231 | 7.276 | 7.26 (0.06) |
+| first-minute CO2 rise | 12.02 | 12.16 | 12 |
+| 1–5 min slope | **4.72** | **1.95** | 3.4, band 2.4–4.4 |
+| SaO2 40% reached at | 513 s | 496 s | — |
+
+**On oxygen the spread is most of the defect and it points one way.** Killing it
+moves PaO2 from 61 to 157 against a measured 314 — a 2.6× move toward the
+measurement — and turns a saturation that FAILS Stock's "every patient above
+92%" into one that passes. It does not reach 314, so the spread is not the whole
+oxygen story.
+
+**On CO2 the spread brackets the measurement rather than fixing it.** 4.72 is
+39% high, 1.95 is 43% low, and Stock's 3.4 sits between them. On the absolute
+300 s value *both* are inside ±1 SD of 63 (9), so the slope is the only
+statistic that discriminates. An earlier draft of this finding claimed B was "in
+band" on the 300 s value where A was "out". Both are in. That claim was wrong,
+came from running Hb 14 rather than the benchmark's 15, and is struck here
+rather than quietly dropped.
+
+The first-minute rise is **inert** to the spread — 12.02 against 12.16, both on
+a measured 12 — so the bulk CO2 bookkeeping is right either way and only the
+arterial-to-alveolar gap moves. That is the same conclusion the dispersion block
+reaches by a different route.
+
+**And against Laviola 2026 the sign reverses.** Removing the spread makes
+agreement WORSE on PaO2, PaCO2, cardiac output and mean arterial pressure at the
+SaO2 40% state. So the human measurement wants LESS spread and the other
+simulator wants MORE.
+
+**Neither arbitrates.** Laviola's simulator has no V/Q distribution at all (see
+"The Nottingham simulator has no V/Q distribution"), so it cannot be an authority
+on this parameter; and Stock's two channels disagree with each other.
+
+**This is not permission to split the difference.** `vq_log_sd` 0.50 puts the CO2
+slope in band at 3.16 and would move oxygen too. That is a fit, not a mechanism,
+and CLAUDE.md forbids it. The parameter stays at 0.70 pending a written ruling.
+
+**What would settle it, and what would not.** Time-to-desaturation is nearly
+blind to this parameter — 513 s against 496 s, a 3.3% difference across the
+entire plausible range of the thing that moves PaO2 by 2.6×. **Any experiment
+reading out desaturation TIME cannot decide it.** It needs a gas state measured
+under obstruction, which is Stock and only Stock, or a measurement of regional
+gas volume against regional perfusion, which nobody in this repository has made
+and which is not what Tokics measured.
+
 ## Open work, roughly by value
 
 1. **Measured shunt fractions in obese anaesthetised patients against BMI.**
