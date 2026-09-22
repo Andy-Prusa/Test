@@ -695,6 +695,87 @@ CO2 disagreements are one mechanism seen from two sides rather than two faults.
   measured numbers are NOT**, deliberately: the spreadsheet is untracked, so a
   check reading it would fail for every recipient. They are dated instead.
 
+### TWO FAULTS, NOT ONE — my own "one mechanism" claim refuted, 2026-09-22
+
+Yesterday I wrote that the sign flip was "the first evidence that the two CO2
+disagreements are ONE mechanism seen from two sides rather than two faults".
+**That was wrong, and the test designed to confirm it refuted it instead.**
+
+**The discriminator.** If one mechanism drove both limbs, a lever on it would
+move BOTH, in opposite directions. Move each lever and watch both. Sealed =
+Stock configuration, 1-5 min (measured 3.4). Patent = Toner buccal
+configuration, 2.5-9.25 min (measured 2.16). Both at the shipped patient.
+
+| lever | SEALED | PATENT |
+|---|---|---|
+| **shipped** | **4.629** | **1.778** |
+| `vq_log_sd` 0.35 — half the V/Q spread | **2.058** | 1.778 |
+| `vq_log_sd` 0.90 | **5.946** | 1.777 |
+| `tau_mix` 15 s — fast stirring between units | **7.466** | 1.778 |
+| `vo2_ref` 300 — 20% more CO2 made | 4.631 | **2.307** |
+| `rq` 0.9 — more CO2 per O2 consumed | 4.928 | **2.078** |
+| `v_tis_co2_fast` 15 — 32% smaller fast store | 5.480 | **2.408** |
+| `k_co2_slow` 0.4 — slower deep store | 4.694 | **1.925** |
+| `v_tis_co2_slow` 90 | 4.627 | 1.781 |
+
+**The levers partition cleanly and the sets are disjoint.**
+
+- **The V/Q levers move the sealed limb by up to 61% and the patent limb by
+  ZERO.** `vq_log_sd` 0.35 halves the sealed slope and changes the patent slope
+  in the fourth decimal place. `tau_mix` 15 s raises the sealed slope 61% and
+  leaves the patent slope identical.
+- **The production and store levers move the patent limb and barely touch the
+  sealed one.** `vo2_ref` 250 to 300 moves the patent slope 30% and the sealed
+  slope by **0.002 mmHg/min — four hundredths of one percent**.
+
+That is about as clean an orthogonality as a model of this kind ever gives, and
+it means **the two red CO2 limbs are separate faults that can be worked
+independently.**
+
+**Why, mechanically.** The arterial-minus-alveolar CO2 gap, measured:
+
+| t (s) | sealed | patent |
+|---|---|---|
+| 60 | -0.18 | 0.11 |
+| 150 | -0.05 | -0.12 |
+| **300** | **+8.27** | **-0.05** |
+| 450 | +1.20 | 0.03 |
+| 555 | -2.52 | 0.08 |
+
+**When the airway is open the gap is zero to within a tenth of a mmHg at every
+timepoint.** Fresh gas keeps the compartments equilibrated, so the V/Q-weighting
+mechanism — the one that makes arterial blood a perfusion-weighted content
+average read through a curve — has nothing to bite on. Seal the airway and it
+switches on hard. So the mechanism identified on 2026-09-21 is real, and it is
+**exclusively an obstructed-airway mechanism**. It cannot explain the patent
+shortfall because it is not operating there.
+
+#### What each fault now points at
+
+**Sealed, +39% too steep: the V/Q weighting.** Already localised. Blocked by the
+definition question — `vq_log_sd` is a gas-volume dispersion judged against a
+ventilation dispersion measured in a ventilated lung.
+
+**Patent, -18% too shallow: CO2 production or the fast tissue store.** New, and
+more tractable. Two candidates, and they pull in opposite directions:
+
+- `vo2_ref` = 250 mL/min would need to rise to about 285 to fix the slope.
+  **But that is the wrong way.** `vo2_ref` is uncited (see the audit), and the
+  one external handle we hold — Farmery & Roe quoting Nunn — puts anaesthetised
+  VO2 at **0.20 L/min against our 232 mL/min**, i.e. our production is if
+  anything already too HIGH. Raising it to fit would be tuning against the
+  literature, which CLAUDE.md forbids.
+- `v_tis_co2_fast` = 22 would need to fall to about 18. **This is the live
+  candidate**, because that store is calibrated against the "Sci Rep 2023"
+  paper that nobody here has read — now identified as Kaiser HA et al.,
+  *Sci Rep* 2024;14:3617, open access. The store is the least-sourced thing in
+  the CO2 limb and it is exactly what the patent slope is sensitive to.
+
+**So the single most valuable paper for this defect is Kaiser 2024**, and the
+prediction is specific: if their measured CO2 kinetics imply a smaller fast
+store than 22, the patent limb resolves without touching anything else, and
+without touching the sealed limb at all.
+
 ### The one open defect
 
 **Arterial CO2 is far too sensitive to V/Q spread.** Tokics 1996 measures

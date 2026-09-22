@@ -1159,6 +1159,77 @@ print("    NOT A CALIBRATION. n=1, transcutaneous is not arterial, and the")
 print("    authorisation terms forbid setting any parameter or band from it.")
 
 # ---------------------------------------------------------------------------
+print("\nTWO FAULTS, NOT ONE -- the 'one mechanism' claim REFUTED 2026-09-22")
+print("  On 2026-09-21 this file's author wrote that the CO2 sign flip was")
+print("  'the first evidence that the two CO2 disagreements are ONE mechanism")
+print("  seen from two sides'. The test built to confirm it refuted it.")
+print("  If one mechanism drove both, a lever on it would move BOTH limbs in")
+print("  opposite directions. Sealed = Stock config, 1-5 min (measured 3.4).")
+print("  Patent = Toner buccal config, 2.5-9.25 min (measured 2.16).")
+
+
+def _seal(**kw):
+    _p = Patient(weight=70, height=1.75, age=45, hb=15, tilt_deg=0, **kw)
+    return simulate(_p, [AirwayEpoch(900, resistance=OBS, fgo2=0.21)],
+                    dt=DT, feo2_start=0.87, paco2_start=39.0, stop_sao2=0.0)
+
+
+def _pat(**kw):
+    _p = Patient(weight=70, height=1.75, age=45, hb=15, tilt_deg=0, **kw)
+    return simulate(_p, [AirwayEpoch(900, resistance=2, fgo2=1.00)],
+                    dt=DT, feo2_start=0.87, paco2_start=40.0, stop_sao2=0.0)
+
+
+def _sl(_r, a, b):
+    return (at(_r, 'paco2', b) - at(_r, 'paco2', a)) / ((b - a) / 60.0)
+
+
+for _lab, _kw, _ws, _wp in (
+        ("shipped", {}, 4.629, 1.778),
+        ("vq_log_sd 0.35", dict(vq_log_sd=0.35), 2.058, 1.778),
+        ("vq_log_sd 0.90", dict(vq_log_sd=0.90), 5.946, 1.777),
+        ("tau_mix 15", dict(tau_mix=15.0), 7.466, 1.778),
+        ("vo2_ref 300", dict(vo2_ref=300.0), 4.631, 2.307),
+        ("rq 0.9", dict(rq=0.9), 4.928, 2.078),
+        ("v_tis_co2_fast 15", dict(v_tis_co2_fast=15.0), 5.480, 2.408),
+        ("k_co2_slow 0.4", dict(k_co2_slow=0.4), 4.694, 1.925)):
+    check(f"{_lab}: SEALED slope", _sl(_seal(**_kw), 60, 300), _ws, 0.05,
+          " mmHg/min")
+    check(f"{_lab}: PATENT slope", _sl(_pat(**_kw), 150, 555), _wp, 0.05,
+          " mmHg/min")
+print("    THE LEVERS PARTITION AND THE SETS ARE DISJOINT. The V/Q levers")
+print("    move the sealed limb up to 61% and the patent limb by ZERO --")
+print("    vq_log_sd 0.35 halves the sealed slope and changes the patent one")
+print("    in the fourth decimal. The production and store levers move the")
+print("    patent limb and barely touch the sealed one: vo2_ref 250 -> 300")
+print("    moves patent 30% and sealed by 0.002 mmHg/min, four hundredths of")
+print("    one percent. So the two red CO2 limbs are SEPARATE FAULTS and can")
+print("    be worked independently.")
+_gs, _gp = _seal(), _pat()
+for _t, _wgs, _wgp in ((60, -0.18, 0.11), (300, 8.27, -0.05), (555, -2.52, 0.08)):
+    check(f"a-A CO2 gap at {_t} s, SEALED",
+          at(_gs, 'paco2', _t) - at(_gs, 'paco2_alv', _t), _wgs, 0.25, " mmHg")
+    check(f"a-A CO2 gap at {_t} s, PATENT",
+          at(_gp, 'paco2', _t) - at(_gp, 'paco2_alv', _t), _wgp, 0.25, " mmHg")
+print("    WHY: with the airway OPEN the gap is zero to within a tenth of a")
+print("    mmHg at every timepoint. Fresh gas keeps the compartments")
+print("    equilibrated, so the V/Q-weighting mechanism has nothing to bite")
+print("    on. Seal the airway and it switches on hard (+8.27 at 300 s). The")
+print("    mechanism found on 2026-09-21 is real and is EXCLUSIVELY an")
+print("    obstructed-airway mechanism. It cannot explain the patent")
+print("    shortfall because it is not operating there.")
+print("    THE PATENT FAULT POINTS AT THE FAST CO2 TISSUE STORE. vo2_ref")
+print("    would have to RISE to about 285 to fix the slope, but Farmery &")
+print("    Roe quoting Nunn puts anaesthetised VO2 at 0.20 L/min against our")
+print("    232 mL/min -- our production is if anything already too high, so")
+print("    raising it would be tuning against the literature. v_tis_co2_fast")
+print("    would have to fall from 22 to about 18, and THAT store is")
+print("    calibrated against the paper nobody has read: Kaiser HA et al,")
+print("    Sci Rep 2024;14:3617, open access. Specific prediction: if their")
+print("    measured CO2 kinetics imply a fast store smaller than 22, the")
+print("    patent limb resolves without touching the sealed limb at all.")
+
+# ---------------------------------------------------------------------------
 print("\nTHE FRC REGRESSION -- the largest UNCITED lever in the model")
 print("  Flagged 2026-09-21 by the pre-release source audit (SOURCES.md). The")
 print("  regression apnoea_core.py anchors FRC to --")
