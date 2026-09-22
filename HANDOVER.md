@@ -627,6 +627,74 @@ stop-absorbing rule, which is the physiologically correct terminator and
 would also bear on the shunt — not a different floor.
 
 
+### THE PATENT-AIRWAY CO2 SLOPE IS 18% LOW, NOT 2-3x LOW — 2026-09-22
+
+`README.md` has been calling the patent-airway CO2 slope "a weakness nothing
+currently tests", our 1.70 mmHg/min against "a classical 3-5". **Both halves of
+that sentence were wrong.** It is now tested, and the comparator is not 3-5.
+
+**Measured: the Toner transcutaneous trace, one patient, ID glottic01, 7 March
+2017.** Unpublished; use authorised by A. Heard on 2026-09-21 under the terms in
+`SOURCES.md`. Transcutaneous CO2 at 1 Hz; this monitor recorded no SpO2 and no
+O2, so the trace constrains the CO2 limb and nothing else.
+
+| | value |
+|---|---|
+| baseline, 14:20-14:41 (1260 s) | 35.46 mmHg, SD 0.63 |
+| **slope, 14:42:30-14:50:00 (452 s)** | **2.160 mmHg/min, r = 0.9959** |
+| peak | 53 mmHg, falling after ~14:51 as ventilation resumed |
+| excursion, baseline to peak | 17.5 mmHg over about 9 min |
+
+**Our model, the Toner configuration already in `test_validation.py`** (70 kg,
+1.75 m, 45 y, Hb 15, supine, patent airway, buccal pharyngeal oxygen), which is
+the right arm because nobody stays apnoeic nine minutes on room air:
+
+| | value |
+|---|---|
+| slope, 2.5-9.25 min | **1.778 mmHg/min** |
+| slope, 1-5 min | 1.680 mmHg/min |
+| excursion over 9.25 min | 25.7 mmHg |
+
+**So we are 18% LOW on the slope, against a measurement, not against a
+textbook.** And it agrees with the study's own published figure: Toner reports
+0.30 kPa/min = 2.25 mmHg/min transcutaneous, which this single trace
+independently reproduces at 2.16.
+
+#### The direction is the finding
+
+| regime | ours | measured | error |
+|---|---|---|---|
+| **obstructed** (Stock 1989) | 4.72 | 3.4 | **+39% TOO STEEP** |
+| **patent** (Toner trace, and Toner's published figure) | 1.78 | 2.16 / 2.25 | **-18% TOO SHALLOW** |
+
+**The model is too steep when the airway is sealed and too shallow when it is
+open.** That matters more than either number. A global error in the CO2
+chemistry — the dissociation curve, the buffering, the tissue stores — would
+move both limbs the SAME way, because all of them act regardless of the airway.
+An error that flips sign with the airway state cannot be any of those. It points
+at what the airway does: dilution by entrained gas when open, and the
+V/Q-weighting mechanism when sealed.
+
+That is consistent with the V/Q finding above — the arterial-to-alveolar gap
+mechanism is switched on hard under obstruction and largely off when fresh gas
+keeps the compartments equilibrated — and it is the first evidence that the two
+CO2 disagreements are one mechanism seen from two sides rather than two faults.
+
+#### What this does NOT license
+
+- **It is one patient.** The slope is beautifully linear (r = 0.9959) but n = 1.
+- **Transcutaneous is not arterial.** The sensor lags by roughly 30-120 s, so
+  the true apnoea onset precedes the visible upturn and the peak trails the end
+  of apnoea. The SLOPE of the linear segment is the robust quantity and is what
+  is quoted; the baseline offset is not (35.5 transcutaneous against our 40.1
+  arterial start, and transcutaneous normally reads HIGHER than arterial, so
+  this patient was probably mildly hyperventilated before the apnoea).
+- **No parameter and no band may be set from it**, per the authorisation terms.
+  It corroborates and it contradicts; it does not calibrate.
+- **The model numbers here are in `handover_numbers.py` and cannot rot. The
+  measured numbers are NOT**, deliberately: the spreadsheet is untracked, so a
+  check reading it would fail for every recipient. They are dated instead.
+
 ### The one open defect
 
 **Arterial CO2 is far too sensitive to V/Q spread.** Tokics 1996 measures

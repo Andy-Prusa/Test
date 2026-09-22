@@ -1120,6 +1120,45 @@ print("    (Frumin)' --", f"{0.4*7.50062:.2f} mmHg/min -- and the n=8 read off")
 print("    Frumin's own page 789. It does NOT verify the pH 6.72 or PaCO2 250.")
 
 # ---------------------------------------------------------------------------
+print("\nTHE PATENT-AIRWAY CO2 SLOPE -- 18% LOW, not 2-3x low")
+print("  README called this 'a weakness nothing currently tests', our 1.70")
+print("  mmHg/min against 'a classical 3-5'. It is now tested and the")
+print("  comparator is not 3-5. Measured on the TONER TRANSCUTANEOUS TRACE,")
+print("  one patient, glottic01, 7 March 2017 (unpublished, use authorised")
+print("  2026-09-21): baseline 35.46 (SD 0.63) over 1260 s, then a slope of")
+print("  2.160 mmHg/min over 452 s with r = 0.9959. Toner's own PUBLISHED")
+print("  figure is 0.30 kPa/min = 2.25 mmHg/min, which the trace reproduces.")
+print("  ONLY THE MODEL SIDE IS CHECKED BELOW. The measured numbers are not")
+print("  scripted on purpose: the spreadsheet is untracked, so a check that")
+print("  read it would fail for every recipient of the package.")
+_tn = Patient(weight=70, height=1.75, age=45, hb=15, tilt_deg=0)
+_tnr = simulate(_tn, [AirwayEpoch(900, resistance=2, fgo2=1.00)],
+                dt=DT, feo2_start=0.87, stop_sao2=0.0)
+check("buccal arm: PaCO2 at 150 s", at(_tnr, 'paco2', 150), 53.79, 0.5,
+      " mmHg")
+check("buccal arm: PaCO2 at 555 s", at(_tnr, 'paco2', 555), 65.79, 0.5,
+      " mmHg")
+check("buccal arm: slope 2.5-9.25 min (measured 2.16)",
+      (at(_tnr, 'paco2', 555) - at(_tnr, 'paco2', 150)) / ((555 - 150) / 60.0),
+      1.778, 0.03, " mmHg/min")
+check("buccal arm: slope 1-5 min",
+      (at(_tnr, 'paco2', 300) - at(_tnr, 'paco2', 60)) / 4.0, 1.680, 0.03,
+      " mmHg/min")
+print("    THE DIRECTION IS THE FINDING. Obstructed we are 4.72 against a")
+print("    measured 3.4, i.e. 39% TOO STEEP. Patent we are 1.78 against a")
+print("    measured 2.16, i.e. 18% TOO SHALLOW. A global error in the CO2")
+print("    chemistry -- the dissociation curve, the buffering, the tissue")
+print("    stores -- would move BOTH limbs the same way, because all of them")
+print("    act whatever the airway is doing. An error that FLIPS SIGN with")
+print("    the airway state cannot be any of those. It points at what the")
+print("    airway does: dilution by entrained gas when open, and the")
+print("    V/Q-weighting mechanism when sealed. That is consistent with the")
+print("    V/Q result above and is the first evidence that the two CO2")
+print("    disagreements are ONE mechanism seen from two sides.")
+print("    NOT A CALIBRATION. n=1, transcutaneous is not arterial, and the")
+print("    authorisation terms forbid setting any parameter or band from it.")
+
+# ---------------------------------------------------------------------------
 print("\nTHE FRC REGRESSION -- the largest UNCITED lever in the model")
 print("  Flagged 2026-09-21 by the pre-release source audit (SOURCES.md). The")
 print("  regression apnoea_core.py anchors FRC to --")

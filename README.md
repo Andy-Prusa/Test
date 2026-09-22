@@ -109,8 +109,14 @@ defect is structural and open.
 **A weakness nothing currently tests**
 
 The patent-airway PaCO2 slope between 1 and 5 minutes is 1.70 mmHg/min against
-a classical 3–5. No benchmark asserts it, so nothing in the suite fails on it
-— which is a gap in the suite, not evidence about the model.
+a classical 3–5. **Both halves of that were wrong, corrected 2026-09-22.** It is
+now measured, against a transcutaneous trace from the Toner study and against
+Toner's own published figure of 0.30 kPa·min⁻¹ (= 2.25 mmHg·min⁻¹). The
+comparator is not 3–5, it is about 2.2, and the model gives 1.78 — **18% low,
+not 2–3× low**. Still no benchmark asserts it, so nothing in the suite fails on
+it, and that remains a gap in the suite. See HANDOVER, *The patent-airway CO2
+slope*, including why the model is too SHALLOW here while being too STEEP under
+obstruction.
 
 **Not modelled at all**
 
