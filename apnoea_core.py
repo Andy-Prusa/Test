@@ -227,15 +227,30 @@ class Patient:
     # -- the same quantity this parameter is -- and the comparison is
     # like-for-like.
     #
-    # 85 therefore sits ABOVE the mean of both groups. It is inside one SD of
-    # group 1 (75 + 19 = 94), so it is defensible rather than unsupported, but
-    # it is not central and nothing in this file said so until now.
+    # 85 sat ABOVE the mean of both groups. It was inside one SD of group 1
+    # (75 + 19 = 94), so it was defensible rather than unsupported, but it was
+    # not central and nothing in this file said so until 2026-09-21.
     #
-    # DO NOT MOVE IT TO FIT. crs 85 -> 60 takes the Stock 1-5 min slope from
-    # 4.72 to 4.37, which PASSES the benchmark that currently fails. That
-    # makes this a CLAUDE.md "do not tune a parameter to pass a benchmark"
-    # decision and it needs a written ruling either way, not a quiet edit.
-    crs: float = 85.0            # mL/cmH2O. Rothen 1993: 75 (19) and 60 (15)
+    # RULED 2026-09-22: MOVED TO 75, Rothen's group 1 mean.
+    #
+    # Read the sweep before changing this again. Measured slope 3.4, band
+    # 2.4-4.4:
+    #     crs 60   slope 4.371   PASSES      PaO2 at 300 s 60.61
+    #     crs 75   slope 4.601   fails       PaO2 at 300 s 60.86
+    #     crs 85   slope 4.716   fails       PaO2 at 300 s 60.98
+    #
+    # 75 IS THE CHOICE THAT BUYS NOTHING. It is the better-powered of Rothen's
+    # two measurements -- group 1 is n=10, group 2 is n=6 -- and it leaves the
+    # failing benchmark still failing. 60 would have passed it, which is
+    # precisely why 60 could not be taken without the CLAUDE.md "do not tune a
+    # parameter to pass a benchmark" objection following it forever. Moving to
+    # 75 is sourcing; moving to 60 would have been indistinguishable from
+    # fitting, whatever the intent.
+    #
+    # Note what the sweep also shows: crs moves the CO2 slope by 7% across its
+    # whole plausible range and moves PaO2 by 0.6%. It is a CO2-only lever.
+    # It cannot be part of any explanation of the oxygen disagreement.
+    crs: float = 75.0            # mL/cmH2O. Rothen 1993 group 1, n=10: 75 (19)
     rv: float = 1100.0           # mL residual volume, anaesthetised supine
     stiff_below_rv: float = 0.15 # compliance retained below RV
     p_collapse: float = P_COLLAPSE   # cmH2O floor on recoil. Minus the
@@ -258,8 +273,16 @@ class Patient:
 
     # --- hypoxic pulmonary vasoconstriction --------------------------------
     # --- hypoxic pulmonary vasoconstriction --------------------------------
-    # Dose-response from Marshall BE, Marshall C, Frasch F, Hanson CW.
-    # Respir Physiol 1994;96:231-47 (canine, independently perfused lung):
+    # Dose-response from Marshall BE, Clarke WR, Costarino AT, Chen L,
+    # Miller F, Marshall C. "The dose-response relationship for hypoxic
+    # pulmonary vasoconstriction." Respir Physiol 1994;96(3):231-47
+    # (canine, independently perfused lung).
+    # AUTHOR LIST CORRECTED 2026-09-22. This file previously read "Marshall
+    # BE, Marshall C, Frasch F, Hanson CW" -- those four authors wrote a
+    # DIFFERENT 1994 paper (Intensive Care Med 20:291-7 and 20:379-89) and
+    # the two citations had been merged. The volume and pages were always
+    # right, so the equations below are sourced to the right paper; only the
+    # attribution was wrong. Search-resolved, NOT read -- see SOURCES.md.
     #     PSO2    = PvO2^0.41 * PAO2^0.59
     #     %PVRmax = PSO2^-2.616 / (6.683e-5 + PSO2^-2.616)   half-max 39.4 mmHg
     #     PVR at maximum = 3.15 (0.18) x its value on 100% oxygen

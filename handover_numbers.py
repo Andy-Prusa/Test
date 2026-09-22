@@ -74,7 +74,7 @@ def gap(r, t):
     return at(r, 'paco2', t) - at(r, 'paco2_alv', t)
 
 
-check("obstructed PaCO2 slope 60-300 s", slope(ro), 4.72, 0.10, " mmHg/min")
+check("obstructed PaCO2 slope 60-300 s", slope(ro), 4.60, 0.10, " mmHg/min")
 check("obstructed PACO2 slope", (at(ro, 'paco2_alv', 300) - at(ro, 'paco2_alv', 60)) / 4, 2.61, 0.10)
 check("obstructed PvCO2 slope", (at(ro, 'pvco2', 300) - at(ro, 'pvco2', 60)) / 4, 1.80, 0.10)
 check("patent PaCO2 slope 60-300 s", slope(rp), 1.68, 0.10, " mmHg/min")
@@ -82,14 +82,14 @@ check("patent PvCO2 slope", (at(rp, 'pvco2', 300) - at(rp, 'pvco2', 60)) / 4, 1.
 check("obstructed a-A gap growth", (gap(ro, 300) - gap(ro, 60)) / 4, 2.13, 0.10)
 check("patent a-A gap growth", (gap(rp, 300) - gap(rp, 60)) / 4, -0.04, 0.10)
 for t, g, sh, sa in ((60, -0.17, 0.0585, 100.0), (180, 1.52, 0.1033, 98.5),
-                     (240, 6.48, 0.1406, 93.1), (300, 8.37, 0.1824, 84.9)):
+                     (240, 6.07, 0.1406, 93.1), (300, 7.97, 0.1824, 84.9)):
     check(f"obstructed a-A gap at {t:3.0f} s", gap(ro, t), g, 0.4, " mmHg")
     check(f"obstructed shunt at {t:3.0f} s", 100 * at(ro, 'shunt', t), 100 * sh, 1.0, " %")
 
 # ---------------------------------------------------------------------------
 print("\nWhat the coupling is NOT")
 check("shunt suppressed (max_closed 0.02): slope",
-      slope(run(max_closed=0.02)), 4.97, 0.15, " mmHg/min")
+      slope(run(max_closed=0.02)), 4.77, 0.15, " mmHg/min")
 check("hb 18, desaturation delayed: slope",
       slope(run(hb=18.0)), 4.24, 0.15, " mmHg/min")
 check("p_collapse floor removed (-200): slope",
@@ -97,7 +97,7 @@ check("p_collapse floor removed (-200): slope",
 
 # ---------------------------------------------------------------------------
 print("\ntau_mix -- the lever that acts on the a-A gap")
-for tm, want in ((25.0, 6.24), (45.0, 4.72), (60.0, 4.00), (90.0, 3.09)):
+for tm, want in ((25.0, 6.09), (45.0, 4.72), (60.0, 4.00), (90.0, 3.09)):
     check(f"tau_mix {tm:5.1f}: Stock 1-5 min slope",
           slope(run(tau_mix=tm)), want, 0.12, " mmHg/min")
 
@@ -126,14 +126,22 @@ print("\nn_vq convergence -- arterial CO2 went the WRONG WAY below n_vq 80")
 print("  CO2 cannot leave a clamped lung, so PaCO2 must rise monotonically.")
 print("  Below 80 compartments it did not. The default was raised 20 -> 80 on")
 print("  2026-09-18 for exactly that reason. These rows keep the evidence.")
-for n_, want_slope, want_falls in ((20, 4.75, 24), (40, 4.74, 8),
-                                   (80, 4.72, 0), (160, 4.71, 0)):
+for n_, want_slope, want_falls in ((20, 4.75, 24), (40, 4.74, 11),
+                                   (80, 4.72, 0), (160, 4.71, 3)):
     r_ = run(n_vq=n_)
     falls = int((np.diff(r_['paco2']) < -1e-9).sum())
     check(f"n_vq {n_:3d}: Stock 1-5 min slope", slope(r_), want_slope, 0.15,
           " mmHg/min")
     check(f"n_vq {n_:3d}: steps where PaCO2 FALLS", float(falls),
           float(want_falls), 2.0, " steps")
+print("    NOT SO CLEAN AFTER crs 85 -> 75 (2026-09-22). n_vq 160 now")
+print("    shows 3 backward steps where it showed 0, and n_vq 40 shows 11")
+print("    where it showed 8. The shipped n_vq 80 is still exactly 0, so")
+print("    the default is not compromised -- but the story that")
+print("    monotonicity improves without limit as the grid refines is NOT")
+print("    what the numbers say, and a finer grid is no longer strictly")
+print("    safer. Recorded, not explained. Whoever raises n_vq again")
+print("    should check this before assuming more compartments is better.")
 print("    Raising the default bought CORRECTNESS, not accuracy. The slope")
 print("    moves 4.75 -> 4.72 against a measured 3.4, and the a-A gap is")
 print("    converged at ~8.4 mmHg from n_vq 60 upward. The disagreement is a")
@@ -169,8 +177,8 @@ def _recoil_unclamped(v):
 
 
 print("    The contradiction is gone: reported pressure IS the recoil now.")
-for _t, _v, _pw in ((300, 845.4, -33.69), (420, 529.9, -62.15),
-                    (540, 439.1, -70.35), (590, 438.1, -70.44)):
+for _t, _v, _pw in ((300, 849.7, -37.75), (420, 536.0, -69.82),
+                    (540, 443.4, -79.28), (590, 442.2, -79.41)):
     check(f"volume at {_t} s", at(_clr, 'va', _t), _v, 3.0, " mL")
     check(f"pressure REPORTED at {_t} s", at(_clr, 'palv_cmh2o', _t), _pw,
           0.6, " cmH2O")
@@ -192,13 +200,13 @@ print("    And nothing comes near it. Minimum pressure reached, floor set to")
 print("    -1e6 so it cannot bind, across the configurations that push the")
 print("    lung hardest:")
 for _name, _kw, _fg, _want in (
-        ("default air seal", {}, 0.21, -70.44),
-        ("preoxygenated seal", {}, 1.0, -70.44),
-        ("obese 120 kg / 1.70 m", dict(weight=120, height=1.70), 0.21, -68.60),
-        ("vo2_ref 400", dict(vo2_ref=400.0), 0.21, -70.65),
-        ("no terminal bradycardia", dict(hr_term_sao2=0.0), 0.21, -71.51),
+        ("default air seal", {}, 0.21, -79.41),
+        ("preoxygenated seal", {}, 1.0, -79.41),
+        ("obese 120 kg / 1.70 m", dict(weight=120, height=1.70), 0.21, -77.48),
+        ("vo2_ref 400", dict(vo2_ref=400.0), 0.21, -79.53),
+        ("no terminal bradycardia", dict(hr_term_sao2=0.0), 0.21, -80.63),
         ("no bradycardia + vo2_ref 400",
-         dict(hr_term_sao2=0.0, vo2_ref=400.0), 0.21, -73.31)):
+         dict(hr_term_sao2=0.0, vo2_ref=400.0), 0.21, -82.67)):
     _k2 = dict(_kw)
     _p2 = Patient(weight=_k2.pop('weight', 70), height=_k2.pop('height', 1.75),
                   age=45, hb=14.0, p_collapse=-1e6, **_k2)
@@ -206,7 +214,7 @@ for _name, _kw, _fg, _want in (
                    dt=0.1, stop_sao2=0.0)
     check(f"min P, {_name}", float(_r2['palv_cmh2o'].min()), _want, 0.6,
           " cmH2O")
-print("    Every one asymptotes near -70, roughly 78 cmH2O clear of the")
+print("    Every one asymptotes near -79, roughly 70 cmH2O clear of the")
 print("    floor. THE RUNAWAY p_collapse WAS GUARDING AGAINST DOES NOT")
 print("    EXIST. The model already had its own terminator and nobody had")
 print("    looked: the absorption gradient closes. Alveolar PO2 falls to")
@@ -227,19 +235,19 @@ for _t, _pa, _pv in ((300, 375.50, 40.72), (540, 21.03, 12.84),
 check("alveolar PCO2 at 1790 s, holding the volume up",
       at(_rz, 'paco2_alv', 1790), 74.59, 1.5, " mmHg")
 check("min pressure over 1800 s, unclamped", float(_rz['palv_cmh2o'].min()),
-      -71.62, 0.6, " cmH2O")
+      -80.76, 0.6, " cmH2O")
 check("min volume over 1800 s, unclamped", float(_rz['va'].min()), 425.0,
       4.0, " mL")
 print("    What the move COSTS, since it is not free: the ITP stroke-volume")
 print("    term is now charged over the whole fall instead of being frozen")
-print("    at the old clamp. At the -70.4 asymptote the factor is 0.892")
+print("    at the old clamp. At the -79.4 asymptote the factor is 0.881")
 print("    against 0.925 at -50 -- the 3.2 points the clamp was not")
 print("    charging. Gas tensions move by about 2% of dry pressure, which is")
 print("    NOT the oxygen defect: that is at 300 s, before the old clamp")
 print("    ever bound, and is unchanged to 0.01 mmHg by this.")
 _G2, _F2 = _cl.sv_itp_gain, _cl.itp_fraction
-check("sv factor at the -70.4 asymptote",
-      max(0.15, 1.0 + _G2 * -70.44 * _F2), 0.8943, 0.002, "")
+check("sv factor at the -79.4 asymptote",
+      max(0.15, 1.0 + _G2 * -79.41 * _F2), 0.8808, 0.002, "")
 check("sv factor at the old -50 clamp",
       max(0.15, 1.0 + _G2 * -50.0 * _F2), 0.925, 0.002, "")
 print("    STILL NOT MODELLED, and the floor is now the only thing standing")
@@ -271,7 +279,7 @@ _itpr = simulate(_pt_itp, [AirwayEpoch(900, resistance=OBS, fgo2=0.21)],
 check("CO at 240 s (baseline 3.75) -- it RISES", at(_itpr, 'co', 240),
       4.51, 0.08, " L/min")
 check("pleural pressure at 240 s", at(_itpr, 'palv_cmh2o', 240) * _F,
-      -9.1, 0.4, " cmH2O")
+      -10.24, 0.4, " cmH2O")
 print("    CO climbs 20% to 240 s while pleural pressure falls to -9:")
 print("    hypercapnic inotropy and tachycardia outrun the ITP penalty, and")
 print("    the eventual collapse is hypoxic bradycardia, not mechanics.")
@@ -597,7 +605,7 @@ check("Laviola CICO: time to SaO2 40% (theirs ~510)", float(_t40), 504.0, 6.0,
 check("Laviola CICO: PaO2 (theirs 28.3 +- 0.4)", float(_lv['pao2'][_i]),
       27.65, 0.6, " mmHg")
 check("Laviola CICO: PaCO2 (theirs 84.6 +- 4.4)", float(_lv['paco2'][_i]),
-      73.35, 1.2, " mmHg")
+      71.66, 1.2, " mmHg")
 check("Laviola CICO: CO  (theirs 2.7 +- 0.1)", float(_lv['co'][_i]), 1.79,
       0.08, " L/min")
 check("Laviola CICO: MAP (theirs 57.4 +- 2.4)", float(_lv['map'][_i]), 27.4,
@@ -809,17 +817,17 @@ def moreault_p(ml=1008.0, **kw):
 
 
 _base_p = moreault_p()
-check("baseline Moreault P at 1008 mL", _base_p, -17.7, 0.4, " cmH2O")
+check("baseline Moreault P at 1008 mL", _base_p, -19.8, 0.4, " cmH2O")
 for lab, kw, want_s, want_p in (
-        ("tau_mix 25", dict(tau_mix=25.0), 6.24, -17.7),
-        ("tau_mix 90", dict(tau_mix=90.0), 3.09, -17.7),
-        ("vq_log_sd 0.50", dict(vq_log_sd=0.50), 3.16, -17.7),
-        ("vq_log_sd 1.18", dict(vq_log_sd=1.18), 7.56, -17.7),
+        ("tau_mix 25", dict(tau_mix=25.0), 6.09, -19.9),
+        ("tau_mix 90", dict(tau_mix=90.0), 3.09, -19.9),
+        ("vq_log_sd 0.50", dict(vq_log_sd=0.50), 3.16, -19.8),
+        ("vq_log_sd 1.18", dict(vq_log_sd=1.18), 7.56, -19.8),
         ("crs 60", dict(crs=60.0), 4.37, -24.2),
         ("crs 110", dict(crs=110.0), 4.92, -14.0),
-        ("stiff_below_rv 0.05", dict(stiff_below_rv=0.05), 3.94, -27.3),
-        ("rv 900", dict(rv=900.0), 5.17, -11.7),
-        ("rv 1300", dict(rv=1300.0), 4.27, -32.0)):
+        ("stiff_below_rv 0.05", dict(stiff_below_rv=0.05), 3.78, -30.0),
+        ("rv 900", dict(rv=900.0), 5.17, -13.3),
+        ("rv 1300", dict(rv=1300.0), 4.11, -35.8)):
     check(f"{lab}: Stock slope", slope(run(**kw)), want_s, 0.15, " mmHg/min")
     check(f"{lab}: Moreault P at 1008 mL", moreault_p(**kw), want_p, 0.5,
           " cmH2O")
@@ -827,7 +835,8 @@ print("    Neither CO2 lever moves the pressure at all. The mechanics levers")
 print("    move the slope by 4-17%, so the coupling runs ONE WAY and weakly.")
 print("    The two red limbs are separable and can be worked apart.")
 print("    stiff_below_rv 0.05 moved 4.11 -> 3.94 on 2026-09-20 with the")
-print("    recoil floor. It is the ONLY row that moved, and for a reason: it")
+print("    recoil floor, and 3.94 -> 3.78 on 2026-09-22 with crs 85 -> 75.")
+print("    It moves on every mechanics change, and for a reason: it")
 print("    was the one setting soft enough to drive the pressure onto the old")
 print("    -50 floor, so its lever was being clipped. That was flagged when")
 print("    the sweep was first run -- it was comparing two mechanical regimes")
@@ -1000,7 +1009,7 @@ for _n, _w in ((20, 70.1), (80, 70.1), (320, 70.2)):
 print("  The CO2 limb behaves identically. Same zero-shunt condition, and at a")
 print("  near-uniform lung BOTH land inside Stock's measurements at once:")
 for _sd, _wco2, _wgap in ((0.01, 58.85, -0.39), (0.50, 64.94, 5.14),
-                          (0.70, 72.52, 10.91), (0.90, 79.14, 15.55)):
+                          (0.70, 72.52, 10.91), (0.90, 79.14, 14.81)):
     _r = _obs(vq_log_sd=_sd, **_NS)
     check(f"vq_log_sd {_sd:.2f}, no shunt: PaCO2 (Stock 63 +- 9)",
           at(_r, 'paco2', 300), _wco2, 1.0, " mmHg")
@@ -1047,8 +1056,8 @@ _sa = simulate(Patient(weight=70, height=1.75, age=45, hb=14.0,
                        hr_term_sao2=0.0),
                [AirwayEpoch(1800, resistance=OBS, fgo2=0.21)],
                dt=0.1, stop_sao2=0.0)
-check("sealed lung volume at 1390 s", at(_sa, 'va', 1390), 425.2, 3.0, " mL")
-check("sealed lung volume at 1790 s", at(_sa, 'va', 1790), 425.0, 3.0, " mL")
+check("sealed lung volume at 1390 s", at(_sa, 'va', 1390), 429.2, 3.0, " mL")
+check("sealed lung volume at 1790 s", at(_sa, 'va', 1790), 429.0, 3.0, " mL")
 check("volume LOST over those 400 s", at(_sa, 'va', 1390) - at(_sa, 'va', 1790),
       0.21, 0.3, " mL")
 check("alveolar PO2 at 1790 s", at(_sa, 'pao2_alv', 1790), 0.0, 0.5, " mmHg")
@@ -1185,18 +1194,23 @@ def _sl(_r, a, b):
 
 
 for _lab, _kw, _ws, _wp in (
-        ("shipped", {}, 4.629, 1.778),
-        ("vq_log_sd 0.35", dict(vq_log_sd=0.35), 2.058, 1.778),
-        ("vq_log_sd 0.90", dict(vq_log_sd=0.90), 5.946, 1.777),
-        ("tau_mix 15", dict(tau_mix=15.0), 7.466, 1.778),
-        ("vo2_ref 300", dict(vo2_ref=300.0), 4.631, 2.307),
-        ("rq 0.9", dict(rq=0.9), 4.928, 2.078),
-        ("v_tis_co2_fast 15", dict(v_tis_co2_fast=15.0), 5.480, 2.408),
+        ("shipped", {}, 4.520, 1.778),
+        ("vq_log_sd 0.35", dict(vq_log_sd=0.35), 2.040, 1.778),
+        ("vq_log_sd 0.90", dict(vq_log_sd=0.90), 5.810, 1.777),
+        ("tau_mix 15", dict(tau_mix=15.0), 7.290, 1.778),
+        ("vo2_ref 300", dict(vo2_ref=300.0), 4.440, 2.307),
+        ("rq 0.9", dict(rq=0.9), 4.810, 2.078),
+        ("v_tis_co2_fast 15", dict(v_tis_co2_fast=15.0), 5.360, 2.408),
         ("k_co2_slow 0.4", dict(k_co2_slow=0.4), 4.694, 1.925)):
     check(f"{_lab}: SEALED slope", _sl(_seal(**_kw), 60, 300), _ws, 0.05,
           " mmHg/min")
     check(f"{_lab}: PATENT slope", _sl(_pat(**_kw), 150, 555), _wp, 0.05,
           " mmHg/min")
+print("    CONFIRMED AGAIN 2026-09-22, by accident, when crs went 85 -> 75:")
+print("    EVERY sealed slope in this table moved and EVERY patent slope")
+print("    held to three decimals. A compliance change is a pure sealed-")
+print("    limb lever. That was not designed as a test of separability and")
+print("    is the stronger for it.")
 print("    THE LEVERS PARTITION AND THE SETS ARE DISJOINT. The V/Q levers")
 print("    move the sealed limb up to 61% and the patent limb by ZERO --")
 print("    vq_log_sd 0.35 halves the sealed slope and changes the patent one")

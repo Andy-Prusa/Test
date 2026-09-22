@@ -19,8 +19,14 @@ HTML = """<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Airway obstruction: where the oxygen goes</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<!-- NO EXTERNAL REFERENCES. The Google Fonts links that used to sit here were
+     removed 2026-09-22 so the built page is a single self-contained file: it
+     opens from a USB stick, an email attachment or an air-gapped machine, and
+     makes no network request of any kind. Barlow and Barlow Condensed are
+     still NAMED in the CSS below and are used if the viewer happens to have
+     them installed; otherwise the system sans is substituted and nothing else
+     changes. If you ever put the fonts back, the page stops being shareable
+     as a file and starts phoning Google on every open. -->
 <style>
 :root{--screen:#060a0d;--panel:#0d151b;--rule:#16242e;--rule2:#223743;
 --spo2:#4fd8e8;--co2:#dda23c;--ecg-line:#4ade5e;--sat:#ecdf49;--alarm:#ff4d3d;--o2:#a8ecff;--inert:#41586a;
@@ -59,8 +65,25 @@ font-family:Barlow,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
  .main .steps{height:34px;margin-bottom:0}
  .main .transport{margin-bottom:2px}
  .main .track{margin-bottom:2px}
- .stage{grid-template-columns:auto minmax(0,1fr);margin-top:8px}
- .stage canvas:not(.ecg){height:clamp(150px,30vh,400px);width:auto}
+ /* THE SAME DEAD-RULE BUG AS .steps ABOVE, found 2026-09-22 from a
+    screenshot on an iPad: the figure was drawn straight over the readout
+    labels, so "alveolar N2" read "olar N2" and "lung volume" read "g volume".
+    This block sets the canvas column to auto, but the BASE `.stage` rule
+    further down has the same specificity (0,1,0) and comes later in source
+    order, so it won and the column stayed pinned at 126px. Meanwhile the
+    canvas rule below DID apply, because the only base rule for it is a bare
+    `canvas` selector it outranks -- so the canvas grew to its clamped height
+    and took its aspect-ratio width (252/404 = 0.624) while its track did not
+    grow with it. At 1366x1024 that is a 192px canvas in a 126px track: 54px
+    of overlap, straight across the labels.
+    Scoping to `.main` (0,2,0) is what makes it win, exactly as for .steps.
+    The track is sized by the SAME expression as the canvas height times the
+    aspect ratio, so the two cannot drift apart again; `auto` is not used
+    because grid auto-sizing of a replaced element with an aspect ratio is
+    where this went wrong in the first place. */
+ .main .stage{grid-template-columns:calc(clamp(150px,30vh,400px)*252/404)
+   minmax(0,1fr);margin-top:8px}
+ .main .stage canvas:not(.ecg){height:clamp(150px,30vh,400px);width:auto}
  .ecg{height:clamp(38px,7vh,80px)}
  .plethw{height:clamp(24px,4.5vh,54px)}
  .foot{margin-top:14px;padding-top:11px;font-size:11.5px;max-width:none}
@@ -181,7 +204,12 @@ body.zen .big{font-size:clamp(26px,7.5vh,76px)}
 body.zen .biglab{font-size:clamp(8px,1.3vh,11px)}
 body.zen .ecg{height:clamp(26px,7vh,74px);margin-top:4px}
 body.zen .plethw{height:clamp(17px,4.5vh,50px)}
-body.zen .stage{grid-template-columns:auto minmax(0,1fr);gap:9px;margin-top:6px}
+/* Same fix as .main .stage: size the track by the canvas's own height
+   expression times its aspect ratio, never by grid `auto`. body.zen is
+   (0,2,0) so it already outranks the base rule -- the bug here was only the
+   `auto`, not the specificity. */
+body.zen .stage{grid-template-columns:calc(clamp(110px,32vh,330px)*252/404)
+  minmax(0,1fr);gap:9px;margin-top:6px}
 body.zen .stage canvas:not(.ecg){height:clamp(110px,32vh,330px);width:auto}
 body.zen .row{font-size:clamp(10px,1.65vh,15px);padding:clamp(1px,0.35vh,5px) 0}
 body.zen .row b{font-size:clamp(12px,2vh,19px)}
@@ -292,7 +320,7 @@ const STARTS=[[0,'From induction'],[120,'After mask ventilation fails'],
  [370,'After failed intubation attempts']];
 
 const BASE={age:45,lmaOpens:true,frcRef:2500,frcDrop:400,tiltDeg:25,
- ccAt20:1800,ccPerYear:20,ccPerBmi:45,ccK:1.5,vo2Ref:250,coRef:5,crs:85,
+ ccAt20:1800,ccPerYear:20,ccPerBmi:45,ccK:1.5,vo2Ref:250,coRef:5,crs:75,
  vArt:1.0,vVen:2.0,vTisO2:1.5,feo2:0.87,rv:1100,pCollapse:-149.5461,nVq:80};
 const P=Object.assign({},BASE);
 DIALS.forEach(d=>P[d[0]]=d[5]);

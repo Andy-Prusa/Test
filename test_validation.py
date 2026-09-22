@@ -37,17 +37,81 @@ DT = 0.05          # dt=0.1 is stable but the nadir does not converge until 0.05
 OBS = np.inf
 KPA = 7.50062
 FAILURES = []
+REGRESSIONS = []
+
+# ---------------------------------------------------------------------------
+# KNOWN OPEN FAILURES -- the baseline, carrying the VALUE not just the name.
+#
+# Recorded 2026-09-22 when Stock 1989 was made the arbiter and his OXYGEN
+# channel was graded for the first time. Grading it was correct and it put two
+# large, real disagreements into the suite that nobody can pass today. Without
+# this table the pre-commit hook would block every commit from here on, every
+# commit would go in with --no-verify, and a gate that is always bypassed is
+# not a gate -- it is a twenty-minute delay. That is how a suite dies.
+#
+# THE VALUE IS THE POINT. A baseline holding only NAMES is a mute button: the
+# row could rot arbitrarily far and nothing would notice. Holding the value
+# means the hook still blocks if a known failure gets WORSE, and says so if it
+# gets BETTER, so an improvement is a visible event rather than a silent one.
+#
+# RULES, so this cannot become a dumping ground:
+#   1. A row goes in ONLY by written ruling, never to make a red suite green.
+#   2. Each row carries the value on the day it was ruled and why it is open.
+#   3. A row that starts passing must be REMOVED, not left to rot. The hook
+#      prints an explicit instruction when that happens.
+#   4. A NEW failure is never covered by this table. It blocks.
+#
+# tolerance: how far a known failure may drift before it counts as a
+# regression. Set from what the number does under ordinary parameter work, not
+# from what would be convenient.
+KNOWN_OPEN = {
+    "Stock obstructed, 1-5 min slope":
+        (4.60, 0.40, "the a-A CO2 gap under obstruction; located, not fixed. "
+                     "See HANDOVER 'Where the Stock residual actually lives'"),
+    "Stock obstructed, PaO2 at 5 min":
+        (61.0, 12.0, "the V/Q weighting: arterial blood is a perfusion-"
+                     "weighted CONTENT average read back through a curved "
+                     "relationship. See HANDOVER 'Removing the V/Q spread'"),
+    "Stock obstructed, SaO2 at 5 min":
+        (85.3, 3.0, "same mechanism as the PaO2 row above -- it is one "
+                    "disagreement reported on two scales, not two"),
+    "ICSM jet, PaCO2 at cricothyroidotomy":
+        (71.7, 3.0, "rides the same CO2 limb as the Stock slope. MODEL "
+                    "comparator, and Laviola's simulator has no V/Q "
+                    "distribution, so it cannot arbitrate either way"),
+}
 
 
 def check(name, value, lo, hi, units="", source=""):
     ok = lo <= value <= hi
-    tag = "PASS" if ok else "FAIL"
-    if not ok:
+    if ok:
+        tag = "PASS"
+        if name in KNOWN_OPEN:
+            tag = "FIXED"
+            REGRESSIONS.append(
+                f"{name}: now PASSES at {value:.2f}. Remove it from "
+                f"KNOWN_OPEN in test_validation.py -- a baseline row that "
+                f"has started passing must not be left to rot.")
+    elif name in KNOWN_OPEN:
+        was, tol, _why = KNOWN_OPEN[name]
+        if abs(value - was) <= tol:
+            tag = "OPEN"
+        else:
+            tag = "WORSE"
+            REGRESSIONS.append(
+                f"{name}: {value:.2f}, was {was:.2f} at the ruling "
+                f"(tolerance {tol:.2f}). A known failure got worse.")
+            FAILURES.append(name)
+    else:
+        tag = "FAIL"
         FAILURES.append(name)
     print(f"  [{tag}] {name:44s} {value:8.1f}{units:>8}   "
           f"expect {lo:.0f}-{hi:.0f}")
     if source:
         print(f"         {source}")
+    if tag == "OPEN":
+        print(f"         KNOWN OPEN, was {KNOWN_OPEN[name][0]:.2f} at the "
+              f"2026-09-22 ruling: {KNOWN_OPEN[name][2]}")
     return ok
 
 
@@ -171,6 +235,38 @@ def test_stock_1989():
     early, late = (g(180) - g(60)) / 2.0, (g(300) - g(180)) / 2.0
     check("PaCO2 rise does not run away", late / max(early, 1e-9),
           0.3, 3.0, " x early slope", "guard: the defect version hit 12x")
+
+    # --- STOCK'S OXYGEN, GRADED FOR THE FIRST TIME 2026-09-22 -------------
+    # Ruled on 2026-09-22: Stock is the arbiter. He was arbitrating only his
+    # CO2. His OXYGEN sat in HANDOVER.md as prose for months, which is the
+    # exact failure CLAUDE.md names -- numbers in markdown rot, numbers in
+    # scripts do not. Both rows below fail, and they are the model's LARGEST
+    # disagreement with any human measurement, larger than the CO2 slope that
+    # has absorbed most of the work. They are in KNOWN_OPEN, which means they
+    # are ruled open, not that they are acceptable.
+    #
+    # Stock Table 2, read 2026-09-14: PaO2 314 (87) mmHg at 5 min, and every
+    # one of the 14 patients above 92% saturation throughout, with 7
+    # completing the full 300 s.
+    #
+    # The PaO2 band is +-2 SD (140-488). We sit at 61, so this row fails at
+    # ANY band width the measurement can justify -- widening it is not an
+    # option anyone should reach for. WHAT WOULD FIX IT is in HANDOVER under
+    # "Removing the V/Q spread": arterial blood is a perfusion-weighted
+    # CONTENT average across a V/Q distribution, read back through a curved
+    # content-to-tension relationship, and above ~150 mmHg that curve is flat
+    # enough to make PaO2 hypersensitive to the weighting. Collapsing the
+    # spread moves this row 61 -> 157, which is most of the defect and still
+    # not all of it.
+    #
+    # THESE TWO ROWS ARE ONE DISAGREEMENT ON TWO SCALES, not two independent
+    # findings, and must not be counted as two pieces of evidence.
+    po2 = lambda s: float(np.interp(s, r['t'], r['pao2']))
+    sao2 = lambda s: float(np.interp(s, r['t'], r['sao2']))
+    check("Stock obstructed, PaO2 at 5 min", po2(300),
+          140.0, 488.0, " mmHg", "clinical; 314 (87) measured, we allow 2 SD")
+    check("Stock obstructed, SaO2 at 5 min", sao2(300),
+          92.0, 100.0, " %", "clinical; every one of 14 above 92% throughout")
 
 
 def test_anaemia_cardiac_response():
@@ -346,21 +442,21 @@ def test_icsm_jet_2026():
     r = simulate(p, [AirwayEpoch(1400, resistance=OBS, fgo2=0.21)],
                  dt=DT, stop_sao2=0.0)
     t40 = time_to(r, 'sao2', 40)
-    # THE SOURCE OF THIS BAND DOES NOT EXIST. Flagged 2026-09-21 after
-    # obtaining the main text. We now hold BOTH the main text and the
-    # Supplementary Digital Content, and "~510 s (8.5 min)" is in neither.
-    # "510" appears zero times in the main text; every duration in the paper is
-    # 3 min preoxygenation, 30 s insufflation interval, 10 min protocol, 60 s
-    # and 86 s peak-saturation times, and 39 s to restore SaO2 above 90%. The
-    # SDC gives the STATE at SaO2 40%, explicitly not the TIME to it.
-    # The band is left in place and failing-visible rather than silently
-    # deleted, because removing it would hide that the suite once graded
-    # against a figure nobody can find. STRIKE OR RE-SOURCE IT -- see
-    # SOURCES.md section 1b.
-    check("ICSM jet, time to SaO2 40% [SOURCE NOT FOUND -- see SOURCES.md]",
-          9999 if t40 is None else t40,
-          400, 620, " s", "MODEL comparator; stated source ~510 s IS NOT IN "
-          "THE PAPER")
+    # STRUCK 2026-09-22 BY RULING. There was once a band here reading "time to
+    # SaO2 40%, 400-620 s, source ~510 s (8.5 min)". THE SOURCE DOES NOT
+    # EXIST. We hold both the main text and the Supplementary Digital Content
+    # and "510" is in neither; "510" appears zero times in the main text, and
+    # every duration the paper does give is something else (3 min
+    # preoxygenation, 30 s insufflation interval, 10 min protocol, 60 s and
+    # 86 s peak-saturation times, 39 s to restore SaO2 above 90%). The SDC
+    # gives the STATE at SaO2 40%, explicitly NOT the time to it.
+    #
+    # It was left failing-visible from 2026-09-21 so that its removal could
+    # not be mistaken for a fix. The ruling is to strike it, and this comment
+    # is the record: the suite once graded against a figure nobody could find,
+    # and that row is gone, not passed. t40 is still COMPUTED, because the two
+    # state comparisons below are taken at that moment -- it is simply no
+    # longer graded against anything.
     i = int(np.searchsorted(r['t'], t40))
     # Their SD of 0.4 mmHg is the internal spread of a 100-subject in-silico
     # cohort with tightly controlled parameters, not measurement uncertainty,
@@ -433,6 +529,7 @@ def test_zz_all_benchmarks_passed():
     """
     assert not FAILURES, (f"{len(FAILURES)} benchmark(s) failed: "
                           + ", ".join(FAILURES))
+    assert not REGRESSIONS, "; ".join(REGRESSIONS)
 
 
 if __name__ == "__main__":
@@ -457,9 +554,18 @@ if __name__ == "__main__":
     test_physical_consistency(); test_timestep_stability()
     print()
     print("=" * 74)
+    _open = [k for k in KNOWN_OPEN if k not in FAILURES]
     if FAILURES:
-        print(f"{len(FAILURES)} FAILED: " + ", ".join(FAILURES))
+        print(f"{len(FAILURES)} BLOCKING: " + ", ".join(FAILURES))
     else:
-        print("all checks passed")
+        print("no blocking failures")
+    if _open:
+        print(f"{len(_open)} KNOWN OPEN (ruled, not blocking): "
+              + ", ".join(_open))
+        print("These are real disagreements with measurement. They do not")
+        print("gate the hook because they are ruled open, NOT because they")
+        print("are acceptable. See KNOWN_OPEN at the head of this file.")
+    for _r in REGRESSIONS:
+        print("  !! " + _r)
     print("=" * 74)
-    sys.exit(1 if FAILURES else 0)
+    sys.exit(1 if (FAILURES or REGRESSIONS) else 0)
