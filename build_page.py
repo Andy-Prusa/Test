@@ -51,7 +51,7 @@ font-family:Barlow,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
  body.sidehid .side{opacity:0;pointer-events:none;overflow:hidden;padding-right:0}
  .main{display:flex;flex-direction:column;min-height:0;gap:6px}
  .arms{flex:1 1 auto;min-height:0}
- .main .transport,.main .steps,.main .track,.main .caption{flex:none}
+ .main .transport,.main .steps,.main .caption{flex:none}
  .main .caption{margin-bottom:0}
  .arm{min-height:0;overflow-y:auto}
  .dials{grid-template-columns:1fr;gap:9px 0}
@@ -64,7 +64,6 @@ font-family:Barlow,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
     makes it win. */
  .main .steps{height:34px;margin-bottom:0}
  .main .transport{margin-bottom:2px}
- .main .track{margin-bottom:2px}
  /* THE SAME DEAD-RULE BUG AS .steps ABOVE, found 2026-09-22 from a
     screenshot on an iPad: the figure was drawn straight over the readout
     labels, so "alveolar N2" read "olar N2" and "lung volume" read "g volume".
@@ -103,7 +102,7 @@ font-size:28px;min-width:78px}
 input[type=range]{accent-color:var(--spo2)}
 #scrub{flex:1;min-width:150px}
 
-.steps{position:relative;height:62px;margin-bottom:4px}
+.steps{position:relative;height:62px;margin-bottom:14px}
 .step{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
 gap:10px;color:var(--dim);opacity:0;transition:opacity .35s;pointer-events:none}
 .step.on{opacity:1}
@@ -111,9 +110,6 @@ gap:10px;color:var(--dim);opacity:0;transition:opacity .35s;pointer-events:none}
 .step span{font-family:'Barlow Condensed',sans-serif;font-size:17px;color:var(--ink)}
 .step b{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:500;
 font-variant-numeric:tabular-nums;color:var(--spo2)}
-.track{position:relative;height:12px;border-top:1px solid var(--rule);margin-bottom:12px}
-.mk{position:absolute;top:0;width:1px;height:7px;background:var(--rule2)}
-.head{position:absolute;top:-1px;width:2px;height:12px;background:var(--spo2)}
 .caption{border-left:2px solid var(--spo2);padding:6px 0 6px 11px;margin-bottom:14px;
 font-size:15px;min-height:40px;line-height:1.35}
 
@@ -181,7 +177,7 @@ border-top:1px solid var(--rule);padding-top:12px}
    adapts to a small embed and a projector alike. */
 body.zen{overflow:hidden}
 body.zen h1,body.zen .sub,body.zen .dials,body.zen .legend,body.zen .foot,
-body.zen .steps,body.zen .track{display:none}
+body.zen .steps{display:none}
 body.zen .side{display:none}
 body.zen #sidebtn{display:none}
 body.zen .wrap{grid-template-columns:1fr}
@@ -216,14 +212,26 @@ body.zen .row b{font-size:clamp(12px,2vh,19px)}
 body.zen .flat{font-size:clamp(9px,1.3vh,12px);padding:2px 0}
 </style></head><body><div class="wrap">
 <div class="side" id="side">
-<h1>Every time the airway opens, something rushes in</h1>
-<p class="sub">Obstructed from induction. Both arms are physically identical until 7:10 &mdash;
-the only difference is what sits in the pharynx when each inrush happens. In the lungs,
-bright is oxygen, dull is nitrogen and CO&#8322;, the dark gap is the vacuum obstruction
-creates, and the bases go violet as they collapse. The head turns blue on deoxygenated
-haemoglobin rather than saturation, so an anaemic patient never looks as bad as they are. Move the sliders and the whole simulation re-runs. Collapsibility defaults to
-the calibrated median; the patients who desaturate despite good tracheal oxygen sit near
-the top of its range.</p>
+<h1>An apnoea simulator</h1>
+<p class="sub"><b>What this is.</b> A computational model of gas exchange during apnoea, run
+forward in real time on two patients side by side. Everything on screen is computed from
+the physiology &mdash; the oxygen stores, the dissociation curves, the shunt, the cardiac
+output and the mechanics of a sealed lung &mdash; not replayed from a recording. Nothing is
+animated for effect.</p>
+<p class="sub"><b>What you are looking at.</b> Two identical patients, both obstructed from
+induction. The only difference between them is what sits in the pharynx. In the lungs,
+bright is oxygen and dull is nitrogen and CO&#8322;; the dark gap above is the vacuum the
+obstruction creates as gas is absorbed and none replaces it, and the bases go violet as
+they collapse. The head turns blue on <i>deoxygenated haemoglobin</i>, not on saturation
+&mdash; which is why an anaemic patient never looks as bad as they are.</p>
+<p class="sub"><b>How to use it.</b> Press Play. Move any slider and the whole simulation
+re-computes from the new patient; nothing is interpolated. Collapsibility starts at the
+calibrated median &mdash; the patients who desaturate despite good tracheal oxygen sit near
+the top of its range, and that is worth seeing.</p>
+<p class="sub"><b>What it is not.</b> Not a medical device and not validated for patient
+care. It disagrees with the one human measurement of arterial oxygen under complete
+obstruction by a wide margin, and that disagreement is recorded rather than hidden. Treat
+it as a way to reason about mechanism, not as a predictor for an individual.</p>
 
 <div class="dials" id="dials"></div>
 <p class="foot">Modelled, not measured. Saturation carries a pulse oximeter delay. There is no
@@ -245,7 +253,6 @@ parameterised, not fitted to source data.</p>
 <span class="busy" id="busy"></span>
 </div>
 <div class="steps" id="steps"></div>
-<div class="track" id="track"></div>
 <div class="caption" id="cap"></div>
 <div class="arms">
 <div class="arm"><div class="armhead"><span class="armname">No buccal oxygen</span>
@@ -331,10 +338,6 @@ STEPS.forEach(([t,ic,lab])=>{const d=document.createElement('div');d.className='
  const mmss=Math.floor(t/60)+':'+String(t%60).padStart(2,'0');
  d.innerHTML=ICONS[ic]+'<b>'+mmss+'</b><span>'+lab+'</span>';
  stepsEl.appendChild(d);});
-const track=document.getElementById('track');
-EVENTS.forEach(([t])=>{const d=document.createElement('div');d.className='mk';
- d.style.left=(100*t/900)+'%';track.appendChild(d);});
-const head=document.createElement('div');head.className='head';track.appendChild(head);
 
 const dialsEl=document.getElementById('dials');
 DIALS.forEach(([key,lab,lo,hi,st,def,fmt])=>{
@@ -575,6 +578,10 @@ const isOpen=(k,t)=>(t>=120&&t<130)||(k==='B'?t>=280:(t>=280&&t<430));
 // turning near SpO2 67% while at Hb 4 it can never turn at all, however dead
 // the patient is. That trap falls straight out of the Hb slider.
 const SKIN=[198,158,136], CYAN=[86,100,158], ATEL=[122,74,140];
+// Hair does NOT track saturation -- it is the one part of the head that
+// holds its colour while the skin goes blue, which is what makes the
+// cyanosis read as a change rather than as a different drawing.
+const HAIR='#4a3a32';
 function mixc(a,b,f){f=Math.max(0,Math.min(1,f));
  // parenthesised: without them these are string concatenations, not sums,
  // and the head renders white at every saturation.
@@ -599,23 +606,84 @@ function lungPath(g,x,y,w,h,flip){
 // The facial detail is drawn with straight segments and the cranium with
 // curves; smoothing the nose and lips rounds them away at this size.
 function headPath(g,cx,yN,h){
+ // Profile, NECK UPPERMOST so the trachea meets it, face to the viewer's
+ // left. u runs 0 at the neck to ~1.0 at the vertex, so LARGER u IS FURTHER
+ // DOWN THE CANVAS -- get that backwards and the eyebrow lands on the chin.
+ // Redrawn 2026-09-22. The old version was all straight segments, which gave
+ // a spiked nose, a zigzag mouth and a visible corner at the jaw. Curves now
+ // carry the jaw, the lips and the whole skull; only the nose keeps a hard
+ // tip, because rounding it at this size erases it. The neck is also wider,
+ // which stops the silhouette reading as a teardrop.
  const X=v=>cx+v, Y=u=>yN+u*h;
  g.beginPath();
- g.moveTo(X(-17),Y(0.00));
- g.lineTo(X(-31),Y(0.11));            // jaw angle
- g.lineTo(X(-41),Y(0.23));            // chin
- g.lineTo(X(-47),Y(0.30));            // lower lip
- g.lineTo(X(-43),Y(0.34));            // mouth
- g.lineTo(X(-48),Y(0.38));            // upper lip
- g.lineTo(X(-46),Y(0.42));            // nose base
- g.lineTo(X(-63),Y(0.47));            // nose tip
- g.lineTo(X(-45),Y(0.54));            // bridge
- g.lineTo(X(-49),Y(0.61));            // brow
- g.bezierCurveTo(X(-48),Y(0.76), X(-32),Y(0.94), X(-6),Y(0.98));   // forehead
- g.bezierCurveTo(X(16),Y(1.01), X(40),Y(0.94), X(48),Y(0.76));     // vertex
- g.bezierCurveTo(X(55),Y(0.58), X(50),Y(0.34), X(34),Y(0.18));     // occiput
- g.lineTo(X(25),Y(0.00));             // back of neck
+ g.moveTo(X(-22),Y(0.000));                                          // throat
+ g.bezierCurveTo(X(-28),Y(0.07), X(-36),Y(0.14), X(-46),Y(0.195));   // jaw
+ g.bezierCurveTo(X(-51),Y(0.225), X(-53),Y(0.255), X(-52),Y(0.285)); // chin
+ g.bezierCurveTo(X(-51),Y(0.305), X(-50),Y(0.315), X(-49),Y(0.325)); // lower lip
+ g.bezierCurveTo(X(-51),Y(0.345), X(-53),Y(0.360), X(-53),Y(0.378)); // upper lip
+ g.bezierCurveTo(X(-52),Y(0.395), X(-51),Y(0.408), X(-50),Y(0.420)); // subnasale
+ g.lineTo(X(-65),Y(0.462));                                          // nose tip
+ g.bezierCurveTo(X(-57),Y(0.492), X(-50),Y(0.505), X(-47),Y(0.522)); // bridge
+ g.bezierCurveTo(X(-51),Y(0.552), X(-54),Y(0.578), X(-54),Y(0.605)); // brow ridge
+ g.bezierCurveTo(X(-57),Y(0.78), X(-44),Y(0.95), X(-16),Y(1.00));    // forehead
+ g.bezierCurveTo(X(14),Y(1.05), X(44),Y(0.97), X(54),Y(0.78));       // vertex
+ g.bezierCurveTo(X(63),Y(0.56), X(58),Y(0.30), X(42),Y(0.16));       // occiput
+ g.lineTo(X(30),Y(0.000));                                           // nape
  g.closePath();
+}
+
+// The hair, as an explicit CRESCENT rather than a filled half-plane. Two
+// earlier attempts filled "everything beyond the hairline" inside a large
+// bounding box; both left the patient bald across the forehead, because the
+// box closed back across its own hairline and the nonzero winding rule
+// cancelled the wedge between them. A ring has no such ambiguity.
+//
+// The OUTER edge reuses headPath's own forehead, vertex and occiput control
+// points, so the hair and the skull cannot drift apart when either is
+// adjusted. The INNER edge is the hairline, shaped to pass BEHIND and ABOVE
+// the ear so the ear stays on the skin side and remains visible.
+function hairPath(g,cx,yN,h){
+ const X=v=>cx+v, Y=u=>yN+u*h;
+ g.beginPath();
+ g.moveTo(X(-55),Y(0.690));                                          // temple
+ g.bezierCurveTo(X(-57),Y(0.78), X(-44),Y(0.95), X(-16),Y(1.00));    // forehead
+ g.bezierCurveTo(X(14),Y(1.05), X(44),Y(0.97), X(54),Y(0.78));       // vertex
+ g.bezierCurveTo(X(63),Y(0.56), X(58),Y(0.30), X(42),Y(0.16));       // occiput
+ g.lineTo(X(32),Y(0.055));                                           // nape
+ g.bezierCurveTo(X(36),Y(0.34), X(32),Y(0.56), X(20),Y(0.68));       // behind the ear
+ g.bezierCurveTo(X(-4),Y(0.84), X(-34),Y(0.78), X(-55),Y(0.690));    // hairline
+ g.closePath();
+}
+
+// Eye, brow and ear. Kept as one function so the three cannot be adjusted out
+// of register with each other; all three take their positions from the same
+// u scale as the profile above.
+function facePath(g,cx,yN,h,hair,ink){
+ const X=v=>cx+v, Y=u=>yN+u*h;
+ // closed lid -- a shallow arc, not a straight scratch
+ g.strokeStyle=ink; g.lineWidth=2.0; g.lineCap='round';
+ g.beginPath();
+ g.moveTo(X(-44),Y(0.556));
+ g.quadraticCurveTo(X(-36),Y(0.588), X(-25),Y(0.578));
+ g.stroke();
+ // brow, forehead-ward of the lid (HIGHER u) and arched the same way
+ g.strokeStyle=hair; g.lineWidth=3.4;
+ g.beginPath();
+ g.moveTo(X(-47),Y(0.612));
+ g.quadraticCurveTo(X(-37),Y(0.648), X(-24),Y(0.632));
+ g.stroke();
+ // ear: helix plus a short antihelix, in front of the hairline
+ g.strokeStyle=ink; g.lineWidth=1.8; g.lineCap='butt';
+ g.beginPath();
+ g.moveTo(X(2),Y(0.408));
+ g.bezierCurveTo(X(16),Y(0.410), X(20),Y(0.470), X(14),Y(0.520));
+ g.bezierCurveTo(X(10),Y(0.552), X(4),Y(0.556), X(1),Y(0.548));
+ g.stroke();
+ g.lineWidth=1.3;
+ g.beginPath();
+ g.moveTo(X(5),Y(0.438));
+ g.quadraticCurveTo(X(12),Y(0.462), X(8),Y(0.508));
+ g.stroke();
 }
 
 function patient(k,t){
@@ -678,11 +746,26 @@ function patient(k,t){
  headPath(g,cx,neck-4,headH);
  g.fillStyle=mixc(SKIN,CYAN,blue); g.fill();
  g.strokeStyle=css('--rule2'); g.lineWidth=2; g.stroke();
- // an ear and a closed eye, so it reads as a face at this size
- g.strokeStyle='rgba(0,0,0,.34)'; g.lineWidth=1.6;
- g.beginPath(); g.arc(cx+8,neck-4+headH*0.50,8,-0.6,2.2); g.stroke();
- g.beginPath(); g.moveTo(cx-38,neck-4+headH*0.585);
- g.lineTo(cx-25,neck-4+headH*0.575); g.stroke();
+ // HAIR, BROW, EAR AND EYE -- the features that make it read as a person.
+ // The head is drawn in profile with the neck UPPERMOST, so in this path's
+ // coordinates u runs from the neck (u=0) over the face and forehead to the
+ // vertex near u=1.0: LARGER u IS FURTHER DOWN THE CANVAS. Getting that
+ // backwards puts the eyebrow on the chin, so the landmarks are named.
+ const HX = v => cx + v, HY = u => (neck - 4) + u * headH;
+ // Hair is clipped to the silhouette, so it can never spill outside the head
+ // however the hairline is drawn. Inside the clip we simply fill everything
+ // BEYOND the hairline -- across the forehead, over the vertex and down the
+ // occiput to the nape -- with a polygon whose far edges sit well outside the
+ // head. That is why the corners below are at +-90 and u 1.2: they are not
+ // features, they are there to be clipped away.
+ g.save();
+ headPath(g, cx, neck - 4, headH);
+ g.clip();
+ hairPath(g, cx, neck - 4, headH);
+ g.fillStyle = HAIR;
+ g.fill();
+ g.restore();
+ facePath(g, cx, neck - 4, headH, HAIR, 'rgba(0,0,0,.40)');
 
  // ---- the vacuum, labelled where it lives -------------------------------
  const p=at(a,'palv',t);
@@ -727,7 +810,6 @@ function render(){
  document.getElementById('clock').textContent=
   Math.floor(T/60)+':'+String(Math.floor(T%60)).padStart(2,'0');
  document.getElementById('scrub').value=T;
- head.style.left=(100*T/900)+'%';
  let c=EVENTS[0];for(const e of EVENTS)if(T>=e[0])c=e;
  let txt=c[1];
  // The 120 s caption is the ONLY place the LMA toggle shows in words, so
