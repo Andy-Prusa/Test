@@ -776,6 +776,88 @@ prediction is specific: if their measured CO2 kinetics imply a smaller fast
 store than 22, the patent limb resolves without touching anything else, and
 without touching the sealed limb at all.
 
+### HARDMAN 1998 AND LAVIOLA 2020 READ — 2026-09-22
+
+Both were obtained on 2026-09-21 and sat unread. Reading them settled a stale
+entry and turned up the deepest explanation yet for the obstructed divergence.
+
+#### THE NOTTINGHAM SIMULATOR HAS NO V/Q DISTRIBUTION AT ALL
+
+Hardman JG, Bedforth NM, Ahmed AB, Mahajan RP, Aitkenhead AR. *Br J Anaesth*
+1998;81:327-332. This is the foundational validation of the NPS, and every
+model comparator in this project descends from it. **Appendix 1, verbatim:**
+
+> "The lungs are modelled as comprising equipment, anatomical and alveolar
+> deadspaces, and ventilated, perfused alveoli. **Complete mixing of gases
+> within the alveoli is assumed.** … **Blood flow through the lung is modelled
+> as two compartments: shunted and non-shunted blood.** … Each packet comes to
+> a true equilibrium with alveolar gases…"
+
+**One well-mixed alveolar compartment, and blood flow split two ways.** We run
+**80 parallel V/Q compartments**. So the mechanism identified on 2026-09-21 as
+our sealed-airway fault — arterial blood being a perfusion-weighted CONTENT
+average across a V/Q spread, read back through a curved dissociation
+relationship — **cannot exist in the NPS. It is structurally absent.**
+
+Three consequences, and the third is the one that matters:
+
+1. It explains why the two models diverge specifically under obstruction. The
+   V/Q mechanism switches on when the airway seals (a-A CO2 gap +8.27 at 300 s
+   sealed, -0.05 patent) and there is nothing corresponding in theirs.
+2. **The ICSM comparator cannot arbitrate our V/Q question in either
+   direction.** Agreement would not corroborate the mechanism and disagreement
+   would not refute it, because their model has no such degree of freedom. Any
+   future use of an ICSM number to argue about V/Q is void.
+3. It sharpens the open definition question rather than answering it. If a
+   single well-mixed compartment is right for a sealed lung, our spread is the
+   error. If a sealed lung really does develop the spread we model, theirs is.
+   **Nothing in either simulator settles that; only a measurement could.**
+
+**"apnoea" and "apnea" appear ZERO times in the entire paper**, as do "V/Q"
+and "ventilation-perfusion". Its own scope sentence: it is recommended "as a
+clinical tool for predicting the effects of alterations in mechanical
+ventilation in stable patients in the intensive care unit". Validated on 31
+ICU patients against changes in minute volume or FiO2, with 95% limits of
+agreement PaO2 -2.07 to +2.47 kPa, PaCO2 -0.33 to +0.67, pH -0.023 to +0.033.
+This is now read from the paper rather than argued from citations, and it
+supports what this file already said about the ICSM validation chain.
+
+Two smaller corrections it forces:
+
+- **The "Hardman ECF 11.6 against our 24.7" comparison was unlike-for-unlike.**
+  Appendix 2 gives `BEecf = [HCO3-] - 11.6 x (7.4 - pH) - 24`. That is an
+  extracellular (blood plus interstitial) base-excess conversion applied to a
+  blood-gas machine reading, not the simulator's internal blood buffering. Our
+  24.7 is Siggaard-Andersen's non-bicarbonate buffer capacity for WHOLE BLOOD.
+  Different quantities; the discrepancy was never real.
+- **They use Thomas's equation** for content-to-partial-pressure; we use
+  Severinghaus. `bloodgas.py`'s PROVENANCE header raises that choice and can
+  now name which model uses which.
+
+#### THE LAVIOLA 2020 RESCUE COMPARATOR IS REPRODUCIBLE — the note saying otherwise was stale
+
+`handover_numbers.py` listed "Laviola 2020 airway rescue (38.7 vs 42.3 kPa)"
+under **NOT REPRODUCIBLE**. Having read the paper, the protocol is exactly what
+`test_validation.py` already implements: 100 virtual subjects, 3 min of 100%
+oxygen, apnoea with an obstructed upper airway, obstruction relieved at SaO2
+60%, supraglottic FO2 100%; reported post-rescue PaO2 **42.3 (4.4) kPa**.
+
+Ours gives **43.92 kPa** — inside one SD. And it is insensitive to the only
+detail we had to assume, their preoxygenation:
+
+| `feo2_start` | trigger (s) | post-rescue PaO2 (kPa) |
+|---|---|---|
+| 0.80 | 399 | 40.60 |
+| **0.87 shipped** | **423** | **43.92** |
+| 0.90 | 431 | 44.96 |
+| 0.95 | 443 | 45.89 |
+
+**Every value across the plausible range sits inside their 1 SD.** The orphaned
+38.7 came from a configuration nobody recorded; the configuration in
+`test_validation.py` is written down, matches the published protocol, and
+reproduces. The NOT REPRODUCIBLE entry is struck. **Ellis 2022 remains
+genuinely unreproducible** and stays there.
+
 ### The one open defect
 
 **Arterial CO2 is far too sensitive to V/Q spread.** Tokics 1996 measures

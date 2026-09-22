@@ -182,14 +182,23 @@ for ordering; it verifies nothing.
 - **Hardman JG, Bedforth NM, Ahmed AB, Mahajan RP, Aitkenhead AR.** A physiology
   simulator: validation of its respiratory components and its ability to predict
   the patient's response to changes in mechanical ventilation. *Br J Anaesth*
-  1998;81:327-332. **Full text, 6 pp.** Previously held only as screenshots.
-  This is the foundational validation of the Nottingham simulator, so it bears
-  directly on `HANDOVER.md`'s "How ICSM validated itself".
+  1998;81:327-332. **READ IN FULL 2026-09-22**, including Appendix 1 and 2.
+  The foundational validation of the Nottingham simulator. **Its lung is ONE
+  well-mixed alveolar compartment with blood flow split two ways, shunted and
+  non-shunted — it has no V/Q distribution at all**, where we run 80 parallel
+  compartments. "apnoea", "apnea", "V/Q" and "ventilation-perfusion" appear
+  zero times in the paper; it was validated on 31 stable ICU patients against
+  changes in minute volume or FiO2. See HANDOVER, *Hardman 1998 and Laviola
+  2020 read*, for why this voids any use of an ICSM number to argue about V/Q.
 - **Laviola M, Niklas C, Das A, Bates DG, Hardman JG.** Effect of oxygen
   fraction on airway rescue: a computational modelling study. *Br J Anaesth*
-  2020. **Full text, 6 pp.** This is the comparator behind
-  `test_icsm_airway_rescue`, and `handover_numbers.py` currently lists its
-  numbers (38.7 vs 42.3 kPa) under "NOT REPRODUCIBLE". Now checkable.
+  2020. **READ IN FULL 2026-09-22.** 100 virtual subjects, 3 min of 100%
+  oxygen, obstructed apnoea, relief at SaO2 20/40/60%; post-rescue PaO2
+  **42.3 (4.4) kPa** at SaO2 60%. **Our `test_validation.py` configuration
+  matches the published protocol exactly and gives 43.92 kPa, inside one SD**,
+  and stays inside 1 SD across every plausible preoxygenation. The
+  "NOT REPRODUCIBLE" entry against it in `handover_numbers.py` was stale and
+  is struck.
 - **Mohanty R, George LR, George SP, Babu M.** Apnoeic oxygenation during
   simulated difficult intubation in obese patients: buccal RAE versus nasal
   cannula. *Anesth Essays Res* 2021;15(4):408-412, doi 10.4103/aer.aer_114_21.
