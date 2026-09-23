@@ -30,9 +30,24 @@
 #                   so a fix cannot go unnoticed and the file cannot rot.
 name: benchmarks
 
+# WHY push IS RESTRICTED TO main. The first version of this file had a bare
+# `push:` alongside `pull_request:`, and every commit on a PR branch then
+# triggered BOTH -- two identical workflow runs, and the benchmark job takes
+# about fifteen minutes of runner time each. Observed on 91d9daf: runs
+# 35902201579 and 35902206265, same six jobs, same results, same commit.
+# PRs are covered by `pull_request`; main is covered by `push`; nothing is
+# covered twice.
 on:
   push:
+    branches: [main]
   pull_request:
+
+# Superseded runs are cancelled. Pushing twice in a minute should not leave
+# an obsolete fifteen-minute benchmark job holding a runner, and its result
+# would be reported against a commit nobody is looking at any more.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   page-freshness:
