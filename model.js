@@ -81,8 +81,14 @@ function derive(P){
   const tg=(P.tiltGainLean===undefined?0.0130:P.tiltGainLean)
           +(P.tiltGainBmi===undefined?0.00015:P.tiltGainBmi)*Math.max(0,bmi-25);
   const tiltF=Math.max(0.45,1+(P.tiltDeg||0)*tg);
-  const frcAwake=P.frcRef*hf*Math.exp(-0.0417*(bmi-22))*tiltF;
-  const frc=Math.max(300,(frcAwake-Math.min(P.frcDrop,0.25*frcAwake))*(P.frcScale||1));
+  // FRC CANNOT BE LESS THAN RESIDUAL VOLUME. Floor added 2026-09-23 and it
+  // is `rv`, not a constant. This line used to floor at 300 while
+  // apnoea_core.py floored the same quantity at 400, so the two disagreed
+  // wherever the floor bound; test_parity.py never caught it because no
+  // tested configuration got near it. At BMI 47 both bound, differently.
+  // See apnoea_core.py frc_awake() for the full reasoning.
+  const frcAwake=Math.max(P.rv,P.frcRef*hf*Math.exp(-0.0417*(bmi-22))*tiltF);
+  const frc=Math.max(P.rv,(frcAwake-Math.min(P.frcDrop,0.25*frcAwake))*(P.frcScale||1));
   const cc=(P.ccAt20+P.ccPerYear*(P.age-20)+P.ccPerBmi*Math.max(0,bmi-25))*hf*(P.ccScale||1);
   const vo2=P.vo2Ref*Math.pow(abw/70,0.75)*(P.bmrScale||1)-0.27*P.weight;
   // The circulation's answer to anaemia. Exactly 1 at and above the

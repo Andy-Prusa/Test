@@ -269,6 +269,109 @@ limb has ever been tested against outside Stock's eight sampled points.
 
 ---
 
+### Gander 2005 — the morbidly obese benchmark, and it says the shunt is ABSENT
+
+**Gander S, Frascarolo P, Suter M, Spahn DR, Magnusson L.** Positive
+end-expiratory pressure during induction of general anesthesia increases
+duration of nonhypoxic apnea in morbidly obese patients. *Anesth Analg*
+2005;100(2):580-4. Held and read 2026-09-23.
+
+**This is the dataset this file has called "the single most valuable missing
+dataset" since before 2026-09-22.** n=30 morbidly obese, control arm n=15
+(11 with blood gases), **BMI 47 (6)**, age 38 (12), 13/15 female. Five minutes
+of 100% O2 with NO CPAP, induction, mechanical ventilation without PEEP, then
+apnoea to SpO2 90%.
+
+| | control | PEEP group |
+|---|---|---|
+| apnoea to SpO2 90% | **127 (43) s** | 188 (46) s |
+| PaO2 before apnoea | **243 (136) mmHg** | 376 (145) |
+| PaCO2 before apnoea | 46 (6) | 47 (11) |
+| PaO2 at SpO2 92% | **68 (10)** | 64 (11) |
+| PaCO2 at SpO2 92% | **53 (4)** | — |
+
+BMI against apnoea duration: **R2 0.51, P 0.003 in the control arm**, and
+R2 0.14 (NS) in the PEEP arm — the BMI effect is abolished by preventing
+atelectasis, which is the mechanism demonstrated by its own removal.
+
+**OUR MODEL AT BMI 47, after the RV floor of 2026-09-23:**
+
+| | ours | measured |
+|---|---|---|
+| PaO2 before apnoea | 563.8 | **243 (136)** |
+| shunt at t=0 | **5.0%** | implied ~20%+ |
+| time to SpO2 90% | 251.2 s | **127 (43)** |
+| PaO2 at SpO2 92% | 43.3 | 68 (10) |
+| PaCO2 at SpO2 92% | 51.5 | 53 (4) |
+
+**OUR MORBIDLY OBESE PATIENT CARRIES THE LEAN BASELINE SHUNT.** 5.0% at BMI
+47. The collapse machinery contributes essentially nothing at the point where
+a real patient is most atelectatic. Their PaO2 243 on FiO2 1.0 with PaCO2 46
+implies an alveolar PO2 near 655 and an a-A gradient near 410 mmHg — a shunt
+measurement in all but name. (That arithmetic is ours; they report no shunt
+fraction. n=11 with SD 136 on a mean of 243, so the scatter is large.)
+
+**THE RV FLOOR DOUBLED THE TIMING ERROR, and that is the useful part.** Before
+it, ERV was -466 mL and we took 166 s against a measured 127. With FRC
+correctly clamped at RV we take 251 s. The unphysical negative ERV had been
+hiding half the error by giving the patient an impossibly small oxygen store.
+
+**AND IT SETTLES WHERE THE DEFECT CANNOT BE.** FRC is now at its floor, so the
+oxygen store cannot be reduced further by any parameter. **At BMI 47 the FRC
+route is exhausted.** Whatever is missing is in GAS EXCHANGE — shunt or low
+V/Q — not in lung volume.
+
+Also available and unused: an obese CO2 slope, 46 -> 53 mmHg over ~127 s,
+about 3.3 mmHg/min. We hold no obese CO2 comparator at all.
+
+### A CONTRADICTION TO CHECK BEFORE ANY SHUNT PARAMETER MOVES
+
+Search-resolved 2026-09-23, **NOT READ**, and it reverses a conclusion given
+with confidence earlier the same day:
+
+**Hedenstierna G, Tokics L, Reinius H, Rothen HU, Ostberg E, Ohrvik J.**
+*Higher age and obesity limit atelectasis formation during anaesthesia: an
+analysis of computed tomography data in 243 subjects.* **Br J Anaesth
+2020;124(3):336-344. PMID 31918847.** n=243, **BMI 18-52**, CT awake and
+during anaesthesia, preoxygenated FIO2 >0.8, no PEEP.
+
+Per the search summary: atelectasis "increased with BMI in normal and
+overweight patients but showed **no further increase in obese subjects (BMI
+>=30)**", and peaked around age 50 rather than rising monotonically.
+
+**IF THAT HOLDS, OUR SHUNT CEILING IS CORRECT AND THE EARLIER DIAGNOSIS WAS
+WRONG.** This file recorded on 2026-09-23 that our saturation — 7.2% at BMI
+26.4, 9.5% at 34.7, 9.8% at 39.6 — was a structural defect, on the strength
+of a TWO-POINT extrapolation from Rothen's BMI 24.9 and 27.7. That
+extrapolation was already flagged here as invalid because it gives NEGATIVE
+shunt below BMI 22. A 243-subject pooled CT analysis beats it comprehensively.
+
+**Then Gander's PaO2 of 243 at BMI 47 needs a different mechanism, and the two
+papers read today supply a candidate.** Hedenstierna measures ATELECTASIS,
+which is true shunt. Holley 1967 measured TIDAL AIRWAY CLOSURE and V/Q
+maldistribution, which tracks ERV and is a different thing. If shunt plateaus
+above BMI 30 while airway closure keeps worsening as ERV falls, morbidly obese
+hypoxaemia becomes increasingly **low-V/Q rather than shunt**.
+
+**Which is uncomfortable**, because the V/Q volume-allocation correction of
+2026-09-22 removed this model's only low-V/Q pseudo-shunt. That removal was
+right — a ratio of flows cannot allocate a volume — but the artefact may have
+been standing in for a real low-V/Q effect the model now has no mechanism for
+at all.
+
+**NOTHING MOVES UNTIL HEDENSTIERNA 2020 IS READ.** It is a search summary, it
+reverses a stated conclusion, and acting on it would repeat the exact failure
+recorded twice already in this file.
+
+Also worth having: **Reinius H, et al.** *Prevention of atelectasis in
+morbidly obese patients during general anesthesia and paralysis: a
+computerized tomography study.* Anesthesiology 2009;111(5):979-87.
+PMID 19809292. And **Eichenberger A, et al.** *Morbid obesity and
+postoperative pulmonary atelectasis: an underestimated problem.* Anesth Analg
+2002;95(6):1788-92. PMID 12456460.
+
+---
+
 ### Holley 1967 — the obesity mechanism, MEASURED, and a bug it exposed
 
 **Holley HS, Milic-Emili J, Becklake MR, Bates DV.** Regional distribution of

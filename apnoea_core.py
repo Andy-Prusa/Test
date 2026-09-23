@@ -500,16 +500,40 @@ class Patient:
         g = self.tilt_gain_lean + self.tilt_gain_bmi * max(0.0, self.bmi() - 25.0)
         return max(0.45, 1.0 + self.tilt_deg * g)
 
+    # FRC CANNOT BE LESS THAN RESIDUAL VOLUME. Floor added 2026-09-23.
+    #
+    # RV is the volume left after a MAXIMAL exhalation; FRC is the volume left
+    # after a QUIET one. FRC < RV is not a marginal case, it is impossible,
+    # and it makes the expiratory reserve volume (ERV = FRC - RV) negative.
+    #
+    # Before this floor, frc_awake() had NO floor at all and frc_anaes() was
+    # floored at an arbitrary 400 mL, neither of them at rv. That is not a
+    # hypothetical: AT THE SHIPPED PARAMETERS a BMI 47 patient -- Gander
+    # 2005's cohort -- got frc_anaes 634 mL against rv 1100, an ERV of MINUS
+    # 466 mL. A k_frc_bmi sweep run the same day reported rows that were
+    # unphysical for the same reason and it was not noticed until Holley
+    # 1967's ERV threshold was checked against them.
+    #
+    # model.js floored the same quantity at 300 rather than 400. The two
+    # implementations therefore disagreed wherever the floor bound, and
+    # test_parity.py never caught it because no tested configuration got
+    # near it. Both now floor at rv.
+    #
+    # WHAT THE FLOOR IMPLIES, and it is a real result rather than a tidy-up:
+    # once FRC is clamped at RV the oxygen store cannot be reduced any
+    # further, so AT HIGH BMI THE FRC ROUTE IS EXHAUSTED. Any remaining
+    # disagreement with a morbidly obese measurement has to come from shunt,
+    # not from lung volume. See SOURCES.md, Gander 2005.
     def frc_awake(self):
-        return (self.frc_ref * self.height_factor()
-                * np.exp(-self.k_frc_bmi * (self.bmi() - 22.0))
-                * self.tilt_factor())
+        return max(self.rv, self.frc_ref * self.height_factor()
+                   * np.exp(-self.k_frc_bmi * (self.bmi() - 22.0))
+                   * self.tilt_factor())
 
     def frc_anaes(self):
         # the absolute induction drop cannot exceed a quarter of an already
         # small FRC, otherwise the obese lung is emptied unphysiologically
         drop = min(self.frc_drop, 0.25 * self.frc_awake())
-        return max(400.0, self.frc_awake() - drop)
+        return max(self.rv, self.frc_awake() - drop)
 
     def closing_capacity(self):
         return (self.cc_at_20
