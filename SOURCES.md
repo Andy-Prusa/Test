@@ -269,6 +269,91 @@ limb has ever been tested against outside Stock's eight sampled points.
 
 ---
 
+### The closing-capacity block is wrong in three ways — READ 2026-09-23
+
+Held and read on 2026-09-23, both in full:
+
+**Milic-Emili J, Torchio R, D'Angelo E.** Closing volume: a reappraisal
+(1967-2007). *Eur J Appl Physiol* 2007;99(6):567-83.
+
+**Hopton P, et al.** Airway closure in anaesthesia and intensive care.
+*BJA Education* 2022;22(4):126-130. doi 10.1016/j.bjae.2021.12.001.
+PMID 35531076.
+
+`apnoea_core.py` labels its closing-capacity block "PLACEHOLDER REGRESSION".
+It now has a real target, and it is wrong in three separate ways.
+
+**1. THE NORMATIVE REGRESSIONS ARE AGE AND SEX ONLY.** Milic-Emili 2007
+quotes Buist & Ross 1973 (n=284 healthy non-smokers, 16-85 yr, single-breath
+N2), equations (2) and (3):
+
+    Males   (n=132):  CC/TLC (%) = 14.9 + 0.50 x age(yr)   SE 4.1
+    Females (n=152):  CC/TLC (%) = 14.4 + 0.54 x age(yr)   SE 4.4
+
+and Teculescu 1996, equations (4) and (5), which agree closely:
+`13.8 + 0.46 x age` males, `12.5 + 0.51 x age` females. **No BMI term, no
+weight term.** CC is normalised to TLC, i.e. to body SIZE, not body MASS.
+
+**2. OUR AGE SLOPE IS TOO SHALLOW BY ABOUT A THIRD.** `cc_per_year` = 20
+mL/yr against Buist & Ross's 0.50% of TLC per year = **30-35 mL/yr** for TLC
+6.0-7.0 L. Our `cc_at_20` = 1800 mL against their implied ~1620 mL at TLC
+6.5 L. So our curve starts too high and rises too slowly, crossing theirs
+near age 45.
+
+**THE CROSSOVER TEST, which has no free parameters in it.** Both papers put
+CC = FRC at **~44 years supine** (Milic-Emili: "in the supine position, CC
+exceeds FRC much earlier (~44 years)"; BJA Ed: "recognised at ~44 yrs of age
+when supine and ~70 yrs [erect]"). **Ours crosses at 50.6 years.**
+
+**3. THE BMI TERM MODELS A MECHANISM BOTH PAPERS ATTRIBUTE TO FRC.**
+
+> Milic-Emili 2007: "Tidal airway closure is common in obesity (Holley et al.
+> 1967), anaesthesia (Hedenstierna 2003)... The tidal airway closure and
+> concurrent hypoxemia found in obesity and anaesthesia **have been attributed
+> mainly to reduction in FRC**."
+
+> BJA Ed 2022: "**Obesity and pregnancy have little effect on TLC and CC.**
+> Decreased FRC in the supine position is associated with a reduced ERV, but
+> an **unchanged CC**."
+
+The second is a positive statement, not an absence, which matters because
+reasoning from what a paper does not say has been wrong repeatedly here.
+
+Our model opens the CC-FRC gap from BOTH ends: `k_frc_bmi` drops FRC (correct,
+and the supported mechanism) AND `cc_per_bmi` = 45 mL per BMI unit raises CC
+(unsupported). At BMI 39.6 versus 23.1, FRC falls 1178 mL and CC climbs 654
+mL — so roughly **45% of our obese airway closure comes from a term the
+literature contradicts**. The same compensating-pair shape as the V/Q volume
+error.
+
+**AND CORRECTING IT MAKES THE OBESE BENCHMARK WORSE, WHICH IS THE POINT.**
+Removing the BMI term LOWERS obese CC, giving less closure, less shunt and
+SLOWER desaturation — and Heard is already too slow at 319.8 s against an IQR
+of 244-314. Re-anchoring the age terms only partly offsets it: at Heard's age
+42, a steeper slope adds ~264 mL, a corrected intercept removes ~180 mL, and
+dropping the BMI term removes ~437 mL at BMI 34.7. **Net, a properly anchored
+CC is about 350 mL LOWER for Heard's patient than ours is now.**
+
+**So the obese deficit cannot live in closing capacity.** It is in FRC against
+BMI, or in the conversion from closure to shunt. That makes **Jones & Nzekwu,
+Chest 2006;130(3):827-33** the decisive paper rather than a supporting one.
+
+**A STRUCTURAL OBSTACLE TO IMPLEMENTING THIS.** Buist & Ross give CC as a
+PERCENTAGE OF TLC. **This model has no TLC.** Implementing their regression
+faithfully means adding a predicted TLC (Quanjer/ERS 1993, which Milic-Emili
+uses) rather than editing three constants. That is a piece of work, not a
+parameter change, and it should be costed before it is started.
+
+**Caveat held against ourselves:** Buist & Ross studied healthy non-smokers,
+almost certainly not obese. The ABSENCE of a BMI term in their regression is
+not by itself proof that CC is BMI-independent in obesity. The BJA Education
+sentence is what carries this, because it is a positive claim.
+
+**Two more papers surface from these:** Holley HS et al 1967 (the obesity
+airway-closure source both cite) and Hedenstierna 2003 (anaesthesia).
+
+---
+
 ### Hardman 2000 and McNamara 2005 — READ 2026-09-22, and they overturn a conclusion
 
 **Hardman JG, Wills JS, Aitkenhead AR.** Factors Determining the Onset and
