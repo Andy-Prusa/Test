@@ -87,8 +87,12 @@ function derive(P){
   // wherever the floor bound; test_parity.py never caught it because no
   // tested configuration got near it. At BMI 47 both bound, differently.
   // See apnoea_core.py frc_awake() for the full reasoning.
-  const frcAwake=Math.max(P.rv,P.frcRef*hf*Math.exp(-0.0417*(bmi-22))*tiltF);
-  const frc=Math.max(P.rv,(frcAwake-Math.min(P.frcDrop,0.25*frcAwake))*(P.frcScale||1));
+  // Residual volume is scaled for body size AND BMI, matching
+  // apnoea_core.py rv_eff(). Anchored on Reinius 2009: EELV 697 mL at
+  // BMI 45 after induction and paralysis, where ERV is ~0 so FRC ~= RV.
+  const rvEff=(P.rv||1100)*hf*Math.exp(-(P.kRvBmi===undefined?0.0198:P.kRvBmi)*Math.max(0,bmi-22));
+  const frcAwake=Math.max(rvEff,P.frcRef*hf*Math.exp(-0.0417*(bmi-22))*tiltF);
+  const frc=Math.max(rvEff,(frcAwake-Math.min(P.frcDrop,0.25*frcAwake))*(P.frcScale||1));
   const cc=(P.ccAt20+P.ccPerYear*(P.age-20)+P.ccPerBmi*Math.max(0,bmi-25))*hf*(P.ccScale||1);
   const vo2=P.vo2Ref*Math.pow(abw/70,0.75)*(P.bmrScale||1)-0.27*P.weight;
   // The circulation's answer to anaemia. Exactly 1 at and above the
@@ -103,11 +107,11 @@ function derive(P){
   const fatKg=Math.max(5,P.weight*(0.10+0.011*Math.max(0,bmi-20)));
   const leanKg=P.weight-fatKg, lam=1.895e-5;
   const n2cap=[(5+0.10*leanKg)*1000*lam,(0.50*leanKg)*1000*lam,(fatKg/0.92)*1000*lam*5];
-  return {bmi,frc,cc,vo2:Math.max(60,vo2),co,n2cap,lam,hf,tiltF,anaemiaCo};
+  return {bmi,frc,cc,vo2:Math.max(60,vo2),co,n2cap,lam,hf,tiltF,anaemiaCo,rvEff};
 }
 
 function simulate(P, epochs, dt=0.1){
-  const d=derive(P), {frc,cc,vo2,co,n2cap,lam,hf,anaemiaCo}=d;
+  const d=derive(P), {frc,cc,vo2,co,n2cap,lam,hf,anaemiaCo,rvEff}=d;
   // crs is mL/cmH2O and rec() works in mmHg. Compliance is volume PER
   // pressure, so the conversion is the RECIPROCAL of the pressure factor:
   // multiply, do not divide. Matches apnoea_core.py -- see the note there.
@@ -165,7 +169,7 @@ function simulate(P, epochs, dt=0.1){
     for(let c=0;c<NC;c++){ nc[c]=n[3*c]+n[3*c+1]+n[3*c+2]; nd+=nc[c]; }
     let vv,pabs;
     { // recoil: linear, stiffening below RV, floored where units collapse
-      const rv=Math.max(200,(P.rv||1100)*hf-150), stiff=0.15, fl=(P.pCollapse||-149.5461)/1.35951;
+      const rv=Math.max(200,rvEff-150), stiff=0.15, fl=(P.pCollapse||-149.5461)/1.35951;
       const rec=v=>{let p=(v-(frc-150))/crs; if(v<rv) p+=(v-rv)/(crs*stiff);
                     return Math.max(p,fl);};
       let lo=1,hi=frc+4000;

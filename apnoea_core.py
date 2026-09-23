@@ -251,7 +251,30 @@ class Patient:
     # whole plausible range and moves PaO2 by 0.6%. It is a CO2-only lever.
     # It cannot be part of any explanation of the oxygen disagreement.
     crs: float = 75.0            # mL/cmH2O. Rothen 1993 group 1, n=10: 75 (19)
-    rv: float = 1100.0           # mL residual volume, anaesthetised supine
+    # RESIDUAL VOLUME. Reference value at BMI 22; scaled for body size and
+    # for BMI by rv_eff() below. It was a flat constant until 2026-09-23.
+    rv: float = 1100.0           # mL, anaesthetised supine, AT BMI 22
+    # Exponential decline of RV per BMI unit above 22, ANCHORED ON ONE
+    # MEASUREMENT and no more than that.
+    #
+    # Reinius H et al, Anesthesiology 2009;111:979-87, n=30, BMI 45 (4),
+    # measured end-expiratory lung volume by spiral CT after induction and
+    # paralysis at ZEEP: 697 (157) mL, down from 1387 (581) awake.
+    #
+    # Holley 1967 shows expiratory reserve volume collapsing toward zero in
+    # this population, and ERV = FRC - RV, so at BMI 45 anaesthetised
+    # FRC ~= RV and Reinius's 697 mL is an UPPER BOUND on RV there. Taking
+    # it as equality is the conservative choice: it gives the LARGEST RV
+    # consistent with the measurement, hence the smallest change.
+    #
+    #     1100 * exp(-k * (45 - 22)) = 697  ->  k = 0.0198
+    #
+    # ONE POINT. It is anchored, not fitted -- nothing about a benchmark
+    # entered the choice -- but a single measurement cannot establish the
+    # SHAPE of the decline, only that a flat 1100 is wrong. Before this,
+    # a BMI 45-47 patient was floored at RV 1100 while the measured FRC was
+    # 697, i.e. the model insisted on more gas than the CT could find.
+    k_rv_bmi: float = 0.0198
     stiff_below_rv: float = 0.15 # compliance retained below RV
     p_collapse: float = P_COLLAPSE   # cmH2O floor on recoil. Minus the
                                  # systolic pressure, by ruling: see
@@ -524,8 +547,19 @@ class Patient:
     # further, so AT HIGH BMI THE FRC ROUTE IS EXHAUSTED. Any remaining
     # disagreement with a morbidly obese measurement has to come from shunt,
     # not from lung volume. See SOURCES.md, Gander 2005.
+    def rv_eff(self):
+        """Residual volume for THIS patient: body size and BMI applied.
+
+        Until 2026-09-23 the three places that used rv disagreed about
+        scaling -- the recoil knee applied height_factor and subtracted
+        anatomical dead space, while the FRC floors added the same day used
+        the raw constant. They now all go through here.
+        """
+        return (self.rv * self.height_factor()
+                * np.exp(-self.k_rv_bmi * max(0.0, self.bmi() - 22.0)))
+
     def frc_awake(self):
-        return max(self.rv, self.frc_ref * self.height_factor()
+        return max(self.rv_eff(), self.frc_ref * self.height_factor()
                    * np.exp(-self.k_frc_bmi * (self.bmi() - 22.0))
                    * self.tilt_factor())
 
@@ -533,7 +567,7 @@ class Patient:
         # the absolute induction drop cannot exceed a quarter of an already
         # small FRC, otherwise the obese lung is emptied unphysiologically
         drop = min(self.frc_drop, 0.25 * self.frc_awake())
-        return max(self.rv, self.frc_awake() - drop)
+        return max(self.rv_eff(), self.frc_awake() - drop)
 
     def closing_capacity(self):
         return (self.cc_at_20
@@ -841,7 +875,7 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
         # that pressure is what drives the flow.
         v_a, p_abs = _solve_obstructed_volume(
             n_dry, frc - pt.vd_anat, crs_mmhg,
-            max(200.0, pt.rv * pt.height_factor() - pt.vd_anat),
+            max(200.0, pt.rv_eff() - pt.vd_anat),
             pt.stiff_below_rv, pt.p_collapse / 1.35951)
         if p_abs > PB and np.isfinite(ep.resistance):
             # Above atmospheric, gas vents through an open airway. It cannot

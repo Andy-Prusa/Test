@@ -294,15 +294,32 @@ BMI against apnoea duration: **R2 0.51, P 0.003 in the control arm**, and
 R2 0.14 (NS) in the PEEP arm — the BMI effect is abolished by preventing
 atelectasis, which is the mechanism demonstrated by its own removal.
 
-**OUR MODEL AT BMI 47, after the RV floor of 2026-09-23:**
+**OUR MODEL AT BMI 47.** Recomputed 2026-09-23 after residual volume was
+made BMI-dependent (see Reinius 2009 below). The configuration is now written
+down and scripted in `handover_numbers.py`, so it cannot go the way of the
+Ellis rows: height 1.70 m, weight 47 x 1.70^2 = 135.8 kg, age 38, Hb 14,
+end-tidal oxygen at the start 0.90, starting PaCO2 46, patent airway on room
+air. Three of these — height, Hb, and how well they preoxygenated — are OURS,
+not Gander's; the paper gives BMI and age only.
 
-| | ours | measured |
-|---|---|---|
-| PaO2 before apnoea | 563.8 | **243 (136)** |
-| shunt at t=0 | **5.0%** | implied ~20%+ |
-| time to SpO2 90% | 251.2 s | **127 (43)** |
-| PaO2 at SpO2 92% | 43.3 | 68 (10) |
-| PaCO2 at SpO2 92% | 51.5 | 53 (4) |
+| | ours, flat RV | ours, BMI-dependent RV | measured |
+|---|---|---|---|
+| PaO2 before apnoea | 563.8 | **563.8** | **243 (136)** |
+| shunt at t=0 | 5.0% | **5.01%** | implied ~20%+ |
+| time to SpO2 90% | 251.2 s | **164.4 s** | **127 (43)** |
+| PaO2 at SpO2 92% | 43.3 | 44.2 | 68 (10) |
+| PaCO2 at SpO2 92% | 51.5 | 55.6 | 53 (4) |
+
+**The timing disagreement is now inside one standard deviation** — 164 s
+against 127 (43), whose 1 SD band is 84–170 s. It was 251 s. Nothing about
+this benchmark entered the choice of `k_rv_bmi`, which was fixed by Reinius's
+CT volume and Holley's ERV threshold before this was run.
+
+**The oxygen disagreement did not move at all.** PaO2 before apnoea is 563.8
+either way, to one decimal place, because the arterial oxygen tension at the
+moment apnoea starts is set by preoxygenation and by gas exchange, not by how
+much gas is in the lung. That is the cleanest available statement of where the
+remaining defect is: **not in lung volume.**
 
 **OUR MORBIDLY OBESE PATIENT CARRIES THE LEAN BASELINE SHUNT.** 5.0% at BMI
 47. The collapse machinery contributes essentially nothing at the point where
@@ -311,10 +328,16 @@ implies an alveolar PO2 near 655 and an a-A gradient near 410 mmHg — a shunt
 measurement in all but name. (That arithmetic is ours; they report no shunt
 fraction. n=11 with SD 136 on a mean of 243, so the scatter is large.)
 
-**THE RV FLOOR DOUBLED THE TIMING ERROR, and that is the useful part.** Before
-it, ERV was -466 mL and we took 166 s against a measured 127. With FRC
-correctly clamped at RV we take 251 s. The unphysical negative ERV had been
-hiding half the error by giving the patient an impossibly small oxygen store.
+**THE TIMING ERROR WENT UP, THEN CAME BACK DOWN, AND BOTH MOVES WERE RIGHT.**
+Before any floor, expiratory reserve volume was **-466 mL** — impossible — and
+we took 166 s against a measured 127. Flooring FRC at a flat residual volume
+removed the impossibility and the answer went to **251 s**: the unphysical
+negative ERV had been hiding half the error by giving the patient an impossibly
+small oxygen store. Making residual volume itself fall with BMI, on Reinius's
+measurement, brings it to **164 s**. That is close to the original 166 s and it
+is worth being explicit that this is NOT a return to the old answer by a
+roundabout route — the old 166 s came from a negative ERV, the new 164 s comes
+from an ERV of zero, which is what Holley measured in this population.
 
 **AND IT SETTLES WHERE THE DEFECT CANNOT BE.** FRC is now at its floor, so the
 oxygen store cannot be reduced further by any parameter. **At BMI 47 the FRC
@@ -440,12 +463,87 @@ at all.
 reverses a stated conclusion, and acting on it would repeat the exact failure
 recorded twice already in this file.
 
-Also worth having: **Reinius H, et al.** *Prevention of atelectasis in
-morbidly obese patients during general anesthesia and paralysis: a
-computerized tomography study.* Anesthesiology 2009;111(5):979-87.
-PMID 19809292. And **Eichenberger A, et al.** *Morbid obesity and
+**Reinius 2009 was obtained and read 2026-09-23 — see its own section below.**
+Still worth having: **Eichenberger A, et al.** *Morbid obesity and
 postoperative pulmonary atelectasis: an underestimated problem.* Anesth Analg
 2002;95(6):1788-92. PMID 12456460.
+
+---
+
+### Reinius 2009 — READ 2026-09-23, and it sets the residual-volume floor
+
+**Reinius H, Jonsson L, Gustafsson S, Sundbom M, Duvernoy O, Pelosi P,
+Hedenstierna G, Freden F.** Prevention of atelectasis in morbidly obese
+patients during general anesthesia and paralysis: a computerized tomography
+study. *Anesthesiology* 2009;111(5):979-87. PMID 19809292. Uploaded to the
+session and read; **not in the repository**, so the numbers below are what was
+read from that upload on the date given and nothing else.
+
+n=30, BMI 45 (SD 4), randomised to PEEP / recruitment+PEEP / neither, CT at
+end-expiration after induction and paralysis.
+
+Two things it gives that nothing else in the repository does:
+
+**1. An end-expiratory lung volume in morbid obesity, measured, after
+induction and paralysis: 697 (157) mL.** That is the whole lung volume at the
+end of a passive expiration, in an anaesthetised paralysed patient at BMI 45 —
+about a third of what a lean anaesthetised patient holds.
+
+**2. "Poorly aerated" lung is quantified SEPARATELY from "nonaerated" lung.**
+Nonaerated is collapsed lung with no gas in it — true shunt. Poorly aerated is
+lung that still contains gas but is ventilating badly — **low V/Q, not shunt**.
+This is the same separation Hedenstierna 2020 makes in prose ("V/Q mismatch
+caused mainly by airway closure") and that Holley 1967 measured with
+xenon-133. Three independent sources now say the same thing: obesity produces
+a low-V/Q compartment that is not atelectasis, and the model has no mechanism
+for it. That is the open item, recorded in HANDOVER.
+
+#### The ruling it settles: `rv` is now BMI-dependent
+
+`rv` is **residual volume** — the gas that cannot be squeezed out of the lungs
+at the end of the hardest possible expiration. It is a floor: functional
+residual capacity (`frc`, the volume left after a normal quiet breath out)
+cannot fall below it. Until 2026-09-23 the model held `rv` at a single value
+for everybody, which was wrong in an obvious direction — the chest wall and
+abdomen that push FRC down in obesity push residual volume down too.
+
+The anchor is Reinius's 697 mL. Holley 1967 measured expiratory reserve volume
+(`erv`, the extra gas you can still blow out below a quiet breath — that is,
+FRC minus RV) falling to essentially **zero** in morbid obesity. If ERV is zero
+at BMI 45, then FRC *is* RV there, so Reinius's measured 697 mL is an **upper
+bound on residual volume at BMI 45**, not a coincidence. Solving
+
+    1100 * exp(-k * (45 - 22)) = 697   ->   k = 0.0198
+
+gives `k_rv_bmi = 0.0198`, with `rv = 1100` mL now stated as the value **at BMI
+22**, anaesthetised and supine, rather than as a universal constant.
+
+**This is not tuning a parameter to pass a benchmark.** No benchmark in
+`test_validation.py` moves on it — it is a measured volume in a measured
+population, and the exponent is fixed by two measurements, not fitted to an
+outcome. What it changes is that FRC in the obese is now floored by something
+physical instead of by a constant that happened to be a lean patient's.
+
+Recomputed 2026-09-23 against `apnoea_core.py` (provenance printed), height
+1.75 m, age 42:
+
+| BMI | residual volume | FRC awake | FRC anaesthetised | ERV anaesthetised |
+|---|---|---|---|---|
+| 22.9 | 1081 | 2412 | 2012 | 931 |
+| 34.3 | 862 | 1498 | 1123 | 261 |
+| 44.4 | 706 | 982 | 737 | 31 |
+| 46.4 | 679 | 905 | 679 | 0 |
+
+At the Reinius BMI of 45.0 exactly, the model gives residual volume 698 mL and
+anaesthetised FRC 719 mL, against Reinius's measured 697 (157). ERV reaching
+zero at BMI 46 is Holley's finding falling out of the model rather than being
+put into it.
+
+**What this does NOT license.** Reinius's 697 is an end-expiratory volume in
+patients who were induced and paralysed, not a residual volume measured by
+washout. Reading it as RV depends entirely on Holley's ERV going to zero. If
+that link is wrong, the exponent is wrong with it. It is recorded here so that
+the dependency is visible rather than buried in a constant.
 
 ---
 

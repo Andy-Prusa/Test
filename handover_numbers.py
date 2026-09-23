@@ -1569,6 +1569,88 @@ print("    transfers to a clamped tube in BMI<30 patients is a separate")
 print("    judgement and is NOT settled -- see protocol/study.html 3.3.")
 
 # ---------------------------------------------------------------------------
+print("\nGANDER 2005 -- the morbidly obese benchmark, CONFIGURATION WRITTEN DOWN")
+print("  SOURCES.md has carried this table as typed-in markdown since")
+print("  2026-09-23 with no script behind it, which is exactly how the Ellis")
+print("  comparator rows became unreproducible. It is scripted here now.")
+print("  Gander gives BMI 47 (6) and age 38 (12) and nothing else about the")
+print("  patient; height, Hb and how well they preoxygenated are OURS.")
+
+
+def _gander():
+    _h = 1.70
+    _p = Patient(weight=47.0 * _h * _h, height=_h, age=38, hb=14.0)
+    _r = simulate(_p, [AirwayEpoch(900.0, resistance=2.0, fgo2=0.21)],
+                  dt=DT, feo2_start=0.90, paco2_start=46.0, stop_sao2=0.0)
+    return _p, _r
+
+
+_gp, _gr = _gander()
+_g92 = time_to(_gr, 'spo2', 92)
+check("Gander: PaO2 before apnoea [measured 243 (136)]",
+      _gr['pao2'][0], 563.8, 1.0, " mmHg")
+check("Gander: shunt at t=0 [implied ~20%+]",
+      _gr['shunt'][0] * 100.0, 5.01, 0.10, " %")
+check("Gander: time to SpO2 90% [measured 127 (43), 1 SD 84-170]",
+      time_to(_gr, 'spo2', 90), 164.4, 3.0, " s")
+check("Gander: PaO2 at SpO2 92% [measured 68 (10)]",
+      at(_gr, 'pao2', _g92), 44.2, 1.0, " mmHg")
+check("Gander: PaCO2 at SpO2 92% [measured 53 (4)]",
+      at(_gr, 'paco2', _g92), 55.6, 1.0, " mmHg")
+check("Gander: ERV anaesthetised [Holley: zero in morbid obesity]",
+      _gp.frc_anaes() - _gp.rv_eff(), 0.0, 5.0, " mL")
+print("    TIMING IS NOW INSIDE ONE SD: 164 s against 127 (43). It was 251 s")
+print("    at a flat residual volume and 166 s before any floor at all -- and")
+print("    the old 166 came from an ERV of MINUS 466 mL, the new 164 from an")
+print("    ERV of zero. Same answer, opposite physics.")
+print("    OXYGEN DID NOT MOVE: PaO2 before apnoea is 563.8 against a measured")
+print("    243 at BOTH residual volumes, to one decimal place, because")
+print("    arterial oxygen at the start of apnoea is set by preoxygenation and")
+print("    gas exchange, not by how much gas the lung holds. The remaining")
+print("    defect is NOT in lung volume.")
+
+# ---------------------------------------------------------------------------
+print("\nRESIDUAL VOLUME IS NOW BMI-DEPENDENT -- the Reinius 2009 anchor")
+print("  rv is residual volume: the gas that cannot be blown out of the lungs")
+print("  even at maximal expiration. It is a FLOOR under FRC. It was one")
+print("  constant for everybody until 2026-09-23, which is wrong in an obvious")
+print("  direction -- what pushes FRC down in obesity pushes RV down too.")
+print("  Anchor: Reinius 2009 measured end-expiratory lung volume 697 (157) mL")
+print("  at BMI 45 after induction and paralysis; Holley 1967 has ERV going to")
+print("  zero in morbid obesity, so FRC IS RV there and 697 is an upper bound")
+print("  on RV. k_rv_bmi solves 1100*exp(-k*(45-22)) = 697.")
+
+
+def _rvpat(bmi, h=1.75):
+    return Patient(weight=bmi * h * h, height=h, age=42, hb=14)
+
+
+check("k_rv_bmi solves the Reinius anchor",
+      np.log(ac.Patient().rv / 697.0) / (45.0 - 22.0),
+      ac.Patient().k_rv_bmi, 0.0005, "")
+_r45 = _rvpat(45.0)
+check("residual volume at BMI 45", _r45.rv_eff(), 698.0, 12.0, " mL")
+check("  ... against Reinius measured 697 (157), in SD",
+      abs(_r45.rv_eff() - 697.0) / 157.0, 0.0, 0.25, " SD")
+check("FRC anaesthetised at BMI 45", _r45.frc_anaes(), 719.0, 15.0, " mL")
+for _b, _rv, _fa, _fn in ((22.9, 1081.0, 2412.0, 2012.0),
+                          (34.3, 862.0, 1498.0, 1123.0),
+                          (44.4, 706.0, 982.0, 737.0),
+                          (46.4, 679.0, 905.0, 679.0)):
+    _p = _rvpat(_b)
+    check(f"BMI {_b:.1f}: residual volume", _p.rv_eff(), _rv, 12.0, " mL")
+    check(f"BMI {_b:.1f}: FRC awake", _p.frc_awake(), _fa, 20.0, " mL")
+    check(f"BMI {_b:.1f}: FRC anaesthetised", _p.frc_anaes(), _fn, 20.0, " mL")
+_erv46 = _rvpat(46.4).frc_anaes() - _rvpat(46.4).rv_eff()
+check("ERV anaesthetised at BMI 46.4 (Holley: zero in morbid obesity)",
+      _erv46, 0.0, 5.0, " mL")
+print("    ERV reaching zero at BMI 46 is Holley FALLING OUT of the model, not")
+print("    being put into it. NO benchmark in test_validation.py moves on this")
+print("    change -- it is a measured volume in a measured population, not a")
+print("    fit. The dependency to watch is that reading Reinius's 697 as a")
+print("    residual volume rests ENTIRELY on Holley's ERV going to zero.")
+
+# ---------------------------------------------------------------------------
 print("\nNOT REPRODUCIBLE, and recorded as such")
 print("    Ellis 2022 pregnancy comparator: HANDOVER quotes 18.1 and 5.8 min")
 print("    against their 25.4 and 9.9. The configuration behind those two")
