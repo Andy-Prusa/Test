@@ -324,7 +324,84 @@ V/Q — not in lung volume.
 Also available and unused: an obese CO2 slope, 46 -> 53 mmHg over ~127 s,
 about 3.3 mmHg/min. We hold no obese CO2 comparator at all.
 
-### A CONTRADICTION TO CHECK BEFORE ANY SHUNT PARAMETER MOVES
+### Hedenstierna 2020 — READ. THE SHUNT CEILING IS CORRECT AND I WAS WRONG
+
+**Hedenstierna G, Tokics L, Reinius H, Rothen HU, Ostberg E, Ohrvik J.**
+Higher age and obesity limit atelectasis formation during anaesthesia: an
+analysis of computed tomography data in 243 subjects. *Br J Anaesth*
+2020;124(3):336-344. doi 10.1016/j.bja.2019.11.026. **Held and read
+2026-09-23.** n=243, age 18-78, **BMI 18-52**, CT awake and during
+anaesthesia, preoxygenated FIO2 >0.8 then ventilated FIO2 >=0.3, no PEEP.
+
+**THIS REVERSES A DIAGNOSIS GIVEN WITH CONFIDENCE EARLIER THE SAME DAY.**
+It was recorded here that our shunt saturation — 7.2% at BMI 26.4 rising only
+to 9.8% at BMI 39.6 — was "a structural ceiling" and a defect, on the
+strength of a TWO-POINT extrapolation from Rothen. **The saturation is
+correct.**
+
+**THEY FIT A BROKEN LINE WITH THE KNEE AT BMI 30.** Abstract: "Log
+atelectasis area was also related to a **broken-line function of the BMI with
+the knee at 30 kg m-2** (r2=0.06; P<0.001)." Conclusions: "Atelectasis
+increased with BMI in normal and overweight patients, but showed **no further
+increase in obese subjects (BMI >=30)**."
+
+| BMI | our shunt | Hedenstierna |
+|---|---|---|
+| 26.4 | 7.2% | rising limb, below the knee |
+| 29.7 | 8.4% | approaching the knee |
+| 34.7 | 9.5% | plateau |
+| 39.6 | 9.8% | plateau |
+
+**Our collapse machinery already produces the shape they measured.** And
+Rothen's two groups (BMI 24.9 -> 4.7%, BMI 27.7 -> 9.9%) sit on the RISING
+LIMB BELOW THE KNEE, which is exactly why extrapolating them past 30 gave
+nonsense. This file had already flagged that extrapolation as invalid
+because it yields negative shunt below BMI 22, and then leaned on it anyway.
+
+**AND THEY SEPARATE THE TWO MECHANISMS EXPLICITLY.** Introduction: "Atelectasis
+causes **shunting** of blood through non-ventilated lung tissue, which,
+together with **ventilation/perfusion mismatch caused mainly by AIRWAY
+CLOSURE**, impedes oxygenation of blood."
+
+**THEIR RESULTS SHOW THE TWO DECOUPLE, and the age data are the cleanest
+demonstration:** "Atelectasis increased with increasing age up to 50 yr, and
+then decreased with further increase in age... **The P/F ratio, in contrast,
+decreased with increasing age even beyond the age of 50 yr.**"
+
+Atelectasis peaks at 50 and falls; oxygenation keeps worsening. **So the
+worsening oxygenation is NOT atelectasis-driven.** The same holds across BMI:
+atelectasis plateaus above 30 while P/F keeps falling in the obese (P<0.001
+between BMI groups during anaesthesia; PaO2 P=0.003).
+
+Other numbers read from the page: atelectasis present in **90%** of subjects,
+median **7.0 cm2** (IQR 2.8-12.5), mean 8.8 (SD 7.7), maximum 39 cm2. FIO2 1.0
+gave more atelectasis than 0.3-0.5 (12.8 vs 8.1 cm2, P<0.001). P/F fell from
+57.6 awake to 44.5 kPa anaesthetised. Awake median PaO2 12.0 kPa, PaCO2 5.2.
+Full multiple regression r2=0.23.
+
+**WHERE THIS LEAVES THE OBESE INVESTIGATION.** Gander's BMI 47 patients have
+PaO2 243 mmHg on FIO2 1.0, an a-A gradient near 410. If atelectasis has
+plateaued by BMI 30, most of that gradient is **airway-closure-driven low
+V/Q**, not shunt — which is what Holley 1967 measured with xenon-133 and what
+this paper names in its first paragraph.
+
+**AND THIS MODEL NOW HAS NO SUCH MECHANISM.** The V/Q volume-allocation
+correction of 2026-09-22 removed the only low-V/Q behaviour it had. That
+removal was correct — a ratio of FLOWS cannot allocate a VOLUME — but the
+artefact had been standing in for a real effect and nothing replaced it.
+**That is the gap, and it is a missing mechanism rather than a mis-set
+parameter.**
+
+**THE LESSON, recorded because it is the third instance today.** A two-point
+extrapolation, already flagged invalid in this very file, was used to call a
+correct feature a defect. The 243-subject measurement was obtainable the whole
+time. Rothen was mined for compliance and shunt but the question "does
+atelectasis keep rising with BMI?" was answered by arithmetic rather than by
+looking.
+
+---
+
+### ~~A CONTRADICTION TO CHECK BEFORE ANY SHUNT PARAMETER MOVES~~ — RESOLVED, see above
 
 Search-resolved 2026-09-23, **NOT READ**, and it reverses a conclusion given
 with confidence earlier the same day:
