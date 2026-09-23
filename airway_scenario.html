@@ -323,13 +323,22 @@ const arterialState=(cco2,be,hb,o2c,T)=>{
   let pco2; if(res(3)>0)pco2=3; else if(res(400)<0)pco2=400; else pco2=bisect(res,3,400,34);
   const[pH,po2,so2]=st(pco2); return {pco2,pH,po2,so2};};
 
+// GAS VOLUME IS ALLOCATED IN PROPORTION TO PERFUSION. Ruled 2026-09-22.
+// This used to read vol[i] = w[i]*Math.exp(sd*z[i]), which allocated a
+// VOLUME using the V/Q RATIO -- a ratio of two FLOWS. In a sealed lung
+// ventilation is zero, so V/Q is undefined and cannot set the oxygen store.
+// It produced a 21.8-fold spread in gas volume per unit perfusion and was
+// the origin of a 295 mmHg alveolar-to-arterial gradient at ZERO shunt.
+// See apnoea_core.py vq_distribution() for the full reasoning and for what
+// the correction does and does NOT fix. `sd` is retained in the signature
+// because callers pass it and because the V/Q ratio itself still uses it
+// elsewhere; it no longer touches the gas store.
 function vqDist(n, sd){
   const z=[], w=[], vol=[];
   for(let i=0;i<n;i++) z.push(-2.2 + 4.4*i/(n-1));
   let ws=0; for(const zz of z){ const v=Math.exp(-0.5*zz*zz); w.push(v); ws+=v; }
   for(let i=0;i<n;i++) w[i]/=ws;
-  let vs=0; for(let i=0;i<n;i++){ const v=w[i]*Math.exp(sd*z[i]); vol.push(v); vs+=v; }
-  for(let i=0;i<n;i++) vol[i]/=vs;
+  for(let i=0;i<n;i++) vol.push(w[i]);
   return {q:w, v:vol};
 }
 

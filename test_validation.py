@@ -68,13 +68,16 @@ KNOWN_OPEN = {
     "Stock obstructed, 1-5 min slope":
         (4.60, 0.40, "the a-A CO2 gap under obstruction; located, not fixed. "
                      "See HANDOVER 'Where the Stock residual actually lives'"),
-    "Stock obstructed, PaO2 at 5 min":
-        (61.0, 12.0, "the V/Q weighting: arterial blood is a perfusion-"
-                     "weighted CONTENT average read back through a curved "
-                     "relationship. See HANDOVER 'Removing the V/Q spread'"),
-    "Stock obstructed, SaO2 at 5 min":
-        (85.3, 3.0, "same mechanism as the PaO2 row above -- it is one "
-                    "disagreement reported on two scales, not two"),
+    # REMOVED 2026-09-22, BECAUSE THEY NOW PASS. Rule 3 at the head of this
+    # table says a row that starts passing must come out rather than be left
+    # to rot, and the harness printed the instruction to do so. They were:
+    #   Stock obstructed, PaO2 at 5 min    61.0 mmHg   now 157.0, band 140-488
+    #   Stock obstructed, SaO2 at 5 min    85.3 %      now  99.1, band 92-100
+    # Fixed by correcting vq_distribution(), which had been allocating gas
+    # VOLUME using the V/Q RATIO -- a ratio of two flows. See apnoea_core.py.
+    # The PaO2 row passes at the BOTTOM EDGE of its band, 157 against a
+    # central 314, and about 139 mmHg of alveolar-to-arterial gradient is
+    # still unexplained at zero shunt. Passing is not the same as solved.
     "ICSM jet, PaCO2 at cricothyroidotomy":
         (71.7, 3.0, "rides the same CO2 limb as the Stock slope. MODEL "
                     "comparator, and Laviola's simulator has no V/Q "

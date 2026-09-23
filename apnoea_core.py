@@ -553,14 +553,66 @@ class Patient:
                 v_fat * 1000 * lam * self.lambda_fat_ratio)
 
     def vq_distribution(self):
-        """Perfusion weights and V/Q ratios over n_vq parallel compartments."""
+        """Perfusion weights and alveolar gas-volume weights.
+
+        THE GAS VOLUME IS ALLOCATED IN PROPORTION TO PERFUSION. Ruled
+        2026-09-22. This used to read
+
+            vol = w * np.exp(self.vq_log_sd * z)
+
+        which allocated gas VOLUME using the V/Q RATIO. That is a category
+        error, not a mis-set number: V/Q is a ratio of two FLOWS (mL/min per
+        mL/min) and gas volume is a VOLUME (mL), and in a SEALED LUNG there
+        is no ventilation at all, so V/Q is undefined everywhere and cannot
+        be what sets the oxygen store.
+
+        WHAT IT WAS DOING. It produced a 21.8-fold spread in gas volume per
+        unit perfusion, 0.175x to 3.80x the mean, with 24.5% of blood flow
+        passing through units holding less than HALF the mean oxygen store
+        per unit of flow. Those units exhaust early, equilibrate at mixed
+        venous tension and from then on behave exactly as shunt -- while the
+        model's `shunt` output reports whatever the collapse levers say,
+        which is ZERO when they are all off. That is the origin of the
+        295 mmHg alveolar-to-arterial gradient at zero shunt, a thing no
+        lung can do, and it is why the defect appeared ONLY under
+        obstruction: with the airway open, fresh gas refills every
+        compartment continuously and the store-size differences never bite.
+
+        WHAT THE CORRECTION BUYS, at the Stock reference patient, 5 min
+        sealed (measured: PaO2 314 (87), SaO2 >92%, slope 3.4, band 2.4-4.4):
+
+            vol = w * V/Q (as shipped)   PaO2  60.9  SaO2 85.3  gap 316.0
+            separate volume SD 0.35      PaO2  87.3  SaO2 95.0  gap 238.5
+            separate volume SD 0.20      PaO2 126.7  SaO2 98.3  gap 176.2
+            vol = w (this)               PaO2 157.0  SaO2 99.1  gap 138.9
+
+        THE SATURATION FAILURE IS FIXED and the CO2 slope comes back into
+        the low end of its band. THE PaO2 FAILURE IS NOT FIXED: 157 against
+        a measured 314, with 138.9 mmHg of gradient still unexplained at
+        ZERO shunt and ZERO volume dispersion. Roughly half the defect
+        remains and is NOT accounted for by this correction. Do not read
+        this as a solution.
+
+        WHY THE LIMITING CASE AND NOT A FITTED DISPERSION. Any intermediate
+        value would be a number chosen because it looked good against a
+        benchmark, which is what CLAUDE.md forbids. Volume proportional to
+        perfusion introduces NO new free parameter; it is an explicit,
+        stated assumption that every compartment holds the same gas store
+        per unit of blood flow. It is certainly not exactly true of a real
+        lung -- dependent regions hold less gas and take more flow -- but
+        the model already carries tilt, closing capacity and dependent
+        collapse, and deriving the volume distribution from those is the
+        right way to improve on this, not a free dispersion parameter.
+
+        vq_log_sd IS STILL USED, for the V/Q ratio itself, which governs
+        gas exchange whenever the airway is patent. It no longer touches the
+        gas store.
+        """
         n = self.n_vq
         z = np.linspace(-2.2, 2.2, n)
         w = np.exp(-0.5 * z * z)
         w /= w.sum()                          # perfusion share
-        ratio = np.exp(self.vq_log_sd * z)    # V/Q relative to the mean
-        vol = w * ratio
-        vol /= vol.sum()                      # share of alveolar gas volume
+        vol = w.copy()                        # gas volume tracks perfusion
         return w, vol
 
     def summary(self):
