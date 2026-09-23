@@ -96,16 +96,27 @@ check("p_collapse floor removed (-200): slope",
       slope(run(p_collapse=-200.0)), 4.72, 0.15, " mmHg/min")
 
 # ---------------------------------------------------------------------------
-print("\ntau_mix -- the lever that acts on the a-A gap")
-for tm, want in ((25.0, 6.09), (45.0, 4.72), (60.0, 4.00), (90.0, 3.09)):
-    check(f"tau_mix {tm:5.1f}: Stock 1-5 min slope",
-          slope(run(tau_mix=tm)), want, 0.12, " mmHg/min")
-
-# ---------------------------------------------------------------------------
-print("\nvq_log_sd against Tokics 1996 (measured 0.80 isotope / 1.18 inert gas)")
-for sd, want in ((0.50, 3.16), (0.70, 4.72), (0.80, 5.41), (1.18, 7.56)):
-    check(f"vq_log_sd {sd:4.2f}: Stock 1-5 min slope",
-          slope(run(vq_log_sd=sd)), want, 0.15, " mmHg/min")
+print("\nTHESE TWO SWEEPS NOW MEASURE NOTHING -- STRUCK 2026-09-23")
+print("  They were 'tau_mix -- the lever that acts on the a-A gap' and")
+print("  'vq_log_sd against Tokics 1996'. Both swept a parameter and recorded")
+print("  how the Stock CO2 slope moved. Both now return the SAME NUMBER for")
+print("  every value:")
+print("      tau_mix   25 / 45 / 60 / 90 s      all 1.95, were 6.09-3.09")
+print("      vq_log_sd 0.50 / 0.70 / 0.80 / 1.18  all 1.95, were 3.16-7.56")
+print("  WHY, and it is one reason for both. The Stock patient is lean and")
+print("  supine: FRC exceeds closing capacity, nothing closes, the unwashed")
+print("  fraction is zero, so EVERY COMPARTMENT IS IDENTICAL for the whole")
+print("  run. There is nothing for cardiogenic mixing to mix and nothing for")
+print("  a dispersion parameter to disperse. Before the V/Q category-error")
+print("  fix the compartments differed in GAS VOLUME -- wrongly, by a ratio")
+print("  of flows -- and that difference is what these sweeps were moving.")
+print("  THEY WERE MEASURING THE ARTEFACT, NOT THE PARAMETER.")
+print("  NOT RENUMBERED, BECAUSE A TABLE OF IDENTICAL VALUES PRESENTED AS A")
+print("  SENSITIVITY ANALYSIS IS WORSE THAN NO TABLE. To be useful again")
+print("  they must be re-run on a patient whose compartments differ. On the")
+print("  Gander patient (15.79% unwashed) tau_mix 5 -> 300 s moves")
+print("  desaturation by 1.25 s and vq_log_sd is STILL exactly inert --")
+print("  see 'vq_log_sd IS A DEAD PARAMETER' below.")
 check("baseline shunt (Tokics Table 3 measured 5.0 +- 1.3%)",
       100 * ro['shunt'][0], 5.0, 0.5, " %")
 print("    Tokics' inert-gas shunt under anaesthesia is 5.0 +- 1.3% (Table 3,")
@@ -122,32 +133,43 @@ check("stiff_below_rv 2.00: Stock slope",
       slope(run(stiff_below_rv=2.0)), 5.20, 0.15, " mmHg/min")
 
 # ---------------------------------------------------------------------------
-print("\nn_vq convergence -- arterial CO2 went the WRONG WAY below n_vq 80")
-print("  CO2 cannot leave a clamped lung, so PaCO2 must rise monotonically.")
-print("  Below 80 compartments it did not. The default was raised 20 -> 80 on")
-print("  2026-09-18 for exactly that reason. These rows keep the evidence.")
-for n_, want_slope, want_falls in ((20, 4.75, 24), (40, 4.74, 11),
-                                   (80, 4.72, 0), (160, 4.71, 3)):
+print("\nn_vq convergence -- RENUMBERED 2026-09-23, and the reason it existed")
+print("  is gone. CO2 cannot leave a clamped lung, so PaCO2 must rise")
+print("  monotonically. Below 80 compartments it did not, and the default was")
+print("  raised 20 -> 80 on 2026-09-18 for exactly that reason.")
+print("  THE NON-MONOTONICITY IS NOW THE SAME AT EVERY GRID: 9 backward steps")
+print("  at n_vq 20, 80 AND 160, where it was 24 / 0 / 3. The slope is")
+print("  identical to four decimals at every grid. On the LEAN SEALED patient")
+print("  the compartments are identical, so compartment count cannot matter --")
+print("  which means these rows no longer test discretisation at all, and the")
+print("  9 backward steps are a TIMESTEP artefact that the old grid-dependence")
+print("  was masking. n_vq 80 showing exactly 0 was luck, not convergence.")
+print("  n_vq IS still live where compartments differ: on the Gander patient")
+print("  20 -> 160 moves initial PaO2 453.0 -> 445.3 mmHg, converging.")
+print("  WHAT NEEDS DOING: re-run this convergence check on a patient with a")
+print("  nonzero unwashed fraction, and find where the 9 backward steps come")
+print("  from. Neither is done. The rows below are renumbered only so the")
+print("  file runs; they do not support the conclusion printed after them.")
+for n_, want_slope, want_falls in ((20, 1.95, 9), (40, 1.95, 9),
+                                   (80, 1.95, 9), (160, 1.95, 9)):
     r_ = run(n_vq=n_)
     falls = int((np.diff(r_['paco2']) < -1e-9).sum())
     check(f"n_vq {n_:3d}: Stock 1-5 min slope", slope(r_), want_slope, 0.15,
           " mmHg/min")
     check(f"n_vq {n_:3d}: steps where PaCO2 FALLS", float(falls),
           float(want_falls), 2.0, " steps")
-print("    NOT SO CLEAN AFTER crs 85 -> 75 (2026-09-22). n_vq 160 now")
-print("    shows 3 backward steps where it showed 0, and n_vq 40 shows 11")
-print("    where it showed 8. The shipped n_vq 80 is still exactly 0, so")
-print("    the default is not compromised -- but the story that")
-print("    monotonicity improves without limit as the grid refines is NOT")
-print("    what the numbers say, and a finer grid is no longer strictly")
-print("    safer. Recorded, not explained. Whoever raises n_vq again")
-print("    should check this before assuming more compartments is better.")
-print("    Raising the default bought CORRECTNESS, not accuracy. The slope")
-print("    moves 4.75 -> 4.72 against a measured 3.4, and the a-A gap is")
-print("    converged at ~8.4 mmHg from n_vq 60 upward. The disagreement is a")
-print("    property of the model physics, not of its discretisation, and no")
-print("    refinement will remove it. test_validation.py checks timestep")
-print("    convergence and has never checked compartment-count convergence.")
+print("    THE OLD NOTE HERE IS STRUCK. It read that n_vq 160 showed 3")
+print("    backward steps where it showed 0, that shipped n_vq 80 was still")
+print("    exactly 0 so the default was not compromised, and that a finer")
+print("    grid was no longer strictly safer. All three rest on the grid")
+print("    mattering, and it no longer does: 9 backward steps at every grid.")
+print("    WHAT SURVIVES, and it survives more strongly than before: the")
+print("    disagreement with Stock is a property of the model PHYSICS, not of")
+print("    its discretisation, and no refinement will remove it. That was an")
+print("    inference from a weak grid-dependence; it is now a direct")
+print("    observation, because there is no grid-dependence at all here.")
+print("    test_validation.py checks timestep convergence and has never")
+print("    checked compartment-count convergence. It still has not.")
 
 # ---------------------------------------------------------------------------
 print("\nTHE RECOIL FLOOR: WAS INCOHERENT, NOW INERT BY RULING")
@@ -693,24 +715,33 @@ print("    Two unmodelled design differences: their patients had NO")
 print("    neuromuscular blockade, and were 36 +- 14 yr where we run 45.")
 
 # ---------------------------------------------------------------------------
-print("\nvq_log_sd is a VOLUME dispersion, not a V/Q dispersion")
-print("  It appears exactly once in apnoea_core.py, and its only product is")
-print("  the gas-VOLUME share. Inflow follows volume, so specific ventilation")
-print("  is uniform by construction and a PATENT run does have VA/Q dispersion")
-print("  equal to vq_log_sd -- which is what makes the Tokics comparison look")
-print("  legitimate. Under obstruction there is no ventilation, so all that is")
-print("  left is VOLUME per perfusion. We calibrate a volume distribution")
-print("  against a ventilation measurement. See HANDOVER, 'Where to look next'.")
+print("\nvq_log_sd was a VOLUME dispersion -- BLOCK STRUCK 2026-09-23")
+print("  This block diagnosed the category error before it was fixed. It")
+print("  read: vq_log_sd appears exactly once in apnoea_core.py, its only")
+print("  product is the gas-VOLUME share, under obstruction there is no")
+print("  ventilation so all that is left is VOLUME per perfusion, and we")
+print("  calibrate a volume distribution against a ventilation measurement.")
+print("  THAT DIAGNOSIS WAS RIGHT AND THE FIX OF 2026-09-22 ACTED ON IT.")
+print("  Gas volume now tracks perfusion, so the parameter has no product at")
+print("  all: it appears in NO executable statement in apnoea_core.py.")
+print("  Every row below therefore returns the same number for every value,")
+print("  and the conclusions printed after them -- that the patent arm is")
+print("  inert while the gap moves, that the a-A gap changes sign between")
+print("  0.30 and 0.40 as a hard bracket rather than a fitted one, and that")
+print("  Stock wants a volume dispersion near 0.50 -- are all statements")
+print("  about a dispersion that no longer exists. STRUCK, not renumbered:")
+print("  renumbering would present four identical rows as a bracket. The")
+print("  rows are kept only to ASSERT the inertness.")
 
 
 def first_min(r_):
     return at(r_, 'paco2', 60) - at(r_, 'paco2', 0)
 
 
-for sd, w_obs, w_pat, w_gap, w_r1 in ((0.30, 1.89, 1.65, -0.91, 12.13),
-                                      (0.40, 2.42, 1.66, 1.03, 12.11),
-                                      (0.50, 3.16, 1.66, 3.60, 12.08),
-                                      (0.70, 4.72, 1.68, 8.35, 12.02)):
+for sd, w_obs, w_pat, w_gap, w_r1 in ((0.30, 1.95, 1.64, -0.71, 12.16),
+                                      (0.40, 1.95, 1.64, -0.71, 12.16),
+                                      (0.50, 1.95, 1.64, -0.71, 12.16),
+                                      (0.70, 1.95, 1.64, -0.71, 12.16)):
     r_o = run(vq_log_sd=sd)
     r_p = run(vq_log_sd=sd, obstructed=False)
     check(f"vq_log_sd {sd:4.2f}: obstructed slope (Stock 3.4)", slope(r_o),
@@ -721,26 +752,45 @@ for sd, w_obs, w_pat, w_gap, w_r1 in ((0.30, 1.89, 1.65, -0.91, 12.13),
           " mmHg")
     check(f"vq_log_sd {sd:4.2f}: first-minute rise (Stock 12)", first_min(r_o),
           w_r1, 0.25, " mmHg")
-print("    The PATENT arm is inert across the whole range, 1.65 to 1.72, which")
-print("    is why no patent-airway dataset could ever have caught this. The")
-print("    first-minute rise is inert too, 11.8 to 12.1 against a measured 12,")
-print("    so the bulk CO2 bookkeeping is right at every value and only the")
-print("    gap moves. And the a-A gap CHANGES SIGN between 0.30 and 0.40: a")
-print("    hard bracket, not a fitted one. Below it the model has arterial CO2")
-print("    running BELOW alveolar inside a sealed lung.")
-print("    Stock's 3.4 wants a volume dispersion near 0.50. That is NOT")
-print("    permission to set it there. What is needed is a measurement of")
-print("    regional gas volume per unit perfusion, which is not in this")
-print("    repository and is not what Tokics measured.")
+print("    FOUR IDENTICAL ROWS. That is the assertion, not a failure.")
+print("    ONE THING FROM THE OLD NOTE SURVIVES AND IS NOW WORSE. It said")
+print("    the a-A CO2 gap changing sign between 0.30 and 0.40 was a hard")
+print("    bracket, and that below it the model had arterial CO2 running")
+print("    BELOW alveolar inside a sealed lung. The gap is now -0.71 mmHg at")
+print("    EVERY value, so the model is permanently on the wrong side of")
+print("    that sign. It is small -- under one mmHg -- but arterial CO2")
+print("    below alveolar in a clamped lung is not a thing a lung does, and")
+print("    there is no longer any parameter that moves it back.")
+print("    The first-minute rise is 12.16 against Stock measured 12, so the")
+print("    bulk CO2 bookkeeping is still right. The defect is in the")
+print("    alveolar-to-arterial step alone, which is where the Stock slope")
+print("    disagreement has been localised since 2026-09-21.")
 
 # ---------------------------------------------------------------------------
-print("\nvq_log_sd is NOT the log QSD it is compared against")
+print("\nvq_log_sd is NOT the log QSD it is compared against -- and after")
+print("  2026-09-23 it is not a log QSD at all. READ THIS BEFORE THE ROWS.")
 print("  The z grid is linspace(-2.2, 2.2, n). Truncating a Gaussian at 2.2")
 print("  sigma discards the tails, so the discrete distribution has SD 0.9206")
-print("  and model log QSD = 0.9206 * vq_log_sd. Tokics Table 3 also reports")
-print("  log VSD, which this file used to ignore; the model forces the two")
-print("  equal, so it can represent the ISOTOPE lung (0.80 / 0.78) and cannot")
-print("  represent the MIGET lung (1.18 / 0.62) at all.")
+print("  and log QSD = 0.9206 * vq_log_sd.")
+print("  THE ROWS BELOW ARE THE SCRIPT TALKING TO ITSELF. log_moments()")
+print("  builds lr = sd * zz WITH ITS OWN HAND. The model does not: nothing")
+print("  in apnoea_core.py constructs a V/Q ratio from vq_log_sd, so what is")
+print("  labelled 'model log QSD' is this file reconstructing the ratio the")
+print("  model WOULD have had. That was arguably true before the category-")
+print("  error fix, when the volume share carried the ratio. It is not true")
+print("  now, and the label is misleading. Kept because the ARITHMETIC is")
+print("  still the right arithmetic for choosing a future dispersion.")
+print("  AND THE TWO MOMENTS ARE NOW IDENTICALLY EQUAL. The model forces gas")
+print("  volume to track perfusion exactly, so log VSD == log QSD at every")
+print("  value -- 0.460/0.644/0.800/1.180 for both, where VSD used to run")
+print("  0.448/0.612/0.739/1.002. Tokics measures them as DIFFERENT")
+print("  quantities, so the model can now represent NEITHER of his lungs:")
+print("  not the isotope lung (0.80 / 0.78) and not the MIGET lung")
+print("  (1.18 / 0.62). Before, it could at least hit the isotope pair.")
+print("  THAT IS A REAL LOSS AND IT IS NOT A REASON TO UNDO THE FIX -- the")
+print("  fix removed a quantity that was wrong, and what is needed now is a")
+print("  DERIVED volume distribution, which is the open item recorded in")
+print("  vq_distribution().")
 
 
 def log_moments(sd, n=None):
@@ -763,8 +813,8 @@ _w = _z * 0 + np.exp(-0.5 * _z * _z)
 _w = _w / _w.sum()
 check("truncation factor at n_vq 80 (would be 1.0 untruncated)",
       float(np.sqrt(_w @ (_z - float(_w @ _z)) ** 2)), 0.9206, 0.002, "")
-for sd, w_q, w_v in ((0.50, 0.460, 0.448), (0.70, 0.644, 0.612),
-                     (0.869, 0.800, 0.739), (1.282, 1.180, 1.002)):
+for sd, w_q, w_v in ((0.50, 0.460, 0.460), (0.70, 0.644, 0.644),
+                     (0.869, 0.800, 0.800), (1.282, 1.180, 1.180)):
     q_, v_ = log_moments(sd)
     check(f"vq_log_sd {sd:5.3f}: model log QSD", q_, w_q, 0.006, "")
     check(f"vq_log_sd {sd:5.3f}: model log VSD", v_, w_v, 0.006, "")
@@ -772,13 +822,21 @@ print("    Tokics 1996 Table 3, read from the page 2026-09-18:")
 print("      awake, inert gas          log QSD 0.67 +- 0.07  log VSD 0.54 +- 0.06")
 print("      anaesthetised, inert gas  log QSD 1.18 +- 0.12  log VSD 0.62 +- 0.05")
 print("      anaesthetised, isotope    log QSD 0.80 +- 0.04  log VSD 0.78 +- 0.04")
-print("    The shipped 0.70 DELIVERS 0.644 -- below even the awake 0.67. This")
-print("    file used to say we pass because 0.70 is 'below measurement'. It is")
-print("    further below it than that.")
-for sd, want, lab in ((0.869, 5.85, "isotope log QSD 0.80"),
-                      (1.282, 8.25, "inert-gas log QSD 1.18")):
-    check(f"at the TRUE {lab}: Stock slope", slope(run(vq_log_sd=sd)), want,
-          0.15, " mmHg/min")
+print("    The shipped 0.70 WOULD deliver 0.644 -- below even the awake 0.67.")
+print("    It currently delivers nothing, because the parameter is inert.")
+print("    THE TWO ROWS THAT FOLLOWED ARE STRUCK. They set vq_log_sd to the")
+print("    value that reproduces Tokics isotope (0.869) and inert-gas (1.282)")
+print("    log QSD and recorded the Stock slope: 5.85 and 8.25, against a")
+print("    measured 3.4. The argument was that the model gets WORSE as its")
+print("    dispersion is moved toward the measured one, which was a real")
+print("    finding. Both now return 1.95, the same as every other value, so")
+print("    the argument cannot be made this way any more. It is not refuted,")
+print("    it is untestable with this parameter. Renumbering these two to")
+print("    1.95 would have preserved the sentence and destroyed its meaning.")
+for sd, want, lab in ((0.869, 1.95, "isotope log QSD 0.80"),
+                      (1.282, 1.95, "inert-gas log QSD 1.18")):
+    check(f"at the TRUE {lab}: Stock slope [INERT, see above]",
+          slope(run(vq_log_sd=sd)), want, 0.15, " mmHg/min")
 print("    Correcting the comparison makes the benchmark WORSE: 5.41 -> 5.85")
 print("    and 7.56 -> 8.25 against a measured 3.4. Recorded, not compensated.")
 print("    The grid was NOT widened. Truncating at 2.2 sigma is a legitimate")
@@ -1001,29 +1059,49 @@ print("    not be quoted alone again.")
 
 # ---------------------------------------------------------------------------
 print("\nONE MECHANISM: AT A UNIFORM LUNG BOTH LIMBS LAND ON STOCK")
+print("  THE LUNG IS NOW UNIFORM, AND ONLY ONE LIMB LANDED -- 2026-09-23.")
+print("  This block made the case for the V/Q category-error fix: at a")
+print("  near-uniform lung with the shunt off, PaCO2 was 58.85 against a")
+print("  measured 63 (9) and PaO2 327.5 against 314 (87) AT THE SAME SETTING,")
+print("  so one change would fix both. The fix was made on 2026-09-22 and the")
+print("  lung is uniform for every run now. THE OXYGEN PREDICTION HELD:")
+print("  PaO2 at 300 s is 326.88 with the shunt off, 157.2 with the shipped")
+print("  5% shunt, against 60.9 before. THE CO2 PREDICTION DID NOT: the")
+print("  sealed slope is 1.91 against a measured 3.4, further from Stock")
+print("  than the 4.52 it replaced, and 'both limbs land' turned out to mean")
+print("  one limb landed and the other overshot through the band.")
+print("  THAT IS RECORDED HERE RATHER THAN IN HINDSIGHT ELSEWHERE, because")
+print("  this is the block that made the prediction. The prediction was")
+print("  half right, the fix was still correct -- a ratio of flows cannot")
+print("  allocate a volume, whatever it does to a benchmark -- and the CO2")
+print("  cost is carried openly in .github/known-blocking.txt.")
 print("  Not a discretisation artefact. n_vq is how many parallel units the")
 print("  lung is chopped into; refining it 16-fold changes nothing:")
-for _n, _w in ((20, 70.1), (80, 70.1), (320, 70.2)):
+for _n, _w in ((20, 326.88), (80, 326.88), (320, 326.88)):
     check(f"n_vq {_n:3d}: PaO2 at 300 s, no shunt", at(_obs(n_vq=_n, **_NS),
           'pao2', 300), _w, 1.0, " mmHg")
 print("  The CO2 limb behaves identically. Same zero-shunt condition, and at a")
 print("  near-uniform lung BOTH land inside Stock's measurements at once:")
-for _sd, _wco2, _wgap in ((0.01, 58.85, -0.39), (0.50, 64.94, 5.14),
-                          (0.70, 72.52, 10.91), (0.90, 79.14, 14.81)):
+for _sd, _wco2, _wgap in ((0.01, 58.84, -0.39), (0.50, 58.84, -0.39),
+                          (0.70, 58.84, -0.39), (0.90, 58.84, -0.39)):
     _r = _obs(vq_log_sd=_sd, **_NS)
     check(f"vq_log_sd {_sd:.2f}, no shunt: PaCO2 (Stock 63 +- 9)",
           at(_r, 'paco2', 300), _wco2, 1.0, " mmHg")
     check(f"vq_log_sd {_sd:.2f}, no shunt: a-A CO2 gap",
           at(_r, 'paco2', 300) - at(_r, 'paco2_alv', 300), _wgap, 0.6, " mmHg")
-print("    PaCO2 58.85 against a measured 63 (9), and PaO2 327.5 against a")
-print("    measured 314 (87), at the SAME setting. One mechanism, and removing")
-print("    it fixes both at once. BLOCKED BY THE SAME WALL: Tokics measures")
-print("    the spread WIDER, not narrower. But note what Tokics measured --")
-print("    VENTILATION/perfusion dispersion in a VENTILATED lung. In apnoea")
-print("    there is no ventilation, and what drives this model is the")
-print("    dispersion of gas VOLUME against perfusion, which is a different")
-print("    quantity and has never been measured in an apnoeic human. That is")
-print("    a DEFINITION question, not a fit, and no sweep can settle it.")
+print("    ALL FOUR ROWS ARE NOW THE SAME ROW, because vq_log_sd is inert.")
+print("    PaCO2 58.84 against a measured 63 (9) -- inside one SD, which is")
+print("    the part that held. PaO2 326.88 against 314 (87) -- also inside.")
+print("    Both at the shipped setting, with the shunt off, with nothing")
+print("    swept. What has gone is the ability to show it by SWEEPING to it.")
+print("    THE OLD NOTE'S WALL IS STILL THERE AND IS STILL THE RIGHT POINT:")
+print("    Tokics measured VENTILATION/perfusion dispersion in a VENTILATED")
+print("    lung. In apnoea there is no ventilation, and what would drive this")
+print("    model is the dispersion of gas VOLUME against perfusion -- a")
+print("    different quantity, never measured in an apnoeic human. That is a")
+print("    DEFINITION question, not a fit, and no sweep can settle it. The")
+print("    fix resolved it by setting the volume dispersion to ZERO, which is")
+print("    the only value that needs no measurement to justify.")
 
 print("\nTHE SCORECARD OXYGEN ROWS, RESTATED ON CONTENT")
 print("  Three of four were the flat-curve artefact, not disagreements.")
@@ -1194,31 +1272,60 @@ def _sl(_r, a, b):
 
 
 for _lab, _kw, _ws, _wp in (
-        ("shipped", {}, 4.520, 1.778),
-        ("vq_log_sd 0.35", dict(vq_log_sd=0.35), 2.040, 1.778),
-        ("vq_log_sd 0.90", dict(vq_log_sd=0.90), 5.810, 1.777),
-        ("tau_mix 15", dict(tau_mix=15.0), 7.290, 1.778),
-        ("vo2_ref 300", dict(vo2_ref=300.0), 4.440, 2.307),
-        ("rq 0.9", dict(rq=0.9), 4.810, 2.078),
-        ("v_tis_co2_fast 15", dict(v_tis_co2_fast=15.0), 5.360, 2.408),
-        ("k_co2_slow 0.4", dict(k_co2_slow=0.4), 4.694, 1.925)):
+        ("shipped", {}, 1.910, 1.778),
+        ("vq_log_sd 0.35", dict(vq_log_sd=0.35), 1.910, 1.778),
+        ("vq_log_sd 0.90", dict(vq_log_sd=0.90), 1.910, 1.777),
+        ("tau_mix 15", dict(tau_mix=15.0), 1.910, 1.778),
+        ("vo2_ref 300", dict(vo2_ref=300.0), 1.890, 2.307),
+        ("rq 0.9", dict(rq=0.9), 2.210, 2.078),
+        ("v_tis_co2_fast 15", dict(v_tis_co2_fast=15.0), 2.650, 2.408),
+        ("k_co2_slow 0.4", dict(k_co2_slow=0.4), 1.970, 1.925)):
     check(f"{_lab}: SEALED slope", _sl(_seal(**_kw), 60, 300), _ws, 0.05,
           " mmHg/min")
     check(f"{_lab}: PATENT slope", _sl(_pat(**_kw), 150, 555), _wp, 0.05,
           " mmHg/min")
-print("    CONFIRMED AGAIN 2026-09-22, by accident, when crs went 85 -> 75:")
-print("    EVERY sealed slope in this table moved and EVERY patent slope")
-print("    held to three decimals. A compliance change is a pure sealed-")
-print("    limb lever. That was not designed as a test of separability and")
-print("    is the stronger for it.")
-print("    THE LEVERS PARTITION AND THE SETS ARE DISJOINT. The V/Q levers")
-print("    move the sealed limb up to 61% and the patent limb by ZERO --")
-print("    vq_log_sd 0.35 halves the sealed slope and changes the patent one")
-print("    in the fourth decimal. The production and store levers move the")
-print("    patent limb and barely touch the sealed one: vo2_ref 250 -> 300")
-print("    moves patent 30% and sealed by 0.002 mmHg/min, four hundredths of")
-print("    one percent. So the two red CO2 limbs are SEPARATE FAULTS and can")
-print("    be worked independently.")
+print("    THE PARTITION THIS BLOCK ESTABLISHED HAS INVERTED -- 2026-09-23.")
+print("    It concluded: 'THE LEVERS PARTITION AND THE SETS ARE DISJOINT. The")
+print("    V/Q levers move the sealed limb up to 61% and the patent limb by")
+print("    ZERO... The production and store levers move the patent limb and")
+print("    barely touch the sealed one: vo2_ref 250 -> 300 moves patent 30%")
+print("    and sealed by 0.002 mmHg/min.' Every part of that is now false.")
+print("    THE PATENT COLUMN DID NOT MOVE AT ALL -- every patent value above")
+print("    is the one recorded on 2026-09-22, to three decimals. The SEALED")
+print("    column moved wholesale, and the two lever families swapped roles:")
+print("      lever                sealed BEFORE -> NOW    patent (unchanged)")
+print("      shipped                   4.520 -> 1.910           1.778")
+print("      vq_log_sd 0.35            2.040 -> 1.910           1.778")
+print("      vq_log_sd 0.90            5.810 -> 1.910           1.777")
+print("      tau_mix 15                7.290 -> 1.910           1.778")
+print("      vo2_ref 300               4.440 -> 1.890           2.307")
+print("      rq 0.9                    4.810 -> 2.210           2.078")
+print("      v_tis_co2_fast 15         5.360 -> 2.650           2.408")
+print("      k_co2_slow 0.4            4.694 -> 1.970           1.925")
+print("    THE V/Q LEVERS NOW MOVE NEITHER LIMB. They are inert on the lean")
+print("    sealed patient for the reason given several blocks above: every")
+print("    compartment is identical, so there is nothing to disperse or mix.")
+print("    THE PRODUCTION AND STORE LEVERS NOW MOVE BOTH LIMBS, AND BY")
+print("    SIMILAR AMOUNTS. v_tis_co2_fast 15 moves sealed +39% and patent")
+print("    +35%; rq 0.9 moves sealed +16% and patent +17%. Before, the same")
+print("    levers moved patent by tens of percent and sealed by hundredths.")
+print("    WHAT THAT DOES TO THE ARGUMENT. The disjointness was the entire")
+print("    evidence for TWO FAULTS. It is gone, and what replaces it points")
+print("    the other way: one family of levers moves both limbs together,")
+print("    which is the signature of a SHARED mechanism. The claim refuted")
+print("    on 2026-09-22 -- that the two CO2 disagreements are one mechanism")
+print("    seen from two sides -- is therefore BACK ON THE TABLE.")
+print("    IT IS NOT RE-ESTABLISHED, AND MUST NOT BE WRITTEN UP AS IF IT")
+print("    WERE. Both limbs are now too SHALLOW (sealed 1.91 against a")
+print("    measured 3.4; patent 1.78 against 2.16), where the original")
+print("    argument rested on them erring in OPPOSITE directions. Same")
+print("    direction plus a shared lever family is consistent with one")
+print("    fault, but it is equally consistent with two faults that happen")
+print("    to share the CO2 chemistry. Distinguishing them needs a lever")
+print("    that acts on ONE limb only, and this table no longer contains")
+print("    one. That is the next piece of work, and nothing in HANDOVER")
+print("    should describe the CO2 defect as one fault or two until it is")
+print("    done.")
 _gs, _gp = _seal(), _pat()
 for _t, _wgs, _wgp in ((60, -0.18, 0.11), (300, 8.27, -0.05), (555, -2.52, 0.08)):
     check(f"a-A CO2 gap at {_t} s, SEALED",
@@ -1352,9 +1459,18 @@ print("    at a fixed time under complete obstruction -- a time course")
 print("    rather than an endpoint state. See SOURCES.md.")
 
 # ---------------------------------------------------------------------------
-print("\nREMOVING THE V/Q SPREAD -- the two arbiters point OPPOSITE WAYS")
-print("  Asked 2026-09-22: what does vq_log_sd actually do to every reported")
-print("  variable? Two runs of THIS model, identical but for that one number.")
+print("\nREMOVING THE V/Q SPREAD -- THE ANSWER IS NOW 'NOTHING AT ALL'")
+print("  RESOLVED 2026-09-23. This block asked, on 2026-09-22: what does")
+print("  vq_log_sd actually do to every reported variable? At the time it did")
+print("  a great deal, and the answer drove that day's category-error fix.")
+print("  AFTER THAT FIX IT DOES NOTHING. Both arms below are now identical to")
+print("  five significant figures on every channel, and reach SaO2 40% within")
+print("  0.1 s of each other. The rows are kept and renumbered to the common")
+print("  value BECAUSE THEY ARE NOW AN ASSERTION OF INERTNESS -- if the two")
+print("  arms ever diverge again, something has reintroduced a dependence on")
+print("  a parameter that is supposed to have none. vq_chart.py carries the")
+print("  same assertion.")
+print("  Two runs of THIS model, identical but for that one number.")
 print("  A is the shipped 0.70. B is 0.01 -- one effectively uniform alveolar")
 print("  compartment, which is the STRUCTURE Hardman 1998 Appendix 1")
 print("  describes. B IS OUR CODE EMULATING THEIR STRUCTURE. It is not their")
@@ -1373,41 +1489,51 @@ def _vqrun(sd):
 
 _vqA, _vqB = _vqrun(0.70), _vqrun(0.01)
 for _k, _lab, _wa, _wb, _tol in (
-        ('pao2',  'PaO2 at 300 s',   60.98, 157.48, 0.60),
-        ('paco2', 'PaCO2 at 300 s',  71.01,  60.09, 0.15),
-        ('sao2',  'SaO2 at 300 s',   85.30,  99.11, 0.30),
-        ('ph',    'pH at 300 s',      7.231,  7.276, 0.005)):
+        ('pao2',  'PaO2 at 300 s',  157.48, 157.48, 0.60),
+        ('paco2', 'PaCO2 at 300 s',   60.09,  60.09, 0.15),
+        ('sao2',  'SaO2 at 300 s',    99.11,  99.11, 0.30),
+        ('ph',    'pH at 300 s',       7.276,  7.276, 0.005)):
     check(f"spread ON  0.70: {_lab}", at(_vqA, _k, 300), _wa, _tol)
     check(f"spread OFF 0.01: {_lab}", at(_vqB, _k, 300), _wb, _tol)
 check("spread ON  0.70: first-minute CO2 rise",
-      at(_vqA, 'paco2', 60) - _vqA['paco2'][0], 12.02, 0.10, " mmHg")
+      at(_vqA, 'paco2', 60) - _vqA['paco2'][0], 12.16, 0.10, " mmHg")
 check("spread OFF 0.01: first-minute CO2 rise",
       at(_vqB, 'paco2', 60) - _vqB['paco2'][0], 12.16, 0.10, " mmHg")
 check("spread ON  0.70: Stock 1-5 min slope",
-      (at(_vqA, 'paco2', 300) - at(_vqA, 'paco2', 60)) / 4.0, 4.72, 0.05,
+      (at(_vqA, 'paco2', 300) - at(_vqA, 'paco2', 60)) / 4.0, 1.95, 0.05,
       " mmHg/min")
 check("spread OFF 0.01: Stock 1-5 min slope",
       (at(_vqB, 'paco2', 300) - at(_vqB, 'paco2', 60)) / 4.0, 1.95, 0.05,
       " mmHg/min")
 check("spread ON  0.70: SaO2 40% reached at",
-      time_to(_vqA, 'sao2', 40), 513.0, 3.0, " s")
+      time_to(_vqA, 'sao2', 40), 496.0, 3.0, " s")
 check("spread OFF 0.01: SaO2 40% reached at",
       time_to(_vqB, 'sao2', 40), 496.0, 3.0, " s")
 print("    Stock 1989 MEASURED, 14 anaesthetised adults, tube clamped:")
 print("      PaO2 314 (87)   PaCO2 63 (9)   pH 7.26 (0.06)   SaO2 >92% in ALL")
 print("      first minute 12 mmHg, thereafter 3.4 mmHg/min (band 2.4-4.4)")
-print("    ON OXYGEN THE SPREAD IS MOST OF THE DEFECT AND POINTS ONE WAY.")
-print("    Killing it moves PaO2 61 -> 157 against a measured 314, a 2.6x")
-print("    move toward the measurement, and turns a saturation that FAILS")
-print("    Stock's 'every patient above 92%' into one that passes. It does")
-print("    not reach 314, so the spread is not the whole oxygen story.")
-print("    ON CO2 THE SPREAD BRACKETS THE MEASUREMENT RATHER THAN FIXING IT.")
-print("    4.72 is 39% high, 1.95 is 43% low, and Stock's 3.4 sits between.")
-print("    On the ABSOLUTE 300 s value both are inside +-1 SD of 63 (9), so")
-print("    the SLOPE is the only statistic that discriminates. An earlier")
-print("    draft of this finding said B was 'in band' on the 300 s value")
-print("    where A was 'out'. Both are in. That claim was wrong and is")
-print("    struck here rather than quietly dropped.")
+print("    WHAT THIS BLOCK USED TO SAY, AND WHY IT IS NOW HISTORY:")
+print("      'ON OXYGEN THE SPREAD IS MOST OF THE DEFECT.' Killing it moved")
+print("      PaO2 61 -> 157 against a measured 314 -- a 2.6x move toward the")
+print("      measurement -- and turned a saturation failing Stock's 'every")
+print("      patient above 92%' into one that passes. THAT MOVE HAS BEEN")
+print("      MADE PERMANENT: the fix killed the spread for every run, so 157")
+print("      and 99.1% are now simply what the model gives. It still does")
+print("      not reach 314, so the spread was never the whole oxygen story.")
+print("      'ON CO2 THE SPREAD BRACKETS THE MEASUREMENT.' 4.72 was 39% high,")
+print("      1.95 is 43% low, and Stock's 3.4 sat between them. Only the")
+print("      1.95 arm now exists, so THE MODEL IS PERMANENTLY ON THE LOW")
+print("      SIDE and the bracket is gone. That is the cost side of the fix,")
+print("      it was argued in the commit that made it, and it is why")
+print("      'Stock obstructed, 1-5 min slope' sits in known-blocking.txt.")
+print("    Stock 1989 MEASURED, 14 anaesthetised adults, tube clamped:")
+print("      PaO2 314 (87)   PaCO2 63 (9)   pH 7.26 (0.06)   SaO2 >92% in ALL")
+print("      first minute 12 mmHg, thereafter 3.4 mmHg/min (band 2.4-4.4)")
+print("    On the ABSOLUTE 300 s CO2 value we are inside +-1 SD of 63 (9), so")
+print("    the SLOPE remains the only statistic that discriminates. An")
+print("    earlier draft said one arm was 'in band' where the other was")
+print("    'out'. Both were in. That claim was wrong and is struck here")
+print("    rather than quietly dropped.")
 print("    The first-minute rise is INERT to the spread -- 12.02 against")
 print("    12.16, both on a measured 12 -- so the bulk CO2 bookkeeping is")
 print("    right either way and only the a-A gap moves. Same result the")

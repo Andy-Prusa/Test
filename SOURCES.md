@@ -533,6 +533,65 @@ quietly drawing a difference again.
 
 ---
 
+#### And the same question asked of `tau_mix` and `n_vq` — a narrower answer
+
+`vq_log_sd` being dead raised an obvious follow-up. If the compartments are
+identical, then **cardiogenic mixing between them** (`tau_mix`, how fast the
+beating heart stirs adjacent lung units toward a common gas composition) and
+the **number of compartments** (`n_vq`) should have nothing to act on either.
+The partial `handover_numbers.py` output looked exactly like that: every
+`tau_mix` from 25 to 90 s returning a Stock slope of 1.95, where the recorded
+values ranged 6.09 down to 3.09.
+
+Measured on the **Stock reference patient** — lean, supine, sealed airway —
+all three are inert to six significant figures:
+
+| parameter | range swept | PaCO2 slope | PaO2 at 300 s | SaO2 at 300 s |
+|---|---|---|---|---|
+| `tau_mix` | 5 → 300 s (60-fold) | 1.9487 | 157.223 | 99.1025 |
+| `vq_log_sd` | 0.01 → 1.18 (118-fold) | 1.9487 | 157.223 | 99.1025 |
+| `n_vq` | 20 → 160 (8-fold) | 1.9487 | 157.223 | 99.1025 |
+
+**But that is a fact about the PATIENT, not about two of the three
+parameters.** The Stock patient is lean and supine: functional residual
+capacity exceeds closing capacity, nothing closes, the unwashed fraction is
+zero, and every compartment stays identical for the entire run. There is
+genuinely nothing to mix and nothing for extra compartments to resolve.
+
+Repeating it on the **Gander patient**, who starts with a 15.79% unwashed share
+and closes airways during apnoea, separates them:
+
+| parameter | range | PaO2 at t=0 | PaO2 at 150 s | time to SpO2 90% |
+|---|---|---|---|---|
+| `vq_log_sd` | 0.01 → 1.18 | 446.857 | 41.938 | 147.90 s |
+| | | *identical* | *identical* | *identical* |
+| `tau_mix` | 5 → 300 s | 446.857 | 41.943 → 41.885 | 147.85 → 149.10 s |
+| `n_vq` | 20 → 160 | 452.953 → 445.251 | 42.005 → 41.920 | 148.05 → 147.85 s |
+
+So, precisely:
+
+- **`vq_log_sd` is dead everywhere.** Identical to six figures even here.
+- **`tau_mix` is alive but weak** — a sixtyfold change moves desaturation by
+  1.25 s, about 0.85%. It was inert on the lean patient because there was
+  nothing to mix, not because the parameter does nothing.
+- **`n_vq` is alive, and behaves like proper discretisation.** 20 → 80
+  compartments moves initial PaO2 by 6.1 mmHg, 80 → 160 by a further 1.6. It
+  is converging, and the residual is the Gaussian quadrature, not the unwashed
+  fraction — that was written to split its boundary compartment precisely so
+  it would not step with `n_vq`.
+
+**What this does to the HANDOVER lever sweeps.** Several blocks in
+`handover_numbers.py` exist to rank which parameters move the Stock CO2 slope.
+Every one of them is run on the lean sealed patient, so every one now returns
+the same number for every value of every parameter it sweeps. They are not
+stale numbers to be refreshed — **they are measurements of nothing, and they
+will stay measurements of nothing until they are re-run on a patient whose
+compartments differ.** Renumbering them would produce a table of identical
+values presented as a sensitivity analysis, which is worse than leaving them
+red.
+
+---
+
 ### Gander 2005 inverted: how big would the low-V/Q compartment have to be?
 
 The mechanism added on 2026-09-23 gives the Gander patient a 15.79% unwashed
