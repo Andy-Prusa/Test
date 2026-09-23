@@ -107,11 +107,21 @@ function derive(P){
   const fatKg=Math.max(5,P.weight*(0.10+0.011*Math.max(0,bmi-20)));
   const leanKg=P.weight-fatKg, lam=1.895e-5;
   const n2cap=[(5+0.10*leanKg)*1000*lam,(0.50*leanKg)*1000*lam,(fatKg/0.92)*1000*lam*5];
-  return {bmi,frc,cc,vo2:Math.max(60,vo2),co,n2cap,lam,hf,tiltF,anaemiaCo,rvEff};
+  // Perfusion share whose airway was shut for the whole of preoxygenation
+  // and therefore never washed out its nitrogen: low V/Q, not shunt. Same
+  // closure law as the runtime collapse term, evaluated at the AWAKE lung
+  // volume because preoxygenation happens before induction. Exactly zero
+  // whenever awake FRC is at or above closing capacity. Mirrors
+  // apnoea_core.py Patient.unwashed_fraction() -- see the long note there.
+  const _xu=Math.max(0,cc-frcAwake)/Math.max(frcAwake,100);
+  const MAXC=P.maxClosed===undefined?0.25:P.maxClosed;
+  const CCK=P.ccK===undefined?1.5:P.ccK;
+  const unwashed=MAXC*_xu/(_xu+CCK);
+  return {bmi,frc,cc,vo2:Math.max(60,vo2),co,n2cap,lam,hf,tiltF,anaemiaCo,rvEff,unwashed};
 }
 
 function simulate(P, epochs, dt=0.1){
-  const d=derive(P), {frc,cc,vo2,co,n2cap,lam,hf,anaemiaCo,rvEff}=d;
+  const d=derive(P), {frc,cc,vo2,co,n2cap,lam,hf,anaemiaCo,rvEff,unwashed}=d;
   // crs is mL/cmH2O and rec() works in mmHg. Compliance is volume PER
   // pressure, so the conversion is the RECIPROCAL of the pressure factor:
   // multiply, do not divide. Matches apnoea_core.py -- see the note there.
@@ -126,16 +136,45 @@ function simulate(P, epochs, dt=0.1){
   const MECH=P.inflowMechFrac===undefined?0.18:P.inflowMechFrac;
   const CVF=P.cvFrac||0.55;
   const n=new Float64Array(NC*3);
-  for(let i=0;i<NC;i++){ n[3*i]=vw[i]*ntot*fo2; n[3*i+1]=vw[i]*ntot*fco2;
-                         n[3*i+2]=vw[i]*ntot*fn2; }
+  // Units that never saw the oxygen. A compartment whose airway was shut
+  // throughout preoxygenation still holds the ALVEOLAR AIR it had when the
+  // airway closed -- alveolar gas is never inspired gas -- so its
+  // composition is the alveolar gas equation on room air. Taken from the
+  // LOW-V/Q end, index 0 upward, because closure happens in the dependent
+  // lung; the boundary compartment is split rather than rounded so the
+  // fraction does not step with nVq. Mirrors apnoea_core.py.
+  const share=new Float64Array(NC);
+  if(unwashed>1e-9){
+    let need=unwashed;
+    for(let i=0;i<NC && need>0;i++){
+      const take=Math.min(qw[i],need); share[i]=take/qw[i]; need-=take;
+    }
+  }
+  const pao2air=Math.max(0,0.2093*PDRY-40/0.8);
+  const ao2=pao2air/PDRY, aco2=40/PDRY, an2=Math.max(0,1-ao2-aco2);
+  for(let i=0;i<NC;i++){
+    const k=share[i], j=1-k;
+    n[3*i]  =vw[i]*ntot*(j*fo2 +k*ao2);
+    n[3*i+1]=vw[i]*ntot*(j*fco2+k*aco2);
+    n[3*i+2]=vw[i]*ntot*(j*fn2 +k*an2);
+  }
   const nc=new Float64Array(NC), pO2=new Float64Array(NC), pCO2=new Float64Array(NC),
         pN2=new Float64Array(NC), ccO2=new Float64Array(NC), ccC=new Float64Array(NC),
         vo2c=new Float64Array(NC), vco2c=new Float64Array(NC);
   const NS=10, vseg=15;
   let ds=[]; for(let i=0;i<NS;i++) ds.push([fo2,fco2,fn2]);
 
-  const pha0=phFromPco2Be(40,be,hb,0.99,T), pao2_0=fo2*PDRY;
-  const cao2=o2Content(pao2_0,hb,pha0,40,T), caco2=co2Content(40,pha0,0.99,hb,T);
+  const pha0=phFromPco2Be(40,be,hb,0.99,T);
+  // End-capillary oxygen content mixed ACROSS COMPARTMENTS: they no longer
+  // all hold the same gas. Using the uniform alveolar value would hide the
+  // low-V/Q units from the starting PaO2. CO2 is identical in every
+  // compartment at t=0, so it needs no mixing. Mirrors apnoea_core.py.
+  let cao2=0;
+  for(let i=0;i<NC;i++){
+    const tot=n[3*i]+n[3*i+1]+n[3*i+2];
+    cao2+=qw[i]*o2Content(n[3*i]/Math.max(tot,1e-12)*PDRY,hb,pha0,40,T);
+  }
+  const caco2=co2Content(40,pha0,0.99,hb,T);
   // arterial blood starts shunt-mixed (the plateau fixed point), not at the
   // alveolar value - see the Python for why this matters
   const _f=Math.min(P.shuntBase===undefined?0.05:P.shuntBase,0.9);

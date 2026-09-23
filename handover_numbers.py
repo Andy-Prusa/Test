@@ -1569,6 +1569,49 @@ print("    transfers to a clamped tube in BMI<30 patients is a separate")
 print("    judgement and is NOT settled -- see protocol/study.html 3.3.")
 
 # ---------------------------------------------------------------------------
+print("\nLOW V/Q FROM INCOMPLETE DENITROGENATION -- added 2026-09-23")
+print("  A lung unit whose airway is already shut when preoxygenation starts")
+print("  never sees the oxygen. It is NOT collapsed -- it still holds gas and")
+print("  is still perfused -- but the gas is the alveolar AIR it had when the")
+print("  airway closed, so blood leaving it is poorly oxygenated while every")
+print("  other unit's is maximally oxygenated. Low V/Q, not shunt.")
+print("  NO NEW FREE PARAMETER: same max_closed and cc_k as the runtime")
+print("  collapse term, evaluated at the AWAKE lung volume because")
+print("  preoxygenation happens before induction.")
+
+
+def _uw(**kw):
+    return Patient(**kw).unwashed_fraction() * 100.0
+
+
+print("  IT IS EXACTLY ZERO WHEREVER FRC EXCEEDS CLOSING CAPACITY, which is")
+print("  every young lean supine patient -- so no lean benchmark can move:")
+check("Stock/Toner reference patient, 45 y, BMI 22.9",
+      _uw(weight=70, height=1.75, age=45, hb=15.0), 0.0, 1e-9, " %")
+check("the SAME patient at 80 years (closure is age as well as BMI)",
+      _uw(weight=70, height=1.75, age=80, hb=15.0), 3.49, 0.05, " %")
+check("Heard cohort, BMI 34.7 at 30 deg head-up",
+      _uw(weight=105, height=1.74, age=42, hb=14, tilt_deg=30), 3.78, 0.05, " %")
+check("Gander cohort, BMI 47 supine",
+      _uw(weight=47 * 1.70 ** 2, height=1.70, age=38, hb=14), 15.79, 0.05, " %")
+print("  WHAT IT MOVED IN test_validation.py, and it is the whole list. Every")
+print("  row that moved is obese or elderly; every lean row is bit-identical:")
+print("      Heard control, SpO2<95%     319.8 -> 310.2 s   band 244-314  PASS")
+print("      tilt, BMI 44 at 25 deg       33.4 ->  35.9 %   band  20-45   PASS")
+print("      tilt, BMI 35 at 30 deg       45.4 ->  51.1 %   band  20-45   FAIL")
+print("      Toner sham, SpO2<95%        444.5 -> 444.5 s   UNCHANGED")
+print("      tilt, non-obese 20 deg       28.6 ->  28.6 %   UNCHANGED")
+print("      every Stock row                      unchanged to 1 decimal")
+print("  THE TILT ROW IS THE COST AND IT IS RECORDED, NOT COMPENSATED.")
+print("  Head-up tilt raises awake FRC, which shrinks the unwashed fraction,")
+print("  so the mechanism AMPLIFIES the benefit of tilt -- 45.4% to 51.1%")
+print("  against a measured ~+30%. That row was already failing at 45.4 and")
+print("  is now failing worse. CLAUDE.md: a correction that makes a benchmark")
+print("  worse is information. The honest reading is that tilt gets TWO bites")
+print("  in this model, once through FRC and once through denitrogenation,")
+print("  and whether a real lung gives it both is an open question.")
+
+# ---------------------------------------------------------------------------
 print("\nGANDER 2005 -- the morbidly obese benchmark, CONFIGURATION WRITTEN DOWN")
 print("  SOURCES.md has carried this table as typed-in markdown since")
 print("  2026-09-23 with no script behind it, which is exactly how the Ellis")
@@ -1587,27 +1630,39 @@ def _gander():
 
 _gp, _gr = _gander()
 _g92 = time_to(_gr, 'spo2', 92)
+check("Gander: unwashed perfusion share (low V/Q)",
+      _gp.unwashed_fraction() * 100.0, 15.79, 0.10, " %")
 check("Gander: PaO2 before apnoea [measured 243 (136)]",
-      _gr['pao2'][0], 563.8, 1.0, " mmHg")
+      _gr['pao2'][0], 446.9, 1.0, " mmHg")
 check("Gander: shunt at t=0 [implied ~20%+]",
-      _gr['shunt'][0] * 100.0, 5.01, 0.10, " %")
+      _gr['shunt'][0] * 100.0, 5.00, 0.10, " %")
 check("Gander: time to SpO2 90% [measured 127 (43), 1 SD 84-170]",
-      time_to(_gr, 'spo2', 90), 164.4, 3.0, " s")
+      time_to(_gr, 'spo2', 90), 147.9, 3.0, " s")
 check("Gander: PaO2 at SpO2 92% [measured 68 (10)]",
       at(_gr, 'pao2', _g92), 44.2, 1.0, " mmHg")
 check("Gander: PaCO2 at SpO2 92% [measured 53 (4)]",
-      at(_gr, 'paco2', _g92), 55.6, 1.0, " mmHg")
+      at(_gr, 'paco2', _g92), 55.1, 1.0, " mmHg")
 check("Gander: ERV anaesthetised [Holley: zero in morbid obesity]",
       _gp.frc_anaes() - _gp.rv_eff(), 0.0, 5.0, " mL")
-print("    TIMING IS NOW INSIDE ONE SD: 164 s against 127 (43). It was 251 s")
-print("    at a flat residual volume and 166 s before any floor at all -- and")
-print("    the old 166 came from an ERV of MINUS 466 mL, the new 164 from an")
-print("    ERV of zero. Same answer, opposite physics.")
-print("    OXYGEN DID NOT MOVE: PaO2 before apnoea is 563.8 against a measured")
-print("    243 at BOTH residual volumes, to one decimal place, because")
-print("    arterial oxygen at the start of apnoea is set by preoxygenation and")
-print("    gas exchange, not by how much gas the lung holds. The remaining")
-print("    defect is NOT in lung volume.")
+print("    THE HISTORY OF THIS ROW, because it has moved three times and each")
+print("    move meant something different:")
+print("      time to SpO2 90%   PaO2 before apnoea   what changed")
+print("        166 s              563.8              no FRC floor at all:")
+print("                                              ERV was MINUS 466 mL")
+print("        251 s              563.8              floored at a FLAT RV")
+print("        164 s              563.8              RV falls with BMI")
+print("        148 s              446.9              low V/Q added")
+print("                           ----")
+print("        127 (43)           243 (136)          MEASURED")
+print("    The old 166 s came from an ERV of MINUS 466 mL and the 164 from an")
+print("    ERV of zero, which is what Holley measured. Same number, opposite")
+print("    physics, and that is why the 251 s step was an improvement even")
+print("    though it doubled the error.")
+print("    LOW V/Q IS THE ONLY THING THAT HAS EVER MOVED THE OXYGEN. 563.8 at")
+print("    every residual volume, 446.9 with unwashed units. Still well above")
+print("    the measured 243 (136): the mechanism is the right KIND of thing")
+print("    and is not yet the whole size of it. Nothing has been reached for")
+print("    to close the rest.")
 
 # ---------------------------------------------------------------------------
 print("\nRESIDUAL VOLUME IS NOW BMI-DEPENDENT -- the Reinius 2009 anchor")
@@ -1645,10 +1700,42 @@ _erv46 = _rvpat(46.4).frc_anaes() - _rvpat(46.4).rv_eff()
 check("ERV anaesthetised at BMI 46.4 (Holley: zero in morbid obesity)",
       _erv46, 0.0, 5.0, " mL")
 print("    ERV reaching zero at BMI 46 is Holley FALLING OUT of the model, not")
-print("    being put into it. NO benchmark in test_validation.py moves on this")
-print("    change -- it is a measured volume in a measured population, not a")
-print("    fit. The dependency to watch is that reading Reinius's 697 as a")
-print("    residual volume rests ENTIRELY on Holley's ERV going to zero.")
+print("    being put into it. The dependency to watch is that reading")
+print("    Reinius's 697 as a residual volume rests ENTIRELY on Holley's ERV")
+print("    going to zero.")
+print("  CORRECTION, 2026-09-23. The commit that made this change asserted")
+print("  that the benchmark suite was 'bit-identical either side of it' and")
+print("  that it 'adds none and fixes none'. BOTH ARE FALSE, and the error")
+print("  was asserting from three spot-checked Stock rows instead of running")
+print("  the suite on both sides. Running it on both sides, FOUR rows moved:")
+print("      tilt, BMI 44 at 25 deg     0.0 ->  33.4 %   FAIL -> PASS")
+print("      tilt, BMI 35 at 30 deg    34.5 ->  45.4 %   PASS -> FAIL")
+print("      Stock obstructed, PaO2   157.0 -> 157.2 mmHg")
+print("      Moreault, pressure step  -13.3 -> -11.8 cmH2O")
+print("  The blocking count stayed at 5 BY COINCIDENCE -- one tilt row fixed,")
+print("  the other broken.")
+print("  AND THE ZERO IS THE POINT. At BMI 44 the flat RV floor bound at BOTH")
+print("  tilt angles, so head-up tilt bought that patient EXACTLY NOTHING --")
+print("  a gain of 0.0%, against four trials measuring about +30%. That is")
+print("  independent evidence for the change, found only by running the suite")
+print("  properly, and it is why the tilt rows are scripted below.")
+
+def _tilt_gain(w, h, hb, tilt, thr):
+    _out = []
+    for _t in (0.0, tilt):
+        _q = Patient(weight=w, height=h, age=45, hb=hb, tilt_deg=_t)
+        _rr = simulate(_q, [AirwayEpoch(1200.0, resistance=OBS, fgo2=0.21)],
+                       dt=DT, stop_sao2=0.0)
+        _out.append(time_to(_rr, 'spo2', thr))
+    return (_out[1] / _out[0] - 1.0) * 100.0
+
+
+check("tilt gain, non-obese 20 deg [band 15-40, lean: must not move]",
+      _tilt_gain(70, 1.75, 15, 20, 95), 28.6, 0.5, " %")
+check("tilt gain, BMI 35 at 30 deg [band 20-45, measured ~+30]",
+      _tilt_gain(95, 1.65, 14, 30, 90), 51.1, 0.5, " %")
+check("tilt gain, BMI 44 at 25 deg [band 15-40; was 0.0 at a flat RV]",
+      _tilt_gain(120, 1.65, 14, 25, 92), 35.9, 0.5, " %")
 
 # ---------------------------------------------------------------------------
 print("\nNOT REPRODUCIBLE, and recorded as such")

@@ -470,6 +470,118 @@ postoperative pulmonary atelectasis: an underestimated problem.* Anesth Analg
 
 ---
 
+### The low-V/Q mechanism — BUILT 2026-09-23, and what it costs
+
+Three papers on this branch say the same thing in three different ways, and
+none of them is this model's shunt:
+
+| source | what it separates from atelectasis |
+|---|---|
+| Hedenstierna 2020, n=243, CT | "V/Q mismatch caused mainly by airway closure", stated as a thing distinct from the collapse |
+| Reinius 2009, n=30, CT | quantifies **poorly aerated** lung separately from **nonaerated**. Poorly aerated lung still has gas in it |
+| Holley 1967, n=8, xenon-133 | measured the ventilation redistribution directly, in this population |
+
+And Hedenstierna 2020 closes the alternative: atelectasis shows **no further
+increase above BMI 30**, so this model's shunt ceiling is correct and cannot be
+where the missing hypoxaemia comes from. The V/Q correction of 2026-09-22
+removed the model's only low-V/Q behaviour — as an artefact, rightly, because
+it was allocating gas volume by a ratio of flows — and left nothing in its
+place.
+
+#### The mechanism: incomplete denitrogenation
+
+A lung unit whose airway is **already shut when preoxygenation begins** never
+sees the oxygen. It is not collapsed: it still holds gas, and it is still
+perfused. But the gas it holds is the alveolar **air** it had when the airway
+closed, so the blood leaving it is poorly oxygenated while the blood leaving
+every other unit is maximally oxygenated. The mixture has a low arterial
+oxygen tension at a nearly normal saturation, which is what low V/Q means.
+
+`unwashed_fraction()` in `apnoea_core.py` is that perfusion share. It uses the
+**same closure law, with the same two parameters**, as the collapse term that
+already runs during apnoea — `max_closed` and `cc_k`, the ceiling on closure
+and its half-saturation. The only difference is that it is evaluated at the
+**awake** lung volume, because preoxygenation happens before induction.
+**No new free parameter, and nothing in it was chosen by looking at a
+benchmark.**
+
+The gas in those units is the alveolar gas equation on room air,
+
+    PAO2 = 0.2093 x (PB - 47) - PaCO2 / RQ
+
+which is arithmetic from constants already in the model. Alveolar gas is never
+inspired gas, so inspired air would have been the wrong choice as well as the
+more flattering one.
+
+#### What it predicts, none of it fitted
+
+1. **Lower arterial oxygen at the start of apnoea** — which is exactly where
+   Gander's disagreement is, and where nothing else has ever moved.
+2. **Scaling with airway closure, not with atelectasis** — so it is exactly
+   **zero** in any patient whose awake FRC exceeds closing capacity, and grows
+   with BMI and with age.
+3. **More atelectasis on 100% oxygen than on 30–50%** — a closed unit full of
+   oxygen absorbs and collapses; a closed unit full of nitrogen is splinted
+   open. Hedenstierna 2020 measured **12.8 cm2 against 8.1 cm2**. The sign is
+   the one this mechanism requires.
+
+#### What it does, measured 2026-09-23
+
+Perfusion share in unwashed units:
+
+| patient | awake FRC | closing capacity | unwashed |
+|---|---|---|---|
+| Stock/Toner reference, 45 y, BMI 22.9 | 2412 | 2300 | **0.00%** |
+| the same patient at 80 years | 2412 | 3000 | 3.49% |
+| Heard cohort, BMI 34.7, 30° head-up | 2096 | 2655 | 3.78% |
+| Gander cohort, BMI 47, supine | 847 | 3027 | **15.79%** |
+
+Every row that moved in `test_validation.py`, and it is the whole list:
+
+| row | before | after | band | |
+|---|---|---|---|---|
+| Heard control, SpO2<95% | 319.8 s | **310.2 s** | 244–314 | **FAIL → PASS** |
+| tilt, BMI 44 at 25° | 33.4% | 35.9% | 15–40 | PASS |
+| tilt, BMI 35 at 30° | 45.4% | **51.1%** | 20–45 | FAIL, and worse |
+| Toner sham, SpO2<95% | 444.5 s | 444.5 s | 380–525 | unchanged |
+| tilt, non-obese 20° | 28.6% | 28.6% | 15–40 | unchanged |
+| every Stock row | | | | unchanged to 1 dp |
+
+**Everything obese or elderly moved; everything lean is bit-identical.** That
+is the signature the mechanism requires, and it was not arranged — it falls out
+of the fraction being zero whenever FRC exceeds closing capacity.
+
+Blocking rows go **5 → 4**. `test_parity.py` passes.
+
+#### The cost, recorded and not compensated
+
+**The head-up tilt benchmark got worse: 45.4% → 51.1% against a measured
+~+30%,** band 20–45. Head-up tilt raises awake FRC, which shrinks the unwashed
+fraction, so in this model tilt now gets **two bites** — once by enlarging the
+oxygen store and once by improving denitrogenation. Whether a real lung gives
+it both is an open question and a good one; the four positioning trials cannot
+separate the two routes.
+
+That row was already failing at 45.4 before this change. Nothing has been
+reached for to compensate it, per CLAUDE.md.
+
+#### And what it does NOT do
+
+**Gander's arterial oxygen is still wrong.** 563.8 → **446.9** mmHg against a
+measured 243 (136). The mechanism is the first thing that has ever moved this
+number at all — it did not shift by one decimal place across the whole
+residual-volume correction — but it closes under half the gap. The right
+reading is that this is the right KIND of mechanism and not yet the whole size
+of it. Candidates for the rest, none of them tested: the fraction may be
+larger than the collapse law says because tidal closure during preoxygenation
+is intermittent rather than absolute; the unwashed units may hold *less* oxygen
+than alveolar air if they have been closed for some time before induction; and
+Gander's own preoxygenation was five minutes by face mask **without CPAP** in
+patients who are hard to seal, so their starting end-tidal oxygen may have been
+well below the 0.90 we assume.
+
+---
+
 ### Reinius 2009 — READ 2026-09-23, and it sets the residual-volume floor
 
 **Reinius H, Jonsson L, Gustafsson S, Sundbom M, Duvernoy O, Pelosi P,
@@ -497,6 +609,34 @@ caused mainly by airway closure") and that Holley 1967 measured with
 xenon-133. Three independent sources now say the same thing: obesity produces
 a low-V/Q compartment that is not atelectasis, and the model has no mechanism
 for it. That is the open item, recorded in HANDOVER.
+
+#### A CORRECTION TO THE COMMIT THAT MADE THIS CHANGE
+
+The commit message for the BMI-dependent residual volume says the benchmark
+suite is **"bit-identical either side of it"** and that the change **"adds none
+and fixes none"**. Both statements are false, and the way they came to be
+written is the failure mode this file exists to catch: three Stock rows were
+spot-checked against a clean checkout, the rest were reasoned about rather than
+run, and the reasoning was that the residual-volume floor could not bind in a
+patient whose FRC was above it. Running the whole suite on both sides, **four
+rows moved**:
+
+| row | before | after | |
+|---|---|---|---|
+| tilt, BMI 44 at 25° | **0.0%** | 33.4% | FAIL → **PASS** |
+| tilt, BMI 35 at 30° | 34.5% | **45.4%** | PASS → **FAIL** |
+| Stock obstructed, PaO2 at 5 min | 157.0 | 157.2 mmHg | PASS |
+| Moreault, pressure tracks gas removed | −13.3 | −11.8 cmH2O | PASS |
+
+The blocking count stayed at five **by coincidence** — one tilt row fixed, the
+other broken.
+
+**And the zero is the finding the spot-check missed.** At BMI 44 the flat
+residual-volume floor bound at *both* tilt angles, so head-up tilt bought that
+patient **exactly nothing** — a gain of 0.0% against four positioning trials
+measuring about +30%. That is independent support for making residual volume
+BMI-dependent, and it was invisible until the suite was run properly. All three
+tilt gains are now regenerated by `handover_numbers.py`.
 
 #### The ruling it settles: `rv` is now BMI-dependent
 

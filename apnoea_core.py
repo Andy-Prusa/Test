@@ -673,6 +673,63 @@ class Patient:
         vol = w.copy()                        # gas volume tracks perfusion
         return w, vol
 
+    # ---- LOW V/Q FROM INCOMPLETE DENITROGENATION, added 2026-09-23 --------
+    #
+    # THE GAP THIS EXISTS TO CLOSE. Gander 2005 measured arterial oxygen of
+    # 243 (136) mmHg in morbidly obese patients at the end of five minutes of
+    # 100% oxygen. The model gave 563.8, and that number did not move by one
+    # decimal place when residual volume was corrected, because arterial
+    # oxygen at the start of apnoea is set by preoxygenation and by gas
+    # exchange, not by how much gas the lung holds. The FRC route is
+    # exhausted; the defect is in gas exchange.
+    #
+    # AND IT IS NOT MORE SHUNT. Hedenstierna 2020 (n=243, CT) finds
+    # atelectasis shows NO FURTHER INCREASE above BMI 30, so this model's
+    # shunt ceiling is right. Three sources instead separate a SECOND thing
+    # from shunt:
+    #
+    #   Hedenstierna 2020  "V/Q mismatch caused mainly by airway closure",
+    #                      stated as distinct from the atelectasis
+    #   Reinius 2009       quantifies "poorly aerated" lung SEPARATELY from
+    #                      "nonaerated". Poorly aerated lung still has gas
+    #                      in it. That is low V/Q, not collapse
+    #   Holley 1967        measured the ventilation redistribution directly,
+    #                      with xenon-133, in exactly this population
+    #
+    # THE MECHANISM. A lung unit whose airway is already closed at the start
+    # of preoxygenation never sees the oxygen. It is not collapsed -- it
+    # still holds gas, and it is still perfused -- but the gas it holds is
+    # the alveolar air it had when the airway shut. Blood leaving it is
+    # therefore poorly oxygenated while every other unit's is maximally
+    # oxygenated, and the mixture has a low arterial oxygen tension at a
+    # normal saturation. That is the definition of low V/Q.
+    #
+    # WHAT IT PREDICTS, none of which was fitted:
+    #   (a) lower arterial oxygen at the START of apnoea, which is where
+    #       Gander's disagreement is
+    #   (b) scaling with AIRWAY CLOSURE, not with atelectasis, so it grows
+    #       with BMI and age wherever closing capacity exceeds FRC and is
+    #       exactly ZERO in a patient whose FRC is above closing capacity
+    #   (c) MORE atelectasis on 100% oxygen than on 30-50%, because a closed
+    #       unit full of oxygen absorbs and a closed unit full of nitrogen is
+    #       splinted open. Hedenstierna 2020 measured 12.8 cm2 against
+    #       8.1 cm2, which is the sign this predicts
+    #
+    # NO NEW FREE PARAMETER. The fraction uses the SAME closure law, with the
+    # SAME max_closed and cc_k, as the runtime collapse term -- the only
+    # difference is that it is evaluated at the AWAKE lung volume, because
+    # preoxygenation happens before induction. Nothing here was chosen by
+    # looking at a benchmark.
+    def unwashed_fraction(self):
+        """Perfusion share whose airway was shut throughout preoxygenation.
+
+        Zero whenever the awake FRC is at or above closing capacity, which is
+        every young lean supine patient. See the block comment above.
+        """
+        v_lung = self.frc_awake()
+        x = max(0.0, self.closing_capacity() - v_lung) / max(v_lung, 100.0)
+        return self.max_closed * x / (x + self.cc_k)
+
     def summary(self):
         return (f"{self.weight:.0f} kg BMI {self.bmi():4.1f} age {self.age:.0f} | "
                 f"tilt {self.tilt_deg:+.0f} FRC {self.frc_anaes():4.0f} "
@@ -812,13 +869,52 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
     # n[i] = [O2, CO2, N2] in compartment i, mL STPD
     n = np.outer(v_w, np.array([f_o2, f_co2, f_n2])) * n_tot0
 
+    # ---- units that never saw the oxygen -------------------------------
+    # See Patient.unwashed_fraction(). A unit whose airway was shut for the
+    # whole of preoxygenation still holds the ALVEOLAR AIR it had when the
+    # airway closed, not inspired air -- alveolar gas is never inspired gas.
+    # Its composition is the alveolar gas equation on room air, which is
+    # arithmetic from constants already in this model and not a parameter:
+    #
+    #     PAO2 = 0.2093 * (PB - 47) - paco2_start / rq
+    #
+    # The units are taken from the LOW-V/Q end of the distribution, index 0
+    # upward, because airway closure happens in the dependent lung. The
+    # boundary compartment is split rather than rounded, so the fraction is
+    # exact and does not step with n_vq -- which test_parity.py would see.
+    f_unwashed = pt.unwashed_fraction()
+    if f_unwashed > 1e-9:
+        pao2_air = 0.2093 * PDRY - paco2_start / pt.rq
+        fa_o2 = max(0.0, pao2_air) / PDRY
+        fa_co2 = paco2_start / PDRY
+        fa_n2 = max(0.0, 1.0 - fa_o2 - fa_co2)
+        share = np.zeros(pt.n_vq)            # unwashed share OF EACH unit
+        need = f_unwashed
+        for i in range(pt.n_vq):
+            if need <= 0.0:
+                break
+            take = min(q_w[i], need)
+            share[i] = take / q_w[i]
+            need -= take
+        air = np.array([fa_o2, fa_co2, fa_n2])
+        pre = np.array([f_o2, f_co2, f_n2])
+        n = (np.outer(v_w * (1.0 - share), pre)
+             + np.outer(v_w * share, air)) * n_tot0
+
     nseg = pt.vd_segments
     v_seg = pt.vd_anat / nseg
     ds = np.tile(np.array([f_o2, f_co2, f_n2]), (nseg, 1))
 
-    pao2_0 = f_o2 * PDRY
     pha_0 = bg.ph_from_pco2_be(paco2_start, be, hb, so2=0.99, temp=temp)
-    cc_o2_0 = bg.o2_content(pao2_0, hb, pha_0, paco2_start, temp)
+    # End-capillary oxygen content is now mixed ACROSS COMPARTMENTS, because
+    # they no longer all hold the same gas (see f_unwashed above). Taking the
+    # uniform alveolar value here would hide the low-V/Q units from the
+    # starting PaO2 for the first pool transit -- the same mistake the shunt
+    # mixing below was written to avoid. Every compartment carries the same
+    # CO2 at t=0, so the CO2 line needs no such mixing.
+    fr_0 = n / np.maximum(n.sum(axis=1, keepdims=True), 1e-12)
+    cc_o2_0 = float(q_w @ bg.o2_content(fr_0[:, 0] * PDRY, hb, pha_0,
+                                        paco2_start, temp))
     caco2_0 = bg.co2_content(paco2_start, pha_0, 0.99, hb, temp)
     # Arterial blood starts SHUNT-MIXED, not at the alveolar value. Solving
     # the shunt equation with the Fick relation gives the resting fixed point
