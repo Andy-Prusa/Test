@@ -283,6 +283,44 @@ PMID 35531076.
 `apnoea_core.py` labels its closing-capacity block "PLACEHOLDER REGRESSION".
 It now has a real target, and it is wrong in three separate ways.
 
+**BUIST & ROSS OBTAINED AND READ AT SOURCE 2026-09-23.** Buist AS, Ross BB.
+*Predicted values for closing volumes using a modified single breath nitrogen
+test.* **Am Rev Respir Dis 1973;107(5):744-52.** It gives a BETTER equation
+than the review does, verbatim:
+
+> "No statistical differences between the regression coefficients for men and
+> women were found. The combined regression equations are: **CC/TLC in per
+> cent = 0.525 age (years) + 14.348 +- 4.34**; CV/VC in per cent = 0.318 age
+> (years) + 1.919 +- 4.61."
+
+Milic-Emili's review quotes the SEX-SEPARATED forms; the authors themselves
+recommend the COMBINED one, and it is steeper than either. **Use 0.525 and
+14.348.**
+
+**THEY MEASURED HEIGHT AND WEIGHT AND NEITHER APPEARS IN THE FORMULA.**
+Methods: "After the subject completed the questionnaire, his height and weight
+were measured." Table 1 reports both. The published predictor is age alone.
+That is stronger than the review's silence on BMI, though it still falls short
+of a positive test of weight as a predictor, which the paper does not report.
+
+**THE INVERSION, which kills the obvious defence.** If our regression were
+merely theirs expressed against a different lung size, some TLC would
+reconcile them. None does:
+
+| age | our CC | Buist CC/TLC | implied TLC |
+|---|---|---|---|
+| 20 | 1800 mL | 24.8% | 7244 mL |
+| 40 | 2200 | 35.3% | 6224 |
+| 60 | 2600 | 45.8% | 5671 |
+| 80 | 3000 | 56.3% | 5324 |
+
+Ours agrees with theirs **only if TLC falls from 7.2 L at age 20 to 5.3 L at
+80**. TLC is approximately age-stable — it is FRC and RV that move with age.
+So this is not a scaling choice: **the two regressions have genuinely
+different slopes, and ours is too shallow.**
+
+---
+
 **1. THE NORMATIVE REGRESSIONS ARE AGE AND SEX ONLY.** Milic-Emili 2007
 quotes Buist & Ross 1973 (n=284 healthy non-smokers, 16-85 yr, single-breath
 N2), equations (2) and (3):
