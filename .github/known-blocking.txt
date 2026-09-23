@@ -1,0 +1,31 @@
+# The blocking benchmark rows, as ruled. One name per line, exactly as
+# test_validation.py prints it in its 'N BLOCKING:' summary.
+#
+# This is a BASELINE, not a permission slip. Every name here is a real
+# disagreement with a real measurement, and each one has its reasoning
+# recorded. CI goes red if a name appears that is not here, AND if a name
+# here starts passing without being removed.
+#
+# Ruled 2026-09-22 with the V/Q category-error fix (4579c4e). That commit
+# corrected gas volume being allocated by the V/Q ratio -- a ratio of two
+# flows cannot allocate a volume -- which fixed the model's two largest
+# disagreements with the only human measurement of arterial oxygen under
+# complete obstruction and broke these in exchange. The trade is the
+# substance of that commit and is argued in its message.
+
+Stock obstructed, 1-5 min slope
+ICSM jet, PaO2 at cricothyroidotomy
+ICSM jet, PaCO2 at cricothyroidotomy
+
+# Added 2026-09-23 with the low-V/Q mechanism (e4f55d3). Head-up tilt now
+# helps twice over -- a larger oxygen store AND better denitrogenation -- so
+# the modelled gain overshoots the positioning trials. Whether a real lung
+# gives tilt both routes is an open question and the four trials cannot
+# separate them. Recorded, not compensated.
+
+tilt, BMI 35 at 30 deg
+
+# REMOVED 2026-09-23, because it now PASSES: 'Heard control, time to SpO2<95%'
+# went 319.8 -> 310.2 s against a band of 244-314, fixed by the same low-V/Q
+# mechanism. Left here as a comment so the removal is visible rather than
+# looking like the row was quietly dropped.

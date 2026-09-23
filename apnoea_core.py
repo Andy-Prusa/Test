@@ -178,7 +178,27 @@ class Patient:
     # the model's physics, not of its discretisation, and no refinement will
     # remove it. Costs about 80% more runtime.
     n_vq: int = 80
-    vq_log_sd: float = 0.70      # log SD of the perfusion distribution
+    # DEAD PARAMETER, established 2026-09-23. It has NO EFFECT on any output,
+    # sealed or patent. Swept 0.01 / 0.35 / 0.70 / 1.18 at the Stock reference
+    # patient, every channel identical to five significant figures and the
+    # desaturation time identical to 0.1 s. Grep confirms it: after the V/Q
+    # category-error fix of 2026-09-22 this name appears nowhere in an
+    # executable statement in this file -- only in its declaration and in two
+    # docstrings, one of which asserted it was still used. model.js is the
+    # same: vqDist(n, sd) ignores sd. Both implementations are dead in the
+    # SAME way, which is why test_parity.py could never see it.
+    #
+    # KEPT, NOT DELETED, and the distinction matters. Removing it would change
+    # the constructor signature that test_parity.py serialises and would read
+    # as though V/Q dispersion had been considered and rejected. It has not
+    # been: the model simply has no V/Q dispersion at present. Every one of
+    # the n_vq compartments is identical at t=0 and they diverge only through
+    # mechanisms -- absorption collapse per compartment, and the unwashed
+    # fraction added the same day. That is what vq_distribution()'s own
+    # docstring called "the right way to improve on this". The slider it fed
+    # on airway_scenario.html has been removed, because a control that does
+    # nothing is worse than no control.
+    vq_log_sd: float = 0.70      # INERT. See above before using it.
     # Cardiogenic mixing. The beating heart displaces gas within the alveoli
     # and tracheobronchial tree with every systole, stirring the compartments
     # toward a common composition. Without it, parallel compartments are
@@ -662,9 +682,21 @@ class Patient:
         collapse, and deriving the volume distribution from those is the
         right way to improve on this, not a free dispersion parameter.
 
-        vq_log_sd IS STILL USED, for the V/Q ratio itself, which governs
-        gas exchange whenever the airway is patent. It no longer touches the
-        gas store.
+        vq_log_sd IS NOW INERT -- CORRECTED 2026-09-23. This docstring used
+        to claim it "IS STILL USED, for the V/Q ratio itself, which governs
+        gas exchange whenever the airway is patent". That was wrong. Nothing
+        in this file or in model.js constructs a V/Q ratio from it, so every
+        compartment has the SAME ventilation-to-perfusion ratio by
+        construction and the parameter changes nothing. Measured, not
+        reasoned: swept over a hundredfold range, sealed and patent, every
+        output identical to five significant figures.
+
+        So the model currently has NO IMPOSED V/Q dispersion at all. Its
+        heterogeneity is entirely derived -- per-compartment absorption
+        collapse, and the unwashed fraction from incomplete denitrogenation.
+        That is the design this docstring argues for two paragraphs above; it
+        is worth being explicit that it is now the actual state rather than an
+        aspiration.
         """
         n = self.n_vq
         z = np.linspace(-2.2, 2.2, n)

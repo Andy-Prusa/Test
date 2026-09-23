@@ -333,6 +333,12 @@ const arterialState=(cco2,be,hb,o2c,T)=>{
 // the correction does and does NOT fix. `sd` is retained in the signature
 // because callers pass it and because the V/Q ratio itself still uses it
 // elsewhere; it no longer touches the gas store.
+// sd IS IGNORED, and deliberately so -- see apnoea_core.py vq_log_sd. After
+// the V/Q category-error fix the gas-volume share equals the perfusion share
+// and nothing constructs a V/Q ratio, so every compartment is identical at
+// t=0 and the dispersion parameter has no effect on any output, sealed or
+// patent. The argument is kept so the call sites and the Python signature
+// still line up for test_parity.py.
 function vqDist(n, sd){
   const z=[], w=[], vol=[];
   for(let i=0;i<n;i++) z.push(-2.2 + 4.4*i/(n-1));
@@ -746,7 +752,6 @@ const DIALS=[
  ['hb','Haemoglobin',4.0,18.0,0.5,14.0,null],
  ['ccScale','Closing capacity',0.6,1.6,0.01,1.0,null],
  ['maxClosed','Lung collapsibility',0.10,0.65,0.01,0.25,null],
- ['vqLogSd','V/Q spread',0.0,1.4,0.02,0.70,null],
  ['tauMix','Cardiogenic mixing',10,300,5,45,null],
  ['fgBuccal','Pharyngeal O₂ (device arm)',0.21,1.00,0.01,1.00,null],
  ['inflowMechFrac','Absorption atelectasis',0.0,0.55,0.01,0.18,null],
@@ -939,8 +944,7 @@ function labels(){
    (D.B?' · FRC '+D.B.frc.toFixed(0)+' mL':'');
  document.getElementById('v_height').textContent=
    P.height.toFixed(2)+' m · BMI '+(P.weight/(P.height*P.height)).toFixed(1);
- document.getElementById('v_vqLogSd').textContent='log SD '+P.vqLogSd.toFixed(2);
- document.getElementById('v_tauMix').textContent=P.tauMix.toFixed(0)+' s';
+  document.getElementById('v_tauMix').textContent=P.tauMix.toFixed(0)+' s';
  // Below 7 g/dL the resting cardiac output rises to defend delivery, so say
  // so on the dial: the number on its own does not tell you the circulation
  // has changed underneath it.

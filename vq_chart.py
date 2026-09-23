@@ -5,9 +5,12 @@
 vq_chart.py -- regenerates vq_comparison.html, the four-panel picture of what
 the V/Q spread does to every reported variable.
 
-Two runs of THIS model, identical but for `vq_log_sd`, the width of the
-ventilation-to-perfusion distribution across the lung -- in plain terms, how
-unevenly air and blood are matched region to region:
+THIS CHART NOW DRAWS TWO IDENTICAL CURVES, AND THAT IS THE RESULT.
+Established 2026-09-23. It was built to show what the V/Q spread does to every
+reported variable. After the V/Q category-error fix of 2026-09-22 the answer
+is: NOTHING. Both arms below agree to five significant figures on arterial
+oxygen, carbon dioxide, saturation and pH, and reach SaO2 40% within 0.1 s of
+each other.
 
     A   vq_log_sd 0.70   what the model ships
     B   vq_log_sd 0.01   one effectively uniform alveolar compartment, which
@@ -16,6 +19,28 @@ unevenly air and blood are matched region to region:
                          emulating their structure. It is NOT their model and
                          NOT their output, and nothing here may be reported as
                          an ICSM result.
+
+WHY THEY ARE IDENTICAL. `vq_log_sd` is now an INERT parameter -- it appears in
+no executable statement in apnoea_core.py, and vqDist() in model.js ignores
+its `sd` argument. Nothing constructs a ventilation-to-perfusion ratio from
+it, so every compartment has the same V/Q by construction. Confirmed by sweep
+as well as by inspection: 0.01 / 0.35 / 0.70 / 1.18, sealed AND patent, every
+output identical to five significant figures.
+
+SO THE CHART'S PREMISE IS GONE, and the honest thing is to say what it now
+demonstrates instead:
+
+  1. Under COMPLETE OBSTRUCTION a V/Q ratio cannot matter even in principle,
+     because there is no ventilation. The old version of this chart showed a
+     difference here, and that difference was the category error -- gas volume
+     being allocated by a ratio of flows -- and not a V/Q effect at all.
+  2. The model has NO IMPOSED V/Q DISPERSION. Its heterogeneity is derived:
+     per-compartment absorption collapse, and the unwashed fraction from
+     incomplete denitrogenation added 2026-09-23.
+
+KEEP RUNNING IT. Two identical curves is a POSITIVE check, not a broken one:
+if these two arms ever diverge again, something has reintroduced a dependence
+on a parameter that is supposed to be inert, and this file will show it.
 
 Configuration is the one in test_validation.test_stock_1989 -- 70 kg, 1.75 m,
 45 y, Hb 15.0, complete obstruction, room air in the airway -- so the Stock
@@ -66,6 +91,15 @@ def at(r, key, t):
 
 def main():
     a, b = run(0.70), run(0.01)
+    # These must now agree exactly -- see the module docstring. Assert it, so
+    # a silent reintroduction of V/Q dependence cannot slip past.
+    for key in ('pao2', 'paco2', 'sao2', 'ph'):
+        va, vb = at(a, key, 300.0), at(b, key, 300.0)
+        rel = abs(va - vb) / max(abs(va), 1e-9)
+        assert rel < 1e-4, (
+            f"vq_log_sd is supposed to be INERT, but {key} at 300 s differs "
+            f"by {rel:.2%} between spread 0.70 and 0.01. Something has "
+            f"reintroduced a V/Q dependence -- see the module docstring.")
     d = {'t': GRID}
     for label, r in (('A', a), ('B', b)):
         for key in ('pao2', 'paco2', 'sao2', 'ph'):

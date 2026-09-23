@@ -315,7 +315,6 @@ const DIALS=[
  ['hb','Haemoglobin',4.0,18.0,0.5,14.0,null],
  ['ccScale','Closing capacity',0.6,1.6,0.01,1.0,null],
  ['maxClosed','Lung collapsibility',0.10,0.65,0.01,0.25,null],
- ['vqLogSd','V/Q spread',0.0,1.4,0.02,0.70,null],
  ['tauMix','Cardiogenic mixing',10,300,5,45,null],
  ['fgBuccal','Pharyngeal O\u2082 (device arm)',0.21,1.00,0.01,1.00,null],
  ['inflowMechFrac','Absorption atelectasis',0.0,0.55,0.01,0.18,null],
@@ -508,8 +507,7 @@ function labels(){
    (D.B?' \u00b7 FRC '+D.B.frc.toFixed(0)+' mL':'');
  document.getElementById('v_height').textContent=
    P.height.toFixed(2)+' m \u00b7 BMI '+(P.weight/(P.height*P.height)).toFixed(1);
- document.getElementById('v_vqLogSd').textContent='log SD '+P.vqLogSd.toFixed(2);
- document.getElementById('v_tauMix').textContent=P.tauMix.toFixed(0)+' s';
+  document.getElementById('v_tauMix').textContent=P.tauMix.toFixed(0)+' s';
  // Below 7 g/dL the resting cardiac output rises to defend delivery, so say
  // so on the dial: the number on its own does not tell you the circulation
  // has changed underneath it.

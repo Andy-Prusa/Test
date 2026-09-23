@@ -62,6 +62,12 @@ const arterialState=(cco2,be,hb,o2c,T)=>{
 // the correction does and does NOT fix. `sd` is retained in the signature
 // because callers pass it and because the V/Q ratio itself still uses it
 // elsewhere; it no longer touches the gas store.
+// sd IS IGNORED, and deliberately so -- see apnoea_core.py vq_log_sd. After
+// the V/Q category-error fix the gas-volume share equals the perfusion share
+// and nothing constructs a V/Q ratio, so every compartment is identical at
+// t=0 and the dispersion parameter has no effect on any output, sealed or
+// patent. The argument is kept so the call sites and the Python signature
+// still line up for test_parity.py.
 function vqDist(n, sd){
   const z=[], w=[], vol=[];
   for(let i=0;i<n;i++) z.push(-2.2 + 4.4*i/(n-1));

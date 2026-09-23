@@ -1569,6 +1569,86 @@ print("    transfers to a clamped tube in BMI<30 patients is a separate")
 print("    judgement and is NOT settled -- see protocol/study.html 3.3.")
 
 # ---------------------------------------------------------------------------
+print("\nvq_log_sd IS A DEAD PARAMETER -- established 2026-09-23")
+print("  It is the width of the ventilation-to-perfusion distribution: how")
+print("  unevenly air and blood are matched from region to region. After the")
+print("  V/Q category-error fix it has NO EFFECT ON ANY OUTPUT, sealed or")
+print("  patent. Its own docstring claimed the opposite until corrected.")
+print("  Checked by SWEEP, not by reading the code, because a claim that a")
+print("  parameter does nothing is exactly the kind that gets asserted:")
+
+
+def _vq(sd, res):
+    _p = Patient(weight=70, height=1.75, age=45, hb=15.0, vq_log_sd=sd)
+    return simulate(_p, [AirwayEpoch(1200.0, resistance=res, fgo2=0.21)],
+                    dt=DT, stop_sao2=0.0)
+
+
+for _res, _lab, _o2, _co2, _sa in ((OBS, 'sealed', 157.22, 60.07, 99.103),
+                                   (2.0, 'patent', 169.84, 58.18, 99.308)):
+    for _sd in (0.01, 0.35, 0.70, 1.18):
+        _r = _vq(_sd, _res)
+        check(f"{_lab}, vq_log_sd {_sd:.2f}: PaO2 at 300 s",
+              at(_r, 'pao2', 300.0), _o2, 0.01, " mmHg")
+        check(f"{_lab}, vq_log_sd {_sd:.2f}: PaCO2 at 300 s",
+              at(_r, 'paco2', 300.0), _co2, 0.01, " mmHg")
+        check(f"{_lab}, vq_log_sd {_sd:.2f}: SaO2 at 300 s",
+              at(_r, 'sao2', 300.0), _sa, 0.01, " %")
+print("    A HUNDREDFOLD RANGE, IDENTICAL TO FIVE SIGNIFICANT FIGURES. The")
+print("    name appears in no executable statement in apnoea_core.py -- only")
+print("    its declaration and two docstrings -- and vqDist(n, sd) in")
+print("    model.js never reads sd. Both implementations are dead the SAME")
+print("    way, so test_parity.py could never see it: parity tests")
+print("    agreement, not liveness.")
+print("    THIS IS NOT A BUG. The model has NO IMPOSED V/Q dispersion. Every")
+print("    compartment is identical at t=0 and they diverge only through")
+print("    mechanisms -- absorption collapse per compartment, and the")
+print("    unwashed fraction. That is what vq_distribution()'s own docstring")
+print("    argued for. The state is now the aspiration.")
+print("    The slider it fed on airway_scenario.html HAS BEEN REMOVED: a")
+print("    control that does nothing is worse than no control, and that page")
+print("    is used by an anaesthetist. vq_chart.py now ASSERTS the two arms")
+print("    agree, so a reintroduced dependence fails loudly.")
+
+# ---------------------------------------------------------------------------
+print("\nTHE PULSE-OXIMETER LAG, and a comparison error it caused")
+print("  Gander drew arterial blood when the OXIMETER read 92%. Our spo2")
+print("  output carries a delay and a time constant, so at the moment it")
+print("  DISPLAYS 92 the true arterial saturation is already far lower, and")
+print("  PaO2 follows the true value. Comparing at the displayed number made")
+print("  a 24 mmHg 'disagreement' that is not one.")
+_gh = 1.70
+_gp2 = Patient(weight=47.0 * _gh * _gh, height=_gh, age=38, hb=14.0)
+_gr2 = simulate(_gp2, [AirwayEpoch(900.0, resistance=2.0, fgo2=0.21)],
+                dt=DT, feo2_start=0.90, paco2_start=46.0, stop_sao2=0.0)
+check("spo2_delay as shipped", _gp2.spo2_delay, 25.0, 1e-9, " s")
+check("spo2_tau as shipped", _gp2.spo2_tau, 8.0, 1e-9, " s")
+_t_disp = time_to(_gr2, 'spo2', 92)
+_t_true = time_to(_gr2, 'sao2', 92)
+check("when the OXIMETER reads 92: PaO2 [Gander 68 (10)]",
+      at(_gr2, 'pao2', _t_disp), 44.2, 1.0, " mmHg")
+check("  ... and the TRUE saturation then is",
+      at(_gr2, 'sao2', _t_disp), 74.9, 1.0, " %")
+check("when the TRUE saturation is 92: PaO2 [Gander 68 (10)]",
+      at(_gr2, 'pao2', _t_true), 71.7, 1.0, " mmHg")
+check("  ... in SD of Gander's 68 (10)",
+      abs(at(_gr2, 'pao2', _t_true) - 68.0) / 10.0, 0.0, 0.6, " SD")
+check("the two readings are how far apart, in saturation points",
+      at(_gr2, 'spo2', _t_disp) - at(_gr2, 'sao2', _t_disp), 17.1, 1.0, " %")
+print("    THE TWO READINGS BRACKET THE MEASURED VALUE, so the row is not a")
+print("    disagreement. But it RELOCATES the problem rather than excusing")
+print("    it: Gander's PaO2 68 at a pH near 7.3 implies a TRUE saturation")
+print("    near 92 at the moment they drew blood, so THEIR oximeter was")
+print("    reading close to the truth. Ours is 17 points out at the same")
+print("    instant. Either the lag is too long for their probe and protocol,")
+print("    or our desaturation through that region is too steep.")
+print("    spo2_delay 25 s and spo2_tau 8 s HAVE NO SOURCE recorded anywhere")
+print("    in this repository. That matters more than one row: every")
+print("    desaturation-time benchmark in test_validation.py -- Toner,")
+print("    Heard, the four tilt trials, Gander -- is scored on a threshold")
+print("    crossing of spo2, so all of them inherit this lag model.")
+
+# ---------------------------------------------------------------------------
 print("\nLOW V/Q FROM INCOMPLETE DENITROGENATION -- added 2026-09-23")
 print("  A lung unit whose airway is already shut when preoxygenation starts")
 print("  never sees the oxygen. It is NOT collapsed -- it still holds gas and")

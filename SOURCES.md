@@ -310,6 +310,13 @@ not Gander's; the paper gives BMI and age only.
 | PaO2 at SpO2 92% | 43.3 | 44.2 | 68 (10) |
 | PaCO2 at SpO2 92% | 51.5 | 55.6 | 53 (4) |
 
+**The last two rows are NOT a disagreement — see "The 'PaO2 at SpO2 92%' row
+was a comparison error" below.** They compare at the moment our simulated
+*oximeter* reads 92%, by which time the true arterial saturation is 75%.
+Compared at true saturation 92%, we give PaO2 **71.7** against their 68 (10),
+inside one standard deviation. What survives is a question about the
+oximeter-lag model, not about oxygen.
+
 **The timing disagreement is now inside one standard deviation** — 164 s
 against 127 (43), whose 1 SD band is 84–170 s. It was 251 s. Nothing about
 this benchmark entered the choice of `k_rv_bmi`, which was fixed by Reinius's
@@ -467,6 +474,131 @@ recorded twice already in this file.
 Still worth having: **Eichenberger A, et al.** *Morbid obesity and
 postoperative pulmonary atelectasis: an underestimated problem.* Anesth Analg
 2002;95(6):1788-92. PMID 12456460.
+
+---
+
+### `vq_log_sd` IS A DEAD PARAMETER — established 2026-09-23
+
+The V/Q comparison chart was regenerated and it now draws **two identical
+curves**. Not nearly identical: arterial oxygen, carbon dioxide, saturation and
+pH agree to five significant figures at every sampled time, and the two arms
+reach SaO2 40% within 0.1 s of each other.
+
+`vq_log_sd` — the width of the ventilation-to-perfusion distribution, how
+unevenly air and blood are matched from region to region — **has no effect on
+any output of this model, sealed or patent.** Swept 0.01 / 0.35 / 0.70 / 1.18,
+a hundredfold range, both airway states:
+
+| vq_log_sd | airway | PaO2 at 300 s | PaCO2 at 300 s | SaO2 at 300 s | time to SpO2<95% |
+|---|---|---|---|---|---|
+| 0.01 | sealed | 157.22 | 60.07 | 99.103 | 385.7 s |
+| 0.35 | sealed | 157.22 | 60.07 | 99.103 | 385.7 s |
+| 0.70 | sealed | 157.22 | 60.07 | 99.103 | 385.7 s |
+| 1.18 | sealed | 157.22 | 60.07 | 99.103 | 385.7 s |
+| 0.01 | patent | 169.84 | 58.18 | 99.308 | 444.5 s |
+| 0.35 | patent | 169.84 | 58.18 | 99.308 | 444.5 s |
+| 0.70 | patent | 169.84 | 58.18 | 99.308 | 444.5 s |
+| 1.18 | patent | 169.84 | 58.18 | 99.308 | 444.5 s |
+
+Inspection agrees with the sweep. In `apnoea_core.py` the name `vq_log_sd`
+appears exactly three times: its declaration, and **two docstrings** — in no
+executable statement at all. In `model.js`, `vqDist(n, sd)` never reads `sd`.
+Both implementations are dead in the **same** way, which is why
+`test_parity.py` could never have caught it: parity tests agreement, not
+liveness.
+
+**And one of those docstrings asserted the opposite.** It read: *"vq_log_sd IS
+STILL USED, for the V/Q ratio itself, which governs gas exchange whenever the
+airway is patent."* That was written on 2026-09-22 as part of the V/Q
+category-error fix and was never true after it. Corrected.
+
+**What this actually means, and it is not a bug.** The model has **no imposed
+V/Q dispersion**. Every one of its 80 compartments is identical at t=0, and
+they diverge only through mechanisms — per-compartment absorption collapse, and
+the unwashed fraction from incomplete denitrogenation. That is exactly what
+`vq_distribution()`'s own docstring argued for: *"deriving the volume
+distribution from those is the right way to improve on this, not a free
+dispersion parameter."* The state is now the aspiration. It is worth saying
+plainly rather than leaving it to be discovered again.
+
+**What changed as a result.** The parameter is kept, marked inert, with the
+reasoning at its declaration — removing it would alter the constructor that
+`test_parity.py` serialises and would read as though dispersion had been
+considered and rejected, which it has not. But **the "V/Q spread" slider has
+been removed from `airway_scenario.html`**: a control that does nothing is
+worse than no control, and this one is presented to an anaesthetist. And
+`vq_chart.py` now **asserts** the two arms agree, so that if anything ever
+reintroduces a dependence on this parameter, the chart fails loudly instead of
+quietly drawing a difference again.
+
+---
+
+### Gander 2005 inverted: how big would the low-V/Q compartment have to be?
+
+The mechanism added on 2026-09-23 gives the Gander patient a 15.79% unwashed
+perfusion share and closes under half the arterial-oxygen gap. So: what share
+*would* close it? Swept with the apnoea collapse term **held fixed** — the
+first attempt forced `max_closed`, which the unwashed fraction and the runtime
+collapse term share, so every row moved for two reasons and the timing column
+was uninterpretable. Overriding `unwashed_fraction()` on a subclass isolates it.
+
+| unwashed | PaO2 at t=0 | time to SpO2 90% | PaCO2 at SpO2 92% |
+|---|---|---|---|
+| 0% | 563.8 | 164.4 s | 55.6 |
+| 10% | 488.6 | 153.9 s | 55.3 |
+| **15.79%** (shipped) | **446.9** | **147.9 s** | **55.1** |
+| 25% | 377.5 | 138.3 s | 54.7 |
+| 35% | 304.8 | 128.0 s | 54.3 |
+| 45% | 237.8 | 117.8 s | 53.9 |
+| **measured** | **243 (136)** | **127 (43)** | **53 (4)** |
+
+**Two independent channels converge on the same answer.** Arterial oxygen needs
+**44.2%**; time to desaturation needs **36.0%**. They agree with each other to
+within a factor of 1.23, and both say the shipped fraction is **2.3 to 2.8
+times too small**. Two separate measurements of the same patients, pointing at
+one quantity, is much stronger evidence than the oxygen row alone — it says the
+mechanism is the right one and the closure law sizes it wrongly, rather than
+the mechanism being wrong.
+
+**Nothing has been changed on the strength of this.** Raising the fraction
+means raising `max_closed`, which is shared with the collapse term and would
+move every obese benchmark. That is a mechanism question — is tidal closure
+during preoxygenation more extensive than the steady-state closure law implies?
+— and not a number to reach for.
+
+---
+
+### The "PaO2 at SpO2 92%" row was a comparison error, not a disagreement
+
+Recorded on 2026-09-23 as ours 44.2 against Gander's 68 (10) — apparently the
+model's worst oxygen disagreement anywhere. It is an artefact of **when** the
+comparison is taken.
+
+Gander drew arterial blood when the **oximeter** read 92%. Our `spo2` output
+carries a 25 s delay and an 8 s time constant, so at the moment it displays 92
+the true arterial saturation is already 75%, and PaO2 follows the true value:
+
+| compared at | time | our PaO2 | our PaCO2 | our SaO2 | our SpO2 |
+|---|---|---|---|---|---|
+| oximeter reads 92 | 144.8 s | **44.2** | 55.1 | 74.9 | 92.0 |
+| true saturation is 92 | 113.0 s | **71.7** | 56.9 | 92.0 | 99.3 |
+| **Gander measured** | | **68 (10)** | **53 (4)** | | |
+
+At true saturation 92% we give **71.7 against their 68 (10)** — inside one
+standard deviation. The two readings **bracket** the measured value.
+
+**But this does not simply excuse the row, it relocates the problem.** Gander's
+own numbers are internally constraining: a PaO2 of 68 at a pH near 7.3 implies
+a true saturation of about 92%, so **their oximeter was reading close to the
+truth at the moment they drew blood.** Ours diverges by 17 saturation points at
+the same instant. Either our oximeter lag is too long for their probe and
+protocol, or our desaturation through that region is too steep. `spo2_delay`
+25 s and `spo2_tau` 8 s have no source recorded anywhere in this repository.
+
+**This is an open item, and it has teeth**, because every desaturation-time
+benchmark in `test_validation.py` — Toner, Heard, the tilt trials, Gander — is
+scored against a threshold crossing on `spo2`, so all of them inherit whatever
+that lag model is doing.
 
 ---
 

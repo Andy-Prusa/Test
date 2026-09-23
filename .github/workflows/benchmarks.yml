@@ -1,0 +1,85 @@
+# The benchmarks, on every push and pull request.
+#
+# This mirrors .githooks/pre-commit, which gates commits locally. The hook can
+# be skipped with `git commit --no-verify`, and on this project it legitimately
+# is -- a correction that breaks a benchmark is committed with the breakage
+# named in the message, because CLAUDE.md says a correction that makes a
+# benchmark worse is INFORMATION and must not be compensated for. This
+# workflow exists so that skipping the hook is visible rather than silent.
+#
+# Three jobs, and they are not equally strict on purpose:
+#
+#   page-freshness  airway_scenario.html embeds its own copy of model.js, so
+#                   editing the model without rebuilding leaves the page
+#                   running different physics from the file beside it. An
+#                   INVARIANT. Always a hard failure.
+#
+#   parity          apnoea_core.py (reference) against model.js (browser) on
+#                   identical inputs, 1% tolerance. Also an INVARIANT: the two
+#                   implementations must agree whether or not either is right.
+#                   Always a hard failure.
+#
+#   benchmarks      test_validation.py, the arbiter. This one is graded
+#                   against a recorded baseline rather than demanding zero
+#                   failures, for the same reason KNOWN_OPEN exists at the head
+#                   of test_validation.py: a suite that is permanently red says
+#                   nothing, and a baseline holding only names would be a mute
+#                   button. .github/known-blocking.txt holds the blocking set
+#                   as ruled. A NEW failure turns this red; a ruled-open one
+#                   does not; and a row that starts passing ALSO turns it red,
+#                   so a fix cannot go unnoticed and the file cannot rot.
+name: benchmarks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  page-freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - name: airway_scenario.html matches model.js
+        run: python3 build_page.py --check
+
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install -r requirements.txt
+      - name: apnoea_core.py vs model.js
+        run: python3 test_parity.py
+
+  benchmarks:
+    runs-on: ubuntu-latest
+    # The suite integrates for several simulated hours at dt=0.05 across ~40
+    # configurations. 15 minutes locally; allow for a slower runner.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - name: run the suite
+        id: suite
+        continue-on-error: true
+        run: python3 test_validation.py | tee benchmark-output.txt
+      - name: the blocking set must match what has been ruled
+        run: python3 .github/check_blocking.py benchmark-output.txt
+      - name: keep the full output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-output
+          path: benchmark-output.txt
