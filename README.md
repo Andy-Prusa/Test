@@ -1,0 +1,191 @@
+# Apnoeic oxygenation model
+
+A computational model of gas exchange during apnoea after intravenous
+induction, built to quantify the effect of buccal oxygen delivery and to
+compare a patent airway against a completely obstructed one.
+
+Two implementations that must agree to within 1%: `apnoea_core.py` is the
+reference, `model.js` is the browser port. `test_parity.py` holds them to it.
+
+---
+
+## Three ways in
+
+**1. Look at it — no installation.**
+Open `airway_scenario.html` in any browser. Two patients side by side, patent
+against obstructed, with lungs, trachea and a head that goes blue on
+deoxygenated haemoglobin rather than on saturation. Sliders for preoxygenation,
+haemoglobin, tilt, buccal oxygen. Nothing is fetched at runtime except the web
+fonts, so it works offline with plainer typography.
+
+**2. Run the model.**
+
+```
+pip install -r requirements.txt      # numpy, scipy, matplotlib
+python3 run.py
+```
+
+`run.py` has a PATIENT block and an AIRWAY block at the top. Edit them and
+re-run; everything below is plumbing.
+
+**3. Check that it still passes.**
+
+```
+python3 test_validation.py           # the benchmarks, pass/fail
+python3 test_parity.py               # Python against JavaScript
+python3 handover_numbers.py          # every number quoted in HANDOVER.md
+python3 protocol/predictions.py      # every number quoted in the study protocol
+```
+
+The first two take several minutes.
+
+**The suite is currently RED.** 36 checks, **34 pass and 2 fail**, and this is
+deliberate — see CLAUDE.md, which says a correction that makes a benchmark worse
+is recorded rather than compensated for. The two failures are:
+
+| check | model | band | why it fails |
+|---|---|---|---|
+| `Stock obstructed, 1-5 min slope` | 4.72 mmHg/min | 2.4-4.4 | the open defect. Arterial CO2 is too sensitive to V/Q spread; every published measurement of that spread makes it **worse**, not better |
+| `ICSM jet, PaCO2 at cricothyroidotomy` | 73.4 mmHg | 75.8-93.4 | fell out of band on 2026-09-20 when the recoil floor was corrected. A MODEL comparator, not a measurement |
+
+Do not read `PROVENANCE.txt` as a statement that the suite passed at that commit.
+It records which commit was packaged, nothing more. Run the suite yourself.
+
+---
+
+## What is validated, and what is not
+
+Read this before quoting anything the model produces.
+
+**Benchmarked against clinical measurement**
+
+The third column is the one to read. It is not a formality: a band transcribed
+from a remembered IQR is not the same kind of evidence as a band read off a page,
+and this table used to make no distinction.
+
+| source | what it pins | read from the page? |
+|---|---|---|
+| Stock 1989 | PaCO2 rise, obstructed | **yes**, 2026-09-14 |
+| Moreault 2021 | the pressure limb | **yes** |
+| Toner 2019 | buccal oxygen, time to desaturation | **no** |
+| Heard 2017 | apnoeic oxygenation, obstructed | **no** |
+| O'Loughlin 2020 | desaturation timing | **no** |
+| Lane / Ramkumar / Altermatt / Dixon | positioning | **no** — and cited by surname and year only, so not retrievable as written |
+| Kaiser 2024, *Sci Rep* 14:3617 (n=91) | cardiac output | **no** — identified by PMCID alone, no author or title recorded |
+| Varat 1972 | the circulation's response to anaemia | **no** |
+
+**Six of these eight have not been read by anyone on this project.** Their band
+edges were entered from memory or from abstracts. That does not make them wrong,
+but it does mean the bands are claims about the literature that nobody here has
+checked, and two of them (`Sci Rep 2024` and the positioning set) additionally
+**grade a parameter against the number that parameter was fitted to**. `SOURCES.md`
+lists every source the model depends on, what rests on each, and its reading
+status. Read it before quoting any number from this model in a publication.
+
+**Compared against another simulator, not against patients**
+
+Laviola 2020 and the 2026 jet paper are the Nottingham model, not measurement.
+Every "model comparator" row in the suite traces back to that one simulator —
+they are not six independent confirmations, and the suite labels them as such.
+
+**The one open defect**
+
+Arterial CO2 is too sensitive to ventilation/perfusion spread. Tokics 1996
+measures log QSD in anaesthetised paralysed adults at 0.80–1.18 (and 0.67 even
+awake); the `vq_log_sd` parameter reads 0.70, and the dispersion the model
+actually **delivers is 0.644**, because the ±2.2σ compartment grid truncates the
+Gaussian by a factor of 0.9206. So the model runs below every published
+measurement including the awake one, and it fails the Stock benchmark anyway
+(4.72 against 2.4–4.4). Setting the spread to any measured value makes that
+failure larger.
+
+**Obstructed CO2 numbers should be treated as unvalidated.** Note what the
+cause is **not**: this paragraph used to blame a red-cell correction "written
+from memory rather than from the source paper". Douglas 1988 was obtained and
+verified on 2026-09-14 (`bloodgas.py`, PROVENANCE header), and correcting it
+moved every CO2 slope by under 0.05 mmHg/min. The curve is not the cause. The
+defect is structural and open.
+
+**A weakness nothing currently tests**
+
+The patent-airway PaCO2 slope between 1 and 5 minutes is 1.70 mmHg/min against
+a classical 3–5. **Both halves of that were wrong, corrected 2026-09-22.** It is
+now measured, against a transcutaneous trace from the Toner study and against
+Toner's own published figure of 0.30 kPa·min⁻¹ (= 2.25 mmHg·min⁻¹). The
+comparator is not 3–5, it is about 2.2, and the model gives 1.78 — **18% low,
+not 2–3× low**. Still no benchmark asserts it, so nothing in the suite fails on
+it, and that remains a gap in the suite. See HANDOVER, *The patent-airway CO2
+slope*, including why the model is too SHALLOW here while being too STEEP under
+obstruction.
+
+**Not modelled at all**
+
+Jet insufflation. There is no bolus delivery and no outflow path — gas can only
+enter the lung. The design decision for it is recorded in HANDOVER but nothing
+is built.
+
+`HANDOVER.md` opens with a dated **Current state** section that is authoritative
+where the rest of the file disagrees with it, including a table of superseded
+claims still present in the older text.
+
+---
+
+## What is in the box
+
+| path | what |
+|---|---|
+| `airway_scenario.html` | the visualisation. Open it directly |
+| `apnoea_core.py` | the model. Reference implementation |
+| `bloodgas.py` | O2/CO2 dissociation and acid-base. Read its PROVENANCE header |
+| `model.js` | the JavaScript port, embedded into the page by `build_page.py` |
+| `run.py` | simplest way to drive the model |
+| `test_validation.py` | the benchmarks. The arbiter |
+| `test_parity.py` | the two implementations against each other |
+| `handover_numbers.py` | regenerates every number quoted in HANDOVER |
+| `HANDOVER.md` | the full history: what was tried, what failed, what was retracted |
+| `SOURCES.md` | **every source the model depends on, and which have actually been read.** Read before quoting any number in a publication |
+| `CLAUDE.md` | the working rules, each one written after it was broken |
+| `protocol/` | the three-way study, its predictions and its evidence map |
+| `patches/` | written but deliberately unapplied changes, with reasons in HANDOVER |
+| `LICENSE` | terms of use. All rights reserved |
+| `CITATION.cff` | how to cite it, machine readable |
+| `editorial.md` | draft prose on the clinical framing. Not peer reviewed |
+
+---
+
+## Two conventions worth knowing
+
+**Numbers in prose rot; numbers in scripts do not.** Anything quoted in
+HANDOVER is regenerable by `handover_numbers.py`, which fails if a value has
+drifted. Two comparator rows are named there as *not* reproducible because their
+configuration was never recorded — that is deliberate, and it is the cautionary
+example the script exists to prevent repeating.
+
+**Parameters are not tuned to pass benchmarks.** Several changes that would make
+a failing benchmark pass are recorded in HANDOVER as refused, with the
+reasoning, because they had no mechanism behind them. A correction that makes a
+benchmark worse is recorded as information rather than compensated for
+elsewhere.
+
+---
+
+## Provenance and terms
+
+Copyright (c) 2026 A. M. B. Heard. All rights reserved. This is unpublished
+research software.
+
+Reading the source, running the model and evaluating it privately need no
+permission. **Copying, redistributing, or using its equations, parameters,
+calibrations, benchmarks or figures in any publication, thesis, presentation or
+product requires the author's prior written permission.** `LICENSE` sets out
+the terms in full; `CITATION.cff` says how to cite it once permission is given.
+
+It is a research model, not a medical device. It must not be used to guide the
+care of any patient.
+
+`PROVENANCE.txt` carries the commit a package was built from, and any script
+can print which model file it actually loaded:
+
+```python
+import apnoea_core; print(apnoea_core.provenance())
+```
