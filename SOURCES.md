@@ -269,6 +269,72 @@ limb has ever been tested against outside Stock's eight sampled points.
 
 ---
 
+### Holley 1967 — the obesity mechanism, MEASURED, and a bug it exposed
+
+**Holley HS, Milic-Emili J, Becklake MR, Bates DV.** Regional distribution of
+pulmonary ventilation and perfusion in obesity. *J Clin Invest*
+1967;46(4):475-81. Held and read 2026-09-23. This is the paper both
+closing-capacity sources cite for obesity.
+
+n=8 (5 women, 3 men), **95-140 kg**, awake and seated at rest, regional
+ventilation and perfusion by **xenon-133**. Verbatim:
+
+> "In four subjects in whom the **expiratory reserve volume** averaged 49% of
+> predicted normal, the ventilation distribution as measured with 133xenon was
+> normal. In the remaining four subjects, in whom the **expiratory reserve
+> volume was reduced to less than 0.4 L** and averaged only 21% of predicted
+> values, the distribution of a normal tidal breath was predominantly to the
+> **upper zones**."
+
+> "In all subjects the perfusion distribution was predominantly to the lower
+> lung zones but was slightly more uniform than in normal nonobese subjects...
+> this abnormality bearing a **close relationship to the reduction in
+> expiratory reserve volume**."
+
+**THE MECHANISM IS MEASURED, NOT ASSERTED.** Obesity reduces ERV; ventilation
+redistributes away from the dependent zones where perfusion is greatest;
+V/Q mismatch follows. ERV = FRC - RV, so this is the FRC mechanism. Closing
+capacity does not appear. Perfusion distribution barely moved — it was
+VENTILATION that shifted.
+
+**AND IT IS A THRESHOLD, NOT A GRADIENT.** Four normal, four abnormal, split
+at roughly **ERV < 0.4 L**. That is a sharper prediction than a regression and
+it is directly checkable.
+
+**A BUG IT EXPOSED: FRC CAN FALL BELOW RESIDUAL VOLUME.** Checking our ERV
+against Holley's threshold showed that `frc_awake()` has no floor at all and
+`frc_anaes()` is floored at 400 mL, but NEITHER is floored at `rv`. At BMI
+34.7 with `k_frc_bmi` >= 0.10 the awake FRC goes UNDER RV, which cannot
+happen; the anaesthetised ERV goes negative from `k` ~ 0.070. **Any sweep of
+`k_frc_bmi` above ~0.064 for this patient is meaningless**, and one was run
+and reported before this was noticed.
+
+| k_frc_bmi | FRC awake | ERV awake | FRC anaes | ERV anaes |
+|---|---|---|---|---|
+| 0.0417 (shipped) | 2096 | 996 | 1696 | 596 |
+| 0.0490 | 1910 | 810 | 1510 | **410** |
+| 0.0639 | 1581 | 481 | 1186 | 86 |
+| 0.0700 | 1464 | 364 | 1098 | **-2** |
+| 0.1000 | 1001 | **-99** | 750 | -350 |
+
+**AND THE VALUE THAT REPRODUCES HEARD LANDS ON HOLLEY'S THRESHOLD.** At
+`k` ~ 0.049 — the value that puts Heard's control arm on its measured median
+of 296 s — the ANAESTHETISED ERV is **410 mL** against Holley's dividing line
+of **400 mL**. Two independent routes to the same volume.
+
+**Do not overread that.** Holley's subjects were AWAKE and SEATED; ours is
+anaesthetised and 30 degrees head-up, and its AWAKE ERV at that setting is
+810 mL, comfortably inside his normal group. The agreement is suggestive, not
+confirmatory. What it does establish is that the FRC needed to reproduce Heard
+puts the patient at the volume where V/Q distribution was measured to start
+failing, rather than at some arbitrary fitted value.
+
+**WHAT HOLLEY DOES NOT GIVE:** any shunt fraction, any anaesthetised subject,
+any supine measurement. n=8, 1967, awake and seated. It establishes the
+mechanism and a threshold; it cannot calibrate an anaesthetised shunt.
+
+---
+
 ### The closing-capacity block is wrong in three ways — READ 2026-09-23
 
 Held and read on 2026-09-23, both in full:
