@@ -1315,17 +1315,45 @@ print("    the other way: one family of levers moves both limbs together,")
 print("    which is the signature of a SHARED mechanism. The claim refuted")
 print("    on 2026-09-22 -- that the two CO2 disagreements are one mechanism")
 print("    seen from two sides -- is therefore BACK ON THE TABLE.")
-print("    IT IS NOT RE-ESTABLISHED, AND MUST NOT BE WRITTEN UP AS IF IT")
-print("    WERE. Both limbs are now too SHALLOW (sealed 1.91 against a")
-print("    measured 3.4; patent 1.78 against 2.16), where the original")
-print("    argument rested on them erring in OPPOSITE directions. Same")
-print("    direction plus a shared lever family is consistent with one")
-print("    fault, but it is equally consistent with two faults that happen")
-print("    to share the CO2 chemistry. Distinguishing them needs a lever")
-print("    that acts on ONE limb only, and this table no longer contains")
-print("    one. That is the next piece of work, and nothing in HANDOVER")
-print("    should describe the CO2 defect as one fault or two until it is")
-print("    done.")
+print("    RULED ONE DEFECT, 2026-09-24. A. Heard. The model is worked from")
+print("    here on as ONE CO2 fault seen from two sides, and HANDOVER may")
+print("    say so.")
+print("    WHAT THE RULING RESTS ON, stated so it can be overturned:")
+print("      1. The production and store levers move BOTH limbs, by similar")
+print("         amounts -- v_tis_co2_fast 15 moves sealed +39% and patent")
+print("         +35%, rq 0.9 moves sealed +16% and patent +17%. A lever")
+print("         family that moves two quantities together is the ordinary")
+print("         signature of one mechanism underneath them.")
+print("      2. Both limbs now err in the SAME direction, too shallow:")
+print("         sealed 1.91 against a measured 3.4, patent 1.78 against")
+print("         2.16. Two independent faults would not be expected to")
+print("         agree in sign.")
+print("      3. No lever now separates them. The V/Q levers, which used to")
+print("         move the sealed limb alone, move neither.")
+print("    WHAT IT DOES NOT REST ON, AND THIS IS THE HONEST PART. The same")
+print("    three observations are ALSO consistent with two faults that")
+print("    happen to share the CO2 chemistry -- the dissociation curve, the")
+print("    buffering and the tissue stores act on both limbs whatever the")
+print("    airway is doing, so a shared lever family is expected either")
+print("    way. Point 1 is therefore weak evidence, not strong. Point 2 is")
+print("    the same observation restated. THE RULING IS A DECISION TO STOP")
+print("    HEDGING AND WORK A SINGLE MECHANISM, NOT A DEMONSTRATION THAT")
+print("    THERE IS ONE.")
+print("    WHAT WOULD OVERTURN IT: any lever that moves one limb and not")
+print("    the other. If one is found, this ruling is void and the search")
+print("    for a shared mechanism should stop. The sealed limb alone is")
+print("    reachable through the alveolar-to-arterial step, which is where")
+print("    the a-A CO2 gap rows below show the sealed and patent airways")
+print("    behaving completely differently -- so such a lever may well")
+print("    exist and has simply not been looked for since the V/Q fix")
+print("    removed the old one.")
+print("    AND ONE THING THE RULING MAKES TESTABLE. If it is one fault,")
+print("    the single correction that brings the sealed limb from 1.91 to")
+print("    3.4 must ALSO bring the patent limb from 1.78 to 2.16 -- a")
+print("    factor of 1.78 on one and 1.21 on the other. It must therefore")
+print("    NOT be a simple gain on CO2 production or storage, because those")
+print("    scale both limbs by the same factor. That is a real constraint")
+print("    and it came out of the ruling rather than out of the data.")
 _gs, _gp = _seal(), _pat()
 for _t, _wgs, _wgp in ((60, -0.18, 0.11), (300, 8.27, -0.05), (555, -2.52, 0.08)):
     check(f"a-A CO2 gap at {_t} s, SEALED",
@@ -1935,6 +1963,64 @@ def _tilt_gain(w, h, hb, tilt, thr):
         _out.append(time_to(_rr, 'spo2', thr))
     return (_out[1] / _out[0] - 1.0) * 100.0
 
+
+print("  DOES THE TILT QUESTION NEED A HUMAN STUDY? NO -- ANSWERED 2026-09-24")
+print("  Head-up tilt helps twice in this model: it raises awake FRC (a")
+print("  bigger oxygen store) AND it shrinks the unwashed fraction (better")
+print("  denitrogenation, because a larger awake lung closes fewer airways).")
+print("  The four positioning trials measure only the TOTAL, so they cannot")
+print("  separate the two -- which looked like it needed a new study.")
+print("  IT DID NOT. The second route is EXACTLY ZERO whenever awake FRC")
+print("  exceeds closing capacity, so switching it off and re-running the")
+print("  trial configurations says how much of the overshoot it owns:")
+print("      configuration        BOTH   FRC only   2nd route   band")
+print("      lean 20 deg          28.6%     28.6%       0.0%    15-40")
+print("      BMI 35 at 30 deg     51.1%     45.4%       5.7%    20-45")
+print("      BMI 44 at 25 deg     35.9%     33.4%       2.5%    15-40")
+print("  THE OVERSHOOT IS NOT IN THE DENITROGENATION ROUTE. With that route")
+print("  switched entirely off the BMI 35 row STILL FAILS, at 45.4% against")
+print("  a band top of 45. The second route adds at most 5.7 points and")
+print("  removing it would not bring the row back.")
+print("  SO THE DEFECT IS IN HOW MUCH FRC RISES WITH TILT, and that is")
+print("  tilt_gain_lean / tilt_gain_bmi, which apnoea_core.py states were")
+print("  'Calibrated against four randomised trials'. THEY ARE A FIT WITH")
+print("  NO INDEPENDENT SOURCE, and the fit is now stale: it was made when")
+print("  FRC, residual volume and the V/Q machinery all behaved differently.")
+print("  WHAT THAT MEANS FOR THE NEXT STEP. Re-fitting them to pass the")
+print("  tilt rows is tuning a parameter to a benchmark, which CLAUDE.md")
+print("  forbids and which has been refused four times. What is needed is a")
+print("  MEASUREMENT of FRC against tilt angle -- not of apnoea time, which")
+print("  is what the four trials give and is downstream of everything else")
+print("  in the model. That is a different literature search, and possibly")
+print("  a different study, from the one the tilt rows suggest.")
+
+
+def _tilt_gain_no2nd(w, h, hb, tilt, thr):
+    """Tilt gain with the denitrogenation route switched off."""
+    class _NoUnwashed(Patient):
+        def unwashed_fraction(self):
+            return 0.0
+    _out = []
+    for _t in (0.0, tilt):
+        _q = _NoUnwashed(weight=w, height=h, age=45, hb=hb, tilt_deg=_t)
+        _rr = simulate(_q, [AirwayEpoch(1200.0, resistance=OBS, fgo2=0.21)],
+                       dt=DT, stop_sao2=0.0)
+        _out.append(time_to(_rr, 'spo2', thr))
+    return (_out[1] / _out[0] - 1.0) * 100.0
+
+
+check("tilt gain FRC ROUTE ONLY, lean 20 deg [band 15-40]",
+      _tilt_gain_no2nd(70, 1.75, 15, 20, 95), 28.6, 0.5, " %")
+check("tilt gain FRC ROUTE ONLY, BMI 35 at 30 deg [band 20-45: STILL FAILS]",
+      _tilt_gain_no2nd(95, 1.65, 14, 30, 90), 45.4, 0.5, " %")
+check("tilt gain FRC ROUTE ONLY, BMI 44 at 25 deg [band 15-40]",
+      _tilt_gain_no2nd(120, 1.65, 14, 25, 92), 33.4, 0.5, " %")
+check("unwashed share at BMI 35, supine", Patient(
+      weight=95, height=1.65, age=45, hb=14, tilt_deg=0).unwashed_fraction()
+      * 100.0, 9.24, 0.05, " %")
+check("  ... and at 30 deg head-up (this is the second route)", Patient(
+      weight=95, height=1.65, age=45, hb=14, tilt_deg=30).unwashed_fraction()
+      * 100.0, 4.29, 0.05, " %")
 
 check("tilt gain, non-obese 20 deg [band 15-40, lean: must not move]",
       _tilt_gain(70, 1.75, 15, 20, 95), 28.6, 0.5, " %")

@@ -533,6 +533,73 @@ quietly drawing a difference again.
 
 ---
 
+### Three rulings, 2026-09-24
+
+**1. The CO2 defect is ONE defect.** A. Heard. The model is worked from here
+on as one fault seen from two sides, and HANDOVER may say so.
+
+What it rests on: the production and store levers move both limbs by similar
+amounts (`v_tis_co2_fast` 15 moves sealed +39% and patent +35%); both limbs now
+err in the same direction, too shallow; and no lever now separates them.
+
+What it does not rest on, stated so the ruling can be overturned: the same
+three observations are equally consistent with **two** faults sharing the CO2
+chemistry, because the dissociation curve, the buffering and the tissue stores
+all act whatever the airway is doing. A shared lever family is expected either
+way. **This is a decision to stop hedging and work a single mechanism, not a
+demonstration that there is one.** Any lever that moves one limb and not the
+other voids it — and one may well exist, because the a-A CO2 gap behaves
+completely differently sealed and patent; it simply has not been looked for
+since the V/Q fix removed the old one.
+
+**And the ruling immediately constrains the answer.** If it is one fault, the
+single correction that takes the sealed limb from 1.91 to 3.4 must also take
+the patent limb from 1.78 to 2.16 — a factor of 1.78 on one and 1.21 on the
+other. So it cannot be a gain on CO2 production or storage, because those
+scale both limbs equally. That constraint came out of the ruling, not out of
+the data, which is the useful thing a ruling can do.
+
+**2. `vq_log_sd` stays, marked inert.** A. Heard. No change; the parameter
+keeps its declaration and its comment, the slider stays removed from
+`airway_scenario.html`, and `vq_chart.py` keeps asserting the two arms agree.
+
+**3. Head-up tilt — the question was whether it needs a human study.** It does
+not, and the check that settles it cost one model run rather than a trial.
+
+The model gives tilt two routes: a larger awake FRC, and a smaller unwashed
+fraction (a bigger awake lung closes fewer airways, so denitrogenation is more
+complete). The four positioning trials measure only the total. But the second
+route is **exactly zero** whenever awake FRC exceeds closing capacity, so it can
+simply be switched off:
+
+| configuration | both routes | FRC only | second route | band |
+|---|---|---|---|---|
+| lean, 20° | 28.6% | 28.6% | **0.0%** | 15–40 |
+| BMI 35, 30° | 51.1% | **45.4%** | 5.7% | 20–45 |
+| BMI 44, 25° | 35.9% | 33.4% | 2.5% | 15–40 |
+
+**The overshoot is not in the denitrogenation route.** With that route switched
+entirely off the BMI 35 row still fails, at 45.4% against a band top of 45. The
+second route contributes at most 5.7 percentage points and removing it would
+not recover the row. In the lean patient it contributes nothing at all, because
+the unwashed fraction is zero at both angles.
+
+So the defect is in **how much FRC rises with tilt** — `tilt_gain_lean` and
+`tilt_gain_bmi`. `apnoea_core.py` says these were "Calibrated against four
+randomised trials". They are a **fit with no independent source**, and the fit
+is stale: it was made when FRC, residual volume and the V/Q machinery all
+behaved differently.
+
+**That changes what to go looking for.** Re-fitting them to pass the tilt rows
+is tuning a parameter to a benchmark, refused four times already. What is
+wanted is a measurement of **FRC against tilt angle** — not of apnoea time,
+which is what the four trials give and which sits downstream of every other
+part of the model. A trial that measured functional residual capacity in the
+ramped position would settle it; several may exist, and none has been looked
+for, because until now the tilt rows looked like a question about apnoea.
+
+---
+
 #### And the same question asked of `tau_mix` and `n_vq` — a narrower answer
 
 `vq_log_sd` being dead raised an obvious follow-up. If the compartments are
