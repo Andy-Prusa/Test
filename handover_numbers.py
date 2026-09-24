@@ -1846,6 +1846,92 @@ print("  in this model, once through FRC and once through denitrogenation,")
 print("  and whether a real lung gives it both is an open question.")
 
 # ---------------------------------------------------------------------------
+print("\nTHE TILT -> CARDIAC OUTPUT TERM -- added 2026-09-24, and it makes a")
+print("  channel WORSE. Perilli 2003 phase 4 vs phase 5, identical but for")
+print("  position: cardiac output 4.9 (0.9) -> 4.0 (0.8) L/min, P<0.05.")
+print("  -18.4% at 30 degrees, so co_tilt_gain = 0.184/30 = 0.00612 per degree.")
+
+_TH, _TBMI, _TAGE, _THB, _TPACO2 = 1.61, 48.1, 37.0, 14.0, 33.0
+
+
+class _NoCoTilt(Patient):
+    def tilt_co_factor(self):
+        return 1.0
+
+
+def _tco(cls, tilt):
+    return cls(weight=_TBMI*_TH*_TH, height=_TH, age=_TAGE, hb=_THB,
+               tilt_deg=tilt)
+
+
+check("tilt_co_factor at 30 deg [Perilli -18.4%]",
+      _tco(Patient, 30.0).tilt_co_factor(), 0.8164, 0.001, "")
+check("  ... our CO ratio, supine to 30 deg",
+      _tco(Patient, 30.0).co_anaes() / _tco(Patient, 0.0).co_anaes(),
+      0.8164, 0.001, "")
+check("  ... Perilli's measured ratio", 4.0 / 4.9, 0.8163, 0.001, "")
+print("    THE RATIO IS EXACT. Our ABSOLUTE cardiac output is not: we give")
+print("    5.78 L/min supine at his BMI 48 against his measured 4.9, +18%.")
+print("    That matters beyond this row, because the 10-12% obese shunt was")
+print("    inverted THROUGH this model's cardiac output -- see Dantzker 1980")
+print("    in the Perilli section of SOURCES.md.")
+check("our supine CO at Perilli's cohort [measured 4.9 (0.9)]",
+      _tco(Patient, 0.0).co_anaes(), 5.78, 0.05, " L/min")
+
+
+def _tox(cls, fio2, tilt):
+    _p = _tco(cls, tilt)
+    _alv = fio2 * ac.PDRY - _TPACO2 / 0.8
+    _r = simulate(_p, [AirwayEpoch(2.0, resistance=2.0, fgo2=fio2)],
+                  dt=DT, feo2_start=_alv / ac.PDRY, paco2_start=_TPACO2,
+                  stop_sao2=0.0)
+    return _r['pao2'][0]
+
+
+print("  IT FLIPS THE SIGN OF PERILLI'S OWN OXYGENATION RESULT. He measures")
+print("  PaO2 146 -> 179, +33 mmHg, IMPROVING with tilt DESPITE the cardiac")
+print("  output falling. At his cohort, FiO2 0.50:")
+_b0, _b30 = _tox(_NoCoTilt, 0.50, 0.0), _tox(_NoCoTilt, 0.50, 30.0)
+_a0, _a30 = _tox(Patient, 0.50, 0.0), _tox(Patient, 0.50, 30.0)
+check("BEFORE the term: PaO2 change at 30 deg [measured +33]",
+      _b30 - _b0, 5.3, 0.3, " mmHg")
+check("WITH the term:   PaO2 change at 30 deg [measured +33]",
+      _a30 - _a0, -12.7, 0.3, " mmHg")
+check("  error against +33, BEFORE", abs(_b30 - _b0 - 33.0), 27.7, 0.3, " mmHg")
+check("  error against +33, WITH",   abs(_a30 - _a0 - 33.0), 45.7, 0.3, " mmHg")
+print("    THE SIGN IS NOW WRONG AND THE DISAGREEMENT IS 65% LARGER.")
+print("    Recorded, NOT compensated. The term is not withdrawn: it is a")
+print("    measured effect the model was wrong to omit, and removing a")
+print("    correct term to conceal an incorrect absence is the worse error.")
+check("standing shunt, supine [must not move with tilt]",
+      _tco(Patient, 0.0).shunt_base_eff() * 100.0, 10.90, 0.02, " %")
+check("standing shunt at 30 deg [IT DOES NOT MOVE -- that is the defect]",
+      _tco(Patient, 30.0).shunt_base_eff() * 100.0, 10.90, 0.02, " %")
+check("FRC supine at this patient", _tco(Patient, 0.0).frc_anaes(),
+      585.0, 5.0, " mL")
+check("FRC at 30 deg -- it moves a great deal, and the shunt ignores it",
+      _tco(Patient, 30.0).frc_anaes(), 840.0, 6.0, " mL")
+print("    THE DIAGNOSIS: THERE IS NO ROUTE FROM LUNG VOLUME TO STANDING")
+print("    SHUNT. shunt_base_eff() is a pure function of BMI, so FRC can")
+print("    rise 585 -> 840 mL and the shunt does not move one hundredth of a")
+print("    percent. Tilt therefore has no oxygenation benefit to offset its")
+print("    cardiac-output cost. Perilli's own explanation of his result is")
+print("    that tilt raises FRC and FRC improves oxygenation; he found the")
+print("    gain correlated with compliance, r = -0.65.")
+print("    AND IT IS THE SAME DEFECT PELOSI EXPOSED. Pelosi: the BMI-keyed")
+print("    curve has a knee that does not exist. Perilli: the BMI-keyed")
+print("    curve cannot respond to position. BOTH SAY BMI IS A PROXY AND THE")
+print("    MODEL IS KEYED ON THE PROXY INSTEAD OF THE QUANTITY -- which is")
+print("    lung volume against closing capacity, already computed in")
+print("    closed_target and already used for the apnoea collapse.")
+print("    A shunt_base_eff driven by (cc - v_lung)/v_lung would, with NO new")
+print("    free parameter: rise smoothly with BMI and with age, with no")
+print("    imposed knee (Pelosi); FALL with head-up tilt (Perilli); and")
+print("    reuse machinery the model already has. NOT DONE -- a redesign,")
+print("    not a parameter change, and the one change both of today's")
+print("    contradictions point at.")
+
+# ---------------------------------------------------------------------------
 print("\nPELOSI 1998 -- the whole BMI range, and IT CONTRADICTS OUR KNEE")
 print("  n=24 across BMI 20-66 continuously, FiO2 0.40, ZEEP, supine,")
 print("  paralysed, before surgery. The ONLY source here that publishes")

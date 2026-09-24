@@ -408,6 +408,41 @@ class Patient:
     # not dominate anywhere in the range this model is used.
     co_ref: float = 5.0
     co_drop_frac: float = 0.25
+    # HEAD-UP TILT COSTS CARDIAC OUTPUT. Added 2026-09-24 by ruling.
+    #
+    # Until now tilt was a PURE BENEFIT in this model: tilt_factor() raised
+    # FRC and nothing anywhere paid for it. That is why the model took too
+    # LITTLE extra lung volume from tilt (+46.6% against Valenza 2007's
+    # measured +84.8% at 30 degrees) and still produced too MUCH extra apnoea
+    # time (+51.1% against the positioning trials' ~+30%). A cost the model
+    # does not pay is exactly the shape of thing that explains that.
+    #
+    # THE MEASUREMENT. Perilli 2003 (Obes Surg 13:605-9, n=20, BMI 48.1 (8.2),
+    # cardiac output by oesophageal echo-Doppler) compares phase 4 with phase
+    # 5 -- identical but for position, both with subcostal retractors and
+    # both without PEEP:
+    #     supine            4.9 (0.9) L/min
+    #     30 deg head-up    4.0 (0.8) L/min    P < 0.05
+    # That is -18.4%, so 0.184/30 = 0.00612 per degree.
+    #
+    # WHY IT SHORTENS APNOEA RATHER THAN LENGTHENING IT. Oxygen leaves the
+    # lung at the metabolic rate whatever the cardiac output, so the LUNG
+    # store is not spared by a lower output. What a lower output does is
+    # widen the arteriovenous difference, which drops mixed venous oxygen,
+    # which the shunt admixes into the artery. With a 10.9% obese shunt that
+    # is a real cost.
+    #
+    # WHAT IS WEAK:
+    #   * ONE study, ONE cohort, at BMI 48.1, during OPEN abdominal surgery
+    #     with retractors in place. Whether the effect is the same without a
+    #     laparotomy is not measured.
+    #   * assumed LINEAR in angle from a single 30-degree measurement, and
+    #     assumed independent of BMI, neither of which anyone has checked.
+    #     The venous-return effect presumably depends on abdominal mass.
+    #   * HEAD-DOWN IS EXTRAPOLATION. Negative tilt_deg gives a factor above
+    #     1, which is the right direction -- Trendelenburg raises venous
+    #     return -- but no measurement here bounds it.
+    co_tilt_gain: float = 0.00612   # fractional CO loss per degree head-up
     # --- the circulation's answer to anaemia ------------------------------
     # Below a threshold haemoglobin the resting cardiac output rises to
     # defend oxygen delivery. Two measured anchors fix this, and nothing
@@ -652,6 +687,14 @@ class Patient:
         f = (self.hb_co_threshold / max(self.hb, 0.5)) ** self.hb_co_exp
         return float(min(self.hb_co_max, f))
 
+    def tilt_co_factor(self):
+        """Cardiac output multiplier for bed tilt. See co_tilt_gain above.
+
+        The 0.40 floor is a guard, not a physiological claim: it would only
+        bind past 98 degrees of head-up, which no timeline reaches.
+        """
+        return max(0.40, 1.0 - self.co_tilt_gain * self.tilt_deg)
+
     def co_anaes(self):
         # The anaemia response is applied BEFORE the anaesthetic drop, not
         # after, so anaesthesia blunts the compensation in proportion. That
@@ -659,7 +702,7 @@ class Patient:
         # holding their delivery together awake gives some of it back on
         # induction, exactly when the reserve is wanted.
         return (self.co_ref * self.scale() * self.anaemia_co_factor()
-                * (1.0 - self.co_drop_frac))
+                * (1.0 - self.co_drop_frac) * self.tilt_co_factor())
 
     def n2_capacities(self):
         """N2 capacity of each tissue compartment, mL STPD per mmHg."""

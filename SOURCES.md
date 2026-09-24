@@ -533,6 +533,85 @@ quietly drawing a difference again.
 
 ---
 
+### The tilt→cardiac-output term — ADDED 2026-09-24, and it makes a channel WORSE
+
+Ruled by A. Heard. Until now head-up tilt was a **pure benefit** in this model:
+`tilt_factor()` raised FRC and nothing anywhere paid for it.
+
+**The measurement.** Perilli 2003, phase 4 against phase 5 — identical but for
+position, both with subcostal retractors, both without PEEP, cardiac output by
+oesophageal echo-Doppler: **4.9 (0.9) → 4.0 (0.8) L/min, P < 0.05**. That is
+−18.4% at 30°, so `co_tilt_gain` = 0.184/30 = **0.00612 per degree**. Our
+ratio reproduces it exactly.
+
+#### IT DOES NOT EXPLAIN THE TILT OVERSHOOT, WHICH IS WHAT IT WAS ADDED FOR
+
+Recorded here because this file predicted otherwise. The entry written when
+Perilli was read said the term was *"very probably the missing piece in the
+FRC-to-apnoea-time conversion"*. Measured, with the term switched off and on:
+
+| configuration | without CO cost | with | change |
+|---|---|---|---|
+| lean, 20° | 28.6% | 27.7% | −0.93 |
+| BMI 35, 30° | 51.5% | **50.2%** | −1.31 |
+| BMI 44, 25° | 36.3% | 35.0% | −1.36 |
+
+The BMI 35 row needs to reach 45% to pass and ~30% to match the trials. The
+term moves it **1.3 points of the 6.5 needed** — it closes **20%** of the
+excess over the band, and about 6% of the gap to the measured value. **It is
+real, it is measured, and it is not the explanation.**
+
+#### AND IT FLIPS THE SIGN OF PERILLI'S OWN OXYGENATION RESULT
+
+This is the serious part. Perilli measures oxygenation **improving** with tilt
+— PaO2 146 → 179, **+33 mmHg** — *despite* the cardiac output falling. Our
+model, at his cohort and both candidate inspired fractions:
+
+| | PaO2 change at 30° | error against +33 |
+|---|---|---|
+| before the term | **+5.3** mmHg | 27.7 |
+| **with the term** | **−12.7** mmHg | **45.7** |
+| Perilli measured | **+33.0** | |
+
+**The sign is now wrong, and the disagreement is 65% larger than before.**
+Recorded, not compensated, per CLAUDE.md. The term is not withdrawn: it is a
+measured effect the model was wrong to omit, and removing a correct term to
+conceal an incorrect absence would be the worse error.
+
+#### THE DIAGNOSIS: THERE IS NO ROUTE FROM LUNG VOLUME TO STANDING SHUNT
+
+Perilli's own explanation of his result: *"it is reasonable that tilting-up the
+patient's head determined a decrease of abdominal push on the diaphragm and,
+therefore, an increase in FRC, and this, in turn, improved oxygenation."* He
+found the oxygenation gain correlated with the compliance gain, r = −0.65.
+
+**In this model tilt cannot do that.** `shunt_base_eff()` is a pure function of
+**BMI**. Tilt raises FRC 585 → 840 mL in that patient and the standing shunt
+does not move one hundredth of a percent — it sits at 10.90% in both positions.
+So tilt has no oxygenation benefit to offset its cardiac-output cost, and the
+net comes out negative.
+
+**AND THIS IS THE SAME DEFECT PELOSI EXPOSED.** Pelosi 1998 showed the
+BMI-keyed curve has a knee that does not exist. Perilli shows the BMI-keyed
+curve cannot respond to position. Both say the same thing: **BMI is a proxy,
+and the model is keyed on the proxy instead of the quantity.** The quantity is
+lung volume against closing capacity — which the model already computes, in
+`closed_target`, and already uses for the collapse that acts during apnoea.
+
+A `shunt_base_eff` driven by `(cc − v_lung)/v_lung` rather than by BMI would,
+without any new free parameter:
+
+- rise with BMI, because FRC falls and closing capacity rises — **smoothly,
+  with no imposed knee**, which is Pelosi's finding;
+- **fall with head-up tilt**, because FRC rises — which is Perilli's;
+- rise with age, because closing capacity rises with age;
+- reuse machinery already in the model rather than adding to it.
+
+**That is a redesign, not a parameter change, and it is not done.** It is the
+single change that both of today's contradictions point at.
+
+---
+
 ### Pelosi 1998 — READ IN FULL 2026-09-24, and IT CONTRADICTS THE KNEE COMMITTED THE SAME DAY
 
 **Pelosi P, Croci M, Ravagnan I, Tredici S, Pedoto A, Lissoni A, Gattinoni L.**

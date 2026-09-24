@@ -380,7 +380,13 @@ function derive(P){
   const anaemiaCo = P.hb>=hbThr ? 1.0 : Math.min(
     P.hbCoMax===undefined?3.0:P.hbCoMax,
     Math.pow(hbThr/Math.max(P.hb,0.5), P.hbCoExp===undefined?1.535:P.hbCoExp));
-  const co=P.coRef*Math.pow(P.weight/70,0.75)*anaemiaCo*0.75;  // at induction
+  // Head-up tilt costs cardiac output: Perilli 2003 measures 4.9 -> 4.0 L/min
+  // at 30 degrees, -18.4%, so 0.00612 per degree. Until 2026-09-24 tilt was a
+  // pure benefit here. The 0.40 floor is a guard and would only bind past 98
+  // degrees. Mirrors apnoea_core.py tilt_co_factor() -- see the parameter
+  // block there for what is weak about it.
+  const coTiltF=Math.max(0.40,1-(P.coTiltGain===undefined?0.00612:P.coTiltGain)*P.tiltDeg);
+  const co=P.coRef*Math.pow(P.weight/70,0.75)*anaemiaCo*0.75*coTiltF;  // at induction
   const fatKg=Math.max(5,P.weight*(0.10+0.011*Math.max(0,bmi-20)));
   const leanKg=P.weight-fatKg, lam=1.895e-5;
   const n2cap=[(5+0.10*leanKg)*1000*lam,(0.50*leanKg)*1000*lam,(fatKg/0.92)*1000*lam*5];
