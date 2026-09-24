@@ -2502,6 +2502,122 @@ print("    40.60/43.92/44.96/45.89 kPa, EVERY value inside their 1 SD. The")
 print("    orphaned 38.7 came from a configuration nobody wrote down; the one")
 print("    in test_validation.py is written down and reproduces.")
 
+# ---------------------------------------------------------------------------
+print("\nCLOSING CAPACITY -- THE SOURCE IS FOUND, THE BLOCKER IS TLC")
+print("  Chased again 2026-09-24 on a ruling, and the first finding is that")
+print("  the chase was already done: Buist & Ross 1973 was obtained and READ")
+print("  AT SOURCE on 2026-09-23 and its combined regression is quoted")
+print("  verbatim in SOURCES.md:")
+print("      CC/TLC (per cent) = 0.525 * age(years) + 14.348 +- 4.34")
+print("  So cc_at_20/cc_per_year/cc_per_bmi are UNSOURCED VALUES, not an")
+print("  unsourced QUANTITY. Any claim that closing capacity has no source is")
+print("  wrong and this block exists to stop it being made again.")
+print("  WHAT ACTUALLY BLOCKS IT: Buist gives CC as a PERCENTAGE OF TLC and")
+print("  this model has no TLC. That is the whole of the remaining work.")
+
+_CH = 1.75
+
+
+def _buist_cc(age, tlc):
+    """Buist & Ross 1973 combined regression, in mL, against a given TLC."""
+    return tlc * (0.525 * age + 14.348) / 100.0
+
+
+def _cp(age, bmi=22.0):
+    return Patient(weight=bmi * _CH * _CH, height=_CH, age=age, tilt_deg=0.0)
+
+
+def _crossover(vol, cc):
+    """Age at which closing capacity overtakes lung volume."""
+    _lo, _hi = 5.0, 100.0
+    for _ in range(60):
+        _m = 0.5 * (_lo + _hi)
+        if cc(_m) < vol(_m):
+            _lo = _m
+        else:
+            _hi = _m
+    return 0.5 * (_lo + _hi)
+
+
+print("  THE CROSSOVER TEST. Both sources put CC = FRC at ~44 years SUPINE")
+print("  (Milic-Emili 2007; BJA Education 2022). It has no free parameter in")
+print("  it, which is what makes it worth failing against.")
+check("our CC = awake FRC crossover [literature ~44 y]",
+      _crossover(lambda a: _cp(a).frc_awake(), lambda a: _cp(a).closing_capacity()),
+      55.0, 0.1, " y")
+print("    SOURCES.md recorded this as 50.6 y. IT DOES NOT REPRODUCE at any")
+print("    reading: 55.0 against awake FRC, 35.0 against anaesthetised FRC.")
+print("    A prose number that rotted, which is why it is now in this file.")
+print("    Our disagreement with the literature is therefore WIDER than the")
+print("    document claimed, not narrower.")
+check("  ... same, against anaesthetised FRC",
+      _crossover(lambda a: _cp(a).frc_anaes(), lambda a: _cp(a).closing_capacity()),
+      35.0, 0.1, " y")
+
+print("  AND OUR FRC IS AGE-FLAT, WHICH IS A SECOND FAULT IN THE SAME TEST.")
+print("  height_factor() quotes a regression carrying 0.009*age and then does")
+print("  not implement the age term, so at BMI 22 frc_awake is frc_ref at")
+print("  EVERY age. Giving the term back makes the crossover WORSE, 55.0 ->")
+print("  59.9 y, because that regression has FRC RISING with age. Recorded,")
+print("  not compensated: it is evidence the error is not all in CC.")
+
+
+def _frc_aged(age):
+    _f = lambda a: 2.34 * _CH + 0.009 * a - 1.09
+    return 2500.0 * _f(age) / _f(45.0)
+
+
+check("crossover once FRC carries its own age term [~44 y]",
+      _crossover(_frc_aged, lambda a: _cp(a).closing_capacity()), 59.92, 0.05, " y")
+
+print("  WHAT TLC WOULD BUIST & ROSS NEED? Solving the crossover for TLC is")
+print("  the one thing that can be done WITHOUT the Quanjer paper, because")
+print("  the 44-year target is itself a published number:")
+_lo, _hi = 3000.0, 14000.0
+for _ in range(60):
+    _m = 0.5 * (_lo + _hi)
+    if _crossover(lambda a: _cp(a).frc_awake(), lambda a, _t=_m: _buist_cc(a, _t)) > 44.0:
+        _lo = _m
+    else:
+        _hi = _m
+_TLC44 = 0.5 * (_lo + _hi)
+check("TLC that puts the Buist crossover at exactly 44 y, h 1.75",
+      _TLC44, 6676.0, 3.0, " mL")
+_lo, _hi = 3000.0, 14000.0
+for _ in range(60):
+    _m = 0.5 * (_lo + _hi)
+    if _crossover(_frc_aged, lambda a, _t=_m: _buist_cc(a, _t)) > 44.0:
+        _lo = _m
+    else:
+        _hi = _m
+check("  ... and again with the FRC age term restored",
+      0.5 * (_lo + _hi), 6658.0, 3.0, " mL")
+print("    THE TWO AGREE TO 0.3%, so the TLC the crossover implies does NOT")
+print("    depend on the unresolved FRC age-term question. About 6.7 L for a")
+print("    1.75 m subject is a plausible TLC, so Buist & Ross and the")
+print("    crossover test are consistent with each other while OUR")
+print("    regression is consistent with neither.")
+
+print("  WHAT IT WOULD COST. Buist CC is LOWER than ours for every obese")
+print("  cohort, so the shunt FALLS -- the direction SOURCES.md predicted:")
+for _nm, _h, _b, _a, _want in (("Pelosi BMI 45", 1.64, 45.0, 52.0, 11.16),
+                               ("Reinius BMI 45", 1.70, 45.0, 42.0, 9.53),
+                               ("Perilli BMI 48.1", 1.61, 48.1, 37.0, 10.31),
+                               ("Heard BMI 34.7", 1.74, 34.7, 42.0, 6.38)):
+    class _BuistCC(Patient):
+        def closing_capacity(self, _t=_TLC44):
+            return _buist_cc(self.age, _t)
+    _q = _BuistCC(weight=_b * _h * _h, height=_h, age=_a, hb=14.0, tilt_deg=0.0)
+    _now = Patient(weight=_b * _h * _h, height=_h, age=_a, hb=14.0, tilt_deg=0.0)
+    check(f"{_nm}: shunt on a Buist CC at TLC {_TLC44:.0f} "
+          f"[ours {_now.shunt_base_eff()*100:.2f}%]",
+          _q.shunt_base_eff() * 100.0, _want, 0.05, " %")
+print("    NOT APPLIED. Implementing Buist faithfully needs a predicted TLC,")
+print("    and the TLC source -- Quanjer/ECSC 1993, which Milic-Emili uses --")
+print("    could not be read: this environment's network policy blocks every")
+print("    primary host. The 6.7 L above is what the crossover IMPLIES, not a")
+print("    value read from anywhere, and it must not be shipped as one.")
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")
