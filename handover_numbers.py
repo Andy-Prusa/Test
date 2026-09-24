@@ -1874,9 +1874,9 @@ check("Reinius: FRC anaesthetised [measured EELV 697 (157)]",
       _rp.frc_anaes(), 668.0, 5.0, " mL")
 check("  ... in SD of 697 (157). NOT independent: k_rv_bmi was anchored here",
       (_rp.frc_anaes() - 697.0) / 157.0, -0.18, 0.05, " SD")
-check("Reinius: FRC AWAKE [measured 1387 (581)] -- THIS ONE IS INDEPENDENT",
+check("Reinius: FRC AWAKE [measured 1387 (581)] -- the non-circular row",
       _rp.frc_awake(), 891.0, 8.0, " mL")
-check("  ... in SD of 1387 (581)",
+check("  ... in SD of 1387 (581). 'NOT CONTRADICTED', not 'confirmed'",
       (_rp.frc_awake() - 1387.0) / 581.0, -0.85, 0.03, " SD")
 check("Reinius: unwashed share [awake poorly aerated 28 (12) %]",
       _rp.unwashed_fraction() * 100.0, 14.79, 0.05, " %")
@@ -1892,6 +1892,19 @@ check("  ... their AWAKE PaO2/FiO2 was 410-432, so we oxygenate an",
 check("Reinius: our a-A oxygen gradient [theirs is 188]",
       _RALV - _rr['pao2'][0], 112.7, 1.0, " mmHg")
 
+print("  AND THE AUTHORS THEMSELVES FLAG THE AWAKE VOLUME. Limitation 12:")
+print("  'during spontaneous breathing the patient did not comprehend the")
+print("  instructions given, thus failing to make an end-expiratory")
+print("  breath-hold... however we believe this to be unlikely'. Its SD is")
+print("  42% of its mean where the anaesthetised value's is 23%. So the one")
+print("  non-circular check on frc_ref and k_frc_bmi is SOFTER than it")
+print("  looks: read -0.85 SD as not contradicted, not as confirmed, and do")
+print("  not quote it as a validation of the FRC regression.")
+print("  LIMITATION 10 STATES OUR MECHANISM'S THIRD PREDICTION AS FACT:")
+print("  'The anesthesia was induced with 100% O2, WHICH PROMOTES FORMATION")
+print("  OF ATELECTASIS'. That is prediction (c) -- a closed unit full of")
+print("  oxygen absorbs, one full of nitrogen is splinted open -- asserted")
+print("  by a group that measures atelectasis by CT for a living.")
 print("  INVERTING THE BLOOD GAS FOR SHUNT. What shunt_base reproduces their")
 print("  PaO2/FiO2 of 252 at an alveolar PO2 of 314?")
 _sh = []

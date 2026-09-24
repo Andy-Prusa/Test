@@ -542,7 +542,9 @@ study. *Anesthesiology* 2009;111(5):979-87. PMID 19809292. **Full text read
 from the page 2026-09-24.** Published data; nothing here is under the Toner
 authorisation.
 
-n=30, BMI **45 (4)**, aged 25-54, scheduled for gastric bypass. Preoxygenation
+n=30 (**7 men, 23 women** by Table 1; the Results text says "33 women and
+7 men", which does not sum to 30 -- see below), BMI **45 (4)**, aged 25-54,
+scheduled for gastric bypass. Preoxygenation
 **5 min of 100% oxygen with a tight seal mask**. Propofol / fentanyl /
 rocuronium, then volume-cycled ventilation at **FiO2 0.5, ZEEP, supine**,
 10 mL/kg predicted body weight, rate set to keep end-tidal CO2 34-41 mmHg.
@@ -668,6 +670,89 @@ our 14.8% sits inside it. If the standing shunt is really 11-12% rather than
 5%, part of what the Gander inversion was asking the unwashed fraction to do
 belongs to the shunt instead. **The two cannot be settled separately, and
 raising one without the other would be fitting.**
+
+---
+
+#### The rest of the paper, read 2026-09-24 — two corrections and four citations
+
+**1. THE AUTHORS THEMSELVES FLAG THE AWAKE LUNG VOLUME AS UNRELIABLE, which
+weakens the independent check claimed above.** Limitation 12, verbatim: *"The
+changes in lung volumes were most likely caused by induction of anesthesia and
+paralysis, but another possible explanation is that during spontaneous
+breathing the patient did not comprehend the instructions given, thus failing
+to make an end-expiratory breath-hold. However we believe this to be unlikely;
+careful instructions were given, and each patient was observed to make a
+breath-hold during the CT scanning."*
+
+The awake 1387 (581) mL was used above as the **one non-circular check** on
+`frc_ref` and `k_frc_bmi`, and we land at −0.85 SD of it. That check is softer
+than it looked: its own authors name a mechanism by which the awake value
+could be too high, and its standard deviation is **42% of its mean** where the
+anaesthetised value's is 23%. Treat −0.85 SD as "not contradicted" rather than
+"confirmed", and do not quote the awake volume as a validation of the FRC
+regression.
+
+**2. The Results text miscounts the sexes.** It reads *"Thirty patients (33
+women and 7 men) were included"* — 33 + 7 = 40, against n = 30. Table 1 gives
+men/women as 0/10, 4/6 and 3/7 by group: **7 men and 23 women**. Table 1 is
+the authoritative row; "33" is a typo for 23. Recorded because this file has
+been caught before by a transposed figure taken from running text rather than
+from a table.
+
+**3. Limitation 10 states our mechanism's third prediction as established
+fact**, in the authors' own words: *"The anesthesia was induced with 100% O2,
+**which promotes formation of atelectasis**; however, this is a standard
+procedure in patients with high risk of difficult intubation and hypoxemia."*
+That is prediction (c) of the incomplete-denitrogenation mechanism — a closed
+unit full of oxygen absorbs, a closed unit full of nitrogen is splinted open —
+asserted by a group that measures atelectasis by CT for a living. Their
+reference 35 (Rothen 1995) is the supporting measurement: after a recruitment
+manoeuvre, atelectasis stays away for at least 20 min **if FiO2 is kept at
+0.4**, and recurs quickly at 100%.
+
+#### Four citations this paper hands us, from its own reference list
+
+These are resolved from a primary source rather than from a search, which is
+the standard §2a of this file asks for.
+
+- **Jones RL, Nzekwu MM.** The effects of body mass index on lung volumes.
+  *Chest* 2006;130(3):827-33. Reinius reference 24. **This is the paper this
+  file has been asking for**, and the citation is now confirmed from a
+  primary source rather than a search result.
+- **Valenza F, Vagginelli F, Tiby A, Francesconi S, Ronzoni G, Guglielmi M,
+  Zappa M, Lattuada E, Gattinoni L.** Effects of the beach chair position,
+  positive end-expiratory pressure, and pneumoperitoneum on respiratory
+  function in morbidly obese patients during anesthesia. *Anesthesiology*
+  2007;107(5):725-32. Reinius reference 36. **This is the shape of paper the
+  tilt question needs**: position against respiratory function in
+  anaesthetised obese patients, rather than position against apnoea time.
+- **Perilli V, Sollazzi L, Modesti C, Annetta MG, Sacco T, Bocci MG, Tacchino
+  RM, Proietti R.** Comparison of positive end-expiratory pressure with
+  reverse Trendelenburg position in morbidly obese patients undergoing
+  bariatric surgery: effects on hemodynamics and pulmonary gas exchange.
+  *Obes Surg* 2003;13(4):605-9. Reinius reference 34. Head-up tilt against
+  **gas exchange**, in the population that matters.
+- **Damia G, Mascheroni D, Croci M, Tarenzi L.** Perioperative changes in
+  functional residual capacity in morbidly obese patients. *Br J Anaesth*
+  1988;60(5):574-8. Reinius reference 25. An FRC measurement in the right
+  population.
+
+And two more worth having:
+
+- **Berthoud MC, Peacock JE, Reilly CS.** Effectiveness of preoxygenation in
+  morbidly obese patients. *Br J Anaesth* 1991;67(4):464-6. Reference 40.
+  Directly relevant to the end-tidal oxygen fraction assumed in the Gander
+  configuration, which is currently **ours, not Gander's**.
+- **Eichenberger A, Proietti S, Wicky S, Frascarolo P, Suter M, Spahn DR,
+  Magnusson L.** Morbid obesity and postoperative pulmonary atelectasis: an
+  underestimated problem. *Anesth Analg* 2002;95(6):1788-92. Reference 5.
+  Already on this file's wanted list; the citation is now confirmed.
+
+**What changes because of this.** The tilt question was recorded on 2026-09-24
+as needing "a measurement of FRC against tilt angle — possibly a new study".
+Two candidate papers now exist by name, from a primary source, and neither has
+been obtained. **Get Valenza 2007 and Perilli 2003 before concluding that
+anything about tilt needs a new trial.**
 
 ---
 
@@ -1764,6 +1849,36 @@ connected and the PDFs placed there.
       rather than the right one
 - [ ] Laviola 2026 main text; Hardman 2000;90:614-8; Hardman & Wills's online
       Appendix 1 — all via the author route recorded in `HANDOVER.md`
+
+**Added 2026-09-24, resolved from Reinius 2009's own reference list — a
+primary source, not a search.** The first two are the ones that matter most:
+
+- [ ] **Valenza F, et al.** Effects of the beach chair position, positive
+      end-expiratory pressure, and pneumoperitoneum on respiratory function in
+      morbidly obese patients during anesthesia. *Anesthesiology*
+      2007;107(5):725-32. **Position against RESPIRATORY FUNCTION in
+      anaesthetised obese patients** — the shape of paper the tilt rows need,
+      and the reason not to conclude that tilt requires a new trial
+- [ ] **Perilli V, et al.** Comparison of positive end-expiratory pressure
+      with reverse Trendelenburg position in morbidly obese patients
+      undergoing bariatric surgery: effects on hemodynamics and pulmonary gas
+      exchange. *Obes Surg* 2003;13(4):605-9. **Head-up tilt against GAS
+      EXCHANGE**, in the population that matters
+- [ ] **Jones RL, Nzekwu MM.** The effects of body mass index on lung volumes.
+      *Chest* 2006;130(3):827-33. Already called "the decisive paper" above;
+      the citation is now confirmed from a primary source
+- [ ] **Damia G, et al.** Perioperative changes in functional residual capacity
+      in morbidly obese patients. *Br J Anaesth* 1988;60(5):574-8
+- [ ] **Berthoud MC, Peacock JE, Reilly CS.** Effectiveness of preoxygenation
+      in morbidly obese patients. *Br J Anaesth* 1991;67(4):464-6. Bears
+      directly on the end-tidal oxygen fraction in the Gander configuration,
+      which is currently OURS and not Gander's
+- [ ] **Eichenberger A, et al.** Morbid obesity and postoperative pulmonary
+      atelectasis. *Anesth Analg* 2002;95(6):1788-92 — citation confirmed
+- [ ] **Tokics L, et al.** 1996 — the 5.0 (1.3) % inert-gas shunt is checked by
+      `handover_numbers.py` from this file's record, NOT from the page. If
+      `shunt_base` becomes BMI-dependent that figure becomes a load-bearing
+      anchor and must be read at source, as Reinius 2009 was
 
 ---
 
