@@ -300,50 +300,69 @@ class Patient:
                                  # systolic pressure, by ruling: see
                                  # SBP_SUPINE above for why, and why it is
                                  # deliberately far enough out to be inert.
-    # BASELINE SHUNT, BMI-DEPENDENT SINCE 2026-09-24. Ruled by A. Heard on
-    # three measurements, with computed tomography taken as the standard for
-    # lung aeration (also his ruling, the same day).
+    # BASELINE SHUNT AGAINST BMI -- PELOSI'S MEASURED CURVE, 2026-09-24.
     #
-    # WHAT WAS WRONG. shunt_base was a flat 0.05 for every patient, and at
-    # t=0 on a patent airway the total shunt IS shunt_base -- the collapse
-    # machinery only acts during apnoea. So a BMI 45 patient and a BMI 22
-    # patient were given IDENTICAL gas exchange. That is the defect the
-    # obese-shunt branch was forked to find, and it was invisible until a
-    # measured obese shunt existed to compare against.
+    # WHAT WAS WRONG ORIGINALLY. shunt_base was a flat 0.05 for every patient,
+    # and at t=0 on a patent airway the total shunt IS shunt_base -- the
+    # collapse machinery only acts during apnoea. A BMI 45 patient and a BMI
+    # 22 patient were given IDENTICAL gas exchange. That is the defect the
+    # obese-shunt branch was forked to find.
     #
-    # THE 0.05 IS NOT WRONG WHERE IT CAME FROM. Tokics 1996 Table 3 measures
-    # inert-gas shunt under anaesthesia at 5.0 (1.3) %. TOKICS'S PATIENTS
-    # WERE NOT OBESE.
+    # WHAT WAS WRONG WITH THE FIRST FIX, committed hours earlier the same day.
+    # It was a broken line: flat 5% to BMI 24, straight to a 10.9% plateau at
+    # BMI 30, flat above. The plateau was anchored on Reinius (BMI 45) and
+    # Valenza (BMI 42); the KNEE AND THE FLATNESS came from Hedenstierna
+    # 2020's finding that ATELECTASIS does not increase above BMI 30. That
+    # block recorded its own weakness -- "shunt and atelectatic area are
+    # different quantities and are not obliged to have the same knee" -- and
+    # Pelosi 1998 then cashed the caveat in. There is no knee, and both
+    # anchors sat in the one interval where the broken line happened to be
+    # right. See SOURCES.md.
     #
-    # THE OBESE ANCHOR, three routes, two centres, two years:
-    #     Reinius 2009, BMI 45, blood gas inverted at FiO2 0.50   11.85 %
-    #     Reinius 2009, BMI 45, nonaerated lung volume by CT      11 (6) %
-    #     Valenza 2007, BMI 42, blood gas inverted at FiO2 0.60   10.0  %
-    # The plateau below is the mean of the two physiological inversions,
-    # 10.9%, which falls inside the CT measurement's 11 (6) %. Combining two
-    # measurements of one quantity is not a fit; no benchmark entered it.
+    # THE CURVE NOW. Pelosi 1998 (Anesth Analg 87:654-60, n=24, FiO2 0.40,
+    # ZEEP, supine, paralysed) is the only source here that measures ACROSS
+    # THE WHOLE BMI RANGE -- 20 to 66 -- rather than at one cohort mean, and
+    # publishes a regression rather than group means:
     #
-    # THE SHAPE IS HEDENSTIERNA'S, AND IT IS A CT FINDING. Hedenstierna 2020
-    # (n=243, CT, BMI 18-52) reports that atelectasis shows NO FURTHER
-    # INCREASE above BMI 30. So the rise happens below 30 and the curve is
-    # flat above it. Reinius at BMI 45 and Valenza at BMI 42 are both on the
-    # plateau, which is why they agree within their scatter.
+    #     PaO2/PAO2 = 1.23 * exp(-0.037 * BMI) + 0.196     r 0.81, P<0.01
     #
-    # WHAT IS WEAK HERE, stated so it can be attacked:
-    #   * shunt_bmi_lean is where the Tokics anchor is placed, and TOKICS HAS
-    #     NOT BEEN READ AT SOURCE -- his cohort's BMI is not in this
-    #     repository. 24 is an assumption, not a measurement, and it sets how
-    #     steep the rise is. See SOURCES.md's wanted list.
-    #   * the knee at 30 comes from Hedenstierna's ATELECTASIS AREA, not from
-    #     a shunt measurement. Shunt and atelectatic area are different
-    #     quantities and are not obliged to have the same knee.
-    #   * nothing measures the shunt BETWEEN BMI 25 and 40. The straight line
-    #     joining the two anchors is the simplest curve through them, not a
-    #     measured shape.
-    shunt_base: float = 0.05     # at or below shunt_bmi_lean. Tokics 1996
-    shunt_bmi_lean: float = 24.0 # BMI the Tokics anchor is placed at. ASSUMED
-    shunt_bmi_knee: float = 30.0 # Hedenstierna 2020: flat above this
-    shunt_obese: float = 0.109   # plateau. Reinius 11.85 / Valenza 10.0
+    # Inverting that through this model gives the shunt that reproduces his
+    # oxygenation at each BMI. The quadratic below is fitted to those inverted
+    # points over BMI 20-55: worst residual 0.27 percentage points, rms 0.094.
+    # A straight line is three times worse (0.79) and a pure exponential six
+    # times (1.77).
+    #
+    # FITTED TO A MEASURED CURVE, NOT TO A BENCHMARK. No benchmark entered it,
+    # and it respects all three earlier anchors without being asked to:
+    #     BMI 42   10.45%   Valenza measured-equivalent 10.0
+    #     BMI 45   11.76%   Reinius 11.85 inverted, 11 (6) by CT
+    #     BMI 22.9  3.71%   Tokics 5.0 (1.3) -- -0.99 SD
+    #
+    # WHAT IS WEAK:
+    #   * the inversion runs Pelosi's blood gas through THIS model's cardiac
+    #     output, and ours is about 18% above the only measured obese value
+    #     we have (Perilli's 4.9 L/min). Dantzker 1980 makes that matter:
+    #     depressing cardiac output is itself a mechanism of shunt reduction.
+    #   * a quadratic is a FITTED SHAPE, not a physiological one. It is chosen
+    #     for fidelity to Pelosi's curve over the measured range and nothing
+    #     else, and it must not be extrapolated far: it turns downward below
+    #     BMI 6 and is unbounded above.
+    #   * Pelosi's cohort is 1 man to 7 women per group, aged 40-75, at
+    #     FiO2 0.40. Reinius, Valenza and Perilli differ in all three.
+    #   * AND THIS IS STILL KEYED ON BMI. Perilli shows that is wrong in kind:
+    #     head-up tilt raises FRC 585 -> 840 mL and this curve does not move,
+    #     so the model cannot reproduce his measured oxygenation gain from
+    #     position. The right quantity is lung volume against closing
+    #     capacity. See the tilt->cardiac-output section in SOURCES.md.
+    shunt_p2: float = 3.86627e-5   # BMI^2 coefficient, as a fraction
+    shunt_p1: float = 1.0209344e-3
+    shunt_p0: float = -6.6007334e-3
+    # Floor: bronchial and thebesian venous drainage bypass the alveoli in
+    # every healthy lung, so a true shunt of a few per cent exists at any
+    # body mass. It binds below BMI 13.5 and is a guard, not a measurement.
+    shunt_floor: float = 0.02
+    # Ceiling: a guard only. It binds past BMI 92, which no timeline reaches.
+    shunt_ceiling: float = 0.40
 
     # --- closing capacity (PLACEHOLDER REGRESSION) -------------------------
     cc_at_20: float = 1800.0
@@ -839,16 +858,16 @@ class Patient:
     # preoxygenation happens before induction. Nothing here was chosen by
     # looking at a benchmark.
     def shunt_base_eff(self):
-        """Baseline shunt for THIS patient. See the parameter block above.
+        """Baseline shunt for THIS patient: Pelosi 1998's measured curve.
 
-        Flat at shunt_base up to shunt_bmi_lean, straight to shunt_obese at
-        shunt_bmi_knee, flat thereafter. The plateau is where Reinius 2009
-        and Valenza 2007 both measured; the knee is Hedenstierna 2020's.
+        A quadratic in BMI fitted to Pelosi's oxygenation regression inverted
+        through this model. See the parameter block above, including the four
+        things wrong with it -- the last of which is that it is keyed on BMI
+        at all.
         """
         b = self.bmi()
-        span = max(self.shunt_bmi_knee - self.shunt_bmi_lean, 1e-9)
-        f = float(np.clip((b - self.shunt_bmi_lean) / span, 0.0, 1.0))
-        return self.shunt_base + (self.shunt_obese - self.shunt_base) * f
+        s = self.shunt_p2 * b * b + self.shunt_p1 * b + self.shunt_p0
+        return float(np.clip(s, self.shunt_floor, self.shunt_ceiling))
 
     def unwashed_fraction(self):
         """Perfusion share whose airway was shut throughout preoxygenation.

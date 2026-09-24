@@ -700,16 +700,49 @@ comparable with our `k_frc_bmi` of 0.0417: his form carries a 0.46 L offset and
 a different prefactor, and ours carries a residual-volume floor. The values
 agree even though the exponents do not, and it is the values that matter.
 
-#### RECORDED, NOT ACTED ON
+#### ADOPTED THE SAME DAY — the broken line is gone
 
-Replacing the broken line with a curve fitted to Pelosi's inverted points would
-be substituting a measurement of the right quantity for an assumption borrowed
-from the wrong one — the same footing as `k_rv_bmi`, and an improvement rather
-than a fit. **But it contradicts a ruling made hours earlier and it moves every
-obese benchmark, so it waits for a ruling.** The three anchors already in the
-model (Tokics, Reinius, Valenza) are not displaced by it: Pelosi agrees with
-Reinius and Valenza where they sit, and his 3.47% at BMI 22 is within 1.2 SD of
-Tokics's 5.0 (1.3) %.
+Ruled by A. Heard. `shunt_base_eff()` now carries Pelosi's curve as a
+**quadratic in BMI fitted to the inverted points** over BMI 20–55: worst
+residual **0.27 percentage points**, rms 0.094. A straight line is three times
+worse and a pure exponential six times. Floored at 2% (bronchial and thebesian
+drainage, binds below BMI 13.5) and ceilinged at 40% as a guard (binds past
+BMI 92).
+
+**Fitted to a measured curve, not to a benchmark.** And it respects every
+earlier anchor without being asked to — none of them entered the fit:
+
+| | ours | measured |
+|---|---|---|
+| Reinius BMI 45, FiO₂ 0.50 | PaO₂/FiO₂ **251.7** | **252** (groups 225–266) |
+| Valenza BMI 42, FiO₂ 0.60 | PaO₂ **171.4** | 177 (50) → **−0.11 SD** |
+| Tokics, lean BMI 22.9 | **3.71%** | 5.0 (1.3) → **−1.00 SD** |
+| Pelosi BMI 22 / 45, FiO₂ 0.40 | 180.9 / 104.3 | his curve 180.8 / 104.6 |
+
+**And Gander improved again, on an apnoea protocol none of the anchors share:**
+
+| | flat 5% | broken line | Pelosi curve | measured |
+|---|---|---|---|---|
+| PaO₂ before apnoea | 446.9 | 345.5 | **312.9** | 243 (136) → **+0.51 SD** |
+| time to SpO₂ 90% | 147.9 s | 145.7 s | **145.0 s** | 127 (43) → **+0.42 SD** |
+| PaCO₂ at SpO₂ 92% | 55.1 | 54.9 | **54.8** | 53 (4) → **+0.46 SD** |
+
+**The blocking set did not move** — four before, four after, same names. The
+rows that did move all improved: Stock's PaO₂ at 5 min **157.2 → 171.1** mmHg
+against a measured 314 (87), Heard 292.2 → 302.2 s, Toner 444.5 → 446.8 s.
+
+**The lean rows moved for the first time on this branch**, because the lean
+shunt falls **5.00% → 3.71%**. Every previous change was exactly zero below
+BMI 24 by construction; this one is not, and that is why the Stock oxygen row
+finally moved toward its measurement.
+
+#### WHAT IT DOES NOT FIX
+
+**It is still keyed on BMI.** Perilli's result — oxygenation improving with
+head-up tilt — remains unreproducible, because tilt raises FRC 585 → 840 mL
+and this curve does not move. Replacing one function of BMI with a better
+function of BMI does not give the model a route from lung volume to shunt.
+That redesign, `(cc − v_lung)/v_lung` in place of BMI, is still the open item.
 
 ---
 

@@ -36,3 +36,14 @@ tilt, BMI 35 at 30 deg
 # did move are Heard control (310.2 -> 299.7 s, still inside 244-314) and the
 # obese comparators, which improved. Every lean row is bit-identical, because
 # the curve is flat at 5% up to BMI 24.
+
+# UNCHANGED again by the Pelosi-curve ruling of 2026-09-24, which replaced the
+# broken line (flat 5% to BMI 24, 10.9% plateau above BMI 30) with a quadratic
+# fitted to Pelosi 1998's measured oxygenation regression across BMI 20-66.
+# Still 4 blocking, same four names. The rows it moved all IMPROVED:
+#   Stock obstructed, PaO2 at 5 min   157.2 -> 171.1 mmHg (measured 314 (87))
+#   Heard control, SpO2<95%           292.2 -> 302.2 s    (band 244-314)
+#   Toner sham, SpO2<95%              444.5 -> 446.8 s    (band 380-525)
+# and the lean shunt fell 5.00% -> 3.71%, which is why the lean rows moved at
+# all for the first time on this branch.
+

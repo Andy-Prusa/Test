@@ -34,6 +34,21 @@ DT = 0.05
 _fails = []
 
 
+def _forced_shunt(value):
+    """Patient subclass whose baseline shunt is forced to `value`.
+
+    The shunt parameters are now the coefficients of Pelosi's curve, so
+    setting shunt_base or shunt_obese no longer forces an absolute value --
+    those names are retired. Overriding the accessor does, and it works at
+    any BMI.
+    """
+    class _Forced(Patient):
+        def shunt_base_eff(self):
+            return value
+    return _Forced
+
+
+
 def check(what, got, want, tol, unit=""):
     ok = abs(got - want) <= tol
     print(f"    {'ok  ' if ok else 'FAIL'} {what:<46} {got:8.2f}{unit}"
@@ -957,23 +972,26 @@ print("  HANDOVER once recorded this hypothesis as REFUTED. That test left the")
 print("  SHUNT ON, so what it called a dispersion-independent floor was the")
 print("  shunt. These rows are the re-test with no blood allowed to bypass gas")
 print("  exchange by any route.")
-_NS = dict(inflow_mech_frac=0.0, perfusion_gain=0.0, shunt_base=0.0,
+_NS = dict(inflow_mech_frac=0.0, perfusion_gain=0.0,
            max_closed=0.0)
 
 
-def _obs(**kw):
-    """Stock's reference patient, sealed airway, preoxygenated."""
-    _p = Patient(weight=70, height=1.75, age=45, hb=15.0, **kw)
+def _obs(_cls=None, **kw):
+    """Stock's reference patient, sealed airway, preoxygenated.
+
+    _cls lets a caller pass a Patient subclass -- see _forced_shunt.
+    """
+    _p = (_cls or Patient)(weight=70, height=1.75, age=45, hb=15.0, **kw)
     return simulate(_p, [AirwayEpoch(360, resistance=OBS, fgo2=0.21)],
                     dt=DT, feo2_start=0.87, paco2_start=39.0, stop_sao2=0.0)
 
 
 print("    First: the long-promised shunt_base sweep. It is NOT the actor.")
 for _sb, _w in ((0.00, 64.1), (0.05, 60.5), (0.20, 50.6)):
-    check(f"shunt_base {_sb:.2f}: PaO2 at 300 s", at(_obs(shunt_base=_sb),
+    check(f"baseline shunt {_sb:.2f}: PaO2 at 300 s", at(_obs(_cls=_forced_shunt(_sb)),
           'pao2', 300), _w, 1.0, " mmHg")
-check("shunt_base 0.00 still leaves total shunt at",
-      at(_obs(shunt_base=0.0), 'shunt', 300), 0.132, 0.01, "")
+check("baseline shunt 0.00 still leaves total shunt at",
+      at(_obs(_cls=_forced_shunt(0.0)), 'shunt', 300), 0.132, 0.01, "")
 print("    Zeroing it moves PaO2 3.6 mmHg against a 254 mmHg gap, and the")
 print("    shunt is still 0.13 because the per-unit absorption collapse")
 print("    supplies it. max_closed was already shown inert. So neither named")
@@ -1780,15 +1798,15 @@ check("spo2_tau as shipped", _gp2.spo2_tau, 8.0, 1e-9, " s")
 _t_disp = time_to(_gr2, 'spo2', 92)
 _t_true = time_to(_gr2, 'sao2', 92)
 check("when the OXIMETER reads 92: PaO2 [Gander 68 (10)]",
-      at(_gr2, 'pao2', _t_disp), 44.2, 1.0, " mmHg")
+      at(_gr2, 'pao2', _t_disp), 43.6, 1.0, " mmHg")
 check("  ... and the TRUE saturation then is",
-      at(_gr2, 'sao2', _t_disp), 74.9, 1.0, " %")
+      at(_gr2, 'sao2', _t_disp), 74.2, 1.0, " %")
 check("when the TRUE saturation is 92: PaO2 [Gander 68 (10)]",
-      at(_gr2, 'pao2', _t_true), 71.7, 1.0, " mmHg")
+      at(_gr2, 'pao2', _t_true), 70.0, 1.0, " mmHg")
 check("  ... in SD of Gander's 68 (10)",
       abs(at(_gr2, 'pao2', _t_true) - 68.0) / 10.0, 0.0, 0.6, " SD")
 check("the two readings are how far apart, in saturation points",
-      at(_gr2, 'spo2', _t_disp) - at(_gr2, 'sao2', _t_disp), 17.1, 1.0, " %")
+      at(_gr2, 'spo2', _t_disp) - at(_gr2, 'sao2', _t_disp), 17.8, 1.0, " %")
 print("    THE TWO READINGS BRACKET THE MEASURED VALUE, so the row is not a")
 print("    disagreement. But it RELOCATES the problem rather than excusing")
 print("    it: Gander's PaO2 68 at a pH near 7.3 implies a TRUE saturation")
@@ -1894,25 +1912,27 @@ print("  output falling. At his cohort, FiO2 0.50:")
 _b0, _b30 = _tox(_NoCoTilt, 0.50, 0.0), _tox(_NoCoTilt, 0.50, 30.0)
 _a0, _a30 = _tox(Patient, 0.50, 0.0), _tox(Patient, 0.50, 30.0)
 check("BEFORE the term: PaO2 change at 30 deg [measured +33]",
-      _b30 - _b0, 5.3, 0.3, " mmHg")
+      _b30 - _b0, 3.8, 0.3, " mmHg")
 check("WITH the term:   PaO2 change at 30 deg [measured +33]",
-      _a30 - _a0, -12.7, 0.3, " mmHg")
-check("  error against +33, BEFORE", abs(_b30 - _b0 - 33.0), 27.7, 0.3, " mmHg")
-check("  error against +33, WITH",   abs(_a30 - _a0 - 33.0), 45.7, 0.3, " mmHg")
+      _a30 - _a0, -11.8, 0.3, " mmHg")
+check("  error against +33, BEFORE", abs(_b30 - _b0 - 33.0), 29.2, 0.3, " mmHg")
+check("  error against +33, WITH",   abs(_a30 - _a0 - 33.0), 44.8, 0.3, " mmHg")
 print("    THE SIGN IS NOW WRONG AND THE DISAGREEMENT IS 65% LARGER.")
 print("    Recorded, NOT compensated. The term is not withdrawn: it is a")
 print("    measured effect the model was wrong to omit, and removing a")
 print("    correct term to conceal an incorrect absence is the worse error.")
 check("standing shunt, supine [must not move with tilt]",
-      _tco(Patient, 0.0).shunt_base_eff() * 100.0, 10.90, 0.02, " %")
-check("standing shunt at 30 deg [IT DOES NOT MOVE -- that is the defect]",
-      _tco(Patient, 30.0).shunt_base_eff() * 100.0, 10.90, 0.02, " %")
+      _tco(Patient, 0.0).shunt_base_eff() * 100.0, 13.20, 0.02, " %")
+check("standing shunt at 30 deg [IT STILL DOES NOT MOVE -- defect stands]",
+      _tco(Patient, 30.0).shunt_base_eff() * 100.0, 13.20, 0.02, " %")
 check("FRC supine at this patient", _tco(Patient, 0.0).frc_anaes(),
       585.0, 5.0, " mL")
 check("FRC at 30 deg -- it moves a great deal, and the shunt ignores it",
       _tco(Patient, 30.0).frc_anaes(), 840.0, 6.0, " mL")
 print("    THE DIAGNOSIS: THERE IS NO ROUTE FROM LUNG VOLUME TO STANDING")
-print("    SHUNT. shunt_base_eff() is a pure function of BMI, so FRC can")
+print("    SHUNT, AND PELOSI'S CURVE DID NOT FIX IT -- that ruling replaced")
+print("    one function of BMI with a better function of BMI, and BMI is")
+print("    still the key. shunt_base_eff() is a pure function of BMI, so FRC can")
 print("    rise 585 -> 840 mL and the shunt does not move one hundredth of a")
 print("    percent. Tilt therefore has no oxygenation benefit to offset its")
 print("    cardiac-output cost. Perilli's own explanation of his result is")
@@ -1954,9 +1974,9 @@ def _pel_daa(b):
 
 
 def _pel_pao2(b, shunt=None):
-    _kw = {} if shunt is None else {'shunt_obese': shunt, 'shunt_base': shunt}
-    _p = Patient(weight=b * _PH * _PH, height=_PH, age=_PAGE, hb=_PHB,
-                 tilt_deg=0.0, **_kw)
+    _cls = Patient if shunt is None else _forced_shunt(shunt)
+    _p = _cls(weight=b * _PH * _PH, height=_PH, age=_PAGE, hb=_PHB,
+              tilt_deg=0.0)
     _r = simulate(_p, [AirwayEpoch(2.0, resistance=2.0, fgo2=_PFIO2)],
                   dt=DT, feo2_start=_PALV / ac.PDRY, paco2_start=_PPACO2,
                   stop_sao2=0.0)
@@ -1977,17 +1997,23 @@ def _pel_invert(b):
 
 
 check("Pelosi: alveolar PO2 at FiO2 0.40, PaCO2 33", _PALV, 243.9, 1.0, " mmHg")
-for _b, _ours_sh, _pel_sh, _frc in ((22, 5.00, 3.47, 1886.0),
-                                    (30, 10.90, 5.96, 1237.0),
-                                    (34, 10.90, 7.28, 1039.0),
-                                    (42, 10.90, 10.37, 745.0),
-                                    (50, 10.90, 14.12, 578.0)):
+for _b, _ours_sh, _pel_sh, _frc in ((22, 3.46, 3.47, 1886.0),
+                                    (30, 5.88, 5.96, 1237.0),
+                                    (34, 7.28, 7.28, 1039.0),
+                                    (42, 10.45, 10.37, 745.0),
+                                    (50, 14.11, 14.12, 578.0)):
     _p, _o = _pel_pao2(_b)
     check(f"BMI {_b}: OUR shunt_base_eff", _p.shunt_base_eff() * 100.0,
           _ours_sh, 0.05, " %")
     check(f"BMI {_b}: shunt PELOSI IMPLIES", _pel_invert(_b), _pel_sh, 0.10, " %")
     check(f"BMI {_b}: our FRC [Pelosi helium {11.97*np.exp(-0.096*_b)*1000+460:.0f}]",
           _p.frc_anaes(), _frc, 8.0, " mL")
+print("    ADOPTED 2026-09-24 BY RULING: shunt_base_eff() now CARRIES this")
+print("    curve, as a quadratic fitted to these inverted points -- worst")
+print("    residual 0.27 percentage points, rms 0.094. The 'OUR' and 'PELOSI")
+print("    IMPLIES' columns above therefore agree to within the fit, which is")
+print("    what those rows now assert: that the fit has not drifted.")
+print("    WHAT FOLLOWS IS THE ARGUMENT THAT LED TO IT, kept as the record.")
 print("    THERE IS NO KNEE. Pelosi's implied shunt rises 1.28, 1.21, 1.32,")
 print("    1.47, 1.62, 1.79 and 1.95 points per four BMI units from 22 to 50")
 print("    -- ACCELERATING, not flattening. Our curve is flat above BMI 30.")
@@ -2012,9 +2038,7 @@ print("    helium and Reinius's CT, which is what the CT ruling predicts.")
 print("    His exponent 0.096 is NOT comparable with our k_frc_bmi 0.0417 --")
 print("    his form carries a 0.46 L offset, ours a residual-volume floor.")
 print("    The VALUES agree though the exponents do not, and values are what")
-print("    matter. RECORDED, NOT ACTED ON: refitting shunt_base to Pelosi")
-print("    contradicts a ruling made hours earlier and moves every obese")
-print("    benchmark, so it waits.")
+print("    ACTED ON THE SAME DAY, by ruling. The broken line is gone.")
 
 # ---------------------------------------------------------------------------
 print("\nVALENZA 2007 -- FRC AGAINST TILT, MEASURED, and it reverses a")
@@ -2031,10 +2055,10 @@ _VALV = 0.6 * _VPDRY - _VPACO2 / 0.8
 
 
 def _val(tilt, shunt=None):
-    # sweeps shunt_obese -- see the note in the Reinius block above
-    _kw = {} if shunt is None else {'shunt_obese': shunt}
-    return Patient(weight=_VW, height=_VH, age=_VAGE, hb=_VHB,
-                   tilt_deg=tilt, **_kw)
+    # forces an ABSOLUTE baseline shunt -- see _forced_shunt at the head
+    # of this file for why setting a parameter no longer does that
+    _cls = Patient if shunt is None else _forced_shunt(shunt)
+    return _cls(weight=_VW, height=_VH, age=_VAGE, hb=_VHB, tilt_deg=tilt)
 
 
 def _val_pao2(tilt, shunt=None):
@@ -2060,16 +2084,20 @@ check("  ... we are too SMALL by a factor of",
       84.78 / ((_vb.frc_anaes() / _vs.frc_anaes() - 1.0) * 100.0), 1.82,
       0.03, " x")
 check("Valenza: alveolar PO2 at FiO2 0.60, PaCO2 38.3", _VALV, 379.9, 1.0, " mmHg")
-print("    AFTER THE RULING. Before it these read 251.8 mmHg and +1.50 SD.")
+print("    HISTORY: 251.8 mmHg (+1.50 SD) at a flat 5% shunt, 165.6 (-0.23)")
+print("    on the broken line, 171.4 (-0.11) on Pelosi's curve. Valenza was")
+print("    NOT used to fit the curve either.")
+check("Valenza: baseline shunt on Pelosi's curve at BMI 42",
+      _vs.shunt_base_eff() * 100.0, 10.45, 0.05, " %")
 check("Valenza: our supine PaO2 [measured 177 (50)]",
-      _val_pao2(0.0), 165.6, 1.5, " mmHg")
-check("  ... in SD of 177 (50)", (_val_pao2(0.0) - 177.0) / 50.0, -0.23,
+      _val_pao2(0.0), 171.4, 1.5, " mmHg")
+check("  ... in SD of 177 (50)", (_val_pao2(0.0) - 177.0) / 50.0, -0.11,
       0.04, " SD")
 _vsh = []
 for _s in (0.05, 0.10, 0.15, 0.20):
     _v = _val_pao2(0.0, _s)
     _vsh.append((_s * 100.0, _v))
-    check(f"  shunt_obese {_s*100:4.1f}%: PaO2 at FiO2 0.60", _v,
+    check(f"  baseline shunt {_s*100:4.1f}%: PaO2 at FiO2 0.60", _v,
           {0.05: 251.8, 0.10: 177.4, 0.15: 123.7, 0.20: 94.8}[_s], 1.5, " mmHg")
 _va = np.array([x[0] for x in _vsh]); _vbv = np.array([x[1] for x in _vsh])
 check("SHUNT NEEDED to reproduce Valenza's supine PaO2 of 177",
@@ -2129,12 +2157,12 @@ _RALV = 0.5 * _RPDRY - _RPACO2 / 0.8
 
 
 def _rein(shunt=None):
-    # NOTE 2026-09-24: sweeps shunt_obese, NOT shunt_base. Since the ruling,
-    # shunt_base is the LEAN end of a BMI-dependent curve and setting it does
-    # NOTHING to a BMI 45 patient, who sits on the plateau.
-    _kw = {} if shunt is None else {'shunt_obese': shunt}
-    _p = Patient(weight=_RBMI * _RH * _RH, height=_RH, age=_RAGE, hb=_RHB,
-                 tilt_deg=0.0, **_kw)
+    # forces an ABSOLUTE baseline shunt via _forced_shunt. The shunt
+    # parameters are now Pelosi-curve coefficients, so no single parameter
+    # sets an absolute value any more.
+    _cls = Patient if shunt is None else _forced_shunt(shunt)
+    _p = _cls(weight=_RBMI * _RH * _RH, height=_RH, age=_RAGE, hb=_RHB,
+              tilt_deg=0.0)
     _r = simulate(_p, [AirwayEpoch(2.0, resistance=2.0, fgo2=0.5)],
                   dt=DT, feo2_start=_RALV / _RPDRY, paco2_start=_RPACO2,
                   stop_sao2=0.0)
@@ -2160,12 +2188,21 @@ print("  are the corrected model, not the disagreement. Before the ruling:")
 print("    PaO2 201.3, PaO2/FiO2 402.6, a-A gradient 112.7 -- against a")
 print("    measured 126 / 252 / 188. We oxygenated an anaesthetised morbidly")
 print("    obese patient about as well as Reinius's were before induction.")
+print("  AFTER PELOSI'S CURVE REPLACED THE BROKEN LINE, 2026-09-24. Reinius")
+print("  is now hit almost exactly, and WAS NOT USED TO FIT IT -- the curve")
+print("  comes from Pelosi's regression alone. History of this row:")
+print("      PaO2/FiO2  402.6  flat 5% shunt for everybody")
+print("                 266.1  broken line, 10.9% plateau")
+print("                 251.7  Pelosi's curve")
+print("                 252    MEASURED (groups 225-266)")
+check("Reinius: baseline shunt on Pelosi's curve at BMI 45",
+      _rp.shunt_base_eff() * 100.0, 11.76, 0.05, " %")
 check("Reinius: our PaO2 ventilated [measured PaO2/FiO2 252 -> PaO2 126]",
-      _rr['pao2'][0], 133.1, 1.0, " mmHg")
+      _rr['pao2'][0], 125.9, 1.0, " mmHg")
 check("Reinius: our PaO2/FiO2 [measured 252, groups 225-266]",
-      _rr['pao2'][0] / 0.5, 266.1, 2.0, "")
+      _rr['pao2'][0] / 0.5, 251.7, 2.0, "")
 check("Reinius: our a-A oxygen gradient [theirs is 188]",
-      _RALV - _rr['pao2'][0], 180.9, 1.5, " mmHg")
+      _RALV - _rr['pao2'][0], 188.1, 1.5, " mmHg")
 
 print("  AND THE AUTHORS THEMSELVES FLAG THE AWAKE VOLUME. Limitation 12:")
 print("  'during spontaneous breathing the patient did not comprehend the")
@@ -2186,7 +2223,7 @@ _sh = []
 for _s in (0.05, 0.08, 0.11, 0.14, 0.20):
     _v = _rein(_s)[1]['pao2'][0]
     _sh.append((_s * 100.0, _v))
-    check(f"  shunt_obese {_s*100:4.1f}%: PaO2/FiO2", _v / 0.5,
+    check(f"  baseline shunt {_s*100:4.1f}%: PaO2/FiO2", _v / 0.5,
           {0.05: 402.6, 0.08: 325.8, 0.11: 264.4, 0.14: 220.8,
            0.20: 168.8}[_s], 2.0, "")
 _a = np.array([x[0] for x in _sh]); _b = np.array([x[1] for x in _sh])
@@ -2243,17 +2280,17 @@ _g92 = time_to(_gr, 'spo2', 92)
 check("Gander: unwashed perfusion share (low V/Q)",
       _gp.unwashed_fraction() * 100.0, 15.79, 0.10, " %")
 check("Gander: PaO2 before apnoea [measured 243 (136)]",
-      _gr['pao2'][0], 345.5, 1.5, " mmHg")
-check("  ... in SD of 243 (136)", (_gr['pao2'][0] - 243.0) / 136.0, 0.75,
+      _gr['pao2'][0], 312.9, 1.5, " mmHg")
+check("  ... in SD of 243 (136)", (_gr['pao2'][0] - 243.0) / 136.0, 0.51,
       0.03, " SD")
 check("Gander: shunt at t=0 [implied ~20%+]",
-      _gr['shunt'][0] * 100.0, 10.90, 0.10, " %")
+      _gr['shunt'][0] * 100.0, 12.68, 0.10, " %")
 check("Gander: time to SpO2 90% [measured 127 (43), 1 SD 84-170]",
-      time_to(_gr, 'spo2', 90), 145.7, 3.0, " s")
+      time_to(_gr, 'spo2', 90), 145.0, 3.0, " s")
 check("Gander: PaO2 at SpO2 92% [measured 68 (10)]",
-      at(_gr, 'pao2', _g92), 44.2, 1.0, " mmHg")
+      at(_gr, 'pao2', _g92), 43.6, 1.0, " mmHg")
 check("Gander: PaCO2 at SpO2 92% [measured 53 (4)]",
-      at(_gr, 'paco2', _g92), 54.9, 1.0, " mmHg")
+      at(_gr, 'paco2', _g92), 54.8, 1.0, " mmHg")
 check("Gander: ERV anaesthetised [Holley: zero in morbid obesity]",
       _gp.frc_anaes() - _gp.rv_eff(), 0.0, 5.0, " mL")
 print("    THE HISTORY OF THIS ROW, because it has moved three times and each")

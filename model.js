@@ -125,16 +125,18 @@ function derive(P){
   // volume because preoxygenation happens before induction. Exactly zero
   // whenever awake FRC is at or above closing capacity. Mirrors
   // apnoea_core.py Patient.unwashed_fraction() -- see the long note there.
-  // Baseline shunt, BMI-dependent since 2026-09-24. Flat to shuntBmiLean,
-  // straight to shuntObese at shuntBmiKnee (Hedenstierna 2020's CT-measured
-  // knee), flat above. Plateau is the mean of Reinius 2009's 11.85% and
-  // Valenza 2007's 10.0%. Mirrors apnoea_core.py shunt_base_eff() -- see the
-  // long parameter block there, including what is weak about it.
-  const _sbL=P.shuntBase===undefined?0.05:P.shuntBase;
-  const _sbO=P.shuntObese===undefined?0.109:P.shuntObese;
-  const _sbA=P.shuntBmiLean===undefined?24:P.shuntBmiLean;
-  const _sbK=P.shuntBmiKnee===undefined?30:P.shuntBmiKnee;
-  const shuntBaseEff=_sbL+(_sbO-_sbL)*Math.min(1,Math.max(0,(bmi-_sbA)/Math.max(_sbK-_sbA,1e-9)));
+  // Baseline shunt against BMI: PELOSI 1998's measured curve, fitted as a
+  // quadratic to his oxygenation regression inverted through the model.
+  // Replaces the broken line with a knee at BMI 30 that Pelosi showed does
+  // not exist. Floor is bronchial/thebesian drainage; ceiling is a guard.
+  // Mirrors apnoea_core.py shunt_base_eff() -- see the parameter block there
+  // for the four things wrong with it.
+  const _sp2=P.shuntP2===undefined?3.86627e-5:P.shuntP2;
+  const _sp1=P.shuntP1===undefined?1.0209344e-3:P.shuntP1;
+  const _sp0=P.shuntP0===undefined?-6.6007334e-3:P.shuntP0;
+  const _sfl=P.shuntFloor===undefined?0.02:P.shuntFloor;
+  const _scl=P.shuntCeiling===undefined?0.40:P.shuntCeiling;
+  const shuntBaseEff=Math.min(_scl,Math.max(_sfl,_sp2*bmi*bmi+_sp1*bmi+_sp0));
   const _xu=Math.max(0,cc-frcAwake)/Math.max(frcAwake,100);
   const MAXC=P.maxClosed===undefined?0.25:P.maxClosed;
   const CCK=P.ccK===undefined?1.5:P.ccK;
