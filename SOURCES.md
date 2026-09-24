@@ -533,6 +533,144 @@ quietly drawing a difference again.
 
 ---
 
+### Reinius 2009 — READ IN FULL 2026-09-24, and it answers the branch's question
+
+**Reinius H, Jonsson L, Gustafsson S, Sundbom M, Duvernoy O, Pelosi P,
+Hedenstierna G, Freden F.** Prevention of atelectasis in morbidly obese
+patients during general anesthesia and paralysis: a computerized tomography
+study. *Anesthesiology* 2009;111(5):979-87. PMID 19809292. **Full text read
+from the page 2026-09-24.** Published data; nothing here is under the Toner
+authorisation.
+
+n=30, BMI **45 (4)**, aged 25-54, scheduled for gastric bypass. Preoxygenation
+**5 min of 100% oxygen with a tight seal mask**. Propofol / fentanyl /
+rocuronium, then volume-cycled ventilation at **FiO2 0.5, ZEEP, supine**,
+10 mL/kg predicted body weight, rate set to keep end-tidal CO2 34-41 mmHg.
+Spiral CT at end-expiration in 23 of the 30.
+
+#### Everything it measures, and what we give
+
+| | measured | ours | |
+|---|---|---|---|
+| end-expiratory lung volume, anaesthetised | **697 (157) mL** | 668 | −0.18 SD |
+| end-expiratory lung volume, awake | **1387 (581) mL** | 891 | −0.85 SD |
+| normally aerated, awake / anaesthetised | 71 (11) / **50 (12) %** | — | |
+| poorly aerated, awake / anaesthetised | **28 (12)** / **39 (9) %** | 14.8% | see below |
+| nonaerated, awake / anaesthetised | 1 (0.5) / **11 (6) %** | 5.0% | see below |
+| PaO2/FiO2 awake, room air | 410–432 | — | |
+| PaO2/FiO2 anaesthetised, FiO2 0.5 | **252 pooled** (225–266) | **403** | |
+| PaCO2 anaesthetised | 33–36 | | |
+
+Density bands, stated in the paper: −1000 to −900 HU overaerated, −900 to −500
+normally aerated, **−500 to −100 poorly aerated**, −100 to +100 nonaerated.
+
+**The awake lung volume is an independent check and it passes.** The
+anaesthetised 697 mL is not — `k_rv_bmi` was anchored on it, so agreement
+there is circular. The **awake** 1387 (581) mL is not circular: it falls out of
+`frc_ref` and `k_frc_bmi`, neither of which has ever seen this paper, and we
+land at −0.85 SD.
+
+#### A CORRECTION TO A COMPARISON MADE EARLIER THE SAME DAY
+
+The first pass at this compared our 14.8% unwashed share against Reinius's
+**anaesthetised** poorly-aerated 39%, and concluded the model was 2.6x too
+small. **That is the wrong row.** The unwashed fraction is the share whose
+airway was shut *during preoxygenation*, and preoxygenation happens **awake**.
+The right comparator is the **awake** figure, **28 (12) %**, and against that
+we are at **−1.10 SD** — low, but not obviously wrong.
+
+And 28% is itself an upper bound, because airway closure in the awake obese is
+**tidal** (Milic-Emili's term): units open and shut within each breath, so they
+partly denitrogenate rather than not at all. A model value around half the
+awake poorly-aerated fraction is what tidal closure would predict. The
+unwashed fraction may be approximately right.
+
+#### THE REAL FINDING: THE MODEL IS TOO GOOD ON A VENTILATOR
+
+At FiO2 0.5, ventilated, our BMI 45 patient gives **PaO2/FiO2 403** against a
+measured **252**. Our alveolar-to-arterial oxygen gradient is 113 mmHg where
+theirs is 188.
+
+**403 is close to what Reinius measured in these patients while they were
+AWAKE** (410–432). So the model's anaesthetised morbidly obese patient
+oxygenates about as well as a real one does before induction.
+
+**And the denitrogenation mechanism cannot be the explanation.** These patients
+are on a ventilator: every unit gets fresh gas every breath, nothing stays
+un-denitrogenated, and `unwashed_fraction()` is irrelevant to this number.
+Whatever closes this gap is a **standing** gas-exchange defect, present on a
+ventilator, not something specific to apnoea.
+
+#### AND TWO INDEPENDENT ROUTES PIN ITS SIZE AT THE SAME PLACE
+
+Inverting the blood gas — what shunt reproduces PaO2/FiO2 252 at an alveolar
+PO2 of 314 mmHg?
+
+| shunt | PaO2 | PaO2/FiO2 |
+|---|---|---|
+| 5.0% (shipped) | 201.3 | 403 |
+| 8.0% | 162.9 | 326 |
+| **11.0%** | 132.2 | **264** |
+| 14.0% | 110.4 | 221 |
+| 20.0% | 84.4 | 169 |
+
+**PaO2/FiO2 252 needs a shunt of 11.9%.** Reinius **measured** the nonaerated
+lung volume at **11 (6) %**.
+
+**11.9% inferred from arterial blood, 11% measured by computed tomography, in
+the same patients.** Those are different quantities — a perfusion fraction and
+a volume fraction — and they are not obliged to agree, so the agreement to
+0.15 SD is worth more than either alone.
+
+We ship **5.0%**.
+
+#### WHY THIS IS NOT A CONTRADICTION OF HEDENSTIERNA 2020
+
+Hedenstierna 2020 (n=243) established that atelectasis shows **no further
+increase above BMI 30**, and on 2026-09-23 this file recorded that our shunt
+ceiling is therefore correct and a previous diagnosis of a structural defect
+was wrong. **That retraction stands.** Hedenstierna constrains the **shape** —
+flat above BMI 30 — and says nothing about the **height** of the flat part.
+Reinius constrains the height, at BMI 45, and says 11-12%.
+
+A flat ceiling at the wrong height is consistent with both papers. Nothing
+before today measured the height in an obese cohort.
+
+#### AND THE MODEL HAS NO BMI DEPENDENCE OF BASELINE SHUNT AT ALL
+
+`shunt_base` is a flat 0.05 for every patient. At t=0 on a patent airway the
+total shunt IS `shunt_base`, so **a lean patient and a BMI 45 patient are given
+the same 5%.** That is the defect this branch was forked to find, and it was
+invisible until a measured obese shunt existed to compare against.
+
+The 5% is not wrong where it came from: Tokics 1996 Table 3 measures inert-gas
+shunt under anaesthesia at **5.0 (1.3) %**, and `handover_numbers.py` checks
+that and passes. **But Tokics's patients were not morbidly obese.** Two
+anchors, two populations:
+
+| population | shunt | source |
+|---|---|---|
+| anaesthetised, normal weight | 5.0 (1.3) % | Tokics 1996, inert gas |
+| anaesthetised, BMI 45 | **11 (6) % measured / 11.9% inferred** | Reinius 2009 |
+
+That is the raw material for a BMI-dependent `shunt_base` anchored on two
+measurements rather than fitted to a benchmark — the same footing as
+`k_rv_bmi`. **NOT DONE. It is a parameter change that will move Heard, the
+tilt rows, Gander and the buccal numbers, and it is recorded here for a ruling
+rather than made.**
+
+#### What this does NOT settle
+
+The three routes to the low-V/Q compartment's size no longer agree once the
+right comparator is used. Inverting **Gander's** apnoea data wanted an unwashed
+share of 36-44%; Reinius's **awake** poorly-aerated fraction is 28 (12) % and
+our 14.8% sits inside it. If the standing shunt is really 11-12% rather than
+5%, part of what the Gander inversion was asking the unwashed fraction to do
+belongs to the shunt instead. **The two cannot be settled separately, and
+raising one without the other would be fitting.**
+
+---
+
 ### Three rulings, 2026-09-24
 
 **1. The CO2 defect is ONE defect.** A. Heard. The model is worked from here

@@ -1846,6 +1846,94 @@ print("  in this model, once through FRC and once through denitrogenation,")
 print("  and whether a real lung gives it both is an open question.")
 
 # ---------------------------------------------------------------------------
+print("\nREINIUS 2009 READ IN FULL -- the obese shunt, measured two ways")
+print("  n=30, BMI 45 (4), spiral CT in 23. Preoxygenated 5 min 100% O2 with")
+print("  a TIGHT SEAL MASK, then ventilated at FiO2 0.5, ZEEP, supine.")
+print("  THE MODEL IS TOO GOOD ON A VENTILATOR, and the denitrogenation")
+print("  mechanism cannot be the explanation: on a ventilator every unit gets")
+print("  fresh gas every breath, so unwashed_fraction() is irrelevant here.")
+
+_RH, _RBMI, _RAGE, _RHB = 1.66, 45.0, 37.0, 14.0
+_RPACO2 = 34.0
+_RPDRY = ac.PDRY
+_RALV = 0.5 * _RPDRY - _RPACO2 / 0.8
+
+
+def _rein(shunt=None):
+    _kw = {} if shunt is None else {'shunt_base': shunt}
+    _p = Patient(weight=_RBMI * _RH * _RH, height=_RH, age=_RAGE, hb=_RHB,
+                 tilt_deg=0.0, **_kw)
+    _r = simulate(_p, [AirwayEpoch(2.0, resistance=2.0, fgo2=0.5)],
+                  dt=DT, feo2_start=_RALV / _RPDRY, paco2_start=_RPACO2,
+                  stop_sao2=0.0)
+    return _p, _r
+
+
+_rp, _rr = _rein()
+check("Reinius: FRC anaesthetised [measured EELV 697 (157)]",
+      _rp.frc_anaes(), 668.0, 5.0, " mL")
+check("  ... in SD of 697 (157). NOT independent: k_rv_bmi was anchored here",
+      (_rp.frc_anaes() - 697.0) / 157.0, -0.18, 0.05, " SD")
+check("Reinius: FRC AWAKE [measured 1387 (581)] -- THIS ONE IS INDEPENDENT",
+      _rp.frc_awake(), 891.0, 8.0, " mL")
+check("  ... in SD of 1387 (581)",
+      (_rp.frc_awake() - 1387.0) / 581.0, -0.85, 0.03, " SD")
+check("Reinius: unwashed share [awake poorly aerated 28 (12) %]",
+      _rp.unwashed_fraction() * 100.0, 14.79, 0.05, " %")
+check("  ... in SD of the AWAKE 28 (12), which is the right comparator",
+      (_rp.unwashed_fraction() * 100.0 - 28.0) / 12.0, -1.10, 0.03, " SD")
+check("Reinius: alveolar PO2 at FiO2 0.5, PaCO2 34", _RALV, 314.0, 1.0, " mmHg")
+check("Reinius: our PaO2 ventilated [measured PaO2/FiO2 252 -> PaO2 126]",
+      _rr['pao2'][0], 201.3, 1.0, " mmHg")
+check("Reinius: our PaO2/FiO2 [measured 252, groups 225-266]",
+      _rr['pao2'][0] / 0.5, 402.6, 2.0, "")
+check("  ... their AWAKE PaO2/FiO2 was 410-432, so we oxygenate an",
+      _rr['pao2'][0] / 0.5, 402.6, 2.0, "  <- anaesthetised patient like an awake one")
+check("Reinius: our a-A oxygen gradient [theirs is 188]",
+      _RALV - _rr['pao2'][0], 112.7, 1.0, " mmHg")
+
+print("  INVERTING THE BLOOD GAS FOR SHUNT. What shunt_base reproduces their")
+print("  PaO2/FiO2 of 252 at an alveolar PO2 of 314?")
+_sh = []
+for _s in (0.05, 0.08, 0.11, 0.14, 0.20):
+    _v = _rein(_s)[1]['pao2'][0]
+    _sh.append((_s * 100.0, _v))
+    check(f"  shunt_base {_s*100:4.1f}%: PaO2/FiO2", _v / 0.5,
+          {0.05: 402.6, 0.08: 325.8, 0.11: 264.4, 0.14: 220.8,
+           0.20: 168.8}[_s], 2.0, "")
+_a = np.array([x[0] for x in _sh]); _b = np.array([x[1] for x in _sh])
+_need = float(np.interp(126.0, _b[::-1], _a[::-1]))
+check("SHUNT NEEDED to reproduce Reinius's arterial oxygen",
+      _need, 11.9, 0.3, " %")
+check("  ... against their MEASURED nonaerated lung volume of 11 (6) %",
+      (_need - 11.0) / 6.0, 0.15, 0.06, " SD")
+print("    11.9% INFERRED FROM ARTERIAL BLOOD, 11% MEASURED BY CT, in the")
+print("    same patients. A perfusion fraction and a volume fraction are not")
+print("    obliged to agree, so the agreement is worth more than either.")
+print("    WE SHIP 5.0%, AND shunt_base HAS NO BMI DEPENDENCE AT ALL -- a")
+print("    lean patient and a BMI 45 patient are given the same 5%. That is")
+print("    the defect this branch was forked to find.")
+print("    THE 5% IS NOT WRONG WHERE IT CAME FROM. Tokics 1996 Table 3")
+print("    measures 5.0 (1.3) % by inert gas under anaesthesia, and the row")
+print("    above checks it and passes. TOKICS'S PATIENTS WERE NOT OBESE.")
+print("    NO CONTRADICTION WITH HEDENSTIERNA 2020, whose finding is that")
+print("    atelectasis does not increase FURTHER above BMI 30. That")
+print("    constrains the SHAPE of the ceiling, not its HEIGHT. A flat")
+print("    ceiling at the wrong height satisfies both papers, and nothing")
+print("    before today measured the height in an obese cohort.")
+print("    NOT ACTED ON. A BMI-dependent shunt_base anchored on Tokics at")
+print("    normal weight and Reinius at BMI 45 would be two measurements,")
+print("    not a fit -- the same footing as k_rv_bmi -- but it moves Heard,")
+print("    the tilt rows, Gander and the buccal numbers, and it is recorded")
+print("    for a ruling rather than made.")
+print("    AND IT CANNOT BE SETTLED SEPARATELY FROM THE LOW-V/Q FRACTION.")
+print("    Inverting GANDER wanted an unwashed share of 36-44%; Reinius's")
+print("    AWAKE poorly-aerated fraction is 28 (12) % and our 14.8% sits")
+print("    inside it. If the standing shunt is really 11-12%, part of what")
+print("    the Gander inversion asked of the unwashed fraction belongs to")
+print("    the shunt instead. Raising one without the other is fitting.")
+
+# ---------------------------------------------------------------------------
 print("\nGANDER 2005 -- the morbidly obese benchmark, CONFIGURATION WRITTEN DOWN")
 print("  SOURCES.md has carried this table as typed-in markdown since")
 print("  2026-09-23 with no script behind it, which is exactly how the Ellis")
