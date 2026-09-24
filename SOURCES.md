@@ -533,6 +533,124 @@ quietly drawing a difference again.
 
 ---
 
+### Valenza 2007 — READ IN FULL 2026-09-24, and it REVERSES this morning's tilt conclusion
+
+**Valenza F, Vagginelli F, Tiby A, Francesconi S, Ronzoni G, Guglielmi M,
+Zappa M, Lattuada E, Gattinoni L.** Effects of the beach chair position,
+positive end-expiratory pressure, and pneumoperitoneum on respiratory function
+in morbidly obese patients during anesthesia and paralysis. *Anesthesiology*
+2007;107(5):725-32. **Full text read from the page 2026-09-24.** Obtained
+because Reinius 2009 cites it; it is the paper this file said was needed and
+did not know existed.
+
+n=20 (5 men, 15 women), aged 37 (10), **BMI 42 (5)**, laparoscopic gastric
+banding. Anaesthetised, **paralysed**, volume-control ventilation at
+**FiO2 0.60**, tidal volume 10.5 (1) mL/kg ideal body weight, rate 11 (1).
+**"Beach chair" is reverse Trendelenburg 30° head-up with the legs lifted to
+the abdomen.** End-expiratory lung volume by **closed-circuit helium
+dilution**. Measurements at ZEEP and at 10 cmH2O PEEP, with and without
+pneumoperitoneum; only the no-pneumoperitoneum, ZEEP rows are used here.
+
+#### THE MEASUREMENT THE TILT ROWS NEEDED
+
+| | supine ZEEP | beach chair ZEEP |
+|---|---|---|
+| end-expiratory lung volume | **0.46 (0.1) L** | **0.85 (0.3) L**, P < 0.001 |
+| PaO2 at FiO2 0.60 | 177 (50) | 203 (51) |
+| PaCO2 | 38.3 (5.2) | 38.9 (5.2) |
+| respiratory system elastance, cmH2O/L | 21.71 (5.26) | 18.05 (3.60) |
+| intra-abdominal pressure, cmH2O | 17.87 (5.45) | **23.92 (4.35)** |
+
+**Tilt gain in lung volume, measured: +84.8%.**
+
+#### AND OUR TILT GAIN IS TOO SMALL, NOT TOO LARGE
+
+This morning this file recorded that the tilt overshoot lives in
+`tilt_gain_lean` / `tilt_gain_bmi` and that what was needed was "a measurement
+of FRC against tilt angle". **That measurement now exists and it says the
+opposite of what was expected.**
+
+| | ours | measured |
+|---|---|---|
+| FRC supine, BMI 42 | 751 mL | 460 (100) |
+| FRC at 30° head-up | 1101 mL | 850 (300) |
+| **tilt gain** | **+46.6%** | **+84.8%** |
+
+Our tilt gain is **1.82x too small**. Correcting it upward — which is what the
+only direct measurement of this quantity demands — would make the apnoea-time
+tilt rows **worse**, because those already overshoot (BMI 35 at 30°: ours
+51.1% against a measured ~+30%).
+
+**So the defect is NOT in `tilt_gain_*`. It is in the conversion of FRC into
+apnoea time.** The model takes too little extra lung volume from tilt and
+turns it into too much extra apnoea time. That is a far more useful statement
+than the one it replaces, and it could not have been made without a
+measurement of the intermediate quantity.
+
+#### AND THE PARAMETER'S STATED MECHANISM IS CONTRADICTED
+
+`apnoea_core.py` says of tilt: *"Head-up lifts the abdominal contents off the
+diaphragm, so it raises FRC and the gain is larger the more abdomen there is
+to lift."* In Valenza's beach chair the legs are lifted to the abdomen and
+**intra-abdominal pressure RISES, 17.87 to 23.92 cmH2O**, while lung volume
+nearly doubles. Whatever raises FRC here, it is not a fall in abdominal
+pressure. The comment describes a mechanism the data does not support; the
+parameter itself is an empirical gain and is unaffected, but the explanation
+attached to it should not be quoted.
+
+#### THE ABSOLUTE VOLUMES DISAGREE BETWEEN THE TWO PAPERS, AND BY METHOD
+
+| | BMI | method | supine anaesthetised EELV |
+|---|---|---|---|
+| Valenza 2007 | 42 | closed-circuit helium | **460 (100) mL** |
+| Reinius 2009 | 45 | spiral CT | **697 (157) mL** |
+| ours | 42 / 45 | — | 751 / 668 mL |
+
+**The two measurements move the wrong way with BMI** — the heavier cohort has
+the larger lung — so at least one is method-bound. Helium dilution measures
+only gas that communicates with the airway; CT measures all of it, trapped
+included, and an obese anaesthetised lung has exactly the trapped,
+poorly-communicating regions that separate the two. Valenza checked this
+against a release technique in 10 patients (R² 0.793) and called trapping
+negligible, **but their own intercept is 0.098 L — 21% of a 460 mL mean.**
+
+We sit −0.18 SD from Reinius and **+2.91 SD from Valenza**. Our BMI slope
+between the two is in the right direction while theirs is not. **Neither paper
+can be used on its own to re-anchor FRC**, and this disagreement should be
+resolved before `frc_ref` or `k_frc_bmi` is touched.
+
+#### A THIRD INDEPENDENT MEASUREMENT OF THE OBESE SHUNT, AND IT AGREES
+
+Inverting Valenza's supine oxygenation — PaO2 177 at an alveolar PO2 of
+379.9 mmHg, FiO2 0.60 — needs a shunt of **10.0%**.
+
+| route | study | shunt |
+|---|---|---|
+| blood gas inverted, FiO2 0.50 | Reinius 2009, BMI 45 | **11.85%** |
+| nonaerated lung volume, CT | Reinius 2009, BMI 45 | **11 (6) %** |
+| blood gas inverted, FiO2 0.60 | Valenza 2007, BMI 42 | **10.0%** |
+| **shipped** | | **5.0%** |
+
+Two centres, two years, two inspired oxygen fractions, two BMIs, one
+anatomical route and two physiological ones. **10–12%.** Our oxygenation at
+Valenza's conditions is PaO2 251.8 against a measured 177 (50) — **+1.50 SD** —
+and PaO2/FiO2 420 against 295, the same direction and size as the Reinius
+disagreement.
+
+#### One caution on reading the shunt as atelectasis
+
+Valenza found **no recruitable lung**: alveolar recruitment 0.04 (0.1) L
+supine and 0.07 (0.2) L beach chair, and their Discussion attributes the low
+supine volume to *"a prevalent decrease of the size of the alveoli rather than
+atelectasis"*. Yet their blood gas needs a 10% shunt. The two are reconcilable
+— their P-V method measures what a recruitment manoeuvre can **open**, not
+what is closed, and they performed frequent recruitment manoeuvres before
+measuring — but it is a reason not to equate the inferred shunt with
+atelectasis. Reinius's separation of **poorly aerated (39%)** from
+**nonaerated (11%)** says the same thing from the other side.
+
+---
+
 ### Reinius 2009 — READ IN FULL 2026-09-24, and it answers the branch's question
 
 **Reinius H, Jonsson L, Gustafsson S, Sundbom M, Duvernoy O, Pelosi P,

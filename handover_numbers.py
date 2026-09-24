@@ -1846,6 +1846,102 @@ print("  in this model, once through FRC and once through denitrogenation,")
 print("  and whether a real lung gives it both is an open question.")
 
 # ---------------------------------------------------------------------------
+print("\nVALENZA 2007 -- FRC AGAINST TILT, MEASURED, and it reverses a")
+print("  conclusion recorded earlier the same day. n=20, BMI 42 (5),")
+print("  anaesthetised and PARALYSED, ventilated at FiO2 0.60. Beach chair =")
+print("  reverse Trendelenburg 30 deg head-up, legs lifted to the abdomen.")
+print("  End-expiratory lung volume by closed-circuit helium dilution.")
+
+_VH, _VBMI, _VAGE, _VHB = 1.65, 42.0, 37.0, 14.0
+_VW = _VBMI * _VH * _VH
+_VPACO2 = 38.3
+_VPDRY = ac.PDRY
+_VALV = 0.6 * _VPDRY - _VPACO2 / 0.8
+
+
+def _val(tilt, shunt=None):
+    _kw = {} if shunt is None else {'shunt_base': shunt}
+    return Patient(weight=_VW, height=_VH, age=_VAGE, hb=_VHB,
+                   tilt_deg=tilt, **_kw)
+
+
+def _val_pao2(tilt, shunt=None):
+    _p = _val(tilt, shunt)
+    _r = simulate(_p, [AirwayEpoch(2.0, resistance=2.0, fgo2=0.6)],
+                  dt=DT, feo2_start=_VALV / _VPDRY, paco2_start=_VPACO2,
+                  stop_sao2=0.0)
+    return _r['pao2'][0]
+
+
+_vs, _vb = _val(0.0), _val(30.0)
+check("Valenza: FRC supine [measured 460 (100) by HELIUM]",
+      _vs.frc_anaes(), 751.0, 5.0, " mL")
+check("  ... in SD of 460 (100)", (_vs.frc_anaes() - 460.0) / 100.0,
+      2.91, 0.06, " SD")
+check("Valenza: FRC at 30 deg head-up [measured 850 (300)]",
+      _vb.frc_anaes(), 1101.0, 6.0, " mL")
+check("Valenza: OUR tilt gain in FRC",
+      (_vb.frc_anaes() / _vs.frc_anaes() - 1.0) * 100.0, 46.6, 0.5, " %")
+check("Valenza: MEASURED tilt gain in FRC (0.46 -> 0.85 L)",
+      (0.85 / 0.46 - 1.0) * 100.0, 84.8, 0.2, " %")
+check("  ... we are too SMALL by a factor of",
+      84.78 / ((_vb.frc_anaes() / _vs.frc_anaes() - 1.0) * 100.0), 1.82,
+      0.03, " x")
+check("Valenza: alveolar PO2 at FiO2 0.60, PaCO2 38.3", _VALV, 379.9, 1.0, " mmHg")
+check("Valenza: our supine PaO2 [measured 177 (50)]",
+      _val_pao2(0.0), 251.8, 1.5, " mmHg")
+check("  ... in SD of 177 (50)", (_val_pao2(0.0) - 177.0) / 50.0, 1.50,
+      0.05, " SD")
+_vsh = []
+for _s in (0.05, 0.10, 0.15, 0.20):
+    _v = _val_pao2(0.0, _s)
+    _vsh.append((_s * 100.0, _v))
+    check(f"  shunt_base {_s*100:4.1f}%: PaO2 at FiO2 0.60", _v,
+          {0.05: 251.8, 0.10: 177.4, 0.15: 123.7, 0.20: 94.8}[_s], 1.5, " mmHg")
+_va = np.array([x[0] for x in _vsh]); _vbv = np.array([x[1] for x in _vsh])
+check("SHUNT NEEDED to reproduce Valenza's supine PaO2 of 177",
+      float(np.interp(177.0, _vbv[::-1], _va[::-1])), 10.0, 0.3, " %")
+
+print("    THE TILT CONCLUSION OF THIS MORNING IS REVERSED. It read that the")
+print("    tilt overshoot lives in tilt_gain_lean / tilt_gain_bmi and that")
+print("    what was needed was a measurement of FRC against tilt angle. The")
+print("    measurement now exists and says OUR TILT GAIN IS 1.8x TOO SMALL.")
+print("    Correcting it upward -- which is what the only direct measurement")
+print("    of this quantity demands -- would make the apnoea-time tilt rows")
+print("    WORSE, since they already overshoot. So the defect is NOT in")
+print("    tilt_gain_*; it is in the CONVERSION OF FRC INTO APNOEA TIME. The")
+print("    model takes too little extra volume from tilt and turns it into")
+print("    too much extra time.")
+print("    AND THE PARAMETER'S STATED MECHANISM IS CONTRADICTED. The comment")
+print("    says head-up 'lifts the abdominal contents off the diaphragm'. In")
+print("    Valenza's beach chair the legs are lifted TO the abdomen and")
+print("    intra-abdominal pressure RISES, 17.87 -> 23.92 cmH2O, while lung")
+print("    volume nearly doubles. The gain is empirical and stands; the")
+print("    explanation attached to it should not be quoted.")
+print("    THE TWO GOLD-STANDARD VOLUMES DISAGREE, AND BY METHOD. Valenza")
+print("    460 (100) at BMI 42 by HELIUM, Reinius 697 (157) at BMI 45 by CT")
+print("    -- the heavier cohort has the LARGER lung, which is backwards.")
+print("    Helium sees only communicating gas; CT sees trapped gas too, and")
+print("    an obese anaesthetised lung is where they differ most. Valenza's")
+print("    own release-technique intercept is 0.098 L, 21% of their mean.")
+print("    We are -0.18 SD from Reinius and +2.91 SD from Valenza, with our")
+print("    BMI slope in the right direction and theirs not. NEITHER PAPER")
+print("    CAN RE-ANCHOR FRC ALONE; resolve them first.")
+print("    A THIRD INDEPENDENT SHUNT MEASUREMENT, AND IT AGREES:")
+print("      Reinius blood gas, FiO2 0.50, BMI 45   11.85 %")
+print("      Reinius nonaerated volume by CT        11 (6) %")
+print("      Valenza blood gas, FiO2 0.60, BMI 42   10.0  %")
+print("      shipped                                 5.0  %")
+print("    Two centres, two years, two inspired fractions, two BMIs, one")
+print("    anatomical route and two physiological ones. 10-12%.")
+print("    ONE CAUTION: Valenza found NO RECRUITABLE LUNG (0.04 (0.1) L")
+print("    supine) and attributes the low volume to 'a prevalent decrease of")
+print("    the size of the alveoli rather than atelectasis', yet their blood")
+print("    gas still needs 10%. Their method measures what a recruitment")
+print("    manoeuvre can OPEN, not what is closed. Do not equate the")
+print("    inferred shunt with atelectasis.")
+
+# ---------------------------------------------------------------------------
 print("\nREINIUS 2009 READ IN FULL -- the obese shunt, measured two ways")
 print("  n=30, BMI 45 (4), spiral CT in 23. Preoxygenated 5 min 100% O2 with")
 print("  a TIGHT SEAL MASK, then ventilated at FiO2 0.5, ZEEP, supine.")
