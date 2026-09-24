@@ -300,7 +300,50 @@ class Patient:
                                  # systolic pressure, by ruling: see
                                  # SBP_SUPINE above for why, and why it is
                                  # deliberately far enough out to be inert.
-    shunt_base: float = 0.05
+    # BASELINE SHUNT, BMI-DEPENDENT SINCE 2026-09-24. Ruled by A. Heard on
+    # three measurements, with computed tomography taken as the standard for
+    # lung aeration (also his ruling, the same day).
+    #
+    # WHAT WAS WRONG. shunt_base was a flat 0.05 for every patient, and at
+    # t=0 on a patent airway the total shunt IS shunt_base -- the collapse
+    # machinery only acts during apnoea. So a BMI 45 patient and a BMI 22
+    # patient were given IDENTICAL gas exchange. That is the defect the
+    # obese-shunt branch was forked to find, and it was invisible until a
+    # measured obese shunt existed to compare against.
+    #
+    # THE 0.05 IS NOT WRONG WHERE IT CAME FROM. Tokics 1996 Table 3 measures
+    # inert-gas shunt under anaesthesia at 5.0 (1.3) %. TOKICS'S PATIENTS
+    # WERE NOT OBESE.
+    #
+    # THE OBESE ANCHOR, three routes, two centres, two years:
+    #     Reinius 2009, BMI 45, blood gas inverted at FiO2 0.50   11.85 %
+    #     Reinius 2009, BMI 45, nonaerated lung volume by CT      11 (6) %
+    #     Valenza 2007, BMI 42, blood gas inverted at FiO2 0.60   10.0  %
+    # The plateau below is the mean of the two physiological inversions,
+    # 10.9%, which falls inside the CT measurement's 11 (6) %. Combining two
+    # measurements of one quantity is not a fit; no benchmark entered it.
+    #
+    # THE SHAPE IS HEDENSTIERNA'S, AND IT IS A CT FINDING. Hedenstierna 2020
+    # (n=243, CT, BMI 18-52) reports that atelectasis shows NO FURTHER
+    # INCREASE above BMI 30. So the rise happens below 30 and the curve is
+    # flat above it. Reinius at BMI 45 and Valenza at BMI 42 are both on the
+    # plateau, which is why they agree within their scatter.
+    #
+    # WHAT IS WEAK HERE, stated so it can be attacked:
+    #   * shunt_bmi_lean is where the Tokics anchor is placed, and TOKICS HAS
+    #     NOT BEEN READ AT SOURCE -- his cohort's BMI is not in this
+    #     repository. 24 is an assumption, not a measurement, and it sets how
+    #     steep the rise is. See SOURCES.md's wanted list.
+    #   * the knee at 30 comes from Hedenstierna's ATELECTASIS AREA, not from
+    #     a shunt measurement. Shunt and atelectatic area are different
+    #     quantities and are not obliged to have the same knee.
+    #   * nothing measures the shunt BETWEEN BMI 25 and 40. The straight line
+    #     joining the two anchors is the simplest curve through them, not a
+    #     measured shape.
+    shunt_base: float = 0.05     # at or below shunt_bmi_lean. Tokics 1996
+    shunt_bmi_lean: float = 24.0 # BMI the Tokics anchor is placed at. ASSUMED
+    shunt_bmi_knee: float = 30.0 # Hedenstierna 2020: flat above this
+    shunt_obese: float = 0.109   # plateau. Reinius 11.85 / Valenza 10.0
 
     # --- closing capacity (PLACEHOLDER REGRESSION) -------------------------
     cc_at_20: float = 1800.0
@@ -752,6 +795,18 @@ class Patient:
     # difference is that it is evaluated at the AWAKE lung volume, because
     # preoxygenation happens before induction. Nothing here was chosen by
     # looking at a benchmark.
+    def shunt_base_eff(self):
+        """Baseline shunt for THIS patient. See the parameter block above.
+
+        Flat at shunt_base up to shunt_bmi_lean, straight to shunt_obese at
+        shunt_bmi_knee, flat thereafter. The plateau is where Reinius 2009
+        and Valenza 2007 both measured; the knee is Hedenstierna 2020's.
+        """
+        b = self.bmi()
+        span = max(self.shunt_bmi_knee - self.shunt_bmi_lean, 1e-9)
+        f = float(np.clip((b - self.shunt_bmi_lean) / span, 0.0, 1.0))
+        return self.shunt_base + (self.shunt_obese - self.shunt_base) * f
+
     def unwashed_fraction(self):
         """Perfusion share whose airway was shut throughout preoxygenation.
 
@@ -953,7 +1008,7 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
     # directly - the same algebra as plateau_sao2(). Initialising at the
     # alveolar value instead makes the first half-minute falsely optimistic
     # and hides the shunt from the starting PaO2 altogether.
-    _f = min(pt.shunt_base, 0.9)
+    _f = min(pt.shunt_base_eff(), 0.9)
     cao2_0 = cc_o2_0 - (_f / (1.0 - _f)) * vo2 / (co * 10.0)
     cvo2_0 = cao2_0 - vo2 / (co * 10.0)
     cvco2_0 = caco2_0 + vco2_metab / (co * 10.0)
@@ -1060,7 +1115,7 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
             f_eff = f0 / (f0 + k_pvr * (1.0 - f0))
         else:
             f_eff = f0
-        shunt = float(np.clip(pt.shunt_base + f_eff, 0.0, 0.95))
+        shunt = float(np.clip(pt.shunt_base_eff() + f_eff, 0.0, 0.95))
 
         # ---- heart rate, then cardiac output ------------------------------
         # Stroke volume is held constant, so these two are not independent:

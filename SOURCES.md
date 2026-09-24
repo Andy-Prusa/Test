@@ -533,6 +533,95 @@ quietly drawing a difference again.
 
 ---
 
+### Perilli 2003 — READ IN FULL 2026-09-24, and it supplies the missing mechanism
+
+**Perilli V, Sollazzi L, Modesti C, Annetta MG, Sacco T, Bocci MG, Tacchino RM,
+Proietti R.** Comparison of positive end-expiratory pressure with reverse
+Trendelenburg position in morbidly obese patients undergoing bariatric
+surgery: effects on hemodynamics and pulmonary gas exchange. *Obes Surg*
+2003;13(4):605-9. **Full text read from the page 2026-09-24.**
+
+n=20, **16 men / 4 women** (the reverse of Reinius's 7/23 and Valenza's 5/15),
+age 36.8 (10.1), weight 129.3 (26.5) kg, height 161 (12.2) cm, **BMI 48.1
+(8.2)**. Open laparotomic biliopancreatic diversion. Thiopental/fentanyl,
+**suxamethonium 1 mg/kg**, sevoflurane in O2-N2O at a stated **FiO2 0.50**,
+cis-atracurium, volume control 8-12 mL/kg IBW, plateau near 25 cmH2O, ZEEP.
+Cardiac output by **oesophageal echo-Doppler**.
+
+Five phases; the tilt comparison is **phase 4 against phase 5**, which differ
+only in position (both have subcostal retractors, both without PEEP):
+
+| | phase 4, supine | phase 5, **30° head-up** |
+|---|---|---|
+| PaO2 | 146 (38) | **179 (62)** |
+| P(A−a)O2 | 233 (25) | **184 (84)** |
+| total respiratory compliance | 32 (4) | **40 (9.3)** |
+| **cardiac output, L/min** | **4.9 (0.9)** | **4.0 (0.8)**, P<0.05 |
+
+#### THE FINDING: TILT COSTS CARDIAC OUTPUT, AND THE MODEL DOES NOT PAY IT
+
+`tilt_factor()` in `apnoea_core.py` touches **only FRC**. `co_anaes()` has no
+tilt term at all. In this model head-up tilt is a pure benefit: more lung
+volume, no price.
+
+**Perilli measures the price. 30° reverse Trendelenburg drops cardiac output
+by 18%, from 4.9 to 4.0 L/min, P<0.05.** Their own Discussion: *"This posture
+determined a significant decrease in CO, like PEEP, with consequent reduction
+of peripheral oxygen delivery."*
+
+**This is very probably the missing piece in the FRC-to-apnoea-time
+conversion identified from Valenza the same day.** The problem there was that
+the model takes too LITTLE extra volume from tilt (+46.6% against a measured
++84.8%) and yet produces too MUCH extra apnoea time (+51.1% against a measured
+~+30%). A cost the model does not pay is exactly the shape of thing that
+explains it. Nothing has been implemented; this is recorded for a ruling.
+
+#### A CAVEAT THIS PAPER PUTS ON OUR OWN SHUNT INVERSIONS
+
+Perilli cites **Dantzker DR, Lynch JP, Weg JG et al.** *Depression of cardiac
+output is a mechanism of shunt reduction in the therapy of acute respiratory
+failure.* Chest 1980;77:636-42 — and uses it to argue that part of the
+oxygenation gain from PEEP and from tilt is a **cardiac-output artefact**
+rather than recruitment.
+
+The obese shunt of 10-12% recorded above was obtained by inverting Reinius's
+and Valenza's arterial oxygen **through this model**, which supplies its own
+cardiac output. If their patients' cardiac output differed from what the model
+assumes, the inferred shunt moves. Neither paper reports cardiac output.
+Perilli does — 4.0 to 5.3 L/min across his phases — and that is the only
+figure we have for what an anaesthetised morbidly obese cardiac output
+actually is. **The 10-12% should be re-derived against a measured cardiac
+output before it is treated as settled.**
+
+#### AND ITS OXYGENATION TABLE DOES NOT RECONCILE WITH ITSELF
+
+Perilli states the alveolar gas equation he used: P(A−a)O2 = FiO2(PB − PH2O) −
+PaCO2/RQ − PaO2, with RQ 0.8. At phase 1 that gives, at the stated FiO2 0.50,
+an alveolar PO2 of 0.50 × 713 − 37/0.8 = **310 mmHg**, so P(A−a)O2 should be
+310 − 187 = **123**. **Table 2 reports 185 (111).** The same gap of about 60
+mmHg appears at every phase; the table is self-consistent only at an FiO2 near
+**0.59**.
+
+Recorded rather than resolved. **It means Perilli's absolute oxygenation
+cannot be inverted for shunt the way Reinius's and Valenza's were** — the
+inspired fraction the numbers imply is not the one stated. The phase 4 to
+phase 5 *difference* is unaffected, because both phases share whatever the
+error is, which is why the tilt result above is usable and the absolute one is
+not.
+
+#### One more thing it says about tilt
+
+Citing **Heneghan CPH, Bergman NA, Jones JG**, *Changes in lung volume and
+(PAO2−PaO2) during anaesthesia*, Br J Anaesth 1984;56:437-45: there was **no**
+improvement in oxygenation when lung volumes were raised by head-up tilt in
+**normal-weight** anaesthetised patients, whereas tilt does improve it in the
+morbidly obese. Our model gives a lean patient a 28.6% apnoea-time gain from
+tilt. That is a different quantity from an oxygenation index and the two are
+not in direct contradiction, but it is a reason to check the lean tilt row
+against something other than the positioning trials.
+
+---
+
 ### Valenza 2007 — READ IN FULL 2026-09-24, and it REVERSES this morning's tilt conclusion
 
 **Valenza F, Vagginelli F, Tiby A, Francesconi S, Ronzoni G, Guglielmi M,
@@ -1977,11 +2066,30 @@ primary source, not a search.** The first two are the ones that matter most:
       2007;107(5):725-32. **Position against RESPIRATORY FUNCTION in
       anaesthetised obese patients** — the shape of paper the tilt rows need,
       and the reason not to conclude that tilt requires a new trial
-- [ ] **Perilli V, et al.** Comparison of positive end-expiratory pressure
-      with reverse Trendelenburg position in morbidly obese patients
-      undergoing bariatric surgery: effects on hemodynamics and pulmonary gas
-      exchange. *Obes Surg* 2003;13(4):605-9. **Head-up tilt against GAS
-      EXCHANGE**, in the population that matters
+- [x] **Perilli V, et al.** *Obes Surg* 2003;13(4):605-9. **OBTAINED AND READ
+      2026-09-24** — see its own section above. It supplies the tilt cost the
+      model does not pay: cardiac output falls 18% at 30° head-up
+- [ ] **Perilli V, Sollazzi L, Bozza P, Modesti C, Chierichini A, Tacchino RM,
+      Ranieri R.** The effects of the reverse Trendelenburg position on
+      respiratory mechanics and blood gases in morbidly obese patients during
+      bariatric surgery. *Anesth Analg* 2000;91(6):1520-5. The EARLIER Perilli,
+      cited by both Valenza and Perilli 2003 — respiratory mechanics AND blood
+      gases, so it may carry the lung volumes the 2003 paper does not
+- [ ] **Heneghan CPH, Bergman NA, Jones JG.** Changes in lung volume and
+      (PAO2−PaO2) during anaesthesia. *Br J Anaesth* 1984;56:437-45. Perilli's
+      reference 18: head-up tilt raises lung volume in NORMAL-WEIGHT patients
+      WITHOUT improving oxygenation. Bears on the lean tilt row
+- [ ] **Dantzker DR, Lynch JP, Weg JG.** Depression of cardiac output is a
+      mechanism of shunt reduction in the therapy of acute respiratory
+      failure. *Chest* 1980;77:636-42. Perilli's reference 16, and a caveat on
+      our own 10–12% shunt inversions: those were done through this model's
+      cardiac output, and neither Reinius nor Valenza reports theirs
+- [ ] **Pelosi P, Croci M, Ravagnan I, Tredici S, Pedoto A, Lissoni A,
+      Gattinoni L.** The effects of body mass on lung volumes, respiratory
+      mechanics, and gas exchange during general anesthesia. *Anesth Analg*
+      1998;87(3):654-60. Valenza's reference 22, and the source his Discussion
+      leans on for FRC falling exponentially with BMI — bears directly on
+      `k_frc_bmi` and on the helium/CT tie
 - [ ] **Jones RL, Nzekwu MM.** The effects of body mass index on lung volumes.
       *Chest* 2006;130(3):827-33. Already called "the decisive paper" above;
       the citation is now confirmed from a primary source

@@ -161,6 +161,9 @@ def js_params(pt, feo2):
         "inflowMechFrac": pt.inflow_mech_frac, "cvFrac": pt.cv_frac,
         "recruitFrac": pt.recruit_frac, "tauRecruit": pt.tau_recruit,
         "shuntBase": pt.shunt_base,
+        "shuntBmiLean": pt.shunt_bmi_lean,
+        "shuntBmiKnee": pt.shunt_bmi_knee,
+        "shuntObese": pt.shunt_obese,
         # HPV
         "hpvEnabled": pt.hpv_enabled, "hpvPvrMax": pt.hpv_pvr_max,
         # metabolic and circulatory

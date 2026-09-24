@@ -119,15 +119,25 @@ function derive(P){
   // volume because preoxygenation happens before induction. Exactly zero
   // whenever awake FRC is at or above closing capacity. Mirrors
   // apnoea_core.py Patient.unwashed_fraction() -- see the long note there.
+  // Baseline shunt, BMI-dependent since 2026-09-24. Flat to shuntBmiLean,
+  // straight to shuntObese at shuntBmiKnee (Hedenstierna 2020's CT-measured
+  // knee), flat above. Plateau is the mean of Reinius 2009's 11.85% and
+  // Valenza 2007's 10.0%. Mirrors apnoea_core.py shunt_base_eff() -- see the
+  // long parameter block there, including what is weak about it.
+  const _sbL=P.shuntBase===undefined?0.05:P.shuntBase;
+  const _sbO=P.shuntObese===undefined?0.109:P.shuntObese;
+  const _sbA=P.shuntBmiLean===undefined?24:P.shuntBmiLean;
+  const _sbK=P.shuntBmiKnee===undefined?30:P.shuntBmiKnee;
+  const shuntBaseEff=_sbL+(_sbO-_sbL)*Math.min(1,Math.max(0,(bmi-_sbA)/Math.max(_sbK-_sbA,1e-9)));
   const _xu=Math.max(0,cc-frcAwake)/Math.max(frcAwake,100);
   const MAXC=P.maxClosed===undefined?0.25:P.maxClosed;
   const CCK=P.ccK===undefined?1.5:P.ccK;
   const unwashed=MAXC*_xu/(_xu+CCK);
-  return {bmi,frc,cc,vo2:Math.max(60,vo2),co,n2cap,lam,hf,tiltF,anaemiaCo,rvEff,unwashed};
+  return {bmi,frc,cc,vo2:Math.max(60,vo2),co,n2cap,lam,hf,tiltF,anaemiaCo,rvEff,unwashed,shuntBaseEff};
 }
 
 function simulate(P, epochs, dt=0.1){
-  const d=derive(P), {frc,cc,vo2,co,n2cap,lam,hf,anaemiaCo,rvEff,unwashed}=d;
+  const d=derive(P), {frc,cc,vo2,co,n2cap,lam,hf,anaemiaCo,rvEff,unwashed,shuntBaseEff}=d;
   // crs is mL/cmH2O and rec() works in mmHg. Compliance is volume PER
   // pressure, so the conversion is the RECIPROCAL of the pressure factor:
   // multiply, do not divide. Matches apnoea_core.py -- see the note there.
@@ -183,7 +193,7 @@ function simulate(P, epochs, dt=0.1){
   const caco2=co2Content(40,pha0,0.99,hb,T);
   // arterial blood starts shunt-mixed (the plateau fixed point), not at the
   // alveolar value - see the Python for why this matters
-  const _f=Math.min(P.shuntBase===undefined?0.05:P.shuntBase,0.9);
+  const _f=Math.min(shuntBaseEff,0.9);
   const cao2s=cao2-(_f/(1-_f))*vo2/(co*10);
   let cvo2=cao2s-vo2/(co*10), cvco2=caco2+vco2m/(co*10);
   const NP=3;
@@ -263,7 +273,7 @@ function simulate(P, epochs, dt=0.1){
       const k=1+((P.hpvPvrMax||3.15)-1)*hpv;
       fEff=f0/(f0+k*(1-f0));
     }
-    const shunt=Math.min(0.95,Math.max(0,(P.shuntBase===undefined?0.05:P.shuntBase)+fEff));
+    const shunt=Math.min(0.95,Math.max(0,shuntBaseEff+fEff));
 
     // cardiac output rises with hypercapnia: +0.97% of baseline per mmHg
     // PaCO2 above 40 (Sci Rep 2023, n=91 apnoeic oxygenation, measured)

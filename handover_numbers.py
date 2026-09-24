@@ -1860,7 +1860,8 @@ _VALV = 0.6 * _VPDRY - _VPACO2 / 0.8
 
 
 def _val(tilt, shunt=None):
-    _kw = {} if shunt is None else {'shunt_base': shunt}
+    # sweeps shunt_obese -- see the note in the Reinius block above
+    _kw = {} if shunt is None else {'shunt_obese': shunt}
     return Patient(weight=_VW, height=_VH, age=_VAGE, hb=_VHB,
                    tilt_deg=tilt, **_kw)
 
@@ -1888,15 +1889,16 @@ check("  ... we are too SMALL by a factor of",
       84.78 / ((_vb.frc_anaes() / _vs.frc_anaes() - 1.0) * 100.0), 1.82,
       0.03, " x")
 check("Valenza: alveolar PO2 at FiO2 0.60, PaCO2 38.3", _VALV, 379.9, 1.0, " mmHg")
+print("    AFTER THE RULING. Before it these read 251.8 mmHg and +1.50 SD.")
 check("Valenza: our supine PaO2 [measured 177 (50)]",
-      _val_pao2(0.0), 251.8, 1.5, " mmHg")
-check("  ... in SD of 177 (50)", (_val_pao2(0.0) - 177.0) / 50.0, 1.50,
-      0.05, " SD")
+      _val_pao2(0.0), 165.6, 1.5, " mmHg")
+check("  ... in SD of 177 (50)", (_val_pao2(0.0) - 177.0) / 50.0, -0.23,
+      0.04, " SD")
 _vsh = []
 for _s in (0.05, 0.10, 0.15, 0.20):
     _v = _val_pao2(0.0, _s)
     _vsh.append((_s * 100.0, _v))
-    check(f"  shunt_base {_s*100:4.1f}%: PaO2 at FiO2 0.60", _v,
+    check(f"  shunt_obese {_s*100:4.1f}%: PaO2 at FiO2 0.60", _v,
           {0.05: 251.8, 0.10: 177.4, 0.15: 123.7, 0.20: 94.8}[_s], 1.5, " mmHg")
 _va = np.array([x[0] for x in _vsh]); _vbv = np.array([x[1] for x in _vsh])
 check("SHUNT NEEDED to reproduce Valenza's supine PaO2 of 177",
@@ -1956,7 +1958,10 @@ _RALV = 0.5 * _RPDRY - _RPACO2 / 0.8
 
 
 def _rein(shunt=None):
-    _kw = {} if shunt is None else {'shunt_base': shunt}
+    # NOTE 2026-09-24: sweeps shunt_obese, NOT shunt_base. Since the ruling,
+    # shunt_base is the LEAN end of a BMI-dependent curve and setting it does
+    # NOTHING to a BMI 45 patient, who sits on the plateau.
+    _kw = {} if shunt is None else {'shunt_obese': shunt}
     _p = Patient(weight=_RBMI * _RH * _RH, height=_RH, age=_RAGE, hb=_RHB,
                  tilt_deg=0.0, **_kw)
     _r = simulate(_p, [AirwayEpoch(2.0, resistance=2.0, fgo2=0.5)],
@@ -1979,14 +1984,17 @@ check("Reinius: unwashed share [awake poorly aerated 28 (12) %]",
 check("  ... in SD of the AWAKE 28 (12), which is the right comparator",
       (_rp.unwashed_fraction() * 100.0 - 28.0) / 12.0, -1.10, 0.03, " SD")
 check("Reinius: alveolar PO2 at FiO2 0.5, PaCO2 34", _RALV, 314.0, 1.0, " mmHg")
+print("  AFTER THE BMI-DEPENDENT SHUNT RULING OF 2026-09-24 the rows below")
+print("  are the corrected model, not the disagreement. Before the ruling:")
+print("    PaO2 201.3, PaO2/FiO2 402.6, a-A gradient 112.7 -- against a")
+print("    measured 126 / 252 / 188. We oxygenated an anaesthetised morbidly")
+print("    obese patient about as well as Reinius's were before induction.")
 check("Reinius: our PaO2 ventilated [measured PaO2/FiO2 252 -> PaO2 126]",
-      _rr['pao2'][0], 201.3, 1.0, " mmHg")
+      _rr['pao2'][0], 133.1, 1.0, " mmHg")
 check("Reinius: our PaO2/FiO2 [measured 252, groups 225-266]",
-      _rr['pao2'][0] / 0.5, 402.6, 2.0, "")
-check("  ... their AWAKE PaO2/FiO2 was 410-432, so we oxygenate an",
-      _rr['pao2'][0] / 0.5, 402.6, 2.0, "  <- anaesthetised patient like an awake one")
+      _rr['pao2'][0] / 0.5, 266.1, 2.0, "")
 check("Reinius: our a-A oxygen gradient [theirs is 188]",
-      _RALV - _rr['pao2'][0], 112.7, 1.0, " mmHg")
+      _RALV - _rr['pao2'][0], 180.9, 1.5, " mmHg")
 
 print("  AND THE AUTHORS THEMSELVES FLAG THE AWAKE VOLUME. Limitation 12:")
 print("  'during spontaneous breathing the patient did not comprehend the")
@@ -2007,7 +2015,7 @@ _sh = []
 for _s in (0.05, 0.08, 0.11, 0.14, 0.20):
     _v = _rein(_s)[1]['pao2'][0]
     _sh.append((_s * 100.0, _v))
-    check(f"  shunt_base {_s*100:4.1f}%: PaO2/FiO2", _v / 0.5,
+    check(f"  shunt_obese {_s*100:4.1f}%: PaO2/FiO2", _v / 0.5,
           {0.05: 402.6, 0.08: 325.8, 0.11: 264.4, 0.14: 220.8,
            0.20: 168.8}[_s], 2.0, "")
 _a = np.array([x[0] for x in _sh]); _b = np.array([x[1] for x in _sh])
@@ -2064,15 +2072,17 @@ _g92 = time_to(_gr, 'spo2', 92)
 check("Gander: unwashed perfusion share (low V/Q)",
       _gp.unwashed_fraction() * 100.0, 15.79, 0.10, " %")
 check("Gander: PaO2 before apnoea [measured 243 (136)]",
-      _gr['pao2'][0], 446.9, 1.0, " mmHg")
+      _gr['pao2'][0], 345.5, 1.5, " mmHg")
+check("  ... in SD of 243 (136)", (_gr['pao2'][0] - 243.0) / 136.0, 0.75,
+      0.03, " SD")
 check("Gander: shunt at t=0 [implied ~20%+]",
-      _gr['shunt'][0] * 100.0, 5.00, 0.10, " %")
+      _gr['shunt'][0] * 100.0, 10.90, 0.10, " %")
 check("Gander: time to SpO2 90% [measured 127 (43), 1 SD 84-170]",
-      time_to(_gr, 'spo2', 90), 147.9, 3.0, " s")
+      time_to(_gr, 'spo2', 90), 145.7, 3.0, " s")
 check("Gander: PaO2 at SpO2 92% [measured 68 (10)]",
       at(_gr, 'pao2', _g92), 44.2, 1.0, " mmHg")
 check("Gander: PaCO2 at SpO2 92% [measured 53 (4)]",
-      at(_gr, 'paco2', _g92), 55.1, 1.0, " mmHg")
+      at(_gr, 'paco2', _g92), 54.9, 1.0, " mmHg")
 check("Gander: ERV anaesthetised [Holley: zero in morbid obesity]",
       _gp.frc_anaes() - _gp.rv_eff(), 0.0, 5.0, " mL")
 print("    THE HISTORY OF THIS ROW, because it has moved three times and each")

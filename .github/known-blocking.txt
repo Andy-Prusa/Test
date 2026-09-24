@@ -29,3 +29,10 @@ tilt, BMI 35 at 30 deg
 # went 319.8 -> 310.2 s against a band of 244-314, fixed by the same low-V/Q
 # mechanism. Left here as a comment so the removal is visible rather than
 # looking like the row was quietly dropped.
+
+# UNCHANGED by the BMI-dependent shunt ruling of 2026-09-24. That change
+# roughly doubled the baseline shunt for every patient above BMI 30 and the
+# blocking set did not move: 4 before, 4 after, same four names. The rows it
+# did move are Heard control (310.2 -> 299.7 s, still inside 244-314) and the
+# obese comparators, which improved. Every lean row is bit-identical, because
+# the curve is flat at 5% up to BMI 24.
