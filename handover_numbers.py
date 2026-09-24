@@ -1846,6 +1846,91 @@ print("  in this model, once through FRC and once through denitrogenation,")
 print("  and whether a real lung gives it both is an open question.")
 
 # ---------------------------------------------------------------------------
+print("\nPELOSI 1998 -- the whole BMI range, and IT CONTRADICTS OUR KNEE")
+print("  n=24 across BMI 20-66 continuously, FiO2 0.40, ZEEP, supine,")
+print("  paralysed, before surgery. The ONLY source here that publishes")
+print("  REGRESSIONS rather than one cohort mean:")
+print("      FRC       = 11.97*exp(-0.096*BMI) + 0.46  L     r 0.86")
+print("      PaO2/PAO2 = 1.23 *exp(-0.037*BMI) + 0.196       r 0.81")
+print("      D(A-a)O2  = -7.15 + 3.37*BMI            mmHg    r 0.84")
+print("      PaCO2     NOT related to BMI (r 0.06), about 33")
+
+_PH, _PAGE, _PHB, _PFIO2, _PPACO2 = 1.64, 52.0, 14.0, 0.40, 33.0
+_PALV = _PFIO2 * ac.PDRY - _PPACO2 / 0.8
+
+
+def _pel_ratio(b):
+    return 1.23 * np.exp(-0.037 * b) + 0.196
+
+
+def _pel_daa(b):
+    return -7.15 + 3.37 * b
+
+
+def _pel_pao2(b, shunt=None):
+    _kw = {} if shunt is None else {'shunt_obese': shunt, 'shunt_base': shunt}
+    _p = Patient(weight=b * _PH * _PH, height=_PH, age=_PAGE, hb=_PHB,
+                 tilt_deg=0.0, **_kw)
+    _r = simulate(_p, [AirwayEpoch(2.0, resistance=2.0, fgo2=_PFIO2)],
+                  dt=DT, feo2_start=_PALV / ac.PDRY, paco2_start=_PPACO2,
+                  stop_sao2=0.0)
+    return _p, _r['pao2'][0]
+
+
+def _pel_invert(b):
+    """Shunt that reproduces Pelosi's oxygenation at this BMI."""
+    _tgt = _pel_ratio(b) * _PALV
+    _lo, _hi = 0.01, 0.60
+    for _ in range(22):
+        _mid = 0.5 * (_lo + _hi)
+        if _pel_pao2(b, _mid)[1] > _tgt:
+            _lo = _mid
+        else:
+            _hi = _mid
+    return 0.5 * (_lo + _hi) * 100.0
+
+
+check("Pelosi: alveolar PO2 at FiO2 0.40, PaCO2 33", _PALV, 243.9, 1.0, " mmHg")
+for _b, _ours_sh, _pel_sh, _frc in ((22, 5.00, 3.47, 1886.0),
+                                    (30, 10.90, 5.96, 1237.0),
+                                    (34, 10.90, 7.28, 1039.0),
+                                    (42, 10.90, 10.37, 745.0),
+                                    (50, 10.90, 14.12, 578.0)):
+    _p, _o = _pel_pao2(_b)
+    check(f"BMI {_b}: OUR shunt_base_eff", _p.shunt_base_eff() * 100.0,
+          _ours_sh, 0.05, " %")
+    check(f"BMI {_b}: shunt PELOSI IMPLIES", _pel_invert(_b), _pel_sh, 0.10, " %")
+    check(f"BMI {_b}: our FRC [Pelosi helium {11.97*np.exp(-0.096*_b)*1000+460:.0f}]",
+          _p.frc_anaes(), _frc, 8.0, " mL")
+print("    THERE IS NO KNEE. Pelosi's implied shunt rises 1.28, 1.21, 1.32,")
+print("    1.47, 1.62, 1.79 and 1.95 points per four BMI units from 22 to 50")
+print("    -- ACCELERATING, not flattening. Our curve is flat above BMI 30.")
+print("    AND THE AGREEMENT AT BMI 42-46 IS WHY NOBODY CAUGHT IT. Pelosi")
+print("    implies 10.37% at BMI 42 and 12.17% at 46 against our flat 10.90%.")
+print("    Reinius sits at BMI 45 and Valenza at 42: BOTH ANCHORS ARE IN THE")
+print("    ONE PLACE WHERE THE WRONG CURVE HAPPENS TO BE RIGHT. The whole")
+print("    disagreement is in BMI 24-40, which the parameter block itself")
+print("    named as unmeasured when the curve was committed.")
+print("    IT DOES NOT OVERTURN HEDENSTIERNA. He measured ATELECTATIC AREA by")
+print("    CT and found it flat above BMI 30. Pelosi measures OXYGENATION,")
+print("    which is shunt PLUS low V/Q. Both hold if the atelectasis plateaus")
+print("    while the poorly-aerated compartment keeps growing -- exactly the")
+print("    nonaerated 11% / poorly aerated 39% split Reinius reports.")
+print("    shunt_base conflates the two, so Hedenstierna's knee was applied")
+print("    to a quantity it does not govern. Pelosi measures the quantity")
+print("    shunt_base actually represents, in the ventilated state where")
+print("    unwashed_fraction() cannot act. HIS CURVE IS THE RIGHT TARGET.")
+print("    THE FRC ROWS ARE REASSURING and are NOT the contradiction: ours")
+print("    tracks Pelosi's helium across the whole range and sits BETWEEN his")
+print("    helium and Reinius's CT, which is what the CT ruling predicts.")
+print("    His exponent 0.096 is NOT comparable with our k_frc_bmi 0.0417 --")
+print("    his form carries a 0.46 L offset, ours a residual-volume floor.")
+print("    The VALUES agree though the exponents do not, and values are what")
+print("    matter. RECORDED, NOT ACTED ON: refitting shunt_base to Pelosi")
+print("    contradicts a ruling made hours earlier and moves every obese")
+print("    benchmark, so it waits.")
+
+# ---------------------------------------------------------------------------
 print("\nVALENZA 2007 -- FRC AGAINST TILT, MEASURED, and it reverses a")
 print("  conclusion recorded earlier the same day. n=20, BMI 42 (5),")
 print("  anaesthetised and PARALYSED, ventilated at FiO2 0.60. Beach chair =")

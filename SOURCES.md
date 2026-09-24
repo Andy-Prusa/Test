@@ -533,6 +533,107 @@ quietly drawing a difference again.
 
 ---
 
+### Pelosi 1998 — READ IN FULL 2026-09-24, and IT CONTRADICTS THE KNEE COMMITTED THE SAME DAY
+
+**Pelosi P, Croci M, Ravagnan I, Tredici S, Pedoto A, Lissoni A, Gattinoni L.**
+The effects of body mass on lung volumes, respiratory mechanics, and gas
+exchange during general anesthesia. *Anesth Analg* 1998;87(3):654-60. **Full
+text read from the page 2026-09-24.**
+
+n=24 in three groups of eight: **BMI 21.9 (0.5), 33.6 (2.8), 48.2 (8)**, age
+40-75, 1 man / 7 women per group, height ~1.64 m, no smoking, no
+cardiopulmonary disease. Propofol, suxamethonium, pancuronium. VT 10 mL/kg
+IBW, rate 14, **FiO2 0.40, ZEEP, supine**, 15 min stabilisation, **before
+surgical intervention**. FRC by closed-circuit helium dilution.
+
+**This is the only source in the repository that measures across the WHOLE BMI
+range continuously — 20 to 66 — rather than at one cohort mean.** It publishes
+regressions rather than group means:
+
+    FRC        = 11.97 * exp(-0.096 * BMI) + 0.46   L      r 0.86, P<0.01
+    PaO2/PAO2  = 1.23  * exp(-0.037 * BMI) + 0.196         r 0.81, P<0.01
+    D(A-a)O2   = -7.15 + 3.37 * BMI                 mmHg   r 0.84, P<0.01
+    PaCO2      NOT related to BMI (r 0.06), about 33 mmHg
+
+#### THE KNEE AT BMI 30 IS WRONG
+
+`shunt_base` was made BMI-dependent earlier the same day: flat 5% to BMI 24,
+straight to a **10.9% plateau at BMI 30, flat above**. The plateau was anchored
+on Reinius (BMI 45) and Valenza (BMI 42); **the knee and the flatness came from
+Hedenstierna 2020's finding that atelectasis does not increase above BMI 30.**
+The parameter block recorded, at the time, that this was the weak part: *"the
+knee at 30 comes from Hedenstierna's ATELECTATIC AREA, not from a shunt
+measurement. Shunt and atelectatic area are different quantities and are not
+obliged to have the same knee."* **That caveat has now been cashed in.**
+
+Inverting Pelosi's oxygenation regression through this model, at his FiO2 0.40
+and PaCO2 33:
+
+| BMI | our shunt | Pelosi implies | our D(A−a)O2 | Pelosi's |
+|---|---|---|---|---|
+| 22 | 5.00% | **3.47%** | 87.4 | 67.0 |
+| 26 | 6.97% | **4.75%** | 109.0 | 80.5 |
+| 30 | **10.90%** | **5.96%** | 139.0 | 94.0 |
+| 34 | 10.90% | **7.28%** | 137.7 | 107.4 |
+| 38 | 10.90% | **8.75%** | 136.6 | 120.9 |
+| 42 | 10.90% | **10.37%** | 135.7 | 134.4 |
+| 46 | 10.90% | **12.17%** | 135.0 | 147.9 |
+| 50 | 10.90% | **14.12%** | 134.3 | 161.3 |
+
+**There is no knee.** The successive rises are 1.28, 1.21, 1.32, 1.47, 1.62,
+1.79 and 1.95 points per four BMI units — **accelerating, not flattening**, all
+the way to BMI 50.
+
+**And the agreement at BMI 42-46 is why nobody caught it.** Pelosi implies
+10.4% at BMI 42 and 12.2% at BMI 46, against our flat 10.9%. Reinius sits at
+BMI 45 and Valenza at BMI 42 — **both anchors are in the one place where the
+wrong curve happens to be right.** The disagreement is entirely in BMI 24-40,
+the interval the parameter block named as unmeasured.
+
+#### WHY THIS DOES NOT OVERTURN HEDENSTIERNA
+
+Hedenstierna 2020 measured **atelectatic area by CT** and found it flat above
+BMI 30. Pelosi measures **oxygenation**, which is shunt *plus* low V/Q. The two
+are compatible if the atelectasis plateaus while the **poorly-aerated,
+low-V/Q compartment keeps growing** — which is precisely the distinction
+Reinius draws between nonaerated (11%) and poorly aerated (39%), and precisely
+what this branch was forked to build.
+
+`shunt_base` conflates them, because at t=0 the model's total shunt IS
+`shunt_base`. So Hedenstierna's knee was applied to a quantity it does not
+govern. Pelosi measures the quantity `shunt_base` actually represents, in the
+ventilated state where `unwashed_fraction()` cannot act, so his curve is the
+correct target for it.
+
+#### WHAT THE FRC REGRESSION SAYS, AND IT IS REASSURING
+
+| BMI | ours | Pelosi (helium) |
+|---|---|---|
+| 22 | 1886 mL | 1908 |
+| 30 | 1237 | 1132 |
+| 42 | 745 | 672 |
+| 50 | 578 | 559 |
+
+Close across the whole range, and ours sits **between** Pelosi's helium and
+Reinius's CT — which is what the helium/CT ruling predicts, since helium sees
+only communicating gas. Pelosi's exponent of 0.096 is **not** directly
+comparable with our `k_frc_bmi` of 0.0417: his form carries a 0.46 L offset and
+a different prefactor, and ours carries a residual-volume floor. The values
+agree even though the exponents do not, and it is the values that matter.
+
+#### RECORDED, NOT ACTED ON
+
+Replacing the broken line with a curve fitted to Pelosi's inverted points would
+be substituting a measurement of the right quantity for an assumption borrowed
+from the wrong one — the same footing as `k_rv_bmi`, and an improvement rather
+than a fit. **But it contradicts a ruling made hours earlier and it moves every
+obese benchmark, so it waits for a ruling.** The three anchors already in the
+model (Tokics, Reinius, Valenza) are not displaced by it: Pelosi agrees with
+Reinius and Valenza where they sit, and his 3.47% at BMI 22 is within 1.2 SD of
+Tokics's 5.0 (1.3) %.
+
+---
+
 ### Perilli 2003 — READ IN FULL 2026-09-24, and it supplies the missing mechanism
 
 **Perilli V, Sollazzi L, Modesti C, Annetta MG, Sacco T, Bocci MG, Tacchino RM,
