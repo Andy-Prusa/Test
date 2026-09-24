@@ -37,10 +37,12 @@ _fails = []
 def _forced_shunt(value):
     """Patient subclass whose baseline shunt is forced to `value`.
 
-    The shunt parameters are now the coefficients of Pelosi's curve, so
-    setting shunt_base or shunt_obese no longer forces an absolute value --
-    those names are retired. Overriding the accessor does, and it works at
-    any BMI.
+    No parameter forces an absolute baseline shunt any more. shunt_base and
+    shunt_obese went with the flat 5%; the Pelosi quadratic's coefficients
+    went with the re-key on 2026-09-24, and what is left -- shunt_anat and
+    shunt_cc_k -- sets a LAW whose value depends on lung volume against
+    closing capacity. Overriding the accessor is the only way to pin the
+    number, and it works at any BMI, tilt and age.
     """
     class _Forced(Patient):
         def shunt_base_eff(self):
@@ -1906,50 +1908,59 @@ def _tox(cls, fio2, tilt):
     return _r['pao2'][0]
 
 
-print("  IT FLIPS THE SIGN OF PERILLI'S OWN OXYGENATION RESULT. He measures")
-print("  PaO2 146 -> 179, +33 mmHg, IMPROVING with tilt DESPITE the cardiac")
-print("  output falling. At his cohort, FiO2 0.50:")
+print("  IT USED TO FLIP THE SIGN OF PERILLI\'S OWN OXYGENATION RESULT, AND")
+print("  THE RE-KEY OF 2026-09-24 FIXED THAT. He measures PaO2 146 -> 179,")
+print("  +33 mmHg, IMPROVING with tilt DESPITE the cardiac output falling.")
+print("  At his cohort, FiO2 0.50:")
 _b0, _b30 = _tox(_NoCoTilt, 0.50, 0.0), _tox(_NoCoTilt, 0.50, 30.0)
 _a0, _a30 = _tox(Patient, 0.50, 0.0), _tox(Patient, 0.50, 30.0)
-check("BEFORE the term: PaO2 change at 30 deg [measured +33]",
-      _b30 - _b0, 3.8, 0.3, " mmHg")
-check("WITH the term:   PaO2 change at 30 deg [measured +33]",
-      _a30 - _a0, -11.8, 0.3, " mmHg")
-check("  error against +33, BEFORE", abs(_b30 - _b0 - 33.0), 29.2, 0.3, " mmHg")
-check("  error against +33, WITH",   abs(_a30 - _a0 - 33.0), 44.8, 0.3, " mmHg")
-print("    THE SIGN IS NOW WRONG AND THE DISAGREEMENT IS 65% LARGER.")
-print("    Recorded, NOT compensated. The term is not withdrawn: it is a")
-print("    measured effect the model was wrong to omit, and removing a")
-print("    correct term to conceal an incorrect absence is the worse error.")
-check("standing shunt, supine [must not move with tilt]",
-      _tco(Patient, 0.0).shunt_base_eff() * 100.0, 13.20, 0.02, " %")
-check("standing shunt at 30 deg [IT STILL DOES NOT MOVE -- defect stands]",
-      _tco(Patient, 30.0).shunt_base_eff() * 100.0, 13.20, 0.02, " %")
+check("FRC route + shunt route, no CO term: PaO2 change at 30 deg [meas +33]",
+      _b30 - _b0, 36.2, 0.3, " mmHg")
+check("WITH the CO term:   PaO2 change at 30 deg [measured +33]",
+      _a30 - _a0, 17.3, 0.3, " mmHg")
+check("  error against +33, no CO term", abs(_b30 - _b0 - 33.0), 3.2, 0.3, " mmHg")
+check("  error against +33, WITH",   abs(_a30 - _a0 - 33.0), 15.7, 0.3, " mmHg")
+print("    THE SIGN IS RIGHT NOW. On the BMI-keyed curve these were +3.8 and")
+print("    -11.8, so the model said head-up tilt made this patient WORSE")
+print("    against a measured +33. The re-key turned -11.8 into +17.3 and")
+print("    cut the error from 44.8 to 15.7, a 65% reduction, WITHOUT any")
+print("    parameter being touched to achieve it -- the shunt law was fitted")
+print("    to Pelosi\'s supine curve alone and Perilli was never in the fit.")
+print("    WHAT IS STILL WRONG, AND IT IS NOW THE CARDIAC-OUTPUT TERM.")
+print("    Without it the FRC and shunt routes together give +36.2 against")
+print("    +33, an error of 3.2 mmHg. Adding the measured CO loss takes it")
+print("    to +17.3. So the two effects are individually defensible and")
+print("    together they overshoot the cost. Three readings are open and")
+print("    this row cannot separate them: the CO term is too strong; or")
+print("    tilt gets too many bites on the oxygen side (store,")
+print("    denitrogenation, and now shunt); or our absolute cardiac output,")
+print("    18% above Perilli\'s measured 4.9 L/min, makes a proportional")
+print("    loss bite harder than it should. NOT COMPENSATED. No parameter")
+print("    was moved to close the remaining 15.7 mmHg.")
+check("standing shunt, supine", 
+      _tco(Patient, 0.0).shunt_base_eff() * 100.0, 12.53, 0.02, " %")
+check("standing shunt at 30 deg [IT MOVES NOW -- this was the defect]",
+      _tco(Patient, 30.0).shunt_base_eff() * 100.0, 9.18, 0.02, " %")
 check("FRC supine at this patient", _tco(Patient, 0.0).frc_anaes(),
       585.0, 5.0, " mL")
-check("FRC at 30 deg -- it moves a great deal, and the shunt ignores it",
+check("FRC at 30 deg -- and the shunt now follows it",
       _tco(Patient, 30.0).frc_anaes(), 840.0, 6.0, " mL")
-print("    THE DIAGNOSIS: THERE IS NO ROUTE FROM LUNG VOLUME TO STANDING")
-print("    SHUNT, AND PELOSI'S CURVE DID NOT FIX IT -- that ruling replaced")
-print("    one function of BMI with a better function of BMI, and BMI is")
-print("    still the key. shunt_base_eff() is a pure function of BMI, so FRC can")
-print("    rise 585 -> 840 mL and the shunt does not move one hundredth of a")
-print("    percent. Tilt therefore has no oxygenation benefit to offset its")
-print("    cardiac-output cost. Perilli's own explanation of his result is")
-print("    that tilt raises FRC and FRC improves oxygenation; he found the")
-print("    gain correlated with compliance, r = -0.65.")
-print("    AND IT IS THE SAME DEFECT PELOSI EXPOSED. Pelosi: the BMI-keyed")
-print("    curve has a knee that does not exist. Perilli: the BMI-keyed")
-print("    curve cannot respond to position. BOTH SAY BMI IS A PROXY AND THE")
-print("    MODEL IS KEYED ON THE PROXY INSTEAD OF THE QUANTITY -- which is")
-print("    lung volume against closing capacity, already computed in")
-print("    closed_target and already used for the apnoea collapse.")
-print("    A shunt_base_eff driven by (cc - v_lung)/v_lung would, with NO new")
-print("    free parameter: rise smoothly with BMI and with age, with no")
-print("    imposed knee (Pelosi); FALL with head-up tilt (Perilli); and")
-print("    reuse machinery the model already has. NOT DONE -- a redesign,")
-print("    not a parameter change, and the one change both of today's")
-print("    contradictions point at.")
+print("    THE DIAGNOSIS THAT WAS ACTED ON. Until the re-key there was NO")
+print("    ROUTE FROM LUNG VOLUME TO STANDING SHUNT. shunt_base_eff() was a")
+print("    pure function of BMI, so FRC could rise 585 -> 840 mL and the")
+print("    shunt would not move one hundredth of a percent; tilt therefore")
+print("    had no oxygenation benefit to offset its cardiac-output cost.")
+print("    Perilli\'s own explanation of his result is that tilt raises FRC")
+print("    and FRC improves oxygenation; he found the gain correlated with")
+print("    compliance, r = -0.65.")
+print("    TWO PAPERS POINTED AT THE SAME REDESIGN. Pelosi: the BMI-keyed")
+print("    curve had a knee that does not exist. Perilli: the BMI-keyed")
+print("    curve could not respond to position. BOTH SAID BMI IS A PROXY AND")
+print("    THE MODEL WAS KEYED ON THE PROXY INSTEAD OF THE QUANTITY -- lung")
+print("    volume against closing capacity, already computed for the apnoea")
+print("    collapse. DONE 2026-09-24 by ruling: shunt_base_eff() now reads")
+print("    x = (cc - frc_anaes)/frc_anaes through closure_x(), on two fitted")
+print("    parameters where the quadratic had three.")
 
 # ---------------------------------------------------------------------------
 print("\nPELOSI 1998 -- the whole BMI range, and IT CONTRADICTS OUR KNEE")
@@ -1997,22 +2008,37 @@ def _pel_invert(b):
 
 
 check("Pelosi: alveolar PO2 at FiO2 0.40, PaCO2 33", _PALV, 243.9, 1.0, " mmHg")
-for _b, _ours_sh, _pel_sh, _frc in ((22, 3.46, 3.47, 1886.0),
-                                    (30, 5.88, 5.96, 1237.0),
-                                    (34, 7.28, 7.28, 1039.0),
-                                    (42, 10.45, 10.37, 745.0),
-                                    (50, 14.11, 14.12, 578.0)):
+for _b, _ours_sh, _pel_sh, _frc in ((22, 3.71, 3.47, 1886.0),
+                                    (30, 5.75, 5.96, 1237.0),
+                                    (34, 7.09, 7.28, 1039.0),
+                                    (42, 10.49, 10.37, 745.0),
+                                    (50, 14.24, 14.12, 578.0)):
     _p, _o = _pel_pao2(_b)
     check(f"BMI {_b}: OUR shunt_base_eff", _p.shunt_base_eff() * 100.0,
           _ours_sh, 0.05, " %")
     check(f"BMI {_b}: shunt PELOSI IMPLIES", _pel_invert(_b), _pel_sh, 0.10, " %")
     check(f"BMI {_b}: our FRC [Pelosi helium {11.97*np.exp(-0.096*_b)*1000+460:.0f}]",
           _p.frc_anaes(), _frc, 8.0, " mL")
-print("    ADOPTED 2026-09-24 BY RULING: shunt_base_eff() now CARRIES this")
-print("    curve, as a quadratic fitted to these inverted points -- worst")
-print("    residual 0.27 percentage points, rms 0.094. The 'OUR' and 'PELOSI")
-print("    IMPLIES' columns above therefore agree to within the fit, which is")
-print("    what those rows now assert: that the fit has not drifted.")
+print("    ADOPTED 2026-09-24 BY RULING, THEN RE-KEYED THE SAME DAY. The")
+print("    curve was first carried as a QUADRATIC IN BMI fitted to these")
+print("    inverted points -- worst residual 0.27 percentage points, rms")
+print("    0.094. It was then re-keyed off BMI entirely onto")
+print("    x = (cc - frc_anaes)/frc_anaes, fitted to the SAME inverted")
+print("    points, on TWO parameters where the quadratic had three:")
+print("        shunt = shunt_anat + (1 - shunt_anat) * x / (x + shunt_cc_k)")
+print("    AND IT FITS PELOSI WORSE: worst residual 0.49 percentage points")
+print("    against 0.27, rms 0.23 against 0.094. That is the honest cost of")
+print("    the re-key and it is recorded, not compensated. What it buys is")
+print("    in the Perilli block above: a shunt that responds to head-up")
+print("    tilt, to age and to the induction FRC drop, none of which a")
+print("    function of BMI can see. The \'OUR\' and \'PELOSI IMPLIES\' columns")
+print("    above therefore agree to within that wider fit, which is what")
+print("    those rows assert: that it has not drifted further.")
+print("    NOTE THE \'OUR\' COLUMN IS NOW CONFIGURATION-DEPENDENT. It is")
+print("    computed at Pelosi\'s cohort -- height 1.64 m, age 52, supine --")
+print("    because the shunt is no longer a function of BMI alone. Reinius,")
+print("    Valenza and Gander differ in height and age and now get their own")
+print("    shunts at the same BMI, which is the point of the change.")
 print("    WHAT FOLLOWS IS THE ARGUMENT THAT LED TO IT, kept as the record.")
 print("    THERE IS NO KNEE. Pelosi's implied shunt rises 1.28, 1.21, 1.32,")
 print("    1.47, 1.62, 1.79 and 1.95 points per four BMI units from 22 to 50")
@@ -2087,12 +2113,18 @@ check("Valenza: alveolar PO2 at FiO2 0.60, PaCO2 38.3", _VALV, 379.9, 1.0, " mmH
 print("    HISTORY: 251.8 mmHg (+1.50 SD) at a flat 5% shunt, 165.6 (-0.23)")
 print("    on the broken line, 171.4 (-0.11) on Pelosi's curve. Valenza was")
 print("    NOT used to fit the curve either.")
-check("Valenza: baseline shunt on Pelosi's curve at BMI 42",
-      _vs.shunt_base_eff() * 100.0, 10.45, 0.05, " %")
+check("Valenza: baseline shunt from closure, BMI 42 at HIS height and age",
+      _vs.shunt_base_eff() * 100.0, 9.64, 0.05, " %")
 check("Valenza: our supine PaO2 [measured 177 (50)]",
-      _val_pao2(0.0), 171.4, 1.5, " mmHg")
-check("  ... in SD of 177 (50)", (_val_pao2(0.0) - 177.0) / 50.0, -0.11,
+      _val_pao2(0.0), 182.27, 1.5, " mmHg")
+check("  ... in SD of 177 (50)", (_val_pao2(0.0) - 177.0) / 50.0, 0.11,
       0.04, " SD")
+print("    THE RE-KEY OF 2026-09-24 IMPROVED THIS ROW and moved the shunt")
+print("    DOWN from 10.45% to 9.64% at the same BMI 42. It moved because")
+print("    the shunt is no longer a function of BMI: Valenza's cohort has")
+print("    its own height and age, so it gets its own closing capacity and")
+print("    its own FRC. PaO2 171.4 (-0.11 SD) -> 182.3 (+0.11 SD), which is")
+print("    the same distance from his measurement on the other side.")
 _vsh = []
 for _s in (0.05, 0.10, 0.15, 0.20):
     _v = _val_pao2(0.0, _s)
@@ -2193,16 +2225,26 @@ print("  is now hit almost exactly, and WAS NOT USED TO FIT IT -- the curve")
 print("  comes from Pelosi's regression alone. History of this row:")
 print("      PaO2/FiO2  402.6  flat 5% shunt for everybody")
 print("                 266.1  broken line, 10.9% plateau")
-print("                 251.7  Pelosi's curve")
+print("                 251.7  Pelosi's curve, as a quadratic in BMI")
+print("                 261.6  re-keyed on lung volume vs closing capacity")
 print("                 252    MEASURED (groups 225-266)")
-check("Reinius: baseline shunt on Pelosi's curve at BMI 45",
-      _rp.shunt_base_eff() * 100.0, 11.76, 0.05, " %")
+print("    THE RE-KEY COST THIS ROW ITS NEAR-EXACT HIT, and that is the")
+print("    trade being recorded rather than hidden: 251.7 was within three")
+print("    tenths of a mmHg of Reinius, 261.6 is 9.6 above him -- still")
+print("    INSIDE his groups' range of 225-266, but at the top of it.")
+print("    It moved because Reinius's cohort is not Pelosi's: same BMI 45,")
+print("    different height and age, so a shunt keyed on closing capacity")
+print("    against FRC no longer gives them the same number. The curve was")
+print("    fitted at Pelosi's height and age alone and Reinius was never in")
+print("    the fit, before or after.")
+check("Reinius: baseline shunt from closure, BMI 45 at HIS height and age",
+      _rp.shunt_base_eff() * 100.0, 11.16, 0.05, " %")
 check("Reinius: our PaO2 ventilated [measured PaO2/FiO2 252 -> PaO2 126]",
-      _rr['pao2'][0], 125.9, 1.0, " mmHg")
+      _rr['pao2'][0], 130.81, 1.0, " mmHg")
 check("Reinius: our PaO2/FiO2 [measured 252, groups 225-266]",
-      _rr['pao2'][0] / 0.5, 251.7, 2.0, "")
+      _rr['pao2'][0] / 0.5, 261.62, 2.0, "")
 check("Reinius: our a-A oxygen gradient [theirs is 188]",
-      _RALV - _rr['pao2'][0], 188.1, 1.5, " mmHg")
+      _RALV - _rr['pao2'][0], 183.19, 1.5, " mmHg")
 
 print("  AND THE AUTHORS THEMSELVES FLAG THE AWAKE VOLUME. Limitation 12:")
 print("  'during spontaneous breathing the patient did not comprehend the")
@@ -2280,11 +2322,11 @@ _g92 = time_to(_gr, 'spo2', 92)
 check("Gander: unwashed perfusion share (low V/Q)",
       _gp.unwashed_fraction() * 100.0, 15.79, 0.10, " %")
 check("Gander: PaO2 before apnoea [measured 243 (136)]",
-      _gr['pao2'][0], 312.9, 1.5, " mmHg")
-check("  ... in SD of 243 (136)", (_gr['pao2'][0] - 243.0) / 136.0, 0.51,
+      _gr['pao2'][0], 321.68, 1.5, " mmHg")
+check("  ... in SD of 243 (136)", (_gr['pao2'][0] - 243.0) / 136.0, 0.58,
       0.03, " SD")
 check("Gander: shunt at t=0 [implied ~20%+]",
-      _gr['shunt'][0] * 100.0, 12.68, 0.10, " %")
+      _gr['shunt'][0] * 100.0, 12.21, 0.10, " %")
 check("Gander: time to SpO2 90% [measured 127 (43), 1 SD 84-170]",
       time_to(_gr, 'spo2', 90), 145.0, 3.0, " s")
 check("Gander: PaO2 at SpO2 92% [measured 68 (10)]",

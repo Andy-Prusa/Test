@@ -5,6 +5,83 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-24
+
+Work on branch `claude/obese-shunt`. The section below dated 2026-09-22 is the
+previous state and is kept as the record.
+
+**The baseline shunt is no longer keyed on BMI.** `shunt_base_eff()` — the
+shunt a patient already has when the apnoea starts — now reads lung volume
+against closing capacity, `x = (cc − frc_anaes)/frc_anaes`, through a shared
+`closure_x()` helper that the runtime collapse term and the unwashed low-V/Q
+fraction also use. Two fitted parameters where the previous quadratic in BMI
+had three; `shunt_floor` retired as unreachable. Full reasoning, the fit, the
+anchors and the costs are in **SOURCES.md, "The shunt re-keyed off BMI"**.
+
+**What it fixed.** Perilli 2003 measures oxygenation *improving* with head-up
+tilt, PaO₂ +33 mmHg, despite cardiac output falling. The BMI-keyed model gave
+**−11.8** — the wrong sign. It now gives **+17.3**, and **+36.2** if the
+cardiac-output term is removed, against that measured +33. Perilli was never in
+the fit.
+
+**What it cost.** It fits Pelosi worse: worst residual **0.49** percentage
+points against **0.27**. Reinius loses a near-exact hit (PaO₂/FiO₂ 251.7 →
+261.6 against a measured 252, still inside his groups' 225–266). Valenza
+improves (−0.11 → +0.11 SD). Recorded, not compensated.
+
+**Benchmarks unchanged: 4 blocking, same four names.** Nine of thirty-four rows
+moved, none changed tag. `test_parity.py` passes.
+
+### Two things this opened, neither of them done
+
+**1. The same closure is counted twice.** `closed_target` applies the same law
+to the same quantity at the current lung volume and grows `collapsed` from
+**zero**, so the closure already present at induction — which is what the
+baseline shunt *is* — is added again as the apnoea runs. At BMI 45 that is a
+12.09% baseline plus a collapse term climbing to 17.72%. The overlap is older
+than today; what changed is that both terms are now the same law of the same
+quantity, so it is finally legible. The coherent fix is one law with
+`collapsed` initialised to its induction value, which changes the collapse
+kinetics and every benchmark. **Needs a ruling.**
+
+**2. `closing_capacity()` became load-bearing.** It is a placeholder
+regression and says so. The shunt now rests on it directly rather than through
+a fitted curve, so `cc_at_20`, `cc_per_year` and `cc_per_bmi` carry the obese
+shunt, and none of them is sourced. This is now the largest unsourced
+dependency in the model.
+
+### Still true from before
+
+`handover_numbers.py` has **166** checks failing across about twenty blocks,
+down from 192 immediately after the re-key: the 26 closed are exactly the rows
+this change touched — Pelosi, Perilli, Reinius, Valenza, Gander — which were
+rewritten with it and now pass.
+
+**The remaining 166 were deliberately not re-baselined.** They are drifted
+values sitting under prose that has to be read before the number is trusted,
+which is how ten reversed conclusions were caught on this branch. Some of them
+will have *moved* with this change, because the lean baseline shunt fell
+3.71% → 3.61%; none of them started failing because of it, as far as the check
+below reaches.
+
+**`buccal_numbers.py` was stale before this change, and the PR body said it
+was clean.** Run against the previous commit it fails **six** rows, every one
+of them obese — the recorded values predate both the tilt → cardiac-output term
+and the Pelosi curve, committed the same day, and the file was not re-run after
+either. The re-key moved the obese rows back toward the recorded values, so
+three now drift rather than six; all three have been updated and it passes.
+The lesson is the one this project already knows: a number is only as fresh as
+the last run of the script that produces it, and "clean" must mean *clean on
+this commit*.
+
+**Scope of that claim, stated because it is partial.** A run of
+`handover_numbers.py` on the pre-change model was started and killed early, so
+it covers **128** of the checks rather than all of them. Across those 128 the
+pass/fail status is **unchanged in both directions** — nothing went `ok` → FAIL
+and nothing went FAIL → `ok`. The blocks beyond that point have not been
+compared, and the cheap way to close the gap is one clean run of the script on
+each side of this commit.
+
 ## Current state — 2026-09-22
 
 ### THREE RULINGS, 2026-09-22 — read these before the chronology below

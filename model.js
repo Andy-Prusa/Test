@@ -125,18 +125,23 @@ function derive(P){
   // volume because preoxygenation happens before induction. Exactly zero
   // whenever awake FRC is at or above closing capacity. Mirrors
   // apnoea_core.py Patient.unwashed_fraction() -- see the long note there.
-  // Baseline shunt against BMI: PELOSI 1998's measured curve, fitted as a
-  // quadratic to his oxygenation regression inverted through the model.
-  // Replaces the broken line with a knee at BMI 30 that Pelosi showed does
-  // not exist. Floor is bronchial/thebesian drainage; ceiling is a guard.
+  // Baseline shunt: AIRWAY CLOSURE AT THE INDUCTION VOLUME, re-keyed off BMI
+  // on 2026-09-24. The driver is x = (cc - frc)/frc, the same quantity the
+  // runtime collapse term and the unwashed low-V/Q fraction use, differing
+  // only in which lung volume is passed. Both limits are physics: at x = 0
+  // the lung is at or above its closing capacity and the shunt is the
+  // bronchial/thebesian drainage shuntAnat; as the volume goes to zero the
+  // whole perfused bed is closed and the shunt tends to 1, so the asymptote
+  // is NOT a free parameter. BMI now enters only through FRC and closing
+  // capacity. Ceiling is a numerical guard, binding at x = 23.
   // Mirrors apnoea_core.py shunt_base_eff() -- see the parameter block there
-  // for the four things wrong with it.
-  const _sp2=P.shuntP2===undefined?3.86627e-5:P.shuntP2;
-  const _sp1=P.shuntP1===undefined?1.0209344e-3:P.shuntP1;
-  const _sp0=P.shuntP0===undefined?-6.6007334e-3:P.shuntP0;
-  const _sfl=P.shuntFloor===undefined?0.02:P.shuntFloor;
+  // for the fit, what it costs against Pelosi's quadratic, and the double
+  // count that re-keying exposed.
+  const _sanat=P.shuntAnat===undefined?0.03225:P.shuntAnat;
+  const _sck=P.shuntCcK===undefined?36.16:P.shuntCcK;
   const _scl=P.shuntCeiling===undefined?0.40:P.shuntCeiling;
-  const shuntBaseEff=Math.min(_scl,Math.max(_sfl,_sp2*bmi*bmi+_sp1*bmi+_sp0));
+  const _xs=Math.max(0,cc-frc)/Math.max(frc,100);
+  const shuntBaseEff=Math.min(_scl,_sanat+(1-_sanat)*_xs/(_xs+_sck));
   const _xu=Math.max(0,cc-frcAwake)/Math.max(frcAwake,100);
   const MAXC=P.maxClosed===undefined?0.25:P.maxClosed;
   const CCK=P.ccK===undefined?1.5:P.ccK;

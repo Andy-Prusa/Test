@@ -607,8 +607,128 @@ without any new free parameter:
 - rise with age, because closing capacity rises with age;
 - reuse machinery already in the model rather than adding to it.
 
-**That is a redesign, not a parameter change, and it is not done.** It is the
-single change that both of today's contradictions point at.
+**That is a redesign, not a parameter change.** It is the single change that
+both of today's contradictions point at.
+
+**DONE 2026-09-24 BY RULING — see the section below.**
+
+---
+
+### The shunt re-keyed off BMI — RULED AND DONE 2026-09-24
+
+`shunt_base_eff()` no longer takes BMI. It reads
+
+```
+x = (cc − frc_anaes) / frc_anaes          # closure_x(), one shared helper
+shunt = shunt_anat + (1 − shunt_anat) · x / (x + shunt_cc_k)
+```
+
+where `cc` is closing capacity and `frc_anaes` the lung volume left after
+induction — so `x` is how far the lung has fallen below the volume at which its
+airways start shutting, measured *relative to what it still holds*. 1600 mL
+below closing capacity is trivial in a 3 L lung and catastrophic in a 700 mL
+one, which is why it is normalised rather than left in millilitres.
+
+**Both ends of the law are physics, not fit.** At `x = 0` the lung is at or
+above its closing capacity, nothing is shut, and the shunt is `shunt_anat` —
+the bronchial and thebesian venous drainage that bypasses the alveoli in every
+healthy lung. As lung volume → 0 the whole perfused bed is closed and the shunt
+tends to 1. **The asymptote is therefore not a free parameter**, which matters
+because Pelosi's range does not identify one: fitted freely it runs to 87% with
+the fit still improving, and fixing it anywhere between 60% and 100% moves the
+worst residual by 0.10 percentage points. Only the ratio of `shunt_cc_k` to the
+asymptote is identified over BMI 20–55. **The saturation is asserted from the
+limit, not measured.**
+
+**Two fitted parameters where the quadratic had three**, fitted to the same
+Pelosi inversion, at his cohort's height 1.64 m and age 52. `shunt_floor` is
+gone with the quadratic — the law cannot return less than `shunt_anat`, so a 2%
+floor could never bind, and a dead parameter is not left lying about.
+
+#### What it fixes: Perilli's sign
+
+| Perilli 2003, supine → 30° head-up, FiO₂ 0.50 | PaO₂ change | error vs measured +33 |
+|---|---|---|
+| BMI-keyed (Pelosi quadratic) | **−11.8** mmHg | 44.8 |
+| re-keyed on closure | **+17.3** mmHg | **15.7** |
+| re-keyed, cardiac-output term removed | +36.2 mmHg | **3.2** |
+
+The shunt falls 12.53% → 9.18% as tilt lifts that patient's FRC from 585 to
+840 mL. **Perilli was never in the fit** — the law was fitted to Pelosi's
+supine curve alone, and no parameter was touched to obtain this.
+
+**What is still wrong is now the cardiac-output term.** The FRC and shunt
+routes together give +36.2 against a measured +33. Adding the measured CO loss
+takes it to +17.3. Three readings are open and this row cannot separate them:
+the CO term is too strong; tilt gets too many bites on the oxygen side (store,
+denitrogenation, and now shunt); or our absolute cardiac output, 18% above
+Perilli's measured 4.9 L/min, makes a proportional loss bite harder than it
+should. **Not compensated.**
+
+It also moves with **age**, which no function of BMI can: at BMI 30, supine,
+1.75 m, the shunt runs 4.43% at 20 years, 5.36% at 45, 6.27% at 70, because
+closing capacity rises with age while FRC does not.
+
+#### What it costs
+
+**It fits Pelosi worse.** Worst residual **0.49** percentage points against the
+quadratic's 0.27, rms 0.23 against 0.094. Recorded, not compensated.
+
+The anchors move, and **they move in both directions**, because the shunt is no
+longer a function of BMI alone — these cohorts differ in height and age, which
+the old curve could not see:
+
+| | BMI-keyed | re-keyed | measured |
+|---|---|---|---|
+| Reinius, PaO₂/FiO₂ | 251.7 | **261.6** | 252 (groups 225–266) |
+| Valenza, supine PaO₂ | 171.4 (−0.11 SD) | **182.3 (+0.11 SD)** | 177 ± 50 |
+| Gander, PaO₂ before apnoea | 312.9 (+0.51 SD) | **321.7 (+0.58 SD)** | 243 ± 136 |
+| Tokics, lean baseline shunt | 3.71% | **3.61%** | 5.0 ± 1.3 |
+
+Reinius loses a near-exact hit — 251.7 was within three tenths of a mmHg — and
+lands at the top of his groups' range but still inside it. Valenza improves and
+crosses to the other side of his mean by the same distance. Nothing here was
+fitted to any of them.
+
+**Benchmarks: the blocking set did not move.** Still four, same four names.
+Nine of thirty-four rows moved, none changed tag, the largest by 5.4 s (Heard
+control 302.2 → 307.6 s, band 244–314). `test_parity.py` passes, including the
+check that `model.js`'s literals match the Python defaults.
+
+#### What it exposed: the same closure is counted twice
+
+**This is a real defect and it is not fixed.** `closed_target` applies the same
+law to the same quantity at the *current* lung volume, and grows `collapsed`
+from **zero** toward it. So the closure already present at induction — which is
+exactly what this baseline shunt *is* — gets added a second time as the apnoea
+runs:
+
+| | x at FRC | baseline shunt | `closed_target` at t=0 |
+|---|---|---|---|
+| Pelosi BMI 22, 1.64 m, 52 y | 0.183 | 3.71% | 2.72% |
+| Pelosi BMI 45, 1.64 m, 52 y | 3.648 | 12.09% | 17.72% |
+| Perilli BMI 48.1, 1.61 m, 37 y | 3.846 | 12.53% | 17.99% |
+
+(`closed_target` is then multiplied by `perfusion_gain` 1.2 and reduced by
+hypoxic pulmonary vasoconstriction before it reaches the shunt.)
+
+**The duplication is older than today** — the two terms have always overlapped.
+What changed is that they are now *the same law of the same quantity*, so it is
+legible. Before today one was a function of BMI and the other a function of
+lung volume, and nobody could see they were the same mechanism.
+
+**Not fixed here.** The coherent form is one law, with `collapsed` initialised
+to its induction value so the runtime term adds only *further* closure. That
+changes the collapse kinetics and every benchmark, and it is a separate ruling.
+
+#### What became load-bearing
+
+`closing_capacity()` is a **placeholder regression** — the code says so. The
+shunt now rests on it **directly** rather than through a curve fitted in BMI, so
+`cc_at_20`, `cc_per_year` and `cc_per_bmi` became load-bearing today, and **none
+of them is sourced.** This is now the largest unsourced dependency the shunt
+has, and it is a better reason to find a closing-capacity source than any that
+existed yesterday.
 
 ---
 

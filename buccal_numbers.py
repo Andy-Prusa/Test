@@ -95,8 +95,29 @@ print("what follows IF the fraction is x, not what a device delivers.\n")
 # volume becoming BMI-dependent, and the low-V/Q mechanism. The first
 # LENGTHENS everything and the third SHORTENS the obese, and on these rows
 # the first dominates.
+#
+# AND THIS FILE WAS STALE BEFORE THE RE-KEY OF 2026-09-24, which is the more
+# important finding. Run against the previous commit (1288632, Pelosi's curve)
+# it failed SIX rows, every one of them obese:
+#     obese FO2 0.21   recorded 310.2   actual 302.2
+#     obese FO2 0.60   recorded 500.3   actual 484.1
+#     obese FO2 0.70   recorded 619.4   actual 597.6
+#     BMI 45.1 room air recorded 196.8  actual 185.7
+#     obese opened at 300 s, FO2 0.21   recorded 52.5   actual 46.6
+#     obese 0.6 mm aperture at 30 min   recorded 88.9   actual 86.6
+# The recorded values predate the tilt -> cardiac-output term and the Pelosi
+# curve, both committed the same day, and the file was not re-run after
+# either. The PR body's claim that it was "complete and clean" was wrong.
+#
+# THE RE-KEY THEN MOVED THE OBESE ROWS BACK TOWARD THE RECORDED VALUES, so
+# only three now drift. This patient is tilted 30 degrees head-up, and the
+# re-key is the first change that lets tilt reduce the shunt: hers falls
+# 7.53% -> 4.72%. In an identical harness, forcing 7.53% gives 597.6 s and
+# forcing 4.72% gives 612.9 s, so within this change lower shunt means longer
+# time, as it should. The recorded 619.4 is NOT on that line, which is what
+# identifies it as predating the cardiac-output term rather than the shunt.
 for fg, lean, obese in ((0.21, 444.5, 310.2), (0.60, 744.2, 500.3),
-                        (0.70, 932.9, 619.4), (0.90, 9999.0, 9999.0)):
+                        (0.70, 938.9, 612.9), (0.90, 9999.0, 9999.0)):
     check(f"lean, pharyngeal FO2 {fg:.2f}", t95(LEAN, fg), lean, 6.0, " s")
     check(f"obese, pharyngeal FO2 {fg:.2f}", t95(OBESE, fg, FEO2_OBESE),
           obese, 6.0, " s")
@@ -132,7 +153,13 @@ for name, kw, fe, want in (('lean', LEAN, FEO2_LEAN, 385.7),
         check(f"{name}, occluded, pharynx {fg:.2f}", got, want, 6.0, " s")
 
 print("\nRelieved at laryngoscopy: room air gives a bump, buccal gives a rescue")
-for fg, want in ((0.21, 52.5), (1.00, 99.8)):
+# The room-air row is recorded at 52.5%, was already 46.6% at the previous
+# commit, and is 47.5% now -- so most of this drift predates the shunt re-key
+# and belongs to the tilt -> cardiac-output term (this patient is tilted 30
+# degrees). The re-key moved it back by 0.9 of a point. The rescue on 100%
+# oxygen is unchanged at 99.8% throughout: it has saturation in hand, and the
+# room-air bump is the one a shunt or a lower cardiac output eats into.
+for fg, want in ((0.21, 47.5), (1.00, 99.8)):
     r = sim(OBESE, feo2=FEO2_OBESE, epochs=[AirwayEpoch(300, resistance=OBS, fgo2=fg),
                     AirwayEpoch(600, resistance=2, fgo2=fg)])
     check(f"obese, opened at 300 s, SpO2 120 s later, FO2 {fg:.2f}",

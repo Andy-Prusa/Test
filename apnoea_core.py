@@ -300,7 +300,7 @@ class Patient:
                                  # systolic pressure, by ruling: see
                                  # SBP_SUPINE above for why, and why it is
                                  # deliberately far enough out to be inert.
-    # BASELINE SHUNT AGAINST BMI -- PELOSI'S MEASURED CURVE, 2026-09-24.
+    # BASELINE SHUNT FROM AIRWAY CLOSURE -- RE-KEYED OFF BMI 2026-09-24.
     #
     # WHAT WAS WRONG ORIGINALLY. shunt_base was a flat 0.05 for every patient,
     # and at t=0 on a patent airway the total shunt IS shunt_base -- the
@@ -308,60 +308,83 @@ class Patient:
     # 22 patient were given IDENTICAL gas exchange. That is the defect the
     # obese-shunt branch was forked to find.
     #
-    # WHAT WAS WRONG WITH THE FIRST FIX, committed hours earlier the same day.
-    # It was a broken line: flat 5% to BMI 24, straight to a 10.9% plateau at
-    # BMI 30, flat above. The plateau was anchored on Reinius (BMI 45) and
-    # Valenza (BMI 42); the KNEE AND THE FLATNESS came from Hedenstierna
-    # 2020's finding that ATELECTASIS does not increase above BMI 30. That
-    # block recorded its own weakness -- "shunt and atelectatic area are
-    # different quantities and are not obliged to have the same knee" -- and
-    # Pelosi 1998 then cashed the caveat in. There is no knee, and both
-    # anchors sat in the one interval where the broken line happened to be
-    # right. See SOURCES.md.
+    # TWO FIXES CAME BEFORE THIS ONE AND BOTH WERE KEYED ON BMI.
+    # First a broken line -- flat to BMI 24, a 10.9% plateau from BMI 30 --
+    # whose knee came from Hedenstierna 2020's finding that ATELECTASIS
+    # plateaus above BMI 30. Pelosi 1998 showed there is no knee, and that
+    # both anchors sat in the one interval where the broken line happened to
+    # be right. Then Pelosi's own curve, as a quadratic in BMI. It fitted his
+    # regression to 0.27 percentage points and STILL could not answer
+    # Perilli 2003: head-up tilt raises that patient's FRC 585 -> 840 mL and
+    # a function of BMI does not move one hundredth of a percent.
     #
-    # THE CURVE NOW. Pelosi 1998 (Anesth Analg 87:654-60, n=24, FiO2 0.40,
-    # ZEEP, supine, paralysed) is the only source here that measures ACROSS
-    # THE WHOLE BMI RANGE -- 20 to 66 -- rather than at one cohort mean, and
-    # publishes a regression rather than group means:
+    # THE QUANTITY, NOT THE PROXY. What closes an airway is lung volume
+    # falling below closing capacity, and what matters is how far below
+    # RELATIVE TO the volume that is left -- 1600 mL below CC is trivial in a
+    # 3 L lung and catastrophic in a 700 mL one. That is
     #
-    #     PaO2/PAO2 = 1.23 * exp(-0.037 * BMI) + 0.196     r 0.81, P<0.01
+    #     x = (cc - v_lung) / v_lung
     #
-    # Inverting that through this model gives the shunt that reproduces his
-    # oxygenation at each BMI. The quadratic below is fitted to those inverted
-    # points over BMI 20-55: worst residual 0.27 percentage points, rms 0.094.
-    # A straight line is three times worse (0.79) and a pure exponential six
-    # times (1.77).
+    # evaluated here at frc_anaes(), the volume the apnoea starts from. It is
+    # the SAME quantity the runtime collapse term uses (closed_target) and
+    # the same one unwashed_fraction() uses at the awake volume; all three
+    # now go through closure_x(). BMI enters only through FRC and closing
+    # capacity, where it belongs.
     #
-    # FITTED TO A MEASURED CURVE, NOT TO A BENCHMARK. No benchmark entered it,
-    # and it respects all three earlier anchors without being asked to:
-    #     BMI 42   10.45%   Valenza measured-equivalent 10.0
-    #     BMI 45   11.76%   Reinius 11.85 inverted, 11 (6) by CT
-    #     BMI 22.9  3.71%   Tokics 5.0 (1.3) -- -0.99 SD
+    # THE LAW:
     #
-    # WHAT IS WEAK:
+    #     shunt = shunt_anat + (1 - shunt_anat) * x / (x + shunt_cc_k)
+    #
+    # ITS TWO LIMITS ARE PHYSICS, NOT FIT. At x = 0 -- a lung sitting at or
+    # above its closing capacity -- the shunt is shunt_anat, the bronchial
+    # and thebesian drainage that bypasses the alveoli in every healthy lung.
+    # As v_lung -> 0 the whole perfused bed is closed and x -> infinity, so
+    # the shunt tends to 1. THE ASYMPTOTE IS THEREFORE NOT A FREE PARAMETER.
+    # That matters because Pelosi's range does not identify one: fitted
+    # freely it runs to 87% with the fit still improving, and fixing it
+    # anywhere between 60% and 100% moves the worst residual by 0.10
+    # percentage points. Only the RATIO shunt_cc_k to the asymptote is
+    # identified over BMI 20-55. The saturation is asserted from the limit,
+    # not measured, and must not be quoted as a finding.
+    #
+    # TWO FITTED PARAMETERS WHERE THE QUADRATIC HAD THREE, fitted to the SAME
+    # Pelosi inversion, at his cohort's height 1.64 m and age 52, over BMI
+    # 20-55 in half-unit steps. shunt_floor is gone with the quadratic: the
+    # law cannot return less than shunt_anat, so a 2% floor could never bind.
+    #
+    # AND IT FITS PELOSI WORSE: worst residual 0.49 percentage points against
+    # the quadratic's 0.27, rms 0.23 against 0.094. That is the cost, it is
+    # recorded rather than compensated, and no parameter was reached for to
+    # hide it. What it buys is a shunt that responds to what actually closes
+    # airways -- head-up tilt, age, the induction FRC drop, height -- none of
+    # which a function of BMI can see.
+    #
+    # WHAT IS STILL WEAK:
     #   * the inversion runs Pelosi's blood gas through THIS model's cardiac
     #     output, and ours is about 18% above the only measured obese value
     #     we have (Perilli's 4.9 L/min). Dantzker 1980 makes that matter:
     #     depressing cardiac output is itself a mechanism of shunt reduction.
-    #   * a quadratic is a FITTED SHAPE, not a physiological one. It is chosen
-    #     for fidelity to Pelosi's curve over the measured range and nothing
-    #     else, and it must not be extrapolated far: it turns downward below
-    #     BMI 6 and is unbounded above.
+    #   * closing_capacity() is a PLACEHOLDER REGRESSION -- see the block
+    #     below, which says so. The shunt now rests on it DIRECTLY rather
+    #     than through a fitted curve, so cc_at_20, cc_per_year and
+    #     cc_per_bmi became load-bearing today, and none of them is sourced.
+    #     This is the single largest unsourced dependency the shunt has.
     #   * Pelosi's cohort is 1 man to 7 women per group, aged 40-75, at
     #     FiO2 0.40. Reinius, Valenza and Perilli differ in all three.
-    #   * AND THIS IS STILL KEYED ON BMI. Perilli shows that is wrong in kind:
-    #     head-up tilt raises FRC 585 -> 840 mL and this curve does not move,
-    #     so the model cannot reproduce his measured oxygenation gain from
-    #     position. The right quantity is lung volume against closing
-    #     capacity. See the tilt->cardiac-output section in SOURCES.md.
-    shunt_p2: float = 3.86627e-5   # BMI^2 coefficient, as a fraction
-    shunt_p1: float = 1.0209344e-3
-    shunt_p0: float = -6.6007334e-3
-    # Floor: bronchial and thebesian venous drainage bypass the alveoli in
-    # every healthy lung, so a true shunt of a few per cent exists at any
-    # body mass. It binds below BMI 13.5 and is a guard, not a measurement.
-    shunt_floor: float = 0.02
-    # Ceiling: a guard only. It binds past BMI 92, which no timeline reaches.
+    #   * THE SAME CLOSURE IS NOW COUNTED TWICE, and re-keying is what made
+    #     it visible. closed_target applies this same x at the CURRENT lung
+    #     volume and grows `collapsed` from ZERO toward it, so the closure
+    #     already present at induction -- which is exactly what this baseline
+    #     is -- gets added a second time as the apnoea runs. The two terms
+    #     were different functions of different drivers until today, which is
+    #     why it was never visible. NOT FIXED HERE: the coherent form is one
+    #     law with `collapsed` initialised to its induction value, and that
+    #     changes the collapse kinetics and every benchmark. See HANDOVER.
+    shunt_anat: float = 0.03225  # bronchial + thebesian: the x = 0 limit
+    shunt_cc_k: float = 36.16    # half-saturation in x; see the note above
+                                 # on why only its ratio to 1 is identified
+    # Ceiling: a numerical guard only. It binds at x = 23 -- a lung at a
+    # twenty-fourth of its closing capacity -- which no timeline reaches.
     shunt_ceiling: float = 0.40
 
     # --- closing capacity (PLACEHOLDER REGRESSION) -------------------------
@@ -857,17 +880,33 @@ class Patient:
     # difference is that it is evaluated at the AWAKE lung volume, because
     # preoxygenation happens before induction. Nothing here was chosen by
     # looking at a benchmark.
-    def shunt_base_eff(self):
-        """Baseline shunt for THIS patient: Pelosi 1998's measured curve.
+    def closure_x(self, v_lung):
+        """How far this lung sits below closing capacity, RELATIVE to what it
+        still holds. The one quantity behind every closure term in the model.
 
-        A quadratic in BMI fitted to Pelosi's oxygenation regression inverted
-        through this model. See the parameter block above, including the four
-        things wrong with it -- the last of which is that it is keyed on BMI
-        at all.
+        1600 mL below closing capacity is trivial in a 3 L lung and
+        catastrophic in a 700 mL one, which is why it is normalised rather
+        than left in millilitres. Normalising is also what separates the
+        obese from the morbidly obese, which an absolute measure fails to do.
+
+        Three callers, differing ONLY in the volume they pass:
+          shunt_base_eff()     frc_anaes(), the volume apnoea starts from
+          unwashed_fraction()  frc_awake(), because preoxygenation is awake
+          the collapse term     the CURRENT volume, as the lung empties
         """
-        b = self.bmi()
-        s = self.shunt_p2 * b * b + self.shunt_p1 * b + self.shunt_p0
-        return float(np.clip(s, self.shunt_floor, self.shunt_ceiling))
+        return max(0.0, self.closing_capacity() - v_lung) / max(v_lung, 100.0)
+
+    def shunt_base_eff(self):
+        """Shunt at the start of apnoea: airway closure at the induction volume.
+
+        Keyed on lung volume against closing capacity, NOT on BMI. See the
+        parameter block above for the law, for the two limits that are
+        physics rather than fit, for what it costs against Pelosi's curve,
+        and for the double count that re-keying exposed.
+        """
+        x = self.closure_x(self.frc_anaes())
+        s = self.shunt_anat + (1.0 - self.shunt_anat) * x / (x + self.shunt_cc_k)
+        return float(min(s, self.shunt_ceiling))
 
     def unwashed_fraction(self):
         """Perfusion share whose airway was shut throughout preoxygenation.
@@ -875,8 +914,7 @@ class Patient:
         Zero whenever the awake FRC is at or above closing capacity, which is
         every young lean supine patient. See the block comment above.
         """
-        v_lung = self.frc_awake()
-        x = max(0.0, self.closing_capacity() - v_lung) / max(v_lung, 100.0)
+        x = self.closure_x(self.frc_awake())
         return self.max_closed * x / (x + self.cc_k)
 
     def summary(self):
@@ -1157,7 +1195,7 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
         # 1600 mL below CC is trivial in a 3 L lung and catastrophic in a
         # 700 mL one. Normalising this way is also what separates the obese
         # from the morbidly obese, which an absolute measure fails to do.
-        x = max(0.0, cc - v_lung) / max(v_lung, 100.0)
+        x = pt.closure_x(v_lung)
         closed_target = pt.max_closed * x / (x + pt.cc_k)
         tau_c = (pt.tau_collapse_o2 * frac[0]
                  + pt.tau_collapse_air * (1.0 - frac[0]))

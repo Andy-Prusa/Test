@@ -161,10 +161,8 @@ def js_params(pt, feo2):
         "inflowMechFrac": pt.inflow_mech_frac, "cvFrac": pt.cv_frac,
         "recruitFrac": pt.recruit_frac, "tauRecruit": pt.tau_recruit,
         "coTiltGain": pt.co_tilt_gain,
-        "shuntP2": pt.shunt_p2,
-        "shuntP1": pt.shunt_p1,
-        "shuntP0": pt.shunt_p0,
-        "shuntFloor": pt.shunt_floor,
+        "shuntAnat": pt.shunt_anat,
+        "shuntCcK": pt.shunt_cc_k,
         "shuntCeiling": pt.shunt_ceiling,
         # HPV
         "hpvEnabled": pt.hpv_enabled, "hpvPvrMax": pt.hpv_pvr_max,
