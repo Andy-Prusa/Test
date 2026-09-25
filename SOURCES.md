@@ -1948,7 +1948,14 @@ predicted:
 **NOT APPLIED.** The 6.7 L is what the crossover *implies*, not a value read
 from anywhere, and it must not be shipped as one.
 
-##### The TLC source could not be read, and a lead on the uncited FRC lever
+##### READ AT SOURCE 2026-09-25 — and both halves came in
+
+**The PDF was uploaded to the session**, so what follows is read from the page,
+not from a search. See the section immediately below. The lead recorded here as
+UNVERIFIED — that the ECSC male FRC equation is our exact coefficients — **is
+confirmed**. The TLC that blocked Buist & Ross is in the same table.
+
+##### What this section said before it was read, kept as the record
 
 `Quanjer PH, Tammeling GJ, Cotes JE, Pedersen OF, Peslin R, Yernault JC.` *Lung
 volumes and forced ventilatory flows. Report Working Party Standardization of
@@ -1974,6 +1981,98 @@ session is unverified, and this repository's retractions all came from
 asserting a number from something short of the source. It is recorded here as a
 lead and is written into no parameter, no comment claiming provenance, and no
 benchmark.
+
+---
+
+### Quanjer 1993 — READ AT SOURCE 2026-09-25, and it settles two things at once
+
+**Quanjer PH, Tammeling GJ, Cotes JE, Pedersen OF, Peslin R, Yernault J-C.**
+Lung volumes and forced ventilatory flows. Report Working Party Standardization
+of Lung Function Tests, European Community for Steel and Coal. Official
+Statement of the European Respiratory Society. *Eur Respir J* 1993;6 Suppl
+16:5-40. **PMID 8499054.** Uploaded to the session and read.
+
+**Table 6, p.26, verbatim.** H is **standing height in metres**, A is age in
+years, volumes in litres. RSD is the residual standard deviation:
+
+| | Men | RSD | Women | RSD |
+|---|---|---|---|---|
+| **FRC** | **2.34H + 0.009A − 1.09** | 0.6 | 2.24H + 0.001A − 1.00 | 0.50 |
+| **TLC** | **7.99H − 7.08** | 0.70 | 6.60H − 5.79 | 0.60 |
+| RV | 1.31H + 0.022A − 1.23 | 0.41 | 1.81H + 0.016A − 2.00 | 0.35 |
+| FRC/TLC (%) | 0.21A + 43.8 | 6.74 | 0.16A + 45.1 | 5.93 |
+| RV/TLC (%) | 0.39A + 13.96 | 5.46 | 0.34A + 18.96 | 5.83 |
+
+#### 1. The largest uncited lever in the model is Quanjer's men's FRC equation
+
+`apnoea_core.py` carried `FRC(L) = 2.34*height(m) + 0.009*age − 1.09` and the
+2026-09-21 source audit flagged it: *no author, no journal and no year anywhere
+in this repository*. It is **Quanjer Table 6, Men, coefficient for
+coefficient.** Now cited in the code.
+
+**Three things follow, and they are not all comfortable:**
+
+- **It is the MEN'S equation and this model has no sex.** Women's FRC carries an
+  age term of 0.001 against men's 0.009 — nine times smaller, essentially flat.
+  Applying a male line to every patient is a real approximation that is now
+  visible and costed nowhere.
+- **Quanjer measures SEATED.** His §6.1: *"Measurements are made with the
+  subject seated upright; other postures should be noted, as they affect lung
+  volumes."* `frc_ref` 2500 mL is **supine**. At 1.75 m and age 45 Quanjer
+  predicts **3410 mL** seated against our 2500 supine, a ratio of **0.733** —
+  the right sort of size for the supine fall, but not itself sourced. So the
+  model takes Quanjer's *shape* and sets its own *level*.
+- **The age term is still not implemented.** `height_factor()` is height-only.
+  Restoring it moves the CC=FRC crossover **55.0 → 59.9 years**, further from
+  the literature's ~44, because this regression has FRC *rising* with age.
+
+**And it settles the contradiction the audit could not close.**
+`airway_scenario.html` tells the recipient the FRC–BMI relation is
+*"parameterised, not fitted to source data"*; `apnoea_core.py` said *"anchored
+to the standing predicted-FRC regression"*. **The code was right and the page is
+wrong** — the height term is Quanjer's, read from the page. That closes one of
+the open release items.
+
+#### 2. The TLC that blocked Buist & Ross, and it has no age term
+
+`TLC = 7.99H − 7.08` for men. **No age term** — which confirms *from a primary
+source* what this document had previously only reasoned to ("TLC is
+approximately age-stable — it is FRC and RV that move with age").
+
+#### 3. The crossover test predicted it before the paper was read
+
+| | TLC at 1.75 m |
+|---|---|
+| inverted from the published 44-year supine crossover | **6676 mL** |
+| Quanjer, men, measured | **6902 mL** |
+| | **agree to 3.3%** |
+
+A quantity the model did not contain, inverted out of an independent published
+figure, landing within 3.3% of a paper nobody here had read. **That is the
+strongest independent check the closing-capacity block has ever had**, and it
+was made before the answer was available.
+
+#### 4. What a Buist CC on Quanjer's own TLC would do — NOT APPLIED
+
+| cohort | our shunt | Buist + Quanjer | CC ours → theirs |
+|---|---|---|---|
+| Pelosi BMI 45, 1.64 m, 52 y | 12.09% | **10.22%** | 3054 → 2509 mL |
+| Reinius BMI 45, 1.70 m, 42 y | 11.47% | **9.31%** | 3018 → 2367 mL |
+| Perilli BMI 48.1, 1.61 m, 37 y | 12.53% | **9.11%** | 2833 → 1953 mL |
+| Heard BMI 34.7, 1.74 m, 42 y | 6.89% | **6.50%** | 2656 → 2483 mL |
+
+Every obese shunt falls. This is a **redesign, not a parameter edit**:
+`cc_at_20`, `cc_per_year` and `cc_per_bmi` would all go, replaced by a predicted
+TLC times Buist's percentage, and `cc_per_bmi` — the term both Milic-Emili and
+BJA Education contradict — would disappear on its own. It moves every benchmark
+and **needs a ruling**.
+
+#### 5. The range we leave
+
+Table 6 applies to **ages 18–70** (*"between 18 and 25 yr substitute 25 yr"*)
+and was derived from heights **1.55–1.95 m in men, 1.45–1.80 m in women**. Our
+crossover sweeps run outside it at both ends, and the model puts no guard on
+either.
 
 ---
 
@@ -2445,8 +2544,12 @@ Documentary, needing no library:
 - [ ] `test_validation.py` names the function `test_toner_2018` while its own
       docstring cites the 2019 paper
 
-Needing the library, cheapest first. **All citations below are now complete
-enough to order** — §2a resolved the four that were not. Nothing here can be
+Needing the library, cheapest first. **Most citations below are complete
+enough to order** — §2a resolved four that were not, but **four still are
+not**: Flin 2013, Byun 2026 and Kaiser 2024 have no TITLE recorded, and
+"Varat 1972; *Circulation* 1963;28:346" has no established author and may be
+an abstract rather than a paper. Corrected 2026-09-25; the previous claim that
+all of them were orderable was wrong. Nothing here can be
 obtained from this environment: every publisher domain is egress-blocked, so
 these need a machine with library access, or the Google Drive connector
 connected and the PDFs placed there.
@@ -2473,7 +2576,8 @@ connected and the PDFs placed there.
 **Added 2026-09-24, resolved from Reinius 2009's own reference list — a
 primary source, not a search.** The first two are the ones that matter most:
 
-- [ ] **Valenza F, et al.** Effects of the beach chair position, positive
+- [x] **Valenza F, et al.** **OBTAINED AND READ 2026-09-24** — see its own
+      section above. Effects of the beach chair position, positive
       end-expiratory pressure, and pneumoperitoneum on respiratory function in
       morbidly obese patients during anesthesia. *Anesthesiology*
       2007;107(5):725-32. **Position against RESPIRATORY FUNCTION in
@@ -2497,22 +2601,21 @@ primary source, not a search.** The first two are the ones that matter most:
       failure. *Chest* 1980;77:636-42. Perilli's reference 16, and a caveat on
       our own 10–12% shunt inversions: those were done through this model's
       cardiac output, and neither Reinius nor Valenza reports theirs
-- [ ] **Pelosi P, Croci M, Ravagnan I, Tredici S, Pedoto A, Lissoni A,
-      Gattinoni L.** The effects of body mass on lung volumes, respiratory
+- [x] **Pelosi P, Croci M, Ravagnan I, Tredici S, Pedoto A, Lissoni A,
+      Gattinoni L.** **OBTAINED AND READ 2026-09-24** — see its own section
+      above; its curve is what shunt_base_eff was fitted to.
+      The effects of body mass on lung volumes, respiratory
       mechanics, and gas exchange during general anesthesia. *Anesth Analg*
       1998;87(3):654-60. Valenza's reference 22, and the source his Discussion
       leans on for FRC falling exponentially with BMI — bears directly on
       `k_frc_bmi` and on the helium/CT tie
-- [ ] **Quanjer PH, Tammeling GJ, Cotes JE, Pedersen OF, Peslin R, Yernault
+- [x] **Quanjer PH, Tammeling GJ, Cotes JE, Pedersen OF, Peslin R, Yernault
       JC.** Lung volumes and forced ventilatory flows. ECSC / official
       statement of the ERS. *Eur Respir J* 1993;6 Suppl 16:5-40. PMID 8499054.
-      **Now the highest-value paper on this list.** It would (a) supply the
-      predicted TLC that Buist & Ross needs and that this model lacks, and
-      (b) probably identify the uncited FRC regression that is the largest
-      uncited lever in the model — a search snippet gives its male FRC
-      equation as our exact coefficients, UNVERIFIED. Every primary host is
-      blocked by this environment's network policy, so it needs either a
-      widened policy or the PDF uploaded to the session.
+      **OBTAINED AND READ 2026-09-25** — see its own section above. It did
+      both things hoped for: Table 6 supplies the predicted TLC that Buist &
+      Ross needs, and its men's FRC equation is our exact coefficients, so the
+      largest uncited lever in the model is now cited.
 - [ ] **Jones RL, Nzekwu MM.** The effects of body mass index on lung volumes.
       *Chest* 2006;130(3):827-33. Already called "the decisive paper" above;
       the citation is now confirmed from a primary source

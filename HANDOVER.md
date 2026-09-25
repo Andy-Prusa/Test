@@ -5,6 +5,59 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-25
+
+**Quanjer 1993 was read at source and it settled two things at once.** The PDF
+was uploaded to the session.
+
+**Quanjer PH, Tammeling GJ, Cotes JE, Pedersen OF, Peslin R, Yernault J-C.**
+Lung volumes and forced ventilatory flows. ECSC / official statement of the
+ERS. *Eur Respir J* 1993;6 Suppl 16:5-40. PMID 8499054. Table 6, p.26 — H is
+standing height in metres, A age in years, volumes in litres:
+
+| | Men | Women |
+|---|---|---|
+| **FRC** | **2.34H + 0.009A − 1.09** (RSD 0.6) | 2.24H + 0.001A − 1.00 |
+| **TLC** | **7.99H − 7.08** (RSD 0.70) | 6.60H − 5.79 |
+
+**1. The largest uncited lever in the model is now cited.** `apnoea_core.py`
+carried that men's FRC line with no author, journal or year since the
+2026-09-21 audit flagged it. It is Quanjer, coefficient for coefficient.
+
+Three things follow, none of them comfortable: it is the **men's** equation and
+this model has no sex (women's age term is 0.001 against men's 0.009); Quanjer
+measures **seated** while `frc_ref` is supine, so the model takes his *shape*
+and sets its own *level* (3410 mL seated vs our 2500 supine, ratio 0.733, not
+itself sourced); and the **age term is still not implemented** — restoring it
+moves the crossover 55.0 → 59.9 years, *further* from the literature's ~44.
+
+It also **closes an open release item**: `airway_scenario.html` says the FRC–BMI
+relation is "parameterised, not fitted to source data" and the code said
+"anchored to the standing predicted-FRC regression". The code was right; the
+page is wrong.
+
+**2. The TLC that blocked Buist & Ross now exists, and it has no age term** —
+confirming from a primary source what SOURCES.md had only reasoned to.
+
+**3. And the crossover test predicted it before the paper was read.** Inverting
+the published 44-year supine CC=FRC crossover gave **6676 mL** at 1.75 m;
+Quanjer measures **6902 mL**. They agree to **3.3%** — on a quantity the model
+did not contain, from a paper nobody here had read. The strongest independent
+check the closing-capacity block has ever had.
+
+**What it would cost, NOT APPLIED.** A Buist CC on Quanjer's own TLC drops every
+obese shunt: Perilli 12.53 → **9.11%**, Reinius 11.47 → **9.31%**, Pelosi BMI 45
+12.09 → **10.22%**, Heard 6.89 → **6.50%**. That is a redesign —
+`cc_at_20`/`cc_per_year`/`cc_per_bmi` all replaced by a predicted TLC times
+Buist's percentage, with `cc_per_bmi` disappearing on its own — and it moves
+every benchmark. **Needs a ruling.**
+
+**The range we leave:** Table 6 applies to ages 18–70 and heights 1.55–1.95 m in
+men; the model guards neither.
+
+15 new checks in `handover_numbers.py`, all passing; total failures unchanged at
+166.
+
 ## Current state — 2026-09-24
 
 Work on branch `claude/obese-shunt`. The section below dated 2026-09-22 is the

@@ -2733,6 +2733,78 @@ print("    0.2 s, 0.06%. The whole obese-shunt branch changed OXYGENATION --")
 print("    the PaO2 a patient starts from -- and hardly touched how long they")
 print("    last. Both are true and they are different questions.")
 
+# ---------------------------------------------------------------------------
+print("\nQUANJER 1993 READ AT SOURCE 2026-09-25 -- IT SETTLES TWO THINGS AT ONCE")
+print("  Quanjer PH, Tammeling GJ, Cotes JE, Pedersen OF, Peslin R, Yernault JC.")
+print("  Lung volumes and forced ventilatory flows. ECSC / official statement of")
+print("  the ERS. Eur Respir J 1993;6 Suppl 16:5-40. PMID 8499054. Table 6, p.26,")
+print("  H = standing height in metres, A = age in years, volumes in litres:")
+print("      Men    FRC = 2.34H + 0.009A - 1.09   RSD 0.6")
+print("      Women  FRC = 2.24H + 0.001A - 1.00   RSD 0.50")
+print("      Men    TLC = 7.99H - 7.08            RSD 0.70")
+print("      Women  TLC = 6.60H - 5.79            RSD 0.60")
+
+
+def _q_tlc_m(h):
+    return (7.99 * h - 7.08) * 1000.0
+
+
+def _q_frc_m(h, a):
+    return (2.34 * h + 0.009 * a - 1.09) * 1000.0
+
+
+print("  1. THE LARGEST UNCITED LEVER IS NOW CITED. apnoea_core.py quoted")
+print("     FRC(L) = 2.34*height(m) + 0.009*age - 1.09 with no author, journal")
+print("     or year. It is Quanjer's MEN'S equation, coefficient for")
+print("     coefficient. The model has no sex, so it applies a male line to")
+print("     every patient -- women's age term is 0.001 against men's 0.009.")
+check("Quanjer men FRC at 1.75 m, age 45 [SEATED]", _q_frc_m(1.75, 45.0),
+      3410.0, 1.0, " mL")
+check("  our frc_ref, SUPINE, same subject",
+      Patient(weight=22 * 1.75 * 1.75, height=1.75, age=45.0).frc_awake(),
+      2500.0, 1.0, " mL")
+check("  ... the supine-to-seated ratio we imply",
+      Patient(weight=22 * 1.75 * 1.75, height=1.75, age=45.0).frc_awake()
+      / _q_frc_m(1.75, 45.0), 0.733, 0.002, "")
+print("     SO THE MODEL TAKES QUANJER'S SHAPE AND SETS ITS OWN LEVEL. Quanjer")
+print("     measures SEATED (his section 6.1); frc_ref is supine. 0.73 is the")
+print("     right sort of size for the supine fall but is not itself sourced.")
+
+print("  2. TLC EXISTS NOW, AND IT HAS NO AGE TERM -- confirming from a primary")
+print("     source what SOURCES.md had only reasoned to.")
+for _h, _w in ((1.61, 5784.0), (1.64, 6024.0), (1.70, 6503.0),
+               (1.74, 6823.0), (1.75, 6902.0)):
+    check(f"Quanjer men TLC at {_h:.2f} m", _q_tlc_m(_h), _w, 1.0, " mL")
+
+print("  3. AND THE CROSSOVER TEST PREDICTED IT BEFORE THE PAPER WAS READ.")
+check("TLC the 44-year crossover implied, 1.75 m", _TLC44, 6676.0, 3.0, " mL")
+check("  ... Quanjer's measured value there", _q_tlc_m(1.75), 6902.0, 1.0, " mL")
+check("  ... they agree to", 100.0 * abs(_q_tlc_m(1.75) - _TLC44) / _q_tlc_m(1.75),
+      3.28, 0.05, " %")
+print("     A quantity the model did not contain, inverted out of a published")
+print("     44-year crossover, landing within 3.3% of a paper nobody here had")
+print("     read. That is the strongest independent check this block has had.")
+
+print("  4. WHAT A BUIST CC ON QUANJER'S OWN TLC WOULD DO. NOT APPLIED.")
+for _nm, _h, _b, _a, _want in (("Pelosi BMI 45", 1.64, 45.0, 52.0, 10.22),
+                               ("Reinius BMI 45", 1.70, 45.0, 42.0, 9.31),
+                               ("Perilli BMI 48.1", 1.61, 48.1, 37.0, 9.11),
+                               ("Heard BMI 34.7", 1.74, 34.7, 42.0, 6.50)):
+    class _QCC(Patient):
+        def closing_capacity(self, _t=_q_tlc_m(_h)):
+            return _buist_cc(self.age, _t)
+    _q = _QCC(weight=_b * _h * _h, height=_h, age=_a, hb=14.0, tilt_deg=0.0)
+    _n = Patient(weight=_b * _h * _h, height=_h, age=_a, hb=14.0, tilt_deg=0.0)
+    check(f"{_nm}: shunt on Buist + Quanjer TLC [ours {_n.shunt_base_eff()*100:.2f}%]",
+          _q.shunt_base_eff() * 100.0, _want, 0.05, " %")
+print("     Every obese shunt FALLS, so this is a redesign and not a parameter")
+print("     edit: cc_at_20/cc_per_year/cc_per_bmi would all go, replaced by a")
+print("     predicted TLC times Buist's percentage. It moves every benchmark")
+print("     and needs a ruling.")
+print("  5. THE RANGE WE LEAVE. Table 6 applies to ages 18-70 (below 25, enter")
+print("     25) and heights 1.55-1.95 m in men, 1.45-1.80 m in women. Our")
+print("     crossover sweeps run outside it at both ends.")
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")
