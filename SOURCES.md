@@ -69,7 +69,7 @@ is recorded in `HANDOVER.md` as the oldest failure mode here.
 | ~~**Heard A, et al.** *Anesth Analg* 2017;124:1162-7~~ **OBTAINED AND READ 2026-09-22** | — | **CLOSED.** Moved to §1b. The band is confirmed as an IQR and was right; the configuration was wrong in four ways and is corrected |
 | **The four positioning trials: Lane 2005, Ramkumar 2011, Altermatt 2005, Dixon 2005.** Surnames and years only | `tilt_gain_lean` and `tilt_gain_bmi`, stated in `apnoea_core.py` as "calibrated against four randomised trials", then graded by three bands set from those same four | **Not retrievable as cited, by anyone, including us.** Also a fit graded by its own calibration target (§6). The limb is not confined to the positioning test: the obese buccal configuration runs `tilt_deg=25` |
 | **The one-lung-ventilation narrative review**, doi 10.3390/jcm15135078. ~~No author or title recorded~~ — **BOTH ARE RECORDED, further down this same section** (Byun S-H, *Optimizing Lung Collapse During One-Lung Ventilation*), a self-contradiction inside one file, caught 2026-09-25 | `protocol/evidence.md` calls it "obtained and read" and draws an **absence** claim from it | Reasoning from what a document does not contain is the move CLAUDE.md forbids outright. Open access |
-| ***Circulation* 1963;28:346**, "Hemodynamic Effects of Chronic Severe Anemia". **No author recorded** | `hb_co_exp` = 1.535, derived from it; a band in `test_validation.py` | The band grades the fit against the number the fit was made from. Whether it is a paper or a meeting abstract is **unknown**, and that changes whether the "CLINICAL" label is honest |
+| **Roy SB, Bhatia ML, Mathur VS, Virmani S.** Hemodynamic effects of chronic severe anemia. *Circulation* 1963;**28**(3):346-356 | `hb_co_exp` = 1.535, derived from it; a band in `test_validation.py` | ~~No author recorded~~ **OBTAINED AND READ AT SOURCE 2026-09-25** — see its own section below. It is a **full paper, not an abstract**, so the "CLINICAL" label is honest. But this file's suspicion was right and understated: the band does grade the fit against the number the fit was made from, **and that number is not in the paper** |
 | **Varat MA, Adolph RJ, Fowler NO.** *Am Heart J* 1972;83:415-26 | `hb_co_threshold` = 7.0 | A **verbatim quotation in quotation marks** ships in three files from a paper nobody here has read |
 | **Laviola 2026, main text** (SDC held) | ~~a band sourced "~510 s"~~ **STRUCK 2026-09-22**, plus the scorecard row and the claim that "two independently built models agree" | **The 510 s is in no document held.** The band that rested on it has been removed from `test_validation.py` by ruling; see §1b. The SDC gives the state at SaO2 40%, explicitly not the time to it, and names no journal, volume or DOI — the citation in `test_validation.py` is the repository speaking, not the document |
 | **Siggaard-Andersen O.** The van Slyke equation. *Scand J Clin Lab Invest Suppl* 1977;146:15-20, doi 10.3109/00365517709098927 | the non-bicarbonate buffer term `(9.5 + 1.63·cHb)` in `bloodgas.py` — the pH at which every CO2 content and every PaCO2 slope is computed | `bloodgas.py` defends its unit convention with an **unsourced assertion**, which is the exact pattern of the Douglas `[Hb]` bug this same file shipped once. The DOI above was read off the held Laviola SDC's reference list, so it is sound |
@@ -2513,6 +2513,103 @@ adopted**, and adopting it means changing `model.js` in the same commit.
 
 ---
 
+### Roy 1963 — OBTAINED AND READ AT SOURCE 2026-09-25
+
+**Roy SB, Bhatia ML, Mathur VS, Virmani S.** Hemodynamic effects of chronic
+severe anemia. *Circulation* 1963;**28**(3):346-356. Department of Cardiology
+and the Cardiovascular Laboratories, All India Institute of Medical Sciences,
+New Delhi.
+
+**This was the last genuinely incomplete citation in this file.** Its author
+was recorded nowhere, and whether it was a paper or a meeting abstract was
+unknown — which mattered, because `test_validation.py` labels it CLINICAL.
+**It is a full paper**, with methods, seven tables and 26 references. The label
+is honest.
+
+51 patients, anaemia of at least four months, Hb ≤ 6.5 g/100 mL (range
+1.5–6.5, mean 3.7). Right-heart catheterisation, cardiac output by **both**
+Fick and dye dilution. Group A: Hb < 4.0, n = 26, mean 3.0. Group B: Hb
+4.0–6.5, n = 25, mean 4.5.
+
+#### What this repository claimed, checked line by line
+
+| claim | verdict |
+|---|---|
+| "Hb 4.0–6.5 (mean 4.5)" | **CONFIRMED**, Summary verbatim |
+| "gave a cardiac index of 6.3 L/min/m²" | **CONFIRMED**, Summary verbatim — *"higher cardiac index (8.0 versus 6.3 liters per minute per square meter)"*, 8.0 being group A and 6.3 group B |
+| "against a normal ~3.2" | **NOT IN THIS PAPER** |
+
+**The paper gives its own normal, and states it three times.** Measured on 65
+healthy volunteers in the same laboratory: Figure 1's caption — *"The area
+between the broken lines (2.5–5.0 L./min./M²) is the range of our normal
+cardiac index"*; p.351 — *"the upper limit of our normal value of 5.0"*;
+p.355 — *"only 10 subjects had normal cardiac output (2.5 to 5.0 liters per
+minute per square meter)"*.
+
+So the ratio depends entirely on which normal is used:
+
+| | |
+|---|---|
+| 6.3 / **3.2** (this repository's, source unknown) | **1.97×** |
+| 6.3 / 3.75 (the paper's midpoint) | **1.68×** |
+| 6.3 / 5.0 (the paper's upper limit) | 1.26× |
+| 6.3 / 2.5 (the paper's lower limit) | 2.52× |
+
+`test_validation.py` bands this at **1.7–2.3×** and our model returns 1.97×.
+**The paper's own midpoint gives 1.68×, below that band.** §2a already
+suspected the band grades the fit against the number the fit was made from;
+that is now confirmed, and worse than suspected — the number is not the
+paper's.
+
+#### But Table 5 is a paired dataset, which is far stronger than two group means
+
+25 patients with Hb **and** cardiac index before and after treatment of the
+anaemia, each his own control. Our law says the factor is `(7/hb)^k` below Hb 7
+and 1 above, and every post-treatment Hb is 10.0–12.5, so the paired ratio
+isolates `k`:
+
+| estimate of `k` | at Hb 4.5 | |
+|---|---|---|
+| 0.471 | 1.23× | vs each patient's own post-treatment cardiac index |
+| 0.826 | 1.44× | vs the paper's normal midpoint, 3.75 |
+| 1.305 | 1.78× | vs the paper's normal lower limit, 2.5 |
+| **1.535** | **1.97×** | **ours** |
+
+**The paired estimate understates, and the paper says why.** Mean cardiac index
+after treatment is **5.36**, near the *top* of the paper's own normal range —
+p.355: *"patients who once become hyperkinetic may take a much longer time for
+the cardiovascular adjustment, even after the correction of the anemia."* So
+the denominator is still elevated and the paired ratio is a floor, not an
+estimate.
+
+**Read together: the primary data bracket our exponent from below rather than
+refuting it.** `hb_co_exp` = 1.535 sits at or just above the top of what this
+paper supports. What is *not* defensible is the "~3.2 normal" and the band
+built on it.
+
+**And the fit is weak by the paper's own account.** R² of the paired fit is
+0.243 with a residual SD of 0.32 in log space — but the paper states the same
+thing directly: *"for any individual subject the heart rate, cardiac output, or
+stroke volume cannot be predicted from the hemoglobin level."* A low R² here is
+the finding, not a defect of the fit.
+
+#### The population caveat, and it is a large one
+
+*"Anemia was due to ankylostomiasis in 45 patients"* of 51 — **chronic hookworm
+anaemia of at least four months**, in India, ages 13–60. Our `hb_co_factor` is
+applied to **any** patient with a low haemoglobin, including acute blood loss,
+where the circulation has had no months in which to adapt. **Nothing in this
+paper licenses that extension**, and the model makes it silently.
+
+#### One thing that cannot be recovered
+
+Tables 2, 3 and 4 — the individual haemodynamics for all 51 patients — are
+**not in the paper**. They were deposited with the ADI Auxiliary Publications
+Project, Library of Congress, Document 7331. Only group means and the 25
+paired rows of Table 5 are available.
+
+---
+
 ### Gutierrez 2004 — OBTAINED AND READ AT SOURCE 2026-09-25
 
 **Gutierrez C, Ghezzo RH, Abboud RT, Cosio MG, Dill JR, Martin RR, McCarthy DS,
@@ -3278,8 +3375,13 @@ connected and the PDFs placed there.
 - [ ] Toner 2019, Heard 2017, O'Loughlin 2020 — **record-keeping, not access.**
       The detail already in the repository reads as though someone once had
       these full texts
-- [ ] **"Hemodynamic Effects of Chronic Severe Anemia." *Circulation*
-      1963;28:346. THE AUTHOR IS RECORDED NOWHERE**, and whether it is a paper
+- [x] **Roy SB, Bhatia ML, Mathur VS, Virmani S.** Hemodynamic effects of
+      chronic severe anemia. *Circulation* 1963;28(3):346-356.
+      **OBTAINED AND READ AT SOURCE 2026-09-25** — the last genuinely
+      incomplete citation in this file, now complete. It is a **full paper**,
+      which settles the open question about the "CLINICAL" label. See its own
+      section above for what it confirmed and what it did not.
+      ~~THE AUTHOR IS RECORDED NOWHERE~~, and whether it is a paper
       or a meeting abstract is unknown — which changes whether the "CLINICAL"
       label `test_validation.py` gives it is honest. **This is the one
       genuinely incomplete citation in this section**, and until 2026-09-25 it

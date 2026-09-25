@@ -3576,6 +3576,93 @@ print("    height, because the height terms cancel in a ratio of ratios. The")
 print("    claim that the posture cost NEARLY DOUBLES across BMI 22-50 is")
 print("    therefore independent of the geometry chosen.")
 
+# ---------------------------------------------------------------------------
+# ROY 1963 -- OBTAINED AND READ AT SOURCE 2026-09-25
+#
+# Roy SB, Bhatia ML, Mathur VS, Virmani S. Hemodynamic effects of chronic
+# severe anemia. Circulation 1963;28(3):346-356. THE LAST GENUINELY
+# INCOMPLETE CITATION IN SOURCES.md, and it is a FULL PAPER, not an
+# abstract -- which settles whether test_validation.py's "CLINICAL" label
+# on this row is honest. It is.
+# ---------------------------------------------------------------------------
+print("\nROY 1963 -- the anaemia/cardiac-output source, read at source")
+
+# Table 5, read from the page: 25 patients, Hb and cardiac index (L/min/m2)
+# BEFORE and AFTER treatment of the anaemia. Each patient is his own control.
+_T5 = ((2.5, 13.6, 12.5, 7.7), (4.5, 13.0, 11.0, 6.0), (1.8, 11.3, 12.5, 3.7),
+       (3.5, 10.4, 10.0, 8.3), (4.0, 9.7, 10.0, 7.7), (1.5, 8.9, 10.0, 3.4),
+       (2.5, 8.6, 10.0, 4.0), (6.5, 8.5, 11.0, 4.3), (4.0, 8.0, 12.5, 5.8),
+       (4.0, 8.0, 11.0, 6.6), (6.0, 7.0, 10.0, 6.2), (4.5, 6.9, 11.5, 3.6),
+       (3.8, 6.5, 10.8, 6.5), (2.0, 6.3, 10.0, 4.7), (4.5, 6.3, 10.0, 6.2),
+       (2.8, 6.2, 11.0, 4.7), (5.0, 6.0, 10.0, 5.1), (3.5, 5.6, 12.0, 5.0),
+       (6.5, 5.4, 11.5, 3.7), (5.0, 5.4, 10.5, 4.3), (3.5, 5.4, 10.0, 5.4),
+       (4.0, 5.0, 10.0, 5.7), (4.5, 4.1, 12.0, 4.3), (4.5, 4.0, 10.0, 5.9),
+       (5.5, 3.9, 10.5, 5.3))
+check("Table 5: patients transcribed", float(len(_T5)), 25.0, 0.0, "")
+check("  ... mean Hb before treatment",
+      float(np.mean([r[0] for r in _T5])), 4.02, 0.01, " g/dL")
+check("  ... mean cardiac index before",
+      float(np.mean([r[1] for r in _T5])), 7.36, 0.01, " L/min/m2")
+check("  ... mean cardiac index after",
+      float(np.mean([r[3] for r in _T5])), 5.36, 0.01, " L/min/m2")
+
+print("  TWO OF THIS REPOSITORY'S THREE CLAIMS ARE CONFIRMED VERBATIM from")
+print("  the Summary: group B is Hb 4.0-6.5 mean 4.5, and its cardiac index")
+print("  is 6.3 L/min/m2 ('higher cardiac index (8.0 versus 6.3 ...)', 8.0")
+print("  being group A at mean Hb 3.0).")
+print("  THE THIRD IS NOT IN THE PAPER. We record 'against a normal ~3.2'.")
+print("  The paper gives ITS OWN normal, from 65 healthy volunteers in the")
+print("  SAME laboratory, and states it three times -- 2.5 to 5.0 L/min/m2.")
+print("  The ratio therefore depends entirely on which normal is used:")
+for _n, _w, _nm in ((3.2, 1.97, "the repository's 3.2, source unknown"),
+                    (3.75, 1.68, "the paper's midpoint"),
+                    (5.0, 1.26, "the paper's upper limit"),
+                    (2.5, 2.52, "the paper's lower limit")):
+    check(f"6.3 / {_n}: {_nm}", 6.3 / _n, _w, 0.01, "x")
+print("    test_validation.py BANDS THIS AT 1.7-2.3x and we return 1.97x.")
+print("    THE PAPER'S OWN MIDPOINT GIVES 1.68x, BELOW THAT BAND. SOURCES.md")
+print("    already suspected this row grades the fit against the number the")
+print("    fit was made from; that is confirmed, and the number is not even")
+print("    the paper's. NOT CHANGED -- the band is a ruling, not an edit.")
+
+print("\n  BUT TABLE 5 IS A PAIRED DATASET, WHICH IS FAR STRONGER THAN TWO")
+print("  GROUP MEANS. Our law is factor = (7/hb)^k below Hb 7 and 1 above,")
+print("  and every post-treatment Hb is 10.0-12.5, so the paired ratio")
+print("  isolates k:  ln(CI_before / CI_after) = k * ln(7 / hb_before)")
+_x = np.array([np.log(7.0 / r[0]) for r in _T5])
+for _den, _wk, _wr, _nm in (
+        (None, 0.471, 1.23, "vs each patient's own post-treatment CI"),
+        (3.75, 0.826, 1.44, "vs the paper's normal midpoint 3.75"),
+        (2.5, 1.305, 1.78, "vs the paper's normal lower limit 2.5")):
+    _y = (np.array([np.log(r[1] / r[3]) for r in _T5]) if _den is None
+          else np.array([np.log(r[1] / _den) for r in _T5]))
+    _k = float((_x * _y).sum() / (_x * _x).sum())
+    check(f"fitted k, {_nm}", _k, _wk, 0.002, "")
+    check(f"  ... which gives, at Hb 4.5", (7.0 / 4.5) ** _k, _wr, 0.01, "x")
+check("OURS: hb_co_exp", Patient().hb_co_exp, 1.535, 0.001, "")
+check("  ... which gives, at Hb 4.5",
+      (7.0 / 4.5) ** Patient().hb_co_exp, 1.97, 0.01, "x")
+print("    THE PAIRED ESTIMATE UNDERSTATES, AND THE PAPER SAYS WHY. Mean")
+print("    cardiac index AFTER treatment is 5.36, near the TOP of the paper's")
+print("    own normal range, because (p.355) 'patients who once become")
+print("    hyperkinetic may take a much longer time for the cardiovascular")
+print("    adjustment, even after the correction of the anemia'. The paired")
+print("    ratio is a FLOOR, not an estimate.")
+print("    READ TOGETHER: the primary data BRACKET our exponent from below")
+print("    rather than refuting it. 1.535 sits at or just above the top of")
+print("    what this paper supports. What is NOT defensible is the 3.2.")
+print("    AND THE FIT IS WEAK BY THE PAPER'S OWN ACCOUNT -- but that is the")
+print("    finding, not a defect of the fit. p.347, verbatim: 'for any")
+print("    individual subject the heart rate, cardiac output, or stroke")
+print("    volume cannot be predicted from the hemoglobin level'.")
+
+print("\n  THE POPULATION CAVEAT, AND IT IS A LARGE ONE. 'Anemia was due to")
+print("  ankylostomiasis in 45 patients' of 51 -- CHRONIC HOOKWORM anaemia of")
+print("  at least four months. hb_co_factor is applied to ANY low haemoglobin")
+print("  in this model, INCLUDING ACUTE BLOOD LOSS, where the circulation has")
+print("  had no months in which to adapt. NOTHING IN THIS PAPER LICENSES THAT")
+print("  EXTENSION, and the model makes it silently.")
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")

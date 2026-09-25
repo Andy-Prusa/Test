@@ -5,6 +5,65 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-25 (eighth entry): Roy 1963 read — the last incomplete citation is closed
+
+**Roy SB, Bhatia ML, Mathur VS, Virmani S.** Hemodynamic effects of chronic
+severe anemia. *Circulation* 1963;28(3):346-356. **This was the last genuinely
+incomplete citation in the repository** — its author was recorded nowhere, and
+whether it was a paper or a meeting abstract was unknown, which mattered
+because `test_validation.py` labels it CLINICAL. **It is a full paper.** The
+label is honest.
+
+**Two of our three claims are confirmed verbatim** from the Summary: group B is
+Hb 4.0–6.5 mean 4.5, and its cardiac index is 6.3 L/min/m².
+
+**The third is not in the paper.** We record *"against a normal ~3.2"*. The
+paper gives its own normal — 65 healthy volunteers in the same laboratory,
+stated three times — as **2.5 to 5.0 L/min/m²**. The ratio depends entirely on
+which normal is used:
+
+| | |
+|---|---|
+| 6.3 / **3.2** (ours, source unknown) | **1.97×** |
+| 6.3 / 3.75 (the paper's midpoint) | **1.68×** |
+| 6.3 / 5.0 (its upper limit) | 1.26× |
+
+`test_validation.py` bands this at **1.7–2.3×** and we return 1.97×. **The
+paper's own midpoint gives 1.68×, below the band.** SOURCES.md already
+suspected this row grades the fit against the number the fit was made from —
+confirmed, and the number is not even the paper's. **Not changed; the band is a
+ruling.**
+
+**But Table 5 is a paired dataset and is far stronger than two group means** —
+25 patients with Hb and cardiac index before *and after* treatment, each his
+own control. Fitting `k` in `(7/hb)^k`:
+
+| `k` | at Hb 4.5 | against |
+|---|---|---|
+| 0.471 | 1.23× | each patient's own post-treatment CI |
+| 0.826 | 1.44× | the paper's normal midpoint |
+| 1.305 | 1.78× | the paper's normal lower limit |
+| **1.535** | **1.97×** | **ours** |
+
+**The paired estimate understates, and the paper says why**: mean cardiac index
+after treatment is 5.36, near the top of its own normal range, because
+*"patients who once become hyperkinetic may take a much longer time for the
+cardiovascular adjustment"*. So it is a floor, not an estimate. **Read
+together, the primary data bracket `hb_co_exp` from below rather than refuting
+it** — 1.535 sits at or just above the top of what the paper supports. What is
+not defensible is the 3.2.
+
+**And a population caveat that is larger than the parameter question.**
+*"Anemia was due to ankylostomiasis in 45 patients"* of 51 — chronic hookworm
+anaemia of at least four months. `hb_co_factor` is applied to **any** low
+haemoglobin in this model, **including acute blood loss**, where the
+circulation has had no months in which to adapt. **Nothing in this paper
+licenses that extension, and the model makes it silently.**
+
+**The registry earned itself on its first day.** Adding Roy to
+`sources_registry.py` regenerated README's table automatically; no second place
+had to be remembered.
+
 ## Current state — 2026-09-25 (seventh entry): four rulings, and the model changed
 
 Ruled **"1 leave, 2 yes, 4 unavailable, 5 yes"**. The second of these is the

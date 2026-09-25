@@ -45,6 +45,11 @@ BENCHMARK_SOURCES = [
      "the title is still not recorded anywhere"),
     ("Varat 1972", "the circulation's response to anaemia", None,
      "a verbatim quotation from it ships in three files"),
+    ("Roy 1963, *Circulation* 28:346-356 (n=51)",
+     "the cardiac-output rise in severe anaemia", "2026-09-25",
+     "the author was recorded NOWHERE until this reading; it is Roy SB, "
+     "Bhatia ML, Mathur VS, Virmani S, and it is a full paper, not an "
+     "abstract"),
 ]
 
 
