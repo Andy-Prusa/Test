@@ -2618,6 +2618,121 @@ print("    could not be read: this environment's network policy blocks every")
 print("    primary host. The 6.7 L above is what the crossover IMPLIES, not a")
 print("    value read from anywhere, and it must not be shipped as one.")
 
+# ---------------------------------------------------------------------------
+print("\nIS DESATURATION ROBUST? ASKED 2026-09-25, AND IT SPLITS IN TWO")
+print("  TIME-TO-THRESHOLD: YES, and strongly. RATE OF CHANGE OF SaO2: NO.")
+
+_RH = dict(weight=105, height=1.74, age=42, hb=14, tilt_deg=30)   # Heard 2017
+_RL = dict(weight=70, height=1.75, age=45, hb=15, tilt_deg=0)     # Toner 2019
+
+
+def _desat(kw, feo2, dt=0.05, nvq=None, dur=1200, thr=95.0):
+    _p = Patient(**kw, **({'n_vq': nvq} if nvq else {}))
+    _r = simulate(_p, [AirwayEpoch(dur, resistance=2.0, fgo2=0.21)], dt=dt,
+                  feo2_start=feo2, stop_sao2=0.0)
+    _s = np.asarray(_r['spo2'])
+    _b = np.where(_s < thr)[0]
+    return float(np.asarray(_r['t'])[_b[0]]) if len(_b) else float('nan')
+
+
+print("  1. TIMESTEP. The shipped dt=0.05 against a half-step reference:")
+check("lean, time to SpO2<95% at dt 0.05", _desat(_RL, 0.87), 446.90, 0.05, " s")
+check("  ... at dt 0.025", _desat(_RL, 0.87, dt=0.025), 447.05, 0.05, " s")
+check("obese, time to SpO2<95% at dt 0.05", _desat(_RH, 0.80), 307.60, 0.05, " s")
+check("  ... at dt 0.025", _desat(_RH, 0.80, dt=0.025), 307.73, 0.05, " s")
+print("    Under 0.05% either way. Timestep is not a source of doubt.")
+
+print("  2. COMPARTMENT COUNT -- NEVER CHECKED ON DESATURATION UNTIL NOW.")
+print("  The n_vq block above says compartment convergence had only ever been")
+print("  checked on the CO2 slope. On desaturation time it is FLAT:")
+for _n, _w in ((20, 307.65), (80, 307.60), (320, 307.60)):
+    check(f"obese, time to SpO2<95% at n_vq {_n}", _desat(_RH, 0.80, nvq=_n),
+          _w, 0.05, " s")
+print("    n_vq 20 to 320 moves desaturation by 0.05 s, 0.016%. It is LIVE for")
+print("    CO2 and INERT for desaturation timing -- both are now measured.")
+
+print("  3. AND NOW THE DEFECT. THE TRUE SaO2 TRACE IS A ONE-SECOND STAIRCASE.")
+print("  apnoea_core.py inverts the blood gas -- which is where SaO2, PaO2,")
+print("  PaCO2 and pH all come from -- only ONCE PER SIMULATED SECOND, and")
+print("  holds the last value in between, whatever dt is. So SaO2 sits exactly")
+print("  flat and then jumps. The signature is unambiguous:")
+
+
+def _stair(dt):
+    _p = Patient(**_RH)
+    _r = simulate(_p, [AirwayEpoch(360, resistance=2.0, fgo2=0.21)], dt=dt,
+                  feo2_start=0.80, stop_sao2=0.0)
+    _t = np.asarray(_r['t'])
+    _sa = np.asarray(_r['sao2'])
+    _ds = np.diff(_sa)
+    return (np.diff(_sa) / np.diff(_t)).min(), _ds.min(), float((np.abs(_ds) < 1e-12).mean())
+
+
+for _dt, _rate, _drop, _flat in ((0.1, -5.4608, -0.5461, 0.9000),
+                                 (0.05, -10.8870, -0.5444, 0.9500),
+                                 (0.025, -21.7392, -0.5435, 0.9750)):
+    _r_, _d_, _f_ = _stair(_dt)
+    check(f"dt {_dt}: APPARENT steepest SaO2 fall", _r_, _rate, 0.02, " %/s")
+    check(f"dt {_dt}:   drop in the one non-flat step", _d_, _drop, 0.002, " %")
+    check(f"dt {_dt}:   fraction of steps EXACTLY flat", _f_, _flat, 0.002, "")
+print("    READ THE THREE COLUMNS TOGETHER. The apparent rate DOUBLES as dt")
+print("    HALVES -- an artefact, not a physiological rate. The drop per step")
+print("    is CONSTANT at 0.544%. And the flat fraction is exactly 1 - dt, so")
+print("    precisely one step per second is non-flat. That is the proof.")
+print("    MEASURED ON A PATCHED COPY outside the repository, inverting every")
+print("    step (provenance printed, per CLAUDE.md): the TRUE steepest fall is")
+print("    0.5438 %/s and NO step exceeds 1 %/s. The shipped model overstates")
+print("    the peak rate TWENTYFOLD at dt 0.05, and worse as dt falls.")
+print("    WHY IT DOES NOT POISON THE TIMING: SpO2 is an exponential filter")
+print("    over the staircase (spo2_delay 25 s, spo2_tau 8 s), so the probe")
+print("    reading is smooth even though the true saturation is not. On the")
+print("    patched copy time to SpO2<90% is 326.25 s against 326.7 shipped --")
+print("    0.45 s, 0.14%. Every benchmark row reads SpO2, so none of them is")
+print("    measurably affected.")
+print("    WHAT IS AFFECTED: any RATE read off SaO2; the instant at which a")
+print("    given true saturation is reached, good to about 1 s; and PaO2,")
+print("    PaCO2 and pH, which come from the SAME cached tuple and are")
+print("    therefore quantised identically. Whether that bears on the")
+print("    backward-PaCO2-step diagnostic above is NOT TESTED.")
+print("    THE FIX IS NOT FREE: inverting every step costs 2.5x runtime")
+print("    (600 s of apnoea, 22 s -> 55 s wall), which would take the CI")
+print("    benchmark job from about 15 minutes to nearer 40. A finer grid,")
+print("    or interpolation between inversions, would buy most of it for")
+print("    less. NOT DONE -- it needs a ruling.")
+
+print("  4. WHAT ACTUALLY MOVES DESATURATION. Every lever +-10%, obese patient,")
+print("  change in time to SpO2 90% against a 326.7 s baseline:")
+_SBASE = _desat(_RH, 0.80, thr=90.0)
+check("baseline, time to SpO2<90%", _SBASE, 326.70, 0.05, " s")
+
+
+def _lever(attr, val, frac):
+    _p = Patient(**_RH, **{attr: val * frac})
+    _r = simulate(_p, [AirwayEpoch(1200, resistance=2.0, fgo2=0.21)], dt=0.05,
+                  feo2_start=0.80, stop_sao2=0.0)
+    _s = np.asarray(_r['spo2'])
+    _b = np.where(_s < 90.0)[0]
+    return (float(np.asarray(_r['t'])[_b[0]]) if len(_b) else float('nan')) - _SBASE
+
+
+for _nm, _at, _v, _lo, _hi in (
+        ("vo2_ref     metabolic rate", "vo2_ref", 250.0, 38.60, -31.00),
+        ("frc_ref     THE UNCITED ONE", "frc_ref", 2500.0, -38.10, 38.60),
+        ("k_frc_bmi   also uncited", "k_frc_bmi", 0.0417, 20.90, -19.70),
+        ("shunt_anat  this branch's work", "shunt_anat", 0.03225, 0.20, -0.20)):
+    check(f"{_nm}, -10%", _lever(_at, _v, 0.9), _lo, 0.06, " s")
+    check(f"{_nm}, +10%", _lever(_at, _v, 1.1), _hi, 0.06, " s")
+print("    TWO LEVERS CARRY IT AND ONE OF THEM IS UNCITED. A 10% error in")
+print("    frc_ref or in vo2_ref moves desaturation by about 12%, near enough")
+print("    one-for-one. frc_ref is the regression apnoea_core.py labels the")
+print("    largest uncited lever in the model, so the dominant uncertainty in")
+print("    every desaturation time this model reports is a number with no")
+print("    author, journal or year in this repository.")
+print("    AND THE SHUNT BARELY MATTERS TO TIMING: 10% on shunt_anat moves it")
+print("    0.2 s, 0.06%. The whole obese-shunt branch changed OXYGENATION --")
+print("    the PaO2 a patient starts from -- and hardly touched how long they")
+print("    last. Both are true and they are different questions.")
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")

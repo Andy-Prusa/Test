@@ -32,6 +32,63 @@ improves (−0.11 → +0.11 SD). Recorded, not compensated.
 **Benchmarks unchanged: 4 blocking, same four names.** Nine of thirty-four rows
 moved, none changed tag. `test_parity.py` passes.
 
+### Is desaturation robust? Asked 2026-09-25, and it splits in two
+
+**Time-to-threshold: yes.** Timestep `dt` 0.05 against a half-step reference
+differs by **0.03–0.05%**. Compartment count `n_vq` 20 → 320 moves obese
+desaturation by **0.05 s, 0.016%** — the first time compartment convergence has
+been checked on desaturation rather than on the CO₂ slope. It is live for CO₂
+and inert for desaturation timing; both are now measured.
+
+**Rate of change of SaO₂: no, and the reason is a defect.**
+`apnoea_core.py` inverts the blood gas — the source of SaO₂, PaO₂, PaCO₂ *and*
+pH — **once per simulated second**, holding the last value in between whatever
+`dt` is. SaO₂ is therefore a staircase:
+
+| `dt` | apparent steepest fall | drop in the one non-flat step | steps exactly flat |
+|---|---|---|---|
+| 0.100 | −5.46 %/s | −0.546% | 0.900 |
+| 0.050 | −10.89 %/s | −0.544% | 0.950 |
+| 0.025 | −21.74 %/s | −0.544% | 0.975 |
+
+The apparent rate **doubles as `dt` halves**, the drop per step is constant, and
+the flat fraction is exactly `1 − dt` — so precisely one step per second is
+non-flat. On a patched copy inverting every step the **true** steepest fall is
+**0.544 %/s** with no step over 1 %/s: the shipped model overstates the peak
+rate **twentyfold** at `dt` 0.05.
+
+**It does not poison the benchmarks.** SpO₂ is an exponential filter over the
+staircase, so the probe reading is smooth. Time to SpO₂ < 90% is 326.25 s
+patched against 326.7 shipped — 0.45 s, 0.14% — and every benchmark reads SpO₂.
+What *is* affected: any rate read off SaO₂, the instant a given true saturation
+is reached (good to ~1 s), and PaO₂/PaCO₂/pH from the same cached tuple.
+Whether that bears on the backward-PaCO₂-step diagnostic is **not tested**.
+
+**The fix is not free:** every-step inversion costs **2.5×** runtime (22 s → 55 s
+for 600 s of apnoea), taking CI's benchmark job from ~15 to nearer 40 minutes.
+A finer grid or interpolation would buy most of it for less. **Needs a ruling.**
+
+### And the dominant uncertainty is not the shunt
+
+±10% on each lever, change in obese time to SpO₂ 90% (baseline 326.7 s):
+
+| lever | worst change |
+|---|---|
+| `vo2_ref` — oxygen consumption | **11.8%** |
+| `frc_ref` — **the uncited regression** | **11.8%** |
+| `k_frc_bmi` — also uncited | 6.4% |
+| `shunt_anat` — this branch's work | **0.06%** |
+| all closing-capacity terms | ≤ 0.9% |
+
+**Two levers carry desaturation and one of them has no author, journal or year
+in this repository.** `frc_ref` is the regression `apnoea_core.py` labels the
+largest uncited lever, and Quanjer/ECSC 1993 would source it — the same paper
+that would unblock closing capacity.
+
+**The shunt barely touches timing.** This branch changed *oxygenation* — the
+PaO₂ a patient starts from — and hardly moved how long they last. Both are
+true; they are different questions, and the benchmark set mixes them.
+
 ### Two things this opened, neither of them done
 
 **1. The same closure is counted twice.** `closed_target` applies the same law
