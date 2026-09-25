@@ -310,9 +310,22 @@ def test_anaemia_cardiac_response():
     Effects of Chronic Severe Anemia, Circulation 1963;28:346. CLINICAL.
 
     Varat: chronic anaemia "usually increases the cardiac output when the
-    haemoglobin level is 7 g/dL or less". Circulation 1963: Hb 4.0-6.5
-    (mean 4.5) gave a cardiac index of 6.3 L/min/m2 against a normal ~3.2,
-    so very nearly double.
+    haemoglobin level is 7 g/dL or less". Roy 1963: Hb 4.0-6.5 (mean 4.5)
+    gave a cardiac index of 6.3 L/min/m2.
+
+    RE-ANCHORED 2026-09-25, AND THE BAND WIDENED, after Roy was read at
+    source. This row used to compare 6.3 against "a normal ~3.2" and band
+    the result 1.7-2.3x. THE 3.2 IS IN NO PART OF THAT PAPER. Roy gives his
+    own normal, measured on 65 healthy volunteers in the same laboratory and
+    stated three times: 2.5 to 5.0 L/min/m2. So what he actually supports is
+
+        6.3 / 5.0 = 1.26x   ...   6.3 / 2.5 = 2.52x
+
+    and the band is now his range, not a number of ours. THE OLD BAND GRADED
+    THE FIT AGAINST THE NUMBER THE FIT WAS MADE FROM -- SOURCES.md suspected
+    it and the reading confirmed it. The new band is wider and therefore
+    weaker, and that is the honest state of this evidence: it can no longer
+    discriminate much, because the source cannot.
 
     The RATIO is what is tested, not the absolute cardiac index. Both
     sources measured awake patients; ours is anaesthetised and carries
@@ -333,7 +346,16 @@ def test_anaemia_cardiac_response():
               "Varat: the rise begins at 7 g/dL or less")
     q45 = Patient(weight=70, height=1.75, age=45, hb=4.5)
     check("cardiac output at Hb 4.5", q45.co_anaes() / ref.co_anaes(),
-          1.7, 2.3, " x normal", "clinical; CI 6.3 vs ~3.2 normal = 1.97x")
+          1.26, 2.52, " x normal",
+          "clinical; Roy 1963 CI 6.3 against HIS OWN normal range 2.5-5.0")
+    # RULED 2026-09-25: Roy studied CHRONIC anaemia -- hookworm, four months
+    # or more -- so the response must not fire on acute blood loss. This
+    # check is what stops that extension creeping back in silently.
+    q45a = Patient(weight=70, height=1.75, age=45, hb=4.5,
+                   anaemia_chronic=False)
+    check("ACUTE anaemia at Hb 4.5 gets no cardiac response",
+          q45a.co_anaes() / ref.co_anaes(), 0.99, 1.01, " x normal",
+          "ruled; Roy 1963 measured chronic anaemia only")
     # Mean arterial pressure must NOT double along with the output. Anaemic
     # patients run a normal or slightly low MAP on a markedly reduced
     # resistance; that reduction is why the output rises in the first place.

@@ -116,7 +116,12 @@ function derive(P){
   // are documented in apnoea_core.py; applied before the anaesthetic drop,
   // so anaesthesia blunts the compensation in proportion.
   const hbThr=P.hbCoThreshold===undefined?7.0:P.hbCoThreshold;
-  const anaemiaCo = P.hb>=hbThr ? 1.0 : Math.min(
+  // anaemiaChronic: RULED 2026-09-25. Roy 1963 measured CHRONIC anaemia
+  // (hookworm, >= 4 months) and nothing licenses extending it to acute blood
+  // loss. Mirrors apnoea_core.py anaemia_co_factor(); default true, which is
+  // the OPTIMISTIC reading and is chosen to leave the benchmarks where they
+  // were, not because it is safer.
+  const anaemiaCo = (P.anaemiaChronic===false || P.hb>=hbThr) ? 1.0 : Math.min(
     P.hbCoMax===undefined?3.0:P.hbCoMax,
     Math.pow(hbThr/Math.max(P.hb,0.5), P.hbCoExp===undefined?1.535:P.hbCoExp));
   // Head-up tilt costs cardiac output: Perilli 2003 measures 4.9 -> 4.0 L/min
@@ -239,7 +244,7 @@ function simulate(P, epochs, dt=0.1){
 
   const out={t:[],spo2:[],vol:[],fao2:[],pan2:[],paco2:[],ph:[],pao2:[],
              shunt:[],palv:[],lungO2:[],hpv:[],pvo2:[],co:[],hr:[],map:[],pap:[],sv:[],atel:[]};
-  let spo2=0.99, hist=[], last=null, stride=Math.round(1/dt);
+  let spo2=0.99, hist=[], last=null, stride=Math.max(1,Math.round((P.bgInvertInterval===undefined?1.0:P.bgInvertInterval)/dt));
 
   for(let i=0;i<=N;i++){
     const ep=st[i];

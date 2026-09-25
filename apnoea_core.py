@@ -658,6 +658,16 @@ class Patient:
     # trust.
     hb_co_threshold: float = 7.0    # g/dL, below which CO starts to rise
     hb_co_exp: float = 1.535        # fitted to the two anchors above
+    # Whether this patient's anaemia is CHRONIC. See anaemia_co_factor():
+    # Roy 1963 measured chronic hookworm anaemia and nothing licenses
+    # extending it to acute blood loss. True is the optimistic default.
+    anaemia_chronic: bool = True
+    # HOW OFTEN THE BLOOD GAS IS INVERTED, seconds. This was a hardcoded
+    # 1.0 until 2026-09-25 and is the source of the SaO2 staircase: PaO2,
+    # PaCO2, pH and SaO2 all come from one inversion that was held for a
+    # whole simulated second whatever dt was, so the apparent rate of fall
+    # was an artefact of the grid and scaled as 1/dt. See HANDOVER.md.
+    bg_invert_interval: float = 1.0
     hb_co_max: float = 3.0          # ceiling; the heart cannot do better
     # The measured +30% cardiac output over +31 mmHg PaCO2 is the NET of a
     # rate and a stroke volume response, and the source does not split them.
@@ -991,7 +1001,24 @@ class Patient:
         """How much the resting cardiac output rises at this haemoglobin.
 
         1.0 at and above hb_co_threshold, so a normal patient is unaffected.
+
+        AND 1.0 FOR ACUTE ANAEMIA, RULED 2026-09-25. Roy 1963, read at source
+        and the only quantitative anchor this limb has, studied CHRONIC
+        anaemia of at least four months -- and in 45 of his 51 patients the
+        cause was ANKYLOSTOMIASIS, hookworm. A circulation given months to
+        adapt is not the circulation of someone who has just bled. The model
+        applied his response to ANY low haemoglobin, silently; it no longer
+        does.
+
+        THE DEFAULT IS chronic=True, WHICH IS THE OPTIMISTIC READING, and
+        that is stated rather than hidden: the raised cardiac output lifts
+        mixed venous oxygen, so it SLOWS desaturation. A patient wrongly
+        marked chronic is therefore flattered by this model. The default is
+        chosen to leave every existing benchmark where it was, not because
+        chronic is the safer assumption -- it is not.
         """
+        if not self.anaemia_chronic:
+            return 1.0
         if self.hb >= self.hb_co_threshold:
             return 1.0
         f = (self.hb_co_threshold / max(self.hb, 0.5)) ** self.hb_co_exp
@@ -1686,7 +1713,7 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
             p_o2, p_co2 = ven_o2[j], ven_co2[j]
 
         # ---- outputs --------------------------------------------------------
-        if i % max(1, int(round(1.0 / dt))) == 0 or _last is None:
+        if i % max(1, int(round(pt.bg_invert_interval / dt))) == 0 or _last is None:
             _last = bg.pco2_from_co2_content(art_co2[-1], be, hb,
                                              art_o2[-1], temp)
         paco2_a, ph_a, sao2, pao2_a = _last
