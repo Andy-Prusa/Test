@@ -29,7 +29,13 @@ Run from the repository root. If you deliberately want a modified copy — for a
 parameter sweep outside the repo — that is fine, but print the provenance so
 the output says so.
 
-**Numbers in markdown rot. Numbers in scripts do not.** Anything quoted in
+**Numbers in markdown rot. Numbers in scripts do not.** So do FACTS in
+markdown: on 2026-09-25 five separate claims about which papers had been read
+were found wrong across four documents, because the same fact was written in
+four places with no link between them. `sources_registry.py` now holds that
+fact once and `check_sources.py` regenerates README from it. If you find
+yourself about to state in prose something another file also states, ask
+whether it can be generated instead. Anything quoted in
 HANDOVER should be regenerable by `python3 handover_numbers.py`, which fails if
 a value has drifted. If you add a table to HANDOVER, add it there too. The
 Ellis comparator rows are the cautionary example: recorded, never scripted, and
@@ -81,8 +87,8 @@ in the reply, where it is just volume.
 
 ## Commits
 
-`.githooks/pre-commit` runs `test_validation.py` and `test_parity.py` and
-blocks on failure. It takes 5-15 minutes; run commits in the background and
+`.githooks/pre-commit` runs `build_page.py --check`, `check_sources.py
+--check`, `test_parity.py` and `test_validation.py`, and blocks on failure. It takes 5-15 minutes; run commits in the background and
 wait. `./setup-hooks.sh` once per clone. `git commit --no-verify` exists but
 say in the message which benchmark is broken and why.
 
@@ -103,4 +109,7 @@ move silently.
 | `handover_numbers.py` | regenerates the numbers quoted in HANDOVER |
 | `buccal_numbers.py` | regenerates the buccal-oxygen numbers, and the audit of `editorial.md` |
 | `protocol/` | the three-way study, its predictions and its evidence map |
+| `sources_registry.py` | WHICH PAPERS HAVE BEEN READ. The only place that fact is written |
+| `check_sources.py` | regenerates README's read-status table from it; `--check` in the hook |
+| `variant_cost.py` | runs the suite against an experimental lung-volume form |
 | `patches/` | written but unapplied changes, with the reason in HANDOVER |

@@ -5,6 +5,75 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-25 (seventh entry): four rulings, and the model changed
+
+Ruled **"1 leave, 2 yes, 4 unavailable, 5 yes"**. The second of these is the
+first change to the shipped physics on this branch since the shunt re-key.
+
+**2. ADOPTED: anaesthetised FRC now carries Pelosi's measured shape.**
+`frc_anaes()` was `frc_awake()` minus an induction drop, with its BMI
+dependence coming entirely from an exponential fitted **without** the offset
+that every published regression of this quantity has. It now carries Pelosi's
+own measured curve as a **shape** — FRC(BMI)/FRC(22) — with the **level left
+ours**, exactly what the model already does with Quanjer's height term.
+**No new parameter.** `model.js` changed in the same commit and
+`airway_scenario.html` is rebuilt.
+
+Measured cost, from four full suite runs before the ruling:
+
+| | legacy | **adopted (C)** |
+|---|---|---|
+| blocking failures | 4 | **4, the same four names** |
+| Heard control [244–314 s] | 307.6 | **272.0** |
+| mean \|error\| vs Pelosi's measured FRC | 7.79% | **1.86%** |
+
+**Two things about the adoption that were not in the costed variant.**
+
+*The shape goes on `frc_anaes()`, not `frc_awake()`.* Pelosi measured the
+anaesthetised lung. Applying his shape to the awake volume and subtracting the
+induction drop afterwards over-steepens it, because the drop is absolute and so
+eats a growing fraction as the lung shrinks. **`frc_awake()` is unchanged**,
+and with it the expiratory reserve and `unwashed_fraction()`.
+
+*A guard was added.* Pelosi's regression is steeper than the form it replaces,
+so below about **BMI 17** it extrapolates the anaesthetised lung **above** the
+awake one — anaesthesia adding gas, which is impossible. The induction drop
+stays an upper bound. The two forms agree exactly at BMI 22 by construction, so
+the guard binds only below it and **cannot have moved the benchmarks**: the
+leanest patient in `test_validation.py` is BMI 22.86.
+
+**1. RULED: FRC stays age-flat.** Quanjer's `0.009·age` term remains
+unimplemented, and that is now a decision rather than an omission. Gutierrez
+2004 — a second reference set, 300 men, read at source — has **no age term at
+all** in its men's FRC equation, and implementing Quanjer's moves the CC = FRC
+crossover *further* from the published ~44. The caveat is kept: Gutierrez's FRC
+model is weak (r² = 0.17), and a term can be absent because it is small *or*
+because the data cannot see it. **The two reference sets genuinely disagree and
+this ruling picks one.**
+
+**4. Watson & Pride 2005 is unavailable.** It stays on the wanted list because
+the question it would answer stays open — and that question is now *sharper*
+than when it was added, not vaguer. Gutierrez let Jones be converted to
+millilitres, and the model is thereby found to claim that lying flat costs a
+lean patient **30%** of FRC and a BMI 50 patient **63%**. **That number is now
+untestable with what is held**, and it should be treated as the model's largest
+unverified structural claim about position.
+
+**5. ADOPTED: the read-status of every source is generated, not written.**
+Five claims about what had been read were found wrong today across four
+documents. The cause is structural — *the same fact was written in four places
+with no link between them*, and prose does not fail a test when it drifts.
+`sources_registry.py` now holds it once; `check_sources.py` regenerates
+README's table from it and runs `--check` in the pre-commit hook, which is
+where an invariant *between documents* belongs.
+
+**Fixing it caught four more wrong rows.** README told a sponsor that Toner
+2019, Heard 2017, O'Loughlin 2020 and Kaiser 2024 were unread. **All four had
+been read**, and its summary said *"six of these eight have not been read"*
+when **six of the eight had been**. That is the most consequential document
+error found today: it is sponsor-facing, and it understated the project's
+evidential base by the width of the table.
+
 ## Current state — 2026-09-25 (sixth entry): Gutierrez read; Jones is now a level
 
 **Gutierrez 2004 was obtained and read at source** — the reference set every

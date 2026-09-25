@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Run test_validation.py against one of the experimental lung-volume forms.
 
-WHY THIS EXISTS. `apnoea_core.py` carries two experimental switches --
-`frc_asymptote` and `k_rv_bmi_jones` -- added 2026-09-25 to cost a decision
-about the offset form that Jones & Nzekwu and Pelosi both measure and this
-model does not have. Both default OFF and the shipped path is bit-identical.
+WHY THIS EXISTS. `apnoea_core.py` carries experimental switches
+added 2026-09-25 to cost a decision about the offset form that Jones & Nzekwu
+and Pelosi both measure. THAT DECISION HAS SINCE BEEN TAKEN -- Pelosi's shape
+was adopted the same day -- so `shipped` now means Pelosi's shape and `legacy`
+restores the exponential form it replaced.
 
 The benchmark cost of turning them on is a table in SOURCES.md. A table in
 markdown rots, so this is the script that regenerates it:
@@ -34,12 +35,15 @@ import sys
 
 import apnoea_core
 
+# 'shipped' IS Pelosi's shape as of the ruling of 2026-09-25; 'legacy'
+# restores the exponential form it replaced, so the table that ruling was made
+# on stays regenerable.
 VARIANTS = {
     'shipped':  {},
+    'legacy':   {'frc_legacy_exp': True},
     'asympt':   {'frc_asymptote': True},
-    'pelshape': {'frc_pelosi_shape': True},
     'jonesrv':  {'k_rv_bmi_jones': True},
-    'both':     {'frc_pelosi_shape': True, 'k_rv_bmi_jones': True},
+    'legacy_jones': {'frc_legacy_exp': True, 'k_rv_bmi_jones': True},
 }
 
 

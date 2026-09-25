@@ -158,11 +158,24 @@ class Patient:
     #     own LEVEL. At 1.75 m and age 45 Quanjer predicts 3410 mL seated
     #     against our 2500 mL supine, a ratio of 0.73, which is the right
     #     sort of size for the supine fall but is not itself sourced.
-    #   * the age term (0.009*age) is STILL NOT IMPLEMENTED. height_factor()
-    #     is height-only and returns 1.0 at age 45 and 1.0 at age 80.
-    #     Restoring it moves the CC=FRC crossover 55.0 -> 59.9 years, i.e.
-    #     FURTHER from the literature's ~44, because this regression has FRC
-    #     RISING with age. Recorded, not compensated. See handover_numbers.py.
+    #   * the age term (0.009*age) is DELIBERATELY NOT IMPLEMENTED --
+    #     RULED 2026-09-25, and it is a decision now, not an omission.
+    #     height_factor() is height-only, so FRC is AGE-FLAT.
+    #     Three things support leaving it out:
+    #       - GUTIERREZ 2004, a second reference set read at source (n = 300
+    #         men, six Canadian centres), has NO AGE TERM AT ALL in its
+    #         men's FRC equation. It agrees with Quanjer to 0.2% at age 45
+    #         and disagrees by +7.3% at 20 and -6.0% at 70, precisely
+    #         because Quanjer's rises 14.1% across that span and its own is
+    #         flat.
+    #       - implementing it moves the CC=FRC crossover 55.0 -> 59.9 years,
+    #         FURTHER from the literature's ~44.
+    #       - so age-flat is what a second primary source predicts, not a
+    #         convenience.
+    #     THE CAVEAT IS KEPT: Gutierrez's FRC model is weak, r2 = 0.17, and a
+    #     term can be absent from a regression because it is small OR because
+    #     the data cannot see it. The two reference sets genuinely disagree
+    #     and this ruling picks one. See SOURCES.md and handover_numbers.py.
     #   * THE EQUATIONS HAVE A RANGE AND WE LEAVE IT. Table 6 applies to ages
     #     18-70 ("between 18 and 25 yr substitute 25 yr") and was derived from
     #     heights 1.55-1.95 m in men, 1.45-1.80 m in women.
@@ -876,8 +889,12 @@ class Patient:
     #   Why it is a separate switch from frc_asymptote: those two are
     #   DIFFERENT MECHANISMS, and the first turns out to disagree with the
     #   very measurement that motivated it. See handover_numbers.py.
+    #
+    # ADOPTED 2026-09-25 BY RULING: frc_pelosi_shape IS NOW THE SHIPPED PATH
+    # and is no longer a switch. frc_legacy_exp restores what it replaced, so
+    # variant_cost.py can still regenerate the table the ruling was made on.
     frc_asymptote = False
-    frc_pelosi_shape = False
+    frc_legacy_exp = False
     k_rv_bmi_jones = False
 
     @staticmethod
@@ -916,21 +933,49 @@ class Patient:
                    * self.tilt_factor())
 
     def frc_anaes(self):
-        if self.frc_pelosi_shape:
-            # Our own anaesthetised FRC at BMI 22 and this geometry, then
-            # Pelosi's measured SHAPE carried across BMI. Applying the shape
-            # to frc_awake() instead and subtracting the induction drop
-            # afterwards over-steepens it -- the drop is absolute, so it
-            # eats a growing FRACTION as the lung shrinks.
-            base = self.frc_ref * self.height_factor() * self.tilt_factor()
-            at22 = base - min(self.frc_drop, 0.25 * base)
-            return max(self.rv_eff(),
-                       at22 * self._pelosi_frc(self.bmi())
-                       / self._pelosi_frc(22.0))
+        """Lung volume at the start of apnoea: awake, then the induction drop.
+
+        RULED 2026-09-25 -- this carries PELOSI'S MEASURED SHAPE. Until then
+        it was frc_awake() minus an induction drop, with the BMI dependence
+        coming entirely from an exponential fitted WITHOUT the offset that
+        every published regression of this quantity has. Pelosi 1998 measured
+        the quantity this method returns -- supine, anaesthetised, paralysed,
+        by helium dilution, n = 24 over BMI 20-66 -- so his curve is carried
+        as a SHAPE, FRC(BMI)/FRC(22), with the LEVEL left ours. That is
+        exactly what this model already does with Quanjer's height term, and
+        IT INTRODUCES NO NEW PARAMETER.
+
+        WHY THE SHAPE GOES HERE AND NOT ON frc_awake(). Pelosi measured the
+        ANAESTHETISED lung. Applying his shape to the awake volume and then
+        subtracting the induction drop over-steepens it, because the drop is
+        ABSOLUTE and so eats a growing FRACTION as the lung shrinks.
+        frc_awake() is therefore UNCHANGED, and so are the expiratory reserve
+        and unwashed_fraction() that depend on it.
+
+        WHAT IT COST, measured over four full suite runs (variant_cost.py):
+        the same four blocking rows by the same four names, agreement with
+        Pelosi's measured FRC improving from 7.79% to 1.86% mean absolute
+        error, and Heard's obese control moving from the TOP of its band to
+        the MIDDLE, 307.6 -> 272.0 s against 244-314.
+
+        THE GUARD, and it is not decoration. Pelosi's regression is STEEPER
+        than the form it replaces, so below about BMI 17 it extrapolates the
+        anaesthetised lung ABOVE the awake one -- anaesthesia adding gas,
+        which is impossible. The induction drop stays an upper bound. The two
+        forms agree exactly at BMI 22 by construction, so this binds only
+        BELOW it and CANNOT have moved the benchmarks: the leanest patient in
+        test_validation.py is BMI 22.86.
+        """
+        awake = self.frc_awake()
         # the absolute induction drop cannot exceed a quarter of an already
         # small FRC, otherwise the obese lung is emptied unphysiologically
-        drop = min(self.frc_drop, 0.25 * self.frc_awake())
-        return max(self.rv_eff(), self.frc_awake() - drop)
+        cap = awake - min(self.frc_drop, 0.25 * awake)
+        if self.frc_legacy_exp:
+            return max(self.rv_eff(), cap)
+        base = self.frc_ref * self.height_factor() * self.tilt_factor()
+        at22 = base - min(self.frc_drop, 0.25 * base)
+        pel = at22 * self._pelosi_frc(self.bmi()) / self._pelosi_frc(22.0)
+        return max(self.rv_eff(), min(cap, pel))
 
     def closing_capacity(self):
         return (self.cc_at_20

@@ -3351,8 +3351,17 @@ primary source, not a search.** The first two are the ones that matter most:
       `et al.`
 - [ ] **Watson RA, Pride NB.** Postural changes in lung volumes and
       respiratory resistance in subjects with obesity. *J Appl Physiol*
-      2005;98:512-517. Jones's reference 10. **ADDED 2026-09-25 AND IT GOES
-      STRAIGHT AT AN ADMITTED HOLE.** The k_rv_bmi retraction of the same day
+      2005;98:512-517. Jones's reference 10.
+      **RULED UNAVAILABLE 2026-09-25 — it cannot be obtained.** It stays on
+      this list because the question it would answer stays open, and the
+      question is now SHARPER than when it was added, not vaguer: Gutierrez
+      let Jones be converted to millilitres, and the model is thereby found to
+      claim that lying flat costs a lean patient **30%** of FRC and a BMI 50
+      patient **63%**. **That number is now untestable with what is held.**
+      It is recorded in `handover_numbers.py` so it cannot drift, and it
+      should be treated as the model's largest unverified structural claim
+      about position. **ADDED 2026-09-25 AND IT GOES STRAIGHT AT AN ADMITTED
+      HOLE.** The k_rv_bmi retraction of the same day
       turns on Jones being SEATED AWAKE where our `rv` is ANAESTHETISED
       SUPINE, and it ends by conceding that the seated-to-supine step "is a
       step this model does not represent at all". This paper measures exactly

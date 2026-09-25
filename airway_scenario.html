@@ -374,7 +374,17 @@ function derive(P){
   // BMI 45 after induction and paralysis, where ERV is ~0 so FRC ~= RV.
   const rvEff=(P.rv||1100)*hf*Math.exp(-(P.kRvBmi===undefined?0.0198:P.kRvBmi)*Math.max(0,bmi-22));
   const frcAwake=Math.max(rvEff,P.frcRef*hf*Math.exp(-0.0417*(bmi-22))*tiltF);
-  const frc=Math.max(rvEff,(frcAwake-Math.min(P.frcDrop,0.25*frcAwake))*(P.frcScale||1));
+  // RULED 2026-09-25: anaesthetised FRC carries PELOSI'S MEASURED SHAPE,
+  // FRC(BMI)/FRC(22) from his helium regression, with the level left ours.
+  // Mirrors apnoea_core.py frc_anaes() -- read its docstring for why the
+  // shape goes here and not on frcAwake, and why the cap is needed below
+  // BMI 22 (Pelosi is steeper, and would otherwise have anaesthesia ADD gas).
+  const _pf=b=>11.97*Math.exp(-0.096*b)+0.46;
+  const _cap=frcAwake-Math.min(P.frcDrop,0.25*frcAwake);
+  const _base=P.frcRef*hf*tiltF;
+  const _at22=_base-Math.min(P.frcDrop,0.25*_base);
+  const _pel=_at22*_pf(bmi)/_pf(22);
+  const frc=Math.max(rvEff,Math.min(_cap,_pel)*(P.frcScale||1));
   const cc=(P.ccAt20+P.ccPerYear*(P.age-20)+P.ccPerBmi*Math.max(0,bmi-25))*hf*(P.ccScale||1);
   const vo2=P.vo2Ref*Math.pow(abw/70,0.75)*(P.bmrScale||1)-0.27*P.weight;
   // The circulation's answer to anaemia. Exactly 1 at and above the
