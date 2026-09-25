@@ -3169,6 +3169,192 @@ print("  sex; only the BASE lung volume does. The female-majority worry falls")
 print("  on Quanjer's LEVEL, not on k_frc_bmi's SLOPE. The ruling stands and")
 print("  its recorded cost is narrower than it was.")
 
+# ---------------------------------------------------------------------------
+# THE OFFSET FORM, COSTED -- ruled 2026-09-25 ("6 y")
+#
+# Two experimental switches were added to apnoea_core.py, as CLASS ATTRIBUTES
+# rather than dataclass fields so an experiment can subclass and flip them
+# without touching a call site. Both default OFF and the shipped path is
+# bit-identical: verified over 72 geometries, 0 mismatches. They are PYTHON
+# ONLY -- model.js implements neither -- so if either is ever adopted,
+# model.js must change in the same commit.
+# ---------------------------------------------------------------------------
+print("\nTHE OFFSET FORM, COSTED -- and the first cut of it was wrong")
+
+class _Asym(Patient):     frc_asymptote = True
+class _PelShape(Patient): frc_pelosi_shape = True
+class _JonesRV(Patient):  k_rv_bmi_jones = True
+
+_PFRC = lambda b: 11.97 * np.exp(-0.096 * b) * 1000.0 + 460.0   # Pelosi, mL
+_PGEO = dict(height=1.64, age=52.0, hb=14.0, tilt_deg=0.0)
+
+print("  THE TRAP, AND IT CAUGHT ME FIRST TIME. The obvious reading of 'give")
+print("  FRC the offset both papers have' is to let FRC decay to RV instead")
+print("  of to zero, keeping k_frc_bmi. THAT IS WRONG, and the reason is")
+print("  worth stating: THE OFFSET AND THE EXPONENT ARE NOT INDEPENDENT.")
+print("  k_frc_bmi = 0.0417 was calibrated for a form with NO offset, so")
+print("  bolting an asymptote underneath it can only RAISE the obese lung.")
+print("  Pelosi's own offset form carries an exponent of 0.096 -- more than")
+print("  twice ours -- precisely because it has the 460 mL offset under it.")
+print("  Doing it faithfully means taking the exponent WITH the offset.")
+print("  Anaesthetised FRC against Pelosi's MEASURED helium, at his geometry:")
+for _b, _w in ((30.0, 1132.0), (40.0, 717.0), (45.0, 619.0), (50.0, 559.0)):
+    check(f"BMI {_b:.0f}: Pelosi's measured FRC", _PFRC(_b), _w, 1.0, " mL")
+_err = {}
+for _nm, _cls in (("shipped", Patient), ("B asymptote-at-RV", _Asym),
+                  ("C Pelosi-shape", _PelShape), ("D Jones RV", _JonesRV)):
+    _e = [abs(_cls(weight=_b * 1.64 ** 2, **_PGEO).frc_anaes() / _PFRC(_b) - 1.0) * 100.0
+          for _b in (22.0, 30.0, 35.0, 40.0, 45.0, 50.0)]
+    _err[_nm] = float(np.mean(_e))
+check("mean |error| vs Pelosi: shipped", _err["shipped"], 7.79, 0.05, " %")
+check("  ... B, asymptote at RV keeping k_frc_bmi",
+      _err["B asymptote-at-RV"], 38.28, 0.05, " %")
+check("  ... C, Pelosi's shape with our level",
+      _err["C Pelosi-shape"], 1.86, 0.05, " %")
+check("  ... D, Jones's RV slope", _err["D Jones RV"], 23.50, 0.05, " %")
+print("    B IS FIVE TIMES WORSE THAN SHIPPED. The correction motivated by")
+print("    Pelosi's offset, done the obvious way, disagrees with Pelosi. Per")
+print("    CLAUDE.md that is recorded, not compensated.")
+print("    C IS FOUR TIMES BETTER THAN SHIPPED, and introduces NO parameter:")
+print("    it carries Pelosi's measured FRC(BMI)/FRC(22) as a SHAPE with the")
+print("    level left ours -- exactly what the model already does with")
+print("    Quanjer's height term. It is applied to frc_anaes() because that")
+print("    is the quantity Pelosi measured; applying it to frc_awake() and")
+print("    subtracting the induction drop afterwards over-steepens it, since")
+print("    an absolute drop eats a growing FRACTION as the lung shrinks.")
+
+print("\n  AND THE k_rv_bmi CONFLICT LARGELY DISSOLVES -- ON A DEFINITION.")
+print("  Jones's RV slope cannot simply be adopted, and the reason is not a")
+print("  preference between two measurements. It is arithmetic:")
+print("    FRC can never be less than RV. Pelosi MEASURES anaesthetised FRC.")
+print("    Jones's slope would put RV ABOVE it in the obese.")
+print("   BMI   Pelosi measured FRC   RV on Jones's slope   implied ERV")
+for _b, _wf, _wr, _we in ((30.0, 1132.0, 956.0, 176.0),
+                          (35.0, 876.0, 927.0, -51.0),
+                          (45.0, 619.0, 870.0, -251.0),
+                          (50.0, 559.0, 843.0, -285.0)):
+    _p = Patient(weight=_b * 1.64 ** 2, **_PGEO)
+    _rj = 1100.0 * _p.height_factor() * np.exp(-0.0063 * max(0.0, _b - 22.0))
+    check(f"BMI {_b:.0f}: RV on Jones's slope", _rj, _wr, 1.0, " mL")
+    check(f"  ... implied expiratory reserve", _PFRC(_b) - _rj, _we, 1.5, " mL")
+_cross = brentq(lambda b: _PFRC(b) - 1100.0
+                * Patient(weight=b * 1.64 ** 2, **_PGEO).height_factor()
+                * np.exp(-0.0063 * max(0.0, b - 22.0)), 25.0, 60.0)
+check("Jones's RV crosses Pelosi's measured FRC at BMI", _cross, 33.6, 0.1, "")
+print("    A NEGATIVE expiratory reserve is not a disagreement, it is an")
+print("    IMPOSSIBILITY: the lung would hold less gas at rest than after a")
+print("    maximal exhalation. Above BMI 33.6 Jones's RV and Pelosi's FRC")
+print("    cannot both describe the same patient.")
+print("    THE RESOLUTION IS IN THE CODE'S OWN COMMENT, and this repository")
+print("    has been caught before by reading a quantity's LABEL rather than")
+print("    its DEFINITION. apnoea_core.py says of rv, verbatim:")
+print("        rv: float = 1100.0    # mL, ANAESTHETISED SUPINE, AT BMI 22")
+print("    Jones measured SEATED AND AWAKE. It is not the same quantity, so")
+print("    his 0.63%/BMI is not a competing value for this parameter -- it")
+print("    is a measurement of a different state. THE CONFLICT RECORDED ON")
+print("    2026-09-25 WAS OVERSTATED BY ME AND IS CORRECTED HERE.")
+print("    WHAT SURVIVES OF IT, because this is not a clean acquittal:")
+print("    Reinius's single CT point is still the only anchor for the")
+print("    anaesthetised supine slope, and Jones now implies that the")
+print("    seated-awake-to-anaesthetised fall in RV must itself be large in")
+print("    the obese -- a step the model does not represent at all.")
+
+# ---------------------------------------------------------------------------
+# PELOSI RE-INVERTED THROUGH A CORRECTED CARDIAC OUTPUT -- ruled ("7 y")
+# ---------------------------------------------------------------------------
+print("\nPELOSI RE-INVERTED THROUGH A CORRECTED CARDIAC OUTPUT")
+print("  shunt_base_eff was fitted by inverting Pelosi's PaO2/PAO2 THROUGH")
+print("  THIS MODEL, so it inherited this model's cardiac output -- which")
+print("  Tokics showed has the wrong GRADIENT. Two measured anaesthetised")
+print("  values anchor a correction: Tokics 5.70 l/min at 77.4 kg, Perilli")
+print("  4.90 at 125 kg.")
+_BEXP = np.log(4.90 / 5.70) / np.log(125.0 / 77.4)
+check("power-law exponent through the two measurements", _BEXP, -0.3155, 0.001, "")
+print("    A NEGATIVE exponent -- cardiac output FALLING with body mass. That")
+print("    is what the two points say; it is not a law anyone published, it")
+print("    rests on two cohorts from different studies, and at Pelosi's lean")
+print("    end (BMI 22 is 59 kg) it EXTRAPOLATES BELOW BOTH ANCHORS. So a")
+print("    FLAT cardiac output is inverted alongside it: if both corrections")
+print("    move the answer the same way, the answer is not an artefact of")
+print("    the exponent. THIS IS A SENSITIVITY PROBE, NOT A PROPOSED")
+print("    PARAMETER, and nothing here is written into the model.")
+
+
+def _co_cls(mode, shunt=None):
+    """A patient whose anaesthetised cardiac output is replaced wholesale.
+
+    'shipped' leaves it alone; 'power' is the two-point law above; 'flat'
+    pins it at 5.30 l/min, the midpoint of the two measurements.
+    """
+    class _P(Patient):
+        def co_anaes(self):
+            if mode == 'shipped':
+                return Patient.co_anaes(self)
+            _k = self.anaemia_co_factor() * self.tilt_co_factor()
+            return (5.70 * (self.weight / 77.4) ** _BEXP * _k
+                    if mode == 'power' else 5.30 * _k)
+        if shunt is not None:
+            def shunt_base_eff(self):
+                return shunt
+    return _P
+
+
+def _co_invert(b, mode):
+    """The shunt that reproduces Pelosi's oxygenation at this BMI and CO.
+
+    Same bisection as _pel_invert above, but through a replaced cardiac
+    output. COMPUTED, not recorded: these are the numbers the ruling of
+    2026-09-25 turns on, so they must not be able to rot.
+    """
+    _tgt = _pel_ratio(b) * _PALV
+    _lo, _hi = 0.005, 0.60
+    for _ in range(22):
+        _mid = 0.5 * (_lo + _hi)
+        _p = _co_cls(mode, _mid)(weight=b * _PH * _PH, height=_PH, age=_PAGE,
+                                 hb=_PHB, tilt_deg=0.0)
+        _r = simulate(_p, [AirwayEpoch(2.0, resistance=2.0, fgo2=_PFIO2)],
+                      dt=DT, feo2_start=_PALV / ac.PDRY, paco2_start=_PPACO2,
+                      stop_sao2=0.0)
+        if _r['pao2'][0] > _tgt:
+            _lo = _mid
+        else:
+            _hi = _mid
+    return 0.5 * (_lo + _hi) * 100.0
+
+
+print("  THE SHUNT PELOSI IMPLIES, BMI 22 -> 50:")
+_inv = {}
+for _mode, _nm, _lo, _hi, _fac in (
+        ('shipped', "through our shipped CO", 3.47, 14.12, 4.07),
+        ('power', "through a power-law CO", 6.31, 11.40, 1.81),
+        ('flat', "through a flat CO", 5.44, 12.46, 2.29)):
+    _a, _z = _co_invert(22.0, _mode), _co_invert(50.0, _mode)
+    _inv[_mode] = (_a, _z)
+    check(f"{_nm}: at BMI 22", _a, _lo, 0.05, " %")
+    check(f"{_nm}: at BMI 50", _z, _hi, 0.05, " %")
+    check(f"{_nm}: the FACTOR across that span", _z / _a, _fac, 0.02, "x")
+print("    READ THE LAST COLUMN. Our cardiac output makes Pelosi imply a")
+print("    FOURFOLD rise in shunt across BMI 22-50. Corrected, it is 1.8- to")
+print("    2.3-fold. ROUGHLY HALF OF shunt_base_eff's BMI DEPENDENCE IS A")
+print("    CARDIAC-OUTPUT ARTEFACT, not a property of the lung -- and both")
+print("    corrections agree on that despite assuming different things.")
+print("  Our shipped law against each inversion, worst residual:")
+_BMIS = (22.0, 30.0, 34.0, 42.0, 50.0)
+_OURS = [Patient(weight=_b * _PH * _PH, height=_PH, age=_PAGE, hb=_PHB,
+                 tilt_deg=0.0).shunt_base_eff() * 100.0 for _b in _BMIS]
+for _mode, _nm, _w in (('shipped', "vs the shipped-CO inversion", 0.25),
+                       ('power', "vs the power-law-CO inversion", 2.84),
+                       ('flat', "vs the flat-CO inversion", 1.77)):
+    _res = [abs(_o - _co_invert(_b, _mode))
+            for _b, _o in zip(_BMIS, _OURS)]
+    check(_nm, max(_res), _w, 0.05, " pp")
+print("    0.25 pp against the first because IT WAS FITTED TO IT. Against a")
+print("    corrected cardiac output it is out by up to 2.84 pp -- larger than")
+print("    the 0.49 pp worst residual the re-key was judged on.")
+print("    THE ORDER OF WORK THIS IMPLIES: the cardiac-output gradient is")
+print("    UPSTREAM of the shunt law, so fixing the shunt law first would be")
+print("    fitting around an error rather than removing it. NOTHING CHANGED.")
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")

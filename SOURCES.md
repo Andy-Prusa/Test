@@ -2352,6 +2352,41 @@ and it is *not resolved here*. Three reasons to be careful before calling
 
 **Recorded as a live conflict. Nothing is changed on it.**
 
+> #### CORRECTED THE SAME DAY — the conflict was overstated, and by me
+>
+> Ruled "6 y" on 2026-09-25, the costing run turned up an arithmetic fact
+> that the paragraph above missed. **Jones's slope cannot simply be adopted,
+> and the reason is not a preference between two measurements.**
+>
+> FRC can never be less than RV. Pelosi *measures* anaesthetised FRC. Jones's
+> slope would put RV **above it** in the obese — at Pelosi's geometry, from
+> **BMI 33.6** upward:
+>
+> | BMI | Pelosi's measured FRC | RV on Jones's slope | implied ERV |
+> |---|---|---|---|
+> | 30 | 1132 mL | 956 mL | +176 |
+> | 35 | 876 | 927 | **−51** |
+> | 45 | 619 | 870 | **−251** |
+> | 50 | 559 | 843 | **−285** |
+>
+> A negative expiratory reserve is not a disagreement, it is an
+> **impossibility**: the lung would hold less gas at rest than after a
+> maximal exhalation.
+>
+> **The resolution is in the code's own comment**, and this repository has
+> been caught before by reading a quantity's *label* rather than its
+> *definition*. `apnoea_core.py` says of `rv`, verbatim:
+> `rv: float = 1100.0    # mL, ANAESTHETISED SUPINE, AT BMI 22`.
+> **Jones measured seated and awake.** It is not the same quantity, so his
+> 0.63%/BMI is not a competing value for this parameter — it is a
+> measurement of a different state.
+>
+> **What survives, because this is not a clean acquittal.** Reinius's single
+> CT point is still the only anchor for the *anaesthetised supine* slope; the
+> threefold gap has not been explained, only attributed; and Jones now
+> implies that the seated-awake-to-anaesthetised fall in RV must itself be
+> large in the obese — **a step this model does not represent at all**.
+
 **And the cost of "correcting" it is large**, which is why it needs a ruling
 and not an edit. A lower `k_rv_bmi` raises obese RV, which raises the floor
 `frc_anaes()` is clamped to. At Pelosi's geometry (1.64 m, age 52, supine):
@@ -2425,6 +2460,65 @@ It has **no anaesthetised and no supine measurement at all**, so it cannot
 settle the posture step directly; it is a bound and a shape, not a level. And
 its patients are all white, which it states as a limitation itself.
 
+### Pelosi re-inverted through a corrected cardiac output — 2026-09-25
+
+Ruled "7 y". `shunt_base_eff()` was fitted by inverting Pelosi's measured
+PaO₂/PAO₂ **through this model**, so it inherited this model's cardiac output
+— which the Tokics reading showed has the wrong **gradient**, not merely the
+wrong level.
+
+**The correction.** Two measured anaesthetised cardiac outputs anchor it:
+Tokics 5.70 L/min at 77.4 kg, Perilli 4.90 at 125 kg. A power law through both
+gives an exponent of **−0.3155** — cardiac output *falling* with body mass.
+
+**Three caveats, stated before the result.** That is what two points say; it is
+**not a law anyone published**; it rests on two cohorts from different studies
+differing by ~12 years of age, neither reporting haemoglobin; and at Pelosi's
+lean end (BMI 22 is 59 kg) it **extrapolates below both anchors**. So a **flat**
+cardiac output at 5.30 L/min was inverted alongside it: if two corrections that
+assume different things move the answer the same way, the answer is not an
+artefact of the exponent. **This is a sensitivity probe, not a proposed
+parameter, and nothing from it is written into the model.**
+
+#### The result, and it is large
+
+The shunt Pelosi implies, across BMI 22 → 50:
+
+| inverted through | at BMI 22 | at BMI 50 | factor |
+|---|---|---|---|
+| our shipped cardiac output | 3.47% | 14.12% | **×4.07** |
+| a power-law cardiac output | 6.31% | 11.40% | **×1.81** |
+| a flat cardiac output | 5.44% | 12.46% | **×2.29** |
+| *our shunt law, for comparison* | *3.71%* | *14.24%* | *×3.83* |
+
+**Roughly half of `shunt_base_eff`'s BMI dependence is a cardiac-output
+artefact rather than a property of the lung** — and both corrections agree on
+that despite assuming different things.
+
+Our shipped law's worst residual against each inversion:
+
+| | worst residual |
+|---|---|
+| vs the shipped-CO inversion | **0.25 pp** |
+| vs the power-law-CO inversion | **2.84 pp** |
+| vs the flat-CO inversion | **1.77 pp** |
+
+0.25 pp against the first **because it was fitted to it**. Against a corrected
+cardiac output it is out by up to **2.84 pp** — larger than the 0.49 pp worst
+residual the re-key was judged on, and larger than the 0.27 pp of the quadratic
+it replaced.
+
+#### What follows
+
+**The cardiac-output gradient is upstream of the shunt law.** Fitting the shunt
+law again while the cardiac output is wrong would be fitting *around* an error
+rather than removing it, and every shunt this repository has inverted — Pelosi,
+Reinius, Valenza, Gander, Perilli — went through the same cardiac output.
+
+**Nothing was changed.** The inversion is regenerated by
+`handover_numbers.py`, computed rather than recorded, so it cannot rot.
+
+---
 ---
 ### Hardman 2000 and McNamara 2005 — READ 2026-09-22, and they overturn a conclusion
 
@@ -2998,6 +3092,14 @@ primary source, not a search.** The first two are the ones that matter most:
       Wanted for its tables of shunt and low-V/Q against age, which would
       settle whether our shunt's age dependence is a defect or a naming
       problem — see its section above.
+- [ ] **Gutierrez C, Ghezzo RH, Abboud RT, et al.** Reference values of
+      pulmonary function tests for Canadian Caucasians. *Can Respir J*
+      2004;11(6):414-24. **ADDED 2026-09-25**, and it is the one paper that
+      would turn Jones & Nzekwu from a SHAPE into a LEVEL. Every number Jones
+      publishes is a per cent of *these* predicted values, so without them his
+      regressions cannot be converted to millilitres here and can only be used
+      as ratios and slopes. Citation is Jones's reference 29, resolved from
+      his reference list rather than from a search
 - [ ] **Damia G, et al.** Perioperative changes in functional residual capacity
       in morbidly obese patients. *Br J Anaesth* 1988;60(5):574-8
 - [ ] **Berthoud MC, Peacock JE, Reilly CS.** Effectiveness of preoxygenation

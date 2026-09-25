@@ -835,14 +835,98 @@ class Patient:
         the raw constant. They now all go through here.
         """
         return (self.rv * self.height_factor()
-                * np.exp(-self.k_rv_bmi * max(0.0, self.bmi() - 22.0)))
+                * np.exp(-self.k_rv_bmi_eff() * max(0.0, self.bmi() - 22.0)))
+
+    # ------------------------------------------------------------------
+    # EXPERIMENTAL SWITCHES, ADDED 2026-09-25 TO COST A DECISION.
+    #
+    # These are CLASS ATTRIBUTES, not dataclass fields, so an experiment
+    # subclasses and flips them without touching a single call site -- the
+    # _forced_shunt idiom handover_numbers.py already uses. Both default to
+    # the shipped behaviour, so an ordinary Patient() is bit-identical to
+    # what shipped before they existed.
+    #
+    # PYTHON ONLY, AND THIS MATTERS. model.js implements NEITHER. With
+    # either one flipped the two implementations are DIFFERENT MODELS, and
+    # test_parity.py runs at the defaults so it cannot see it. IF EITHER IS
+    # EVER ADOPTED, model.js MUST CHANGE IN THE SAME COMMIT.
+    #
+    # frc_asymptote -- give FRC the non-zero floor that both published
+    #   regressions have and this model does not. Jones & Nzekwu carry a
+    #   +55.2 %pred offset and Pelosi a +460 mL one; ours decays toward
+    #   ZERO and is caught by a hard rv_eff() clamp, which is a corner
+    #   where the measurements show a smooth approach. The mechanism is
+    #   that body mass cannot squeeze a lung below its residual volume, so
+    #   the quantity that decays exponentially is the EXPIRATORY RESERVE
+    #   (frc - rv), not FRC itself. That is Jones's own ERV regression,
+    #   whose offset is 6.5 %pred -- very nearly zero.
+    #   NOT A FIT: no new parameter, no benchmark consulted. It re-reads
+    #   k_frc_bmi as the decay of ERV rather than of FRC, and the value at
+    #   BMI 22 is unchanged by construction.
+    #
+    # k_rv_bmi_jones -- use Jones's 0.0063 in place of Reinius's 0.0198.
+    #   Measurement against measurement, unresolved; see k_rv_bmi above.
+    # frc_pelosi_shape -- the offset form done FAITHFULLY, which means
+    #   taking the exponent WITH the offset instead of bolting an asymptote
+    #   onto an exponent calibrated without one. Pelosi is the only supine
+    #   ANAESTHETISED regression we hold, and frc_anaes() is the quantity he
+    #   measured, so his curve is used as a SHAPE -- FRC(BMI)/FRC(22) -- with
+    #   the level left ours. That is exactly what this model already does
+    #   with Quanjer's height term, and it introduces NO new parameter.
+    #   Why it is a separate switch from frc_asymptote: those two are
+    #   DIFFERENT MECHANISMS, and the first turns out to disagree with the
+    #   very measurement that motivated it. See handover_numbers.py.
+    frc_asymptote = False
+    frc_pelosi_shape = False
+    k_rv_bmi_jones = False
+
+    @staticmethod
+    def _pelosi_frc(bmi):
+        """Pelosi 1998's measured helium regression, litres, supine anaesthetised.
+
+        FRC = 11.97 exp(-0.096 BMI) + 0.46, r 0.86, n = 24 over BMI 20-66.
+        Quoted in SOURCES.md and used here only as a ratio to itself.
+        """
+        return 11.97 * np.exp(-0.096 * bmi) + 0.46
+
+    def k_rv_bmi_eff(self):
+        """How fast residual volume falls with BMI, and WHOSE measurement.
+
+        0.0198 is Reinius's single CT point; 0.0063 is Jones's 373 patients
+        by plethysmography. They disagree threefold and the conflict is open.
+        """
+        return 0.0063 if self.k_rv_bmi_jones else self.k_rv_bmi
 
     def frc_awake(self):
+        if self.frc_asymptote:
+            # The expiratory reserve decays; FRC therefore decays TO rv,
+            # smoothly, instead of toward zero and being clamped at it.
+            base = self.frc_ref * self.height_factor() * self.tilt_factor()
+            rv = self.rv_eff()
+            return rv + max(0.0, base - rv) * np.exp(
+                -self.k_frc_bmi * (self.bmi() - 22.0))
+        # THE SHIPPED PATH IS LEFT EXACTLY AS IT WAS, factor for factor.
+        # Hoisting tilt_factor() out of this product to share it with the
+        # branch above reordered the multiply and changed 15 of 72 sampled
+        # values in their last bits -- float multiplication is not
+        # associative. Caught 2026-09-25 by checking bit-identity rather
+        # than assuming it.
         return max(self.rv_eff(), self.frc_ref * self.height_factor()
                    * np.exp(-self.k_frc_bmi * (self.bmi() - 22.0))
                    * self.tilt_factor())
 
     def frc_anaes(self):
+        if self.frc_pelosi_shape:
+            # Our own anaesthetised FRC at BMI 22 and this geometry, then
+            # Pelosi's measured SHAPE carried across BMI. Applying the shape
+            # to frc_awake() instead and subtracting the induction drop
+            # afterwards over-steepens it -- the drop is absolute, so it
+            # eats a growing FRACTION as the lung shrinks.
+            base = self.frc_ref * self.height_factor() * self.tilt_factor()
+            at22 = base - min(self.frc_drop, 0.25 * base)
+            return max(self.rv_eff(),
+                       at22 * self._pelosi_frc(self.bmi())
+                       / self._pelosi_frc(22.0))
         # the absolute induction drop cannot exceed a quarter of an already
         # small FRC, otherwise the obese lung is emptied unphysiologically
         drop = min(self.frc_drop, 0.25 * self.frc_awake())
