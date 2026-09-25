@@ -244,7 +244,13 @@ function simulate(P, epochs, dt=0.1){
 
   const out={t:[],spo2:[],vol:[],fao2:[],pan2:[],paco2:[],ph:[],pao2:[],
              shunt:[],palv:[],lungO2:[],hpv:[],pvo2:[],co:[],hr:[],map:[],pap:[],sv:[],atel:[]};
-  let spo2=0.99, hist=[], last=null, stride=Math.max(1,Math.round((P.bgInvertInterval===undefined?1.0:P.bgInvertInterval)/dt));
+  let spo2=0.99, hist=[], last=null, stride=(function(){
+    // RULED 2026-09-25: 0 means invert EVERY STEP and is the default.
+    // Mirrors apnoea_core.py. The defect was that the interval did not
+    // scale with dt, so halving dt doubled the apparent rate of SaO2 fall.
+    var iv=(P.bgInvertInterval===undefined?0.0:P.bgInvertInterval);
+    return iv>0 ? Math.max(1,Math.round(iv/dt)) : 1;
+  })();
 
   for(let i=0;i<=N;i++){
     const ep=st[i];

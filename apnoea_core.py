@@ -667,7 +667,12 @@ class Patient:
     # PaCO2, pH and SaO2 all come from one inversion that was held for a
     # whole simulated second whatever dt was, so the apparent rate of fall
     # was an artefact of the grid and scaled as 1/dt. See HANDOVER.md.
-    bg_invert_interval: float = 1.0
+    # RULED 2026-09-25: 0.0 means INVERT EVERY STEP, and that is the default.
+    # Any positive value is an interval in seconds, kept only so the old
+    # behaviour and the cost curve can be reproduced. The defect was never
+    # the 1.0 as such -- it was that the interval did NOT scale with dt, so
+    # halving dt doubled the apparent rate of fall. At 0.0 it cannot.
+    bg_invert_interval: float = 0.0
     hb_co_max: float = 3.0          # ceiling; the heart cannot do better
     # The measured +30% cardiac output over +31 mmHg PaCO2 is the NET of a
     # rate and a stroke volume response, and the source does not split them.
@@ -1437,6 +1442,12 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
     sao2_hist, spo2, cum_o2_in = [], 0.99, 0.0
     dt_min = dt / 60.0
     _last = None
+    # How many steps between blood-gas inversions. 0.0 means every step, and
+    # is the default: the old behaviour held one inversion for a whole
+    # simulated second whatever dt was, which made the apparent rate of fall
+    # of SaO2 an artefact of the grid, scaling as 1/dt.
+    _bg_stride = (max(1, int(round(pt.bg_invert_interval / dt)))
+                  if pt.bg_invert_interval > 0 else 1)
 
     states = []
     for e in timeline:
@@ -1713,7 +1724,7 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
             p_o2, p_co2 = ven_o2[j], ven_co2[j]
 
         # ---- outputs --------------------------------------------------------
-        if i % max(1, int(round(pt.bg_invert_interval / dt))) == 0 or _last is None:
+        if _bg_stride == 1 or i % _bg_stride == 0 or _last is None:
             _last = bg.pco2_from_co2_content(art_co2[-1], be, hb,
                                              art_o2[-1], temp)
         paco2_a, ph_a, sao2, pao2_a = _last
