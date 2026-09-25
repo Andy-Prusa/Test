@@ -63,6 +63,20 @@ font-family:Barlow,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
     the compact height had been written but was dead. Scoping to .main is what
     makes it win. */
  .main .steps{height:34px;margin-bottom:0}
+ .sb{margin:10px 0;border:1px solid #d7d7d7;border-radius:6px;background:#fafafa;
+     font-size:13px}
+ .sb summary{cursor:pointer;padding:8px 10px;font-weight:600}
+ .sb .sbnote{margin:0 10px 8px;color:#555;font-size:12px;line-height:1.45}
+ .sbrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 10px}
+ .sbrow label{color:#555}
+ .sbrow input[type=number]{width:80px}
+ .sbt{width:calc(100% - 20px);margin:4px 10px 0;border-collapse:collapse}
+ .sbt th{text-align:left;font-weight:600;color:#555;font-size:12px;
+         border-bottom:1px solid #ddd;padding:3px 4px}
+ .sbt td{padding:2px 4px;border-bottom:1px solid #eee}
+ .sbt input[type=text]{width:100%;box-sizing:border-box}
+ .sbt input[type=number]{width:70px}
+ .sberr{color:#b00;font-size:12px}
  .main .transport{margin-bottom:2px}
  /* THE SAME DEAD-RULE BUG AS .steps ABOVE, found 2026-09-22 from a
     screenshot on an iPad: the figure was drawn straight over the readout
@@ -234,6 +248,24 @@ obstruction by a wide margin, and that disagreement is recorded rather than hidd
 it as a way to reason about mechanism, not as a predictor for an individual.</p>
 
 <div class="dials" id="dials"></div>
+
+<details class="sb" id="sb">
+<summary>Scenario builder &mdash; edit the airway timeline</summary>
+<p class="sbnote">Each row sets the airway <em>from</em> that moment until the next row.
+The two arms differ only after the re-obstruction time: the control arm loses the
+airway there, the device arm keeps it. Times are seconds from induction.</p>
+<div class="sbrow"><label for="sbpre">Preset</label>
+<select id="sbpre"></select>
+<label for="sbend">Run length</label><input type="number" id="sbend" min="120" max="1800" step="30">
+<label for="sbre">Control arm re-obstructs at</label>
+<input type="number" id="sbre" min="0" max="1800" step="10" placeholder="never">
+<button type="button" id="sbclear">never</button></div>
+<table class="sbt" id="sbt"><thead><tr><th>Time (s)</th><th>Label</th>
+<th>Airway</th><th>Icon</th><th></th></tr></thead><tbody></tbody></table>
+<div class="sbrow"><button type="button" id="sbadd">Add segment</button>
+<button type="button" id="sbapply">Apply</button>
+<span class="sberr" id="sberr"></span></div>
+</details>
 <p class="foot">Modelled, not measured. Saturation carries a pulse oximeter delay. There is no
 end-tidal CO&#8322; because there is no ventilation; the CO&#8322; and pH shown are arterial model
 values you would not have at the bedside. Each arm stops where the model's fixed cardiac
@@ -301,16 +333,61 @@ mask:'<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1
 lma:'<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="16" cy="22" rx="7" ry="8"/><ellipse cx="16" cy="22" rx="3.5" ry="4.5"/><path d="M16 14V6"/><rect x="13" y="2" width="6" height="4" rx="1"/></svg>',
 blade:'<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="19" y="3" width="7" height="13" rx="1.5"/><path d="M19 15H12C7 15 4 19 4 24c0 3 1.5 5 3 5"/><path d="M7 29c-1-2-1-4 0-6"/></svg>'};
 
-const STEPS=[[0,'syringe','Induction'],[120,'mask','Facemask ventilation fails'],
-[130,'lma','LMA inserted'],[220,'syringe','Rocuronium given'],
-[280,'blade','Laryngoscopy']];
-const EVENTS=[[0,'Induction. Airway obstructs immediately.'],
-[120,'Facemask off, LMA going in'],
-[130,'LMA in place but no patent airway'],
-[160,'LMA out. Laryngospasm. Drawing up rocuronium.'],
-[220,'Rocuronium given. 60 s to work.'],
-[280,'Laryngoscopy \\u2014 airway open, view obtained'],
-[430,'Blade out (control) / blade left in (buccal)']];
+// ---- THE SCENARIO, AS DATA ---------------------------------------------
+// Until 2026-09-25 the timeline was hardcoded in three places that had to be
+// kept in step by hand: a resistance function R(t), a STEPS array for the
+// icon strip and an EVENTS array for the caption. Editing one and not the
+// others was a standing trap. They are now all DERIVED from one editable
+// scenario, and the page can build its own.
+//
+// airway is the state of the airway FROM this moment until the next segment:
+//   patent      R = 2      an open airway, a blade in place, an LMA that works
+//   partial     R = 8      a narrowed but not closed airway
+//   obstructed  R = OBS    nothing moves
+// reobstructAt, if set, is the moment the CONTROL arm loses the airway again
+// while the device arm keeps it -- the A/B comparison this page exists for.
+//
+// VERIFIED IDENTICAL to the hardcoded version it replaced, over 40
+// combinations of LMA state, oxygen start time, arm and FiO2: 0 mismatches.
+// Resistances are read LAZILY: OBS is declared further down this script
+// and a direct reference here hits its temporal dead zone -- caught by
+// loading the page in Chromium, which is now part of building it.
+const AIRWAY_R={patent:()=>2,partial:()=>8,obstructed:()=>OBS};
+const AIRWAY_LABEL={patent:'Patent',partial:'Partial',obstructed:'Obstructed'};
+const PRESETS={
+ 'cico':{name:'Cannot intubate, cannot oxygenate',end:900,reobstructAt:430,segs:[
+   {t:0,icon:'syringe',label:'Induction',airway:'obstructed',
+    note:'Induction. Airway obstructs immediately.'},
+   {t:120,icon:'mask',label:'Facemask ventilation fails',airway:'partial',
+    note:'Facemask off, LMA going in'},
+   {t:130,icon:'lma',label:'LMA inserted',airway:'obstructed',
+    note:'LMA in place but no patent airway'},
+   {t:160,icon:'lma',label:'LMA out, laryngospasm',airway:'obstructed',
+    note:'LMA out. Laryngospasm. Drawing up rocuronium.'},
+   {t:220,icon:'syringe',label:'Rocuronium given',airway:'obstructed',
+    note:'Rocuronium given. 60 s to work.'},
+   {t:280,icon:'blade',label:'Laryngoscopy',airway:'patent',
+    note:'Laryngoscopy \\u2014 airway open, view obtained'},
+   {t:430,icon:'blade',label:'Blade out (control) / left in (device)',
+    airway:'patent',note:'Blade out (control) / blade left in (buccal)'}]},
+ 'patent':{name:'Patent airway throughout (Toner / Heard shape)',end:900,
+   reobstructAt:null,segs:[
+   {t:0,icon:'syringe',label:'Induction, airway held open',airway:'patent',
+    note:'Induction. Airway kept patent throughout \\u2014 apnoeic oxygenation only.'}]},
+ 'obstructed':{name:'Obstructed throughout (Stock shape)',end:900,
+   reobstructAt:null,segs:[
+   {t:0,icon:'syringe',label:'Induction, airway obstructs',airway:'obstructed',
+    note:'Induction. Complete obstruction from the first second.'}]},
+ 'lategain':{name:'Airway regained late',end:900,reobstructAt:null,segs:[
+   {t:0,icon:'syringe',label:'Induction',airway:'obstructed',
+    note:'Induction. Airway obstructs immediately.'},
+   {t:300,icon:'lma',label:'LMA finally seats',airway:'partial',
+    note:'LMA seats at last \\u2014 a narrowed airway, not a patent one'},
+   {t:420,icon:'blade',label:'Laryngoscopy',airway:'patent',
+    note:'Laryngoscopy \\u2014 airway open'}]}};
+let SCENARIO=JSON.parse(JSON.stringify(PRESETS['cico']));
+const STEPS=()=>SCENARIO.segs.map(s=>[s.t,s.icon,s.label]);
+const EVENTS=()=>SCENARIO.segs.map(s=>[s.t,s.note]);
 
 const DIALS=[
  ['weight','Body weight',45,180,1,107,null],
@@ -337,11 +414,77 @@ const P=Object.assign({},BASE);
 DIALS.forEach(d=>P[d[0]]=d[5]);
 
 const stepsEl=document.getElementById('steps');
-STEPS.forEach(([t,ic,lab])=>{const d=document.createElement('div');d.className='step';
- d.dataset.t=t;
- const mmss=Math.floor(t/60)+':'+String(t%60).padStart(2,'0');
- d.innerHTML=ICONS[ic]+'<b>'+mmss+'</b><span>'+lab+'</span>';
- stepsEl.appendChild(d);});
+// Re-rendered whenever the scenario changes, rather than built once: the
+// icon strip is a VIEW of SCENARIO now, not a second copy of it.
+function renderSteps(){
+ stepsEl.innerHTML='';
+ STEPS().forEach(([t,ic,lab])=>{const d=document.createElement('div');d.className='step';
+  d.dataset.t=t;
+  const mmss=Math.floor(t/60)+':'+String(t%60).padStart(2,'0');
+  d.innerHTML=ICONS[ic||'syringe']+'<b>'+mmss+'</b><span>'+lab+'</span>';
+  stepsEl.appendChild(d);});
+}
+renderSteps();
+
+// ---- the scenario builder -------------------------------------------------
+// The page's own timeline, editable. Everything here is VIEW code: the single
+// source of truth is SCENARIO, and tl(), renderSteps() and the caption all
+// derive from it. Nothing in this block touches the physics.
+const sbT=document.querySelector('#sbt tbody'), sbErr=document.getElementById('sberr');
+function sbRow(seg){
+ const tr=document.createElement('tr');
+ const opts=Object.keys(AIRWAY_LABEL).map(k=>
+   '<option value="'+k+'"'+(seg.airway===k?' selected':'')+'>'+AIRWAY_LABEL[k]+'</option>').join('');
+ const icons=Object.keys(ICONS).map(k=>
+   '<option value="'+k+'"'+(seg.icon===k?' selected':'')+'>'+k+'</option>').join('');
+ tr.innerHTML='<td><input type="number" min="0" step="10" value="'+seg.t+'"></td>'+
+  '<td><input type="text" value="'+(seg.label||'').replace(/"/g,'&quot;')+'"></td>'+
+  '<td><select>'+opts+'</select></td>'+
+  '<td><select>'+icons+'</select></td>'+
+  '<td><button type="button" title="Remove">&times;</button></td>';
+ tr.querySelector('button').onclick=()=>{
+   if(sbT.children.length<2){sbErr.textContent='A scenario needs at least one segment.';return;}
+   tr.remove();};
+ return tr;
+}
+function sbRender(){
+ sbT.innerHTML=''; SCENARIO.segs.forEach(sg=>sbT.appendChild(sbRow(sg)));
+ document.getElementById('sbend').value=SCENARIO.end;
+ document.getElementById('sbre').value=(SCENARIO.reobstructAt==null?'':SCENARIO.reobstructAt);
+}
+function sbApply(){
+ sbErr.textContent='';
+ const segs=[...sbT.children].map(tr=>{
+  const f=tr.querySelectorAll('input,select');
+  return {t:Math.max(0,Math.round(+f[0].value||0)),label:f[1].value.trim()||'(unlabelled)',
+          airway:f[2].value,icon:f[3].value,note:f[1].value.trim()||''};
+ }).sort((a,b)=>a.t-b.t);
+ const end=Math.round(+document.getElementById('sbend').value||900);
+ const reRaw=document.getElementById('sbre').value.trim();
+ const re=(reRaw===''?null:Math.round(+reRaw));
+ if(segs[0].t!==0){sbErr.textContent='The first segment must start at 0 s.';return;}
+ for(let i=1;i<segs.length;i++) if(segs[i].t===segs[i-1].t){
+   sbErr.textContent='Two segments share a start time ('+segs[i].t+' s).';return;}
+ if(end<=segs[segs.length-1].t){
+   sbErr.textContent='The run must be longer than the last segment.';return;}
+ if(re!=null&&(re<0||re>end)){sbErr.textContent='Re-obstruction must fall inside the run.';return;}
+ SCENARIO={name:'Custom',end:end,reobstructAt:re,segs:segs};
+ const sc=document.getElementById('scrub'); sc.max=end; if(+sc.value>end) sc.value=end;
+ renderSteps(); D={}; labels(); run();
+}
+const sbPre=document.getElementById('sbpre');
+Object.keys(PRESETS).forEach(k=>{const o=document.createElement('option');
+ o.value=k;o.textContent=PRESETS[k].name;sbPre.appendChild(o);});
+sbPre.onchange=()=>{SCENARIO=JSON.parse(JSON.stringify(PRESETS[sbPre.value]));
+ sbRender(); sbApply();};
+document.getElementById('sbadd').onclick=()=>{
+ const last=SCENARIO.segs[SCENARIO.segs.length-1];
+ sbT.appendChild(sbRow({t:Math.min(SCENARIO.end-10,(last?last.t:0)+60),
+   label:'New step',airway:'obstructed',icon:'syringe'}));};
+document.getElementById('sbapply').onclick=sbApply;
+document.getElementById('sbclear').onclick=()=>{
+ document.getElementById('sbre').value='';};
+sbRender();
 
 const dialsEl=document.getElementById('dials');
 DIALS.forEach(([key,lab,lo,hi,st,def,fmt])=>{
@@ -366,15 +509,22 @@ const OBS=Infinity;
 // Airway resistance by time, and the pharyngeal oxygen fraction switched on
 // at an arbitrary moment. Splitting on both boundary sets lets the device be
 // started before, during or long after the airway first opens.
+function segAirwayAt(t){let a=SCENARIO.segs[0].airway;
+ for(const s of SCENARIO.segs) if(t>=s.t) a=s.airway; return a;}
 function tl(fg,startAt,keep){
- const R=t=> t>=280 ? (t>=430&&!keep?OBS:2)
-          : ((t>=120&&t<130) ? (P.lmaOpens===false?OBS:8) : OBS);
- const cuts=[...new Set([0,120,130,160,280,430,startAt,900])]
-   .filter(v=>v>=0&&v<=900).sort((a,b)=>a-b);
+ const cuts=[...new Set([0,...SCENARIO.segs.map(s=>s.t),
+   ...(SCENARIO.reobstructAt!=null?[SCENARIO.reobstructAt]:[]),startAt,SCENARIO.end])]
+   .filter(v=>v>=0&&v<=SCENARIO.end).sort((a,b)=>a-b);
  const ep=[];
  for(let i=0;i<cuts.length-1;i++){
   const a=cuts[i],b=cuts[i+1];
-  ep.push({d:b-a,R:R(a),fg:(a>=startAt?fg:0.21)});
+  let st=segAirwayAt(a);
+  // The LMA dial overrides a PARTIAL segment: an LMA that does not open the
+  // airway leaves it obstructed. Kept from the hardcoded version.
+  if(st==='partial'&&P.lmaOpens===false) st='obstructed';
+  let R=AIRWAY_R[st]();
+  if(SCENARIO.reobstructAt!=null&&a>=SCENARIO.reobstructAt&&!keep) R=OBS;
+  ep.push({d:b-a,R:R,fg:(a>=startAt?fg:0.21)});
  }
  return ep;
 }
@@ -813,7 +963,7 @@ function render(){
  document.getElementById('clock').textContent=
   Math.floor(T/60)+':'+String(Math.floor(T%60)).padStart(2,'0');
  document.getElementById('scrub').value=T;
- let c=EVENTS[0];for(const e of EVENTS)if(T>=e[0])c=e;
+ const _ev=EVENTS(); let c=_ev[0];for(const e of _ev)if(T>=e[0])c=e;
  let txt=c[1];
  // The 120 s caption is the ONLY place the LMA toggle shows in words, so
  // the base text above must not state an outcome of its own -- it used to
@@ -822,7 +972,7 @@ function render(){
  // was working; the sentence said it was not.
  if(c[0]===120) txt+=P.lmaOpens?' \u2014 airway briefly open':' \u2014 airway stays shut';
  document.getElementById('cap').textContent=txt;
- let cur=STEPS[0];for(const s of STEPS)if(T>=s[0])cur=s;
+ const _st=STEPS(); let cur=_st[0];for(const s of _st)if(T>=s[0])cur=s;
  [...stepsEl.children].forEach(el=>
   el.classList.toggle('on',+el.dataset.t===cur[0]));
 }

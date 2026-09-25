@@ -244,10 +244,18 @@ function simulate(P, epochs, dt=0.1){
 
   const out={t:[],spo2:[],vol:[],fao2:[],pan2:[],paco2:[],ph:[],pao2:[],
              shunt:[],palv:[],lungO2:[],hpv:[],pvo2:[],co:[],hr:[],map:[],pap:[],sv:[],atel:[]};
-  let spo2=0.99, hist=[], last=null, stride=(function(){
-    // RULED 2026-09-25: 0 means invert EVERY STEP and is the default.
-    // Mirrors apnoea_core.py. The defect was that the interval did not
-    // scale with dt, so halving dt doubled the apparent rate of SaO2 fall.
+  // stride gates OUTPUT SAMPLING -- one row per simulated second. It must
+  // stay at 1/dt: apnoea_core.py samples its outputs at the same cadence and
+  // test_parity.py compares the two series row for row.
+  let spo2=0.99, hist=[], last=null, stride=Math.round(1/dt);
+  // bgStride gates the BLOOD-GAS INVERSION, which is a different question
+  // and used to share this variable. RULED 2026-09-25: 0 means invert every
+  // step and is the default. The defect was that the interval did not scale
+  // with dt, so halving dt doubled the apparent rate of SaO2 fall.
+  // SEPARATING THESE TWO IS NOT COSMETIC: conflating them made the port emit
+  // twenty times as many output rows as the Python, and test_parity.py
+  // caught it at 8000%.
+  const bgStride=(function(){
     var iv=(P.bgInvertInterval===undefined?0.0:P.bgInvertInterval);
     return iv>0 ? Math.max(1,Math.round(iv/dt)) : 1;
   })();
@@ -463,7 +471,7 @@ function simulate(P, epochs, dt=0.1){
     for(let j=0;j<NP;j++){ vO2[j]+=(coNow/vvs)*(p1-vO2[j])*dtm; vC[j]+=(coNow/vvs)*(p2-vC[j])*dtm;
       p1=vO2[j];p2=vC[j]; }
 
-    if(i%stride===0||!last){ last=arterialState(aC[NP-1],be,hb,aO2[NP-1],T);
+    if(i%bgStride===0||!last){ last=arterialState(aC[NP-1],be,hb,aO2[NP-1],T);
       paco2Prev=last.pco2; sao2Prev=last.so2; }
     // PvO2 is the only stimulus tension HPV has, and the venous pool moves
     // every step, so apnoea_core.py recomputes it every step - outside the
