@@ -3094,12 +3094,30 @@ primary source, not a search.** The first two are the ones that matter most:
       problem — see its section above.
 - [ ] **Gutierrez C, Ghezzo RH, Abboud RT, et al.** Reference values of
       pulmonary function tests for Canadian Caucasians. *Can Respir J*
-      2004;11(6):414-24. **ADDED 2026-09-25**, and it is the one paper that
+      2004;11:414-424. **ADDED 2026-09-25**, and it is the one paper that
       would turn Jones & Nzekwu from a SHAPE into a LEVEL. Every number Jones
       publishes is a per cent of *these* predicted values, so without them his
       regressions cannot be converted to millilitres here and can only be used
-      as ratios and slopes. Citation is Jones's reference 29, resolved from
-      his reference list rather than from a search
+      as ratios and slopes. Citation is Jones's reference 29, transcribed from
+      his reference list rather than from a search.
+      **CORRECTED the same day:** this entry first carried an issue number,
+      `11(6)`. Jones's reference list gives no issue — it reads
+      `Can Respir J 2004; 11:414-424`. The `(6)` was supplied from memory and
+      is struck. The `et al.` is Jones's too, so **the full author list is not
+      known here**
+- [ ] **Watson RA, Pride NB.** Postural changes in lung volumes and
+      respiratory resistance in subjects with obesity. *J Appl Physiol*
+      2005;98:512-517. Jones's reference 10. **ADDED 2026-09-25 AND IT GOES
+      STRAIGHT AT AN ADMITTED HOLE.** The k_rv_bmi retraction of the same day
+      turns on Jones being SEATED AWAKE where our `rv` is ANAESTHETISED
+      SUPINE, and it ends by conceding that the seated-to-supine step "is a
+      step this model does not represent at all". This paper measures exactly
+      that step, in exactly that population
+- [ ] **Naimark A, Cherniack RM.** Compliance of the respiratory system in
+      health and obesity. *J Appl Physiol* 1960;15:377-382. Jones's reference
+      21. Bears on `crs` (respiratory compliance, how stiff the lungs and
+      chest are), which is currently Rothen's value with NO obesity term at
+      all
 - [ ] **Damia G, et al.** Perioperative changes in functional residual capacity
       in morbidly obese patients. *Br J Anaesth* 1988;60(5):574-8
 - [ ] **Berthoud MC, Peacock JE, Reilly CS.** Effectiveness of preoxygenation
