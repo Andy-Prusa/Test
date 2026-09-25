@@ -42,6 +42,25 @@ stays an upper bound. The two forms agree exactly at BMI 22 by construction, so
 the guard binds only below it and **cannot have moved the benchmarks**: the
 leanest patient in `test_validation.py` is BMI 22.86.
 
+**And the adoption has a cost the cost table could not see.** Re-deriving the
+Pelosi inversion against the adopted model afterwards: the **inversion itself
+did not move at all** (it is a shunt equation at fixed alveolar PO₂ over two
+seconds, so it barely depends on FRC), which means the cardiac-output finding
+survives unchanged. But `shunt_base_eff()` reads closure against `frc_anaes()`,
+so the lower anaesthetised FRC **raises the shunt** by up to 0.89 pp between
+BMI 30 and 42 — nothing at 22 where the forms agree exactly, nothing at 50
+where both are floored at RV. `shunt_anat` and `shunt_cc_k` were fitted against
+the *old* `frc_anaes`, so **the law has moved away from the curve it was fitted
+to: worst residual 0.25 → 1.01 pp, fourfold.** No benchmark row reads that
+residual, which is why four full suite runs did not show it. **Not refitted** —
+that would be tuning to a curve, through a cardiac output already known to have
+the wrong gradient.
+
+**Verified after the fact:** `test_validation.py` on the adopted model gives
+**4 blocking, the same four names**, with every key row matching the costed
+variant exactly (Toner 439.3, Heard 272.0, tilt 28.0 / 50.6 / 38.4). The guard
+moved nothing, as predicted. `test_parity.py` passes, 0 failures.
+
 **1. RULED: FRC stays age-flat.** Quanjer's `0.009·age` term remains
 unimplemented, and that is now a decision rather than an omission. Gutierrez
 2004 — a second reference set, 300 men, read at source — has **no age term at

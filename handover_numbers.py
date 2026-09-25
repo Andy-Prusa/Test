@@ -3410,15 +3410,50 @@ print("  Our shipped law against each inversion, worst residual:")
 _BMIS = (22.0, 30.0, 34.0, 42.0, 50.0)
 _OURS = [Patient(weight=_b * _PH * _PH, height=_PH, age=_PAGE, hb=_PHB,
                  tilt_deg=0.0).shunt_base_eff() * 100.0 for _b in _BMIS]
-for _mode, _nm, _w in (('shipped', "vs the shipped-CO inversion", 0.25),
+for _mode, _nm, _w in (('shipped', "vs the shipped-CO inversion", 1.01),
                        ('power', "vs the power-law-CO inversion", 2.84),
                        ('flat', "vs the flat-CO inversion", 1.77)):
     _res = [abs(_o - _co_invert(_b, _mode))
             for _b, _o in zip(_BMIS, _OURS)]
     check(_nm, max(_res), _w, 0.05, " pp")
-print("    0.25 pp against the first because IT WAS FITTED TO IT. Against a")
-print("    corrected cardiac output it is out by up to 2.84 pp -- larger than")
-print("    the 0.49 pp worst residual the re-key was judged on.")
+print("    Against a corrected cardiac output our law is out by up to 2.84 pp")
+print("    -- larger than the 0.49 pp worst residual the re-key was judged on,")
+print("    and larger than the 0.27 pp of the quadratic it replaced.")
+
+print("\n  RE-DERIVED 2026-09-25 AFTER PELOSI'S SHAPE WAS ADOPTED, and two")
+print("  things came out of it that the cost table could not see.")
+print("  FIRST, THE INVERSION ITSELF DID NOT MOVE AT ALL -- 3.47/14.12,")
+print("  6.31/11.40 and 5.44/12.46 to the last digit. It is a shunt equation")
+print("  evaluated over two seconds at a fixed alveolar PO2, so it barely")
+print("  depends on FRC. THE CARDIAC-OUTPUT FINDING THEREFORE SURVIVES THE")
+print("  ADOPTION UNCHANGED, which is worth knowing because almost nothing")
+print("  else in this file did.")
+print("  SECOND, AND IT IS A COST THE COST TABLE MISSED. shunt_base_eff reads")
+print("  closure against frc_anaes, so adopting a LOWER anaesthetised FRC")
+print("  raises the shunt wherever the change bites:")
+for _b, _wl, _wn in ((22.0, 3.71, 3.71), (30.0, 5.75, 6.28),
+                     (34.0, 7.09, 7.98), (42.0, 10.49, 11.38),
+                     (50.0, 14.24, 14.24)):
+    _lp = _Legacy(weight=_b * _PH * _PH, height=_PH, age=_PAGE, hb=_PHB,
+                  tilt_deg=0.0).shunt_base_eff() * 100.0
+    _np_ = Patient(weight=_b * _PH * _PH, height=_PH, age=_PAGE, hb=_PHB,
+                   tilt_deg=0.0).shunt_base_eff() * 100.0
+    check(f"BMI {_b:.0f}: shunt_base_eff, legacy", _lp, _wl, 0.02, " %")
+    check(f"  ... adopted", _np_, _wn, 0.02, " %")
+print("    NOTHING MOVES AT BMI 22 OR 50, and for two different reasons: at 22")
+print("    the two FRC forms agree EXACTLY by construction, and at 50 both are")
+print("    already floored at residual volume. The change bites only between.")
+print("    THE CONSEQUENCE, STATED PLAINLY: shunt_anat and shunt_cc_k WERE")
+print("    FITTED AGAINST THE OLD frc_anaes, so the adoption has moved the")
+print("    shunt law away from the curve it was fitted to. Its worst residual")
+print("    against the shipped-CO inversion goes 0.25 -> 1.01 pp, FOURFOLD.")
+print("    The cost table measured test_validation rows and could not see")
+print("    this, because no benchmark row reads that residual.")
+print("    NOT REFITTED. Refitting shunt_cc_k here would be tuning a parameter")
+print("    to a curve, which CLAUDE.md refuses, and it would be doing it")
+print("    THROUGH A CARDIAC OUTPUT ALREADY KNOWN TO HAVE THE WRONG GRADIENT.")
+print("    Recorded as a consequence of the adoption, awaiting the cardiac")
+print("    output being fixed first.")
 print("    THE ORDER OF WORK THIS IMPLIES: the cardiac-output gradient is")
 print("    UPSTREAM of the shunt law, so fixing the shunt law first would be")
 print("    fitting around an error rather than removing it. NOTHING CHANGED.")
