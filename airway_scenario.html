@@ -520,7 +520,7 @@ function simulate(P, epochs, dt=0.1){
 
   const out={t:[],spo2:[],vol:[],fao2:[],pan2:[],paco2:[],ph:[],pao2:[],
              shunt:[],palv:[],lungO2:[],hpv:[],pvo2:[],co:[],hr:[],map:[],pap:[],sv:[],atel:[]};
-  let spo2=0.99, hist=[], last=null, stride=Math.round(1/dt);
+  let spo2=0.99, hist=[], last=null, stride=Math.max(1,Math.round((P.bgInvertInterval===undefined?1.0:P.bgInvertInterval)/dt));
 
   for(let i=0;i<=N;i++){
     const ep=st[i];
