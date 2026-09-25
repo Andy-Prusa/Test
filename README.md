@@ -71,7 +71,7 @@ and this table used to make no distinction.
 | Heard 2017 | apnoeic oxygenation, obstructed | **no** |
 | O'Loughlin 2020 | desaturation timing | **no** |
 | Lane / Ramkumar / Altermatt / Dixon | positioning | **no** — and cited by surname and year only, so not retrievable as written |
-| Kaiser 2024, *Sci Rep* 14:3617 (n=91) | cardiac output | **no** — identified by PMCID alone, no author or title recorded |
+| Kaiser 2024, *Sci Rep* 14:3617 (n=91) | cardiac output | **yes — obtained and read 2026-09-22.** This row said "no — identified by PMCID alone" until 2026-09-25, three days after the paper was read and its numbers written into `HANDOVER.md`. The title is still not recorded |
 | Varat 1972 | the circulation's response to anaemia | **no** |
 
 **Six of these eight have not been read by anyone on this project.** Their band
