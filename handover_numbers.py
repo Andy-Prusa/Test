@@ -3416,6 +3416,124 @@ print("    THE ORDER OF WORK THIS IMPLIES: the cardiac-output gradient is")
 print("    UPSTREAM of the shunt law, so fixing the shunt law first would be")
 print("    fitting around an error rather than removing it. NOTHING CHANGED.")
 
+# ---------------------------------------------------------------------------
+# GUTIERREZ 2004 -- OBTAINED AND READ AT SOURCE 2026-09-25
+#
+# Gutierrez C, Ghezzo RH, Abboud RT, Cosio MG, Dill JR, Martin RR,
+# McCarthy DS, Morse JLC, Zamel N. Reference values of pulmonary function
+# tests for Canadian Caucasians. Can Respir J 2004;11(6):414-424.
+#
+# n = 327 women and 300 men, six Canadian centres, ages 20-80, all Caucasian
+# LIFETIME NONSMOKERS, body plethysmography. This is the reference set every
+# per cent in Jones & Nzekwu is a per cent OF, so it is what turns Jones from
+# a shape into a level.
+# ---------------------------------------------------------------------------
+print("\nGUTIERREZ 2004 -- the reference set under Jones, read at source")
+
+# Table 3, ADULT MALES. HEIGHT IN CENTIMETRES, volumes in litres.
+_GM_TLC = lambda h: -8.618 + 0.090 * h
+_GM_VC = lambda h, a: -5.897 + 0.069 * h - 0.023 * a
+_GM_FRC = lambda h: -4.633 + 0.046 * h          # NO AGE TERM AT ALL
+_GM_RV = lambda h, a: -2.443 + 0.020 * h + 0.021 * a
+_QM_FRC = lambda h, a: 2.34 * h + 0.009 * a - 1.09      # Quanjer, h in METRES
+_QM_TLC = lambda h: 7.99 * h - 7.08
+
+print("  Table 3, men (height in CM, litres): TLC -8.618 + 0.090H;")
+print("  VC -5.897 + 0.069H - 0.023A; FRC -4.633 + 0.046H; RV -2.443 +")
+print("  0.020H + 0.021A. THE TABLE WAS READ OFF A PAGE IMAGE, so it is")
+print("  checked for internal consistency before anything is built on it:")
+check("male 175 cm 45 y: TLC", _GM_TLC(175.0), 7.132, 0.002, " L")
+check("  ... VC", _GM_VC(175.0, 45.0), 5.143, 0.002, " L")
+check("  ... RV", _GM_RV(175.0, 45.0), 2.002, 0.002, " L")
+check("  ... VC + RV against TLC, as a % gap",
+      100.0 * ((_GM_VC(175.0, 45.0) + _GM_RV(175.0, 45.0)) / _GM_TLC(175.0) - 1.0),
+      0.18, 0.02, " %")
+print("    Three independently-read equations close on the fourth to 0.2%.")
+
+print("\n  1. IT CORROBORATES THE LEVEL QUANJER SETS, TO 0.2%.")
+check("male FRC at 1.75 m / 45 y: Quanjer", _QM_FRC(1.75, 45.0) * 1000.0,
+      3410.0, 1.0, " mL")
+check("  ... Gutierrez", _GM_FRC(175.0) * 1000.0, 3417.0, 1.0, " mL")
+print("    A European and a Canadian reference set, built two decades and an")
+print("    ocean apart, agree to 0.2% on the quantity this model's height")
+print("    term IS. That is the strongest check the FRC level has had.")
+
+print("\n  2. AND THEY FLATLY DISAGREE ABOUT AGE -- WHICH BEARS ON AN OPEN")
+print("     RULING. Quanjer's men's FRC carries +0.009*age. GUTIERREZ'S HAS")
+print("     NO AGE TERM AT ALL (the cell is blank, r2 = 0.17).")
+for _a, _w in ((20.0, 7.28), (45.0, 0.21), (70.0, -5.99)):
+    check(f"age {_a:.0f}: Gutierrez over Quanjer",
+          100.0 * (_GM_FRC(175.0) / _QM_FRC(1.75, _a) - 1.0), _w, 0.05, " %")
+check("Quanjer's male FRC rise across age 20-70",
+      100.0 * (_QM_FRC(1.75, 70.0) / _QM_FRC(1.75, 20.0) - 1.0), 14.13, 0.05, " %")
+print("    THE MODEL IS CURRENTLY AGE-FLAT, because Quanjer's age term was")
+print("    never implemented. That has been recorded as a DEFECT awaiting a")
+print("    ruling. A SECOND REFERENCE SET NOW SAYS AGE-FLAT IS RIGHT for")
+print("    men. Taken with the fact that implementing the term moves the")
+print("    CC = FRC crossover 55.0 -> 59.9 years, FURTHER from the published")
+print("    ~44, there is now a POSITIVE case for leaving it out rather than")
+print("    merely an unfixed omission. STILL A RULING, not taken here.")
+print("    The honest caveat: Gutierrez's FRC model is weak, r2 = 0.17, and")
+print("    a term can be absent from a regression because it is small OR")
+print("    because the data cannot see it.")
+
+print("\n  3. THE SUPINE FALL, CONFIRMED BY A SECOND SOURCE.")
+_p22 = Patient(weight=22.0 * 1.75 ** 2, height=1.75, age=45.0, hb=14.0,
+               tilt_deg=0.0)
+check("frc_ref over Gutierrez's seated prediction",
+      _p22.frc_awake() / (_GM_FRC(175.0) * 1000.0), 0.7317, 0.001, "")
+print("    apnoea_core.py says of the ratio against Quanjer that 0.733 is")
+print("    'the right size for the supine fall, not itself sourced'. Against")
+print("    Gutierrez it is 0.732. The same number from an independent")
+print("    reference set -- still not a measurement OF the supine fall, but")
+print("    no longer resting on one reference set's level.")
+check("our rv over Gutierrez's seated-awake RV",
+      _p22.rv_eff() / (_GM_RV(175.0, 45.0) * 1000.0), 0.5495, 0.001, "")
+print("    AND THIS ONE IS NEW. Our rv is documented ANAESTHETISED SUPINE and")
+print("    sits at 55% of the seated-awake prediction. So the model ALREADY")
+print("    embodies a 45% seated-to-anaesthetised fall in residual volume at")
+print("    the lean end -- baked into a constant rather than represented. That")
+print("    is the same step the k_rv_bmi retraction said the model 'does not")
+print("    represent at all'. It does represent it; it just cannot VARY it.")
+
+print("\n  4. JONES IN MILLILITRES -- WHAT THIS PAPER WAS WANTED FOR.")
+_JF = lambda b: 231.9 * np.exp(-0.070 * b) + 55.2
+print("   BMI   Jones %pred   Jones mL   ours mL   implied supine/seated")
+for _b, _wj, _wo, _wr in ((22.0, 3585.0, 2500.0, 0.697),
+                          (30.0, 2857.0, 1791.0, 0.627),
+                          (40.0, 2368.0, 1180.0, 0.498),
+                          (50.0, 2125.0, 778.0, 0.366)):
+    _q = Patient(weight=_b * 1.75 ** 2, height=1.75, age=45.0, hb=14.0,
+                 tilt_deg=0.0)
+    _jm = _JF(_b) / 100.0 * _GM_FRC(175.0) * 1000.0
+    check(f"BMI {_b:.0f}: Jones, in mL", _jm, _wj, 1.0, " mL")
+    check(f"  ... ours, supine awake", _q.frc_awake(), _wo, 1.0, " mL")
+    check(f"  ... implied supine/seated ratio", _q.frc_awake() / _jm, _wr,
+          0.001, "")
+print("    THE MODEL'S POSTURE CLAIM IS NOW A NUMBER FOR THE FIRST TIME: it")
+print("    says lying flat costs a lean patient 30% of FRC and a BMI 50")
+print("    patient 63%. The direction is right -- abdominal mass loads the")
+print("    diaphragm harder supine -- but the SIZE at the obese end is a")
+print("    strong claim that NOTHING IN THIS REPOSITORY TESTS.")
+print("    WATSON & PRIDE 2005 is exactly that measurement, and it is on the")
+print("    wanted list. This is the number it would check.")
+_r = []
+for _h in (1.60, 1.75, 1.85):
+    _a = Patient(weight=22.0 * _h * _h, height=_h, age=45.0, hb=14.0,
+                 tilt_deg=0.0).frc_awake() / (_JF(22.0) / 100.0 * _GM_FRC(_h * 100) * 1000.0)
+    _z = Patient(weight=50.0 * _h * _h, height=_h, age=45.0, hb=14.0,
+                 tilt_deg=0.0).frc_awake() / (_JF(50.0) / 100.0 * _GM_FRC(_h * 100) * 1000.0)
+    _r.append(_z / _a)
+check("fall in that ratio, BMI 22 -> 50, at 1.60 m", _r[0], 0.5254, 0.001, "x")
+check("  ... at 1.75 m", _r[1], 0.5254, 0.001, "x")
+check("  ... at 1.85 m", _r[2], 0.5254, 0.001, "x")
+print("    JONES REPORTS NO COHORT HEIGHT OR AGE, so the ratio above is at OUR")
+print("    reference geometry and its LEVEL moves with height (0.77 to 0.66 at")
+print("    BMI 22 across 1.60-1.85 m). Its FALL does not: x0.525 at every")
+print("    height, because the height terms cancel in a ratio of ratios. The")
+print("    claim that the posture cost NEARLY DOUBLES across BMI 22-50 is")
+print("    therefore independent of the geometry chosen.")
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")

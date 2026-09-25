@@ -2513,6 +2513,116 @@ adopted**, and adopting it means changing `model.js` in the same commit.
 
 ---
 
+### Gutierrez 2004 — OBTAINED AND READ AT SOURCE 2026-09-25
+
+**Gutierrez C, Ghezzo RH, Abboud RT, Cosio MG, Dill JR, Martin RR, McCarthy DS,
+Morse JLC, Zamel N.** Reference values of pulmonary function tests for Canadian
+Caucasians. *Can Respir J* 2004;11(6):414-424.
+
+n = 327 women and 300 men, six Canadian centres, ages 20–80, all Caucasian
+**lifetime nonsmokers**, body plethysmography. This is the reference set every
+per cent in Jones & Nzekwu is a per cent *of*, and it was wanted for exactly
+one thing: to turn Jones from a shape into a level.
+
+**Table 3, adult males** — height in **centimetres**, volumes in litres:
+
+```
+TLC = −8.618 + 0.090·H                 r² 0.37   SEE 0.817
+VC  = −5.897 + 0.069·H − 0.023·A       r² 0.54
+FRC = −4.633 + 0.046·H                 r² 0.17   SEE 0.715   ← NO AGE TERM
+RV  = −2.443 + 0.020·H + 0.021·A       r² 0.33
+```
+
+**Read off a page image, so checked before use:** at 175 cm and 45 years the
+three independently-read equations for VC, RV and TLC close on each other to
+**0.2%** (VC + RV = 7.145 L against TLC 7.132 L).
+
+#### 1. It corroborates the level Quanjer sets, to 0.2%
+
+| male, 1.75 m, 45 y | predicted FRC |
+|---|---|
+| Quanjer 1993 (European) | 3410 mL |
+| **Gutierrez 2004 (Canadian)** | **3417 mL** |
+
+Two reference sets built two decades and an ocean apart agree to **0.2%** on
+the quantity this model's height term *is*. That is the strongest check the FRC
+level has had.
+
+#### 2. And they flatly disagree about age — which bears on an open ruling
+
+Quanjer's men's FRC carries **+0.009·age**. **Gutierrez's has no age term at
+all** — the cell is blank.
+
+| age | Gutierrez over Quanjer |
+|---|---|
+| 20 | **+7.3%** |
+| 45 | +0.2% |
+| 70 | **−6.0%** |
+
+Quanjer's male FRC **rises 14.1%** across 20–70; Gutierrez's is flat.
+
+**The model is currently age-flat**, because Quanjer's age term was never
+implemented, and that has been recorded as a defect awaiting a ruling. **A
+second reference set now says age-flat is right for men.** Taken with the fact
+that implementing the term moves the CC = FRC crossover 55.0 → 59.9 years,
+*further* from the published ~44, there is now a **positive case** for leaving
+it out rather than merely an unfixed omission.
+
+**Still a ruling, not taken here.** And the honest caveat: Gutierrez's FRC
+model is weak, r² = 0.17, and a term can be absent from a regression because it
+is small *or* because the data cannot see it.
+
+#### 3. The supine fall, confirmed by a second source — and one new number
+
+`apnoea_core.py` says of the ratio against Quanjer that 0.733 is *"the right
+size for the supine fall, not itself sourced"*. Against Gutierrez it is
+**0.732**. Still not a measurement *of* the supine fall, but it no longer rests
+on one reference set's level.
+
+**New:** our `rv` is documented ANAESTHETISED SUPINE and sits at **55%** of
+Gutierrez's seated-awake prediction (1100 against 2002 mL). So the model
+**already embodies a 45% seated-to-anaesthetised fall in residual volume** at
+the lean end — baked into a constant rather than represented. That is the same
+step the `k_rv_bmi` retraction called one the model *"does not represent at
+all"*. **It does represent it; it just cannot vary it.**
+
+#### 4. Jones in millilitres — what the paper was wanted for
+
+| BMI | Jones %pred | **Jones, mL** | ours, mL | implied supine/seated |
+|---|---|---|---|---|
+| 22 | 104.9 | 3585 | 2500 | **0.697** |
+| 30 | 83.6 | 2857 | 1791 | 0.627 |
+| 40 | 69.3 | 2368 | 1180 | 0.498 |
+| 50 | 62.2 | 2125 | 778 | **0.366** |
+
+**The model's posture claim is a number for the first time:** it says lying
+flat costs a lean patient **30%** of FRC and a BMI 50 patient **63%**.
+
+The *direction* is right — abdominal mass loads the diaphragm harder supine —
+but the **size at the obese end is a strong claim that nothing in this
+repository tests**. **Watson & Pride 2005** is exactly that measurement, and it
+is on the wanted list. This is the number it would check.
+
+**Jones reports no cohort height or age**, so the ratio above is computed at
+*our* reference geometry. Its **level** moves with height (0.77 to 0.66 at
+BMI 22 across 1.60–1.85 m). Its **fall does not**: ×0.525 at every height,
+because the height terms cancel in a ratio of ratios. So the claim that the
+posture cost nearly doubles across BMI 22–50 **does not depend on the geometry
+chosen**.
+
+#### Two things it does not settle
+
+Its TLC at 1.75 m is **7132 mL** against Quanjer's 6902 — **+3.3%**, and the
+crossover-implied 6676 is now below *both* (Quanjer +3.4%, Gutierrez +6.8%), so
+the TLC gap the crossover test opened **widens slightly** rather than closing.
+
+And its own population is **not obese** — median BMI 25.2 in men, 23.6 in
+women. The paper states that *"BMI was not predictive in any of the tested
+models"*, but over that range that is a statement about the normal-weight
+spread, not about obesity.
+
+---
+
 ### Pelosi re-inverted through a corrected cardiac output — 2026-09-25
 
 Ruled "7 y". `shunt_base_eff()` was fitted by inverting Pelosi's measured
@@ -3222,19 +3332,23 @@ primary source, not a search.** The first two are the ones that matter most:
       Wanted for its tables of shunt and low-V/Q against age, which would
       settle whether our shunt's age dependence is a defect or a naming
       problem — see its section above.
-- [ ] **Gutierrez C, Ghezzo RH, Abboud RT, et al.** Reference values of
-      pulmonary function tests for Canadian Caucasians. *Can Respir J*
-      2004;11:414-424. **ADDED 2026-09-25**, and it is the one paper that
-      would turn Jones & Nzekwu from a SHAPE into a LEVEL. Every number Jones
-      publishes is a per cent of *these* predicted values, so without them his
-      regressions cannot be converted to millilitres here and can only be used
-      as ratios and slopes. Citation is Jones's reference 29, transcribed from
-      his reference list rather than from a search.
-      **CORRECTED the same day:** this entry first carried an issue number,
-      `11(6)`. Jones's reference list gives no issue — it reads
-      `Can Respir J 2004; 11:414-424`. The `(6)` was supplied from memory and
-      is struck. The `et al.` is Jones's too, so **the full author list is not
-      known here**
+- [x] **Gutierrez C, Ghezzo RH, Abboud RT, Cosio MG, Dill JR, Martin RR,
+      McCarthy DS, Morse JLC, Zamel N.** Reference values of pulmonary
+      function tests for Canadian Caucasians. *Can Respir J*
+      **2004;11(6):414-424**. **OBTAINED AND READ AT SOURCE 2026-09-25** —
+      see its own section above. It did what it was wanted for: Jones &
+      Nzekwu is now a level and not only a shape.
+      **AND IT RETRACTS A "CORRECTION" I MADE THE SAME DAY.** This entry
+      originally carried the issue number `11(6)`. I struck it that morning on
+      the grounds that Jones's reference list gives no issue. **The paper's own
+      self-citation block reads `Can Respir J 2004;11(6):414-424` and every
+      page footer reads `Vol 11 No 6`.** The `(6)` was right and I removed it
+      because one source did not repeat it — *reasoning from what a document
+      does not say*, for the second time in one day, in the act of correcting
+      the first. Jones's reference list prints no issue number for **any** of
+      its 35 references; absence there was never evidence.
+      The nine-author list above is the paper's own, replacing Jones's
+      `et al.`
 - [ ] **Watson RA, Pride NB.** Postural changes in lung volumes and
       respiratory resistance in subjects with obesity. *J Appl Physiol*
       2005;98:512-517. Jones's reference 10. **ADDED 2026-09-25 AND IT GOES

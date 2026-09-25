@@ -5,6 +5,70 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-25 (sixth entry): Gutierrez read; Jones is now a level
+
+**Gutierrez 2004 was obtained and read at source** — the reference set every
+per cent in Jones & Nzekwu is a per cent *of*, and the one paper that could
+turn Jones from a shape into a level. It did that, and three other things.
+
+**1. It corroborates Quanjer's level to 0.2%.** For a 1.75 m, 45-year-old man
+Quanjer predicts an FRC of 3410 mL and Gutierrez 3417 mL — two reference sets
+built two decades and an ocean apart, on the quantity this model's height term
+*is*. The strongest check the FRC level has had.
+
+**2. And they flatly disagree about age, which bears on an open ruling.**
+Quanjer's men's FRC carries +0.009·age and rises **14.1%** across 20–70.
+**Gutierrez's has no age term at all.** The model is currently age-flat because
+Quanjer's term was never implemented, and that has sat recorded as a defect
+awaiting a ruling — **a second reference set now says age-flat is right for
+men.** With implementation moving the CC = FRC crossover 55.0 → 59.9 years,
+*further* from the published ~44, there is now a positive case for leaving it
+out rather than an unfixed omission. Caveat kept: Gutierrez's FRC model is weak
+(r² = 0.17), and a term can be absent because it is small *or* because the data
+cannot see it. **Still a ruling.**
+
+**3. Jones in millilitres — and the model's posture claim becomes a number.**
+
+| BMI | Jones, mL (seated awake) | ours, mL (supine awake) | implied supine/seated |
+|---|---|---|---|
+| 22 | 3585 | 2500 | **0.697** |
+| 30 | 2857 | 1791 | 0.627 |
+| 40 | 2368 | 1180 | 0.498 |
+| 50 | 2125 | 778 | **0.366** |
+
+The model says lying flat costs a lean patient **30%** of FRC and a BMI 50
+patient **63%**. The direction is right; the size at the obese end is a strong
+claim **nothing in this repository tests**. Watson & Pride 2005 is exactly that
+measurement and is on the wanted list. Jones gives no cohort height or age, so
+the *level* of this ratio moves with the geometry chosen (0.77 to 0.66 at BMI
+22 across 1.60–1.85 m) — but its **fall is ×0.525 at every height**, so the
+claim that the posture cost nearly doubles does not depend on that choice.
+
+**4. And one number that was hiding in a constant.** Our `rv` is documented
+ANAESTHETISED SUPINE and sits at **55%** of Gutierrez's seated-awake
+prediction. So the model **already embodies a 45% seated-to-anaesthetised fall
+in residual volume** at the lean end. The `k_rv_bmi` retraction earlier today
+said that step was one the model *"does not represent at all"*. **It does
+represent it; it just cannot vary it** — which is a smaller and more precise
+gap than the one recorded this morning.
+
+**What it does not settle.** Its TLC is 7132 mL at 1.75 m against Quanjer's
+6902, so the crossover-implied 6676 is now below *both* and the TLC gap
+**widens** slightly rather than closing. And its own population is not obese
+(median BMI 25.2 men, 23.6 women), so its remark that "BMI was not predictive"
+speaks to the normal-weight spread, not to obesity.
+
+### A fourth retraction, and it is the same error twice in one day
+
+This morning I "corrected" the Gutierrez entry by **striking its issue
+number**, `11(6)`, on the grounds that Jones's reference list gives no issue.
+**The paper's own self-citation block reads `Can Respir J 2004;11(6):414-424`
+and every page footer reads `Vol 11 No 6`.** The `(6)` was right, and I removed
+it because one source did not repeat it — *reasoning from what a document does
+not say*, in the act of correcting an earlier instance of exactly that. Jones's
+reference list prints no issue number for **any** of its 35 references, so
+absence there was never evidence. The nine-author list is now the paper's own.
+
 ## Current state — 2026-09-25 (fifth entry): three rulings, and three of my own claims retracted
 
 Ruled **"6 y 7 y 8 y"** on three standing offers. All three are done. Along the
