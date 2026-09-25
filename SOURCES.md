@@ -1883,6 +1883,14 @@ CC is about 350 mL LOWER for Heard's patient than ours is now.**
 BMI, or in the conversion from closure to shunt. That makes **Jones & Nzekwu,
 Chest 2006;130(3):827-33** the decisive paper rather than a supporting one.
 
+> **READ 2026-09-25 — and the answer is "neither, quite".** Jones has no
+> supine and no anaesthetised measurement, so he cannot settle the level. What
+> he does settle is that our FRC-against-BMI term is inside the
+> Jones/Pelosi bracket up to BMI 37 and steeper than both above it, and that
+> above BMI ~37 our obese FRC is set by the residual-volume floor rather than
+> by the BMI term. **So the obese deficit's remaining home is `k_rv_bmi` and
+> the closure-to-shunt conversion, not `k_frc_bmi`.** See his section below.
+
 **A STRUCTURAL OBSTACLE TO IMPLEMENTING THIS.** Buist & Ross give CC as a
 PERCENTAGE OF TLC. **This model has no TLC.** Implementing their regression
 faithfully means adding a predicted TLC (Quanjer/ERS 1993, which Milic-Emili
@@ -2237,6 +2245,187 @@ either.
 
 ---
 
+### Jones & Nzekwu 2006 — OBTAINED AND READ AT SOURCE 2026-09-25
+
+**Jones RL, Nzekwu MMU.** The effects of body mass index on lung volumes.
+*Chest* 2006;130(3):827–833. DOI 10.1378/chest.130.3.827. Uploaded to the
+session as page images.
+
+This file has called it *"the decisive paper rather than a supporting one"*
+since the obese deficit was traced **out** of closing capacity and into either
+FRC-against-BMI or the closure-to-shunt conversion. It is now read.
+
+**What it is.** 373 patients, BMI 20 to ~57, retrospective from two accredited
+outpatient laboratories, **seated and awake**, by **body plethysmography**
+(SensorMedics Vmax 22 / 6200 Autobox). All had a normal FEV₁/FVC ratio, a DLCO
+above the lower limit of normal, and no cardiopulmonary disease; all were
+white. TLC was computed as FRC + inspiratory capacity, and **RV as TLC − VC**
+— so his RV is derived from his plethysmographic FRC, not measured
+independently.
+
+**Figure 4, read off the page image** (percentages are **of predicted**;
+r² = 0.49 and p < 0.0001 for both):
+
+```
+FRC (%pred) = 231.9 · exp(−0.070 · BMI) + 55.2
+ERV (%pred) = 587.8 · exp(−0.083 · BMI) +  6.5
+```
+
+**The figure was read off an image, so it is checked before anything is built
+on it.** Six values from the paper's own prose (FRC 112 → 84 %pred over BMI
+20 → 30; ERV 118 → 55; the ratios 75% and 47%) and four Table 1 group means
+all reproduce from these two equations, the worst gap being 0.74 %pred. They
+are read correctly.
+
+**A limit on what can be taken from it.** His percentages are of predicted
+values from **Gutierrez 2004** (Canadian Caucasians), *not* Quanjer, whose
+equations this model uses. That reference set is **not held here**, so Jones's
+percentages **cannot be converted to millilitres in this repository**, and
+nothing below tries to. Everything used from him is a *ratio* or a *slope*.
+
+#### 1. The BMI exponent now has a bracket, and above BMI ~37 we fall out of it
+
+This file already records, correctly, that Pelosi's raw exponent of 0.096 is
+*"not directly comparable with our `k_frc_bmi` of 0.0417"* because his form
+carries an offset and ours carries a residual-volume floor. The comparable
+quantity is the **local slope** d(ln FRC)/d(BMI), which handles the offsets.
+Jones is **seated awake**, Pelosi is **supine anaesthetised**, and Jones states
+in his own discussion that Pelosi's absolute BMI effect was the **larger**. So
+the two should **bracket** a supine awake lung — which is exactly what
+`frc_awake()` (the resting lung volume of an awake patient lying flat) is.
+
+Per cent of FRC lost per BMI unit:
+
+| BMI | Jones, seated awake | **ours** | Pelosi, supine anaesthetised |
+|---|---|---|---|
+| 22 | 3.32 | **4.17** | 7.29 |
+| 30 | 2.38 | **4.17** | 5.70 |
+| 40 | 1.42 | **4.17** | 3.44 |
+| 45 | 1.07 | **4.17** | 2.47 |
+
+Inside BMI 22–37 ours sits **between** the two, which is where a supine awake
+lung belongs. **Above BMI 36.70 ours is steeper than both** — steeper than the
+supine anaesthetised curve, which ought to be the steeper of the pair.
+
+**The mechanism is the same in both papers and absent in ours.** Jones carries
+a **+55.2 %pred** offset and Pelosi a **+460 mL** offset, so both decay to a
+non-zero floor: squeezing a chest with body mass cannot drive the lung to
+nothing. Ours decays toward zero and is caught by the hard `rv_eff()` clamp
+(residual volume — the gas that cannot be breathed out) instead. **Two
+independent regressions of the same quantity both have the offset; we have
+none.**
+
+**What this is NOT.** It is not a claim that our obese FRC *values* are wrong.
+The table above in this file puts ours against Pelosi's helium across BMI
+22–50 and they agree to 11%. The finding is that **above BMI ~37 that
+agreement is carried by the residual-volume floor, not by the BMI term** —
+which makes `k_rv_bmi`, not `k_frc_bmi`, the parameter that actually sets
+obese FRC. That matters because of finding 2.
+
+#### 2. A second measurement arrives on `k_rv_bmi`, which had only one
+
+`apnoea_core.py` says of `k_rv_bmi` in its own words that it is *"ANCHORED ON
+ONE MEASUREMENT and no more than that"* — Reinius's CT, 697 mL at BMI 45,
+converted to a residual volume by assuming expiratory reserve ≈ 0 there. Jones
+measures RV across 373 patients and it **barely moves with BMI**:
+
+| | per cent of RV lost per BMI unit | fall over BMI 22.5 → 37.5 |
+|---|---|---|
+| Jones Table 1 | 0.63 | 7.9% |
+| **ours** | **1.98** | **26.4%** |
+
+Ours is **3.14× steeper**.
+
+**This is measurement against measurement, not guess against measurement**,
+and it is *not resolved here*. Three reasons to be careful before calling
+`k_rv_bmi` wrong:
+
+- **Technique.** Jones is body plethysmography, which counts gas behind closed
+  airways; Reinius is CT, which counts aerated lung. In an obese chest full of
+  trapped gas plethysmography reads **higher** — and that is the direction of
+  the disagreement. This repository already has a helium/CT ruling on this
+  same axis.
+- **Posture and state.** Jones is seated awake; Reinius is supine,
+  anaesthetised and paralysed.
+- **His RV is derived, not measured.** RV = TLC − VC on a plethysmographic
+  FRC, so it inherits whatever his FRC does.
+
+**Recorded as a live conflict. Nothing is changed on it.**
+
+**And the cost of "correcting" it is large**, which is why it needs a ruling
+and not an edit. A lower `k_rv_bmi` raises obese RV, which raises the floor
+`frc_anaes()` is clamped to. At Pelosi's geometry (1.64 m, age 52, supine):
+
+| BMI | change in anaesthetised FRC on Jones's `k_rv_bmi` |
+|---|---|
+| 35 | 0.0% |
+| 40 | +10.9% |
+| 45 | **+32.4%** |
+| 50 | **+45.9%** |
+
+A BMI 45 patient's anaesthetised FRC would rise by a **third**: more starting
+oxygen and less airway closure, so **slower** desaturation — and Heard's obese
+control is already too **slow** at 319.8 s against an IQR of 244–314. Per
+CLAUDE.md that is recorded as information and **not** compensated elsewhere.
+
+#### 3. The ERV agreement we had was a compensating pair
+
+Our expiratory reserve volume (the gas a patient could still blow out from a
+resting breath) is **derived** — `frc_awake() − rv_eff()` — and was never
+fitted to anything, so Jones's measured ERV regression is a free test of it.
+It looked like a pass. It is not one.
+
+| mean absolute error against Jones's ERV, BMI 25–45 | |
+|---|---|
+| as shipped | 3.62 percentage points |
+| with RV alone corrected to Jones | **7.21 percentage points** |
+
+Correcting RV **alone** makes the agreement **twice as bad**, and at BMI 45
+drives our ERV to 0.4% of its lean value — FRC collapsing onto RV. So the
+agreement as shipped comes from an FRC that falls too fast and an RV that
+falls too fast, **subtracting**. That is the same compensating-pair shape this
+repository has caught twice before, and it means **the two cannot be fixed one
+at a time**. Both would be fixed by the same missing mechanism: the non-zero
+asymptote that Jones and Pelosi each measure and we do not have.
+
+#### 4. It bears directly on the open Buist & Ross ruling
+
+That ruling would compute closing capacity as a **percentage of TLC**, with
+the TLC coming from Quanjer — and **Quanjer's TLC has no weight term**. Jones
+measures TLC falling **0.50 %pred per BMI unit** (his Fig 3), so a Quanjer TLC
+overestimates the obese lung, and closing capacity with it, in exactly the
+patients this branch is about:
+
+| BMI | Quanjer TLC over Jones's measured TLC |
+|---|---|
+| 30 | +5.3% |
+| 40 | +11.2% |
+| 45 | +14.4% |
+
+This does **not** sink the Buist route — it quantifies a known and correctable
+bias in it, which is better than the route had before. But it means the
+earlier costing (Perilli 12.53 → 9.11%) used an **uncorrected** Quanjer TLC
+and therefore **overstates** how far the obese shunt would fall.
+
+#### 5. And it softens the cost recorded against the male ruling
+
+The 2026-09-25 ruling made this a male model and recorded against it that
+Pelosi's cohort was seven women to one man per group. Jones, n = 373 with both
+sexes, reports in his Results that there were **no significant differences
+between men and women in the best-fit regression lines** for the effect of BMI
+on TLC, VC, RV, FRC, ERV or DLCO — which is why he pooled them.
+
+So **the BMI term does not need a sex; only the base lung volume does.** The
+female-majority worry falls on Quanjer's **level**, not on `k_frc_bmi`'s
+**slope**. The ruling stands and its recorded cost is narrower than it was.
+
+#### What it does not give us
+
+It has **no anaesthetised and no supine measurement at all**, so it cannot
+settle the posture step directly; it is a bound and a shape, not a level. And
+its patients are all white, which it states as a limitation itself.
+
+---
 ### Hardman 2000 and McNamara 2005 — READ 2026-09-22, and they overturn a conclusion
 
 **Hardman JG, Wills JS, Aitkenhead AR.** Factors Determining the Onset and
@@ -2594,7 +2783,7 @@ measured.
 
 | value | where | note |
 |---|---|---|
-| `FRC(L) = 2.34·height + 0.009·age − 1.09` | `apnoea_core.py`, `model.js`, `airway_scenario.html` | **The largest uncited lever in the model.** No author, journal or year anywhere. A ±12% error in `frc_ref` takes a headline clinical benchmark out of band; ±30% in `k_frc_bmi` takes the obese one out in both directions. The quoted age term is **not implemented**. Measured and recorded in the code comment, and regenerated by `handover_numbers.py` |
+| ~~`FRC(L) = 2.34·height + 0.009·age − 1.09`~~ **SOURCED 2026-09-25** | `apnoea_core.py`, `model.js`, `airway_scenario.html` | **CLOSED as uncited — this row was itself stale and is corrected here.** It is **Quanjer 1993 Table 6, Men**, coefficient for coefficient, read at source. What remains open is not the citation but three known departures from it, each recorded in the code: the age term is **still not implemented**; Quanjer measures **seated** and `frc_ref` is supine, so the model takes his shape and sets its own level; and his stated range (ages 18–70, heights 1.55–1.95 m) is **not guarded**. The sensitivity stands — ±12% in `frc_ref` takes a headline benchmark out of band, ±30% in `k_frc_bmi` takes the obese one out in both directions — and `k_frc_bmi` itself is now bracketed by Jones and Pelosi, which it leaves above BMI 36.70. Regenerated by `handover_numbers.py` |
 | ~~`crs` = 85.0 mL/cmH2O~~ **RULED 2026-09-22, now 75.0** | `apnoea_core.py`, `build_page.py`, `airway_scenario.html` | **CLOSED.** It was uncited and sat above the 60-75 range the same file cites Rothen for. Now set to Rothen 1993 Table II group 1, n=10, 75 (19) mL/cmH2O — the better-powered of the paper's two groups. The sweep is the reason it is 75 and not 60: measured slope 3.4, band 2.4-4.4, **crs 60 gives 4.371 which PASSES, crs 75 gives 4.601 which FAILS, crs 85 gave 4.716**. 75 is the value that buys nothing, so the §"do not tune" objection does not attach to it; 60 could not have been taken without that objection following it forever. Note also that `crs` moves the CO2 slope 7% and PaO2 0.6% across its whole range — it is a CO2-only lever and cannot bear on the oxygen disagreement |
 | `tau_collapse_o2` 60 s, `tau_collapse_air` 900 s, `perfusion_gain` 1.2 | `apnoea_core.py` | No comment, no citation |
 | `vo2_ref` 250, `vo2_drop_per_kg` 0.27 | `apnoea_core.py` | No citation. Farmery & Roe (held) quote Nunn's anaesthetised **0.20 L/min** against our 232 mL/min — an external handle that exists and is unused |
@@ -2614,6 +2803,20 @@ measured.
 ---
 
 ## 5. Errors this audit found in documents, not in papers
+
+**Caught 2026-09-25 while reading Jones — a row in THIS FILE had gone stale
+within a day.** §3 "Values with no source at all" still listed
+`FRC(L) = 2.34·height + 0.009·age − 1.09` as *"the largest uncited lever in the
+model — no author, journal or year anywhere"*. Quanjer was read at source on
+**2026-09-25**, the day before, and `apnoea_core.py` was updated; this table
+was not. Corrected in place, with the three real remaining departures (age term
+unimplemented, seated-vs-supine level, range unguarded) kept and separated from
+the citation question they had been conflated with.
+
+**The lesson is the one CLAUDE.md already states.** The stale row is prose in a
+markdown table, exactly the class of number that file warns rots. The Quanjer
+findings that *were* written into `handover_numbers.py` could not have drifted
+this way, and did not.
 
 **Caught by actually reading O'Loughlin, 2026-09-21 — the first error a
 newly-obtained paper has exposed.** `editorial.md` said their "own tabulation
@@ -2780,9 +2983,14 @@ primary source, not a search.** The first two are the ones that matter most:
       both things hoped for: Table 6 supplies the predicted TLC that Buist &
       Ross needs, and its men's FRC equation is our exact coefficients, so the
       largest uncited lever in the model is now cited.
-- [ ] **Jones RL, Nzekwu MM.** The effects of body mass index on lung volumes.
-      *Chest* 2006;130(3):827-33. Already called "the decisive paper" above;
-      the citation is now confirmed from a primary source
+- [x] **Jones RL, Nzekwu MMU.** The effects of body mass index on lung volumes.
+      *Chest* 2006;130(3):827-33. **OBTAINED AND READ 2026-09-25** -- see its
+      own section above. It did NOT do the thing it was wanted for (it has no
+      supine and no anaesthetised measurement, so it cannot set our level),
+      but it did three others: it BRACKETS `k_frc_bmi` with Pelosi and shows
+      us falling out of that bracket above BMI 37; it puts a SECOND
+      measurement on `k_rv_bmi`, which had one; and it quantifies the obese
+      TLC bias in the open Buist & Ross ruling
 - [ ] **Gunnarsson L, Tokics L, Gustavsson H, Hedenstierna G.** Influence of
       age on atelectasis formation and gas exchange impairment during general
       anaesthesia. *Br J Anaesth* 1991;66:423-432. **A CONDENSATION IS HELD,

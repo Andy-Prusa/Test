@@ -2986,6 +2986,189 @@ print("    He reports anaesthesia dropping cardiac output to 70-85% of awake.")
 print("    We sit at 75%, inside his range -- an independent confirmation of a")
 print("    parameter, from a source that was not used to set it.")
 
+# ---------------------------------------------------------------------------
+# JONES & NZEKWU 2006 -- OBTAINED AND READ AT SOURCE 2026-09-25
+#
+# Jones RL, Nzekwu MMU. The effects of body mass index on lung volumes.
+# Chest 2006;130(3):827-833. DOI 10.1378/chest.130.3.827. The PDF was
+# uploaded to the session as page images. SOURCES.md has called this "the
+# decisive paper rather than a supporting one" for the FRC-against-BMI
+# question since the obese deficit was traced out of closing capacity.
+#
+# 373 patients, BMI 20 to ~57, all white, all with normal FEV1/FVC, measured
+# SEATED AND AWAKE by body plethysmography in two accredited laboratories.
+# Percentages are OF PREDICTED, and the predicted values are Gutierrez 2004
+# (Canadian Caucasians) -- NOT Quanjer, whose equations this model uses.
+# That reference set is not held here, so Jones's percentages CANNOT be
+# converted to millilitres in this repository, and nothing below tries to.
+# ---------------------------------------------------------------------------
+print("\nJONES & NZEKWU 2006 -- the FRC-vs-BMI paper, read at source")
+
+_JF = lambda b: 231.9 * np.exp(-0.070 * b) + 55.2     # FRC, % predicted
+_JE = lambda b: 587.8 * np.exp(-0.083 * b) + 6.5      # ERV, % predicted
+# Pelosi 1998's helium regression, already used above: SUPINE ANAESTHETISED.
+_PF = lambda b: 11.97 * np.exp(-0.096 * b) * 1000.0 + 460.0   # mL
+
+print("  Figure 4, read off the page image:")
+print("    FRC(%pred) = 231.9 exp(-0.070 BMI) + 55.2   r2 = 0.49, p < 0.0001")
+print("    ERV(%pred) = 587.8 exp(-0.083 BMI) +  6.5   r2 = 0.49, p < 0.0001")
+print("  THE FIGURE WAS READ OFF AN IMAGE, so it is checked against the")
+print("  paper's OWN prose and its own Table 1 before anything is built on it.")
+check("Jones FRC at BMI 20 [his text: 112]", _JF(20.0), 112.4, 0.6, " %pred")
+check("Jones FRC at BMI 30 [his text: 84]", _JF(30.0), 83.6, 0.6, " %pred")
+check("  ... FRC(30)/FRC(20) [his text: 75%]", 100.0 * _JF(30.0) / _JF(20.0),
+      74.4, 0.7, " %")
+check("Jones ERV at BMI 20 [his text: 118]", _JE(20.0), 118.3, 0.6, " %pred")
+check("Jones ERV at BMI 30 [his text: 55]", _JE(30.0), 55.2, 0.6, " %pred")
+check("  ... ERV(30)/ERV(20) [his text: 47%]", 100.0 * _JE(30.0) / _JE(20.0),
+      46.7, 0.7, " %")
+_jt = [abs(_JF(m) - t) for m, t in ((22.5, 103.1), (27.5, 89.2),
+                                    (32.5, 78.3), (37.5, 72.2))]
+check("  ... worst gap, Fig 4 vs Table 1 group means", max(_jt), 0.70, 0.10,
+      " %pred")
+print("    Six prose values and four group means all reproduce. The equations")
+print("    are read correctly and can be used.")
+
+print("\n  1. THE BMI EXPONENT NOW HAS A BRACKET, AND WE FALL OUT OF IT.")
+print("  Jones is SEATED AWAKE; Pelosi is SUPINE ANAESTHETISED; Jones says in")
+print("  his own discussion that Pelosi's absolute BMI effect was the LARGER.")
+print("  So the two should BRACKET a supine awake lung -- which is exactly")
+print("  what frc_awake() is. The comparable quantity is the LOCAL slope")
+print("  d(ln FRC)/d(BMI), which handles the offsets that SOURCES.md correctly")
+print("  noted make the raw exponents incomparable. Ours is k_frc_bmi =")
+print("  0.0417 and it is CONSTANT, because our FRC has no offset at all.")
+_h = 1e-4
+_sl = lambda f, b: -(np.log(f(b + _h)) - np.log(f(b - _h))) / (2 * _h)
+print("  Shown as PER CENT OF FRC LOST PER BMI UNIT, so ours reads 4.17.")
+for _b, _wj, _wp in ((22.0, 3.32, 7.29), (30.0, 2.38, 5.70),
+                     (40.0, 1.42, 3.44), (45.0, 1.07, 2.47)):
+    check(f"BMI {_b:.0f}: Jones  seated awake", 100.0 * _sl(_JF, _b), _wj,
+          0.02, " %/BMI")
+    check(f"BMI {_b:.0f}: ours   supine awake", 4.17, 4.17, 0.01, " %/BMI")
+    check(f"BMI {_b:.0f}: Pelosi supine anaesthetised", 100.0 * _sl(_PF, _b),
+          _wp, 0.02, " %/BMI")
+_bx = brentq(lambda b: _sl(_PF, b) - 0.0417, 20.0, 60.0)
+check("BMI where ours overtakes even Pelosi's slope", _bx, 36.70, 0.05, "")
+print("    Inside BMI 22-37 our exponent sits BETWEEN the two measurements,")
+print("    which is where a supine awake lung belongs. ABOVE BMI ~37 ours is")
+print("    steeper than BOTH -- steeper than the supine anaesthetised curve,")
+print("    which ought to be the steeper of the pair.")
+print("    THE MECHANISM IS THE SAME IN BOTH PAPERS AND ABSENT IN OURS:")
+print("    Jones carries a +55.2 %pred offset and Pelosi a +460 mL offset, so")
+print("    both decay to a NON-ZERO floor. Ours decays to zero and is caught")
+print("    by the hard rv_eff() clamp instead. Two independent regressions of")
+print("    the same quantity both have the offset; we have none.")
+print("    WHAT THIS IS NOT: it is not a claim that our obese FRC VALUES are")
+print("    wrong. SOURCES.md tabulates them against Pelosi's helium and they")
+print("    agree to 11% across BMI 22-50. The finding is that above BMI ~37")
+print("    that agreement is carried by the RESIDUAL-VOLUME FLOOR and not by")
+print("    the BMI term -- which makes k_rv_bmi, not k_frc_bmi, the parameter")
+print("    setting obese FRC. That matters because of finding 2.")
+
+print("\n  2. A SECOND MEASUREMENT ARRIVES ON k_rv_bmi, WHICH HAD ONLY ONE.")
+print("  apnoea_core.py says of k_rv_bmi, in its own words, 'ANCHORED ON ONE")
+print("  MEASUREMENT and no more than that' -- Reinius's CT, 697 mL at BMI 45,")
+print("  converted to an RV by assuming ERV ~= 0 there. Jones measures RV")
+print("  across 373 patients and it barely moves with BMI.")
+_rvp = ((22.5, 102.7), (27.5, 96.7), (32.5, 95.5), (37.5, 94.6), (43.0, 90.5))
+_x = np.array([p[0] - 22.5 for p in _rvp])
+_y = np.log([p[1] / 102.7 for p in _rvp])
+_kfit = -float((_x * _y).sum() / (_x * _x).sum())
+check("k_rv_bmi implied by Jones Table 1", 100.0 * _kfit, 0.63, 0.03,
+      " %/BMI")
+check("  ... ours, for comparison", 100.0 * 0.0198, 1.98, 0.01, " %/BMI")
+check("  ... ratio, ours over Jones's", 0.0198 / _kfit, 3.14, 0.10, "x")
+check("Jones RV fall, BMI 22.5 -> 37.5", 100.0 * (102.7 - 94.6) / 102.7,
+      7.9, 0.1, " %")
+check("ours  RV fall, same span", 100.0 * (1.0 - np.exp(-0.0198 * 15.5)),
+      26.4, 0.1, " %")
+print("    THIS IS MEASUREMENT AGAINST MEASUREMENT, NOT GUESS AGAINST")
+print("    MEASUREMENT, and it is not resolved here. Three reasons to be")
+print("    careful before calling k_rv_bmi wrong:")
+print("      * TECHNIQUE. Jones is body PLETHYSMOGRAPHY, which counts gas")
+print("        behind closed airways; Reinius is CT, which counts aerated")
+print("        lung. In an obese chest full of trapped gas plethysmography")
+print("        reads HIGHER, and that is the direction of the disagreement.")
+print("        The repository already has a helium/CT ruling on this axis.")
+print("      * POSTURE AND STATE. Jones is seated awake, Reinius supine")
+print("        anaesthetised and paralysed.")
+print("      * JONES'S RV IS DERIVED, NOT MEASURED: his Methods give TLC =")
+print("        FRC + IC and RV = TLC - VC, so his RV inherits his FRC.")
+print("    Recorded as a live conflict. NOTHING IS CHANGED ON IT.")
+
+print("\n  AND THE COST OF 'CORRECTING' IT IS LARGE, WHICH IS WHY IT NEEDS A")
+print("  RULING RATHER THAN AN EDIT. A lower k_rv_bmi RAISES obese RV, which")
+print("  RAISES the floor that frc_anaes() is clamped to:")
+for _b, _w in ((35.0, 0.0), (40.0, 10.9), (45.0, 32.4), (50.0, 45.9)):
+    _p = Patient(height=1.64, weight=_b * 1.64 ** 2, age=52.0, hb=14.0,
+                 tilt_deg=0.0)
+    _fa = _p.frc_awake()
+    _now = _p.frc_anaes()
+    _alt = max(1100.0 * _p.height_factor() * np.exp(-_kfit * max(0.0, _b - 22.0)),
+               _fa - min(400.0, 0.25 * _fa))
+    check(f"BMI {_b:.0f}: frc_anaes change on Jones's k_rv_bmi",
+          100.0 * (_alt / _now - 1.0), _w, 0.4, " %")
+print("    At Pelosi's geometry a BMI 45 patient's anaesthetised FRC would")
+print("    rise by a THIRD. More starting oxygen and less airway closure, so")
+print("    SLOWER desaturation -- and Heard's obese control is already too")
+print("    SLOW at 319.8 s against an IQR of 244-314. Per CLAUDE.md that is")
+print("    recorded as information and NOT compensated elsewhere.")
+
+print("\n  3. THE ERV AGREEMENT WE HAD WAS A COMPENSATING PAIR.")
+print("  Our ERV is DERIVED (frc_awake - rv_eff) and was never fitted to")
+print("  anything, so Jones's measured ERV regression is a free test of it.")
+print("  It looked like a pass. It is not one.")
+_p20 = Patient(height=1.64, weight=20 * 1.64 ** 2, age=52.0, hb=14.0,
+               tilt_deg=0.0)
+_e20 = _p20.frc_awake() - _p20.rv_eff()
+_e20j = _p20.frc_awake() - 1100.0 * _p20.height_factor() * np.exp(
+    -_kfit * max(0.0, 20.0 - 22.0))
+_en, _ec = [], []
+for _b in (25.0, 30.0, 35.0, 40.0, 45.0):
+    _p = Patient(height=1.64, weight=_b * 1.64 ** 2, age=52.0, hb=14.0,
+                 tilt_deg=0.0)
+    _j = 100.0 * _JE(_b) / _JE(20.0)
+    _en.append(abs(100.0 * (_p.frc_awake() - _p.rv_eff()) / _e20 - _j))
+    _ec.append(abs(100.0 * (_p.frc_awake() - 1100.0 * _p.height_factor()
+                            * np.exp(-_kfit * max(0.0, _b - 22.0))) / _e20j - _j))
+check("ERV vs Jones, mean abs error as shipped", float(np.mean(_en)), 3.62,
+      0.05, " pp")
+check("ERV vs Jones, mean abs error with RV alone corrected",
+      float(np.mean(_ec)), 7.21, 0.05, " pp")
+print("    Correcting RV ALONE makes the ERV agreement TWICE AS BAD, and at")
+print("    BMI 45 drives our ERV to 0.4% of its lean value -- FRC collapsing")
+print("    onto RV. So the agreement as shipped comes from an FRC that falls")
+print("    too fast and an RV that falls too fast, subtracting. That is the")
+print("    same compensating-pair shape this repository has caught twice")
+print("    before, and it means the two cannot be fixed one at a time.")
+print("    Both would be fixed by the SAME missing mechanism: the non-zero")
+print("    asymptote that Jones and Pelosi each measure and we do not have.")
+
+print("\n  4. IT BEARS DIRECTLY ON THE OPEN BUIST & ROSS RULING.")
+print("  That ruling would compute closing capacity as a PERCENTAGE OF TLC,")
+print("  with the TLC coming from Quanjer. QUANJER'S TLC HAS NO WEIGHT TERM.")
+print("  Jones measures TLC falling 0.50 %pred per BMI unit (his Fig 3), so a")
+print("  Quanjer TLC OVERESTIMATES the obese lung, and closing capacity with")
+print("  it -- in exactly the patients this branch is about:")
+for _b, _w in ((30.0, 5.3), (40.0, 11.2), (45.0, 14.4)):
+    check(f"BMI {_b:.0f}: Quanjer TLC over Jones's measured TLC",
+          100.0 * (100.0 / (98.7 - 0.50 * (_b - 22.5)) - 1.0), _w, 0.2, " %")
+print("    This does not sink the Buist route -- it quantifies a known and")
+print("    correctable bias in it, which is better than the route had before.")
+print("    The earlier costing (Perilli 12.53 -> 9.11%) used the uncorrected")
+print("    Quanjer TLC, so it OVERSTATES how far the obese shunt would fall.")
+
+print("\n  5. AND IT SOFTENS THE COST RECORDED AGAINST THE MALE RULING.")
+print("  Yesterday's ruling made this a male model and recorded against it")
+print("  that Pelosi's cohort was seven women to one man per group. Jones,")
+print("  n = 373 with both sexes, reports in his Results that there were NO")
+print("  significant differences between men and women in the best-fit")
+print("  regression lines for the effect of BMI on TLC, VC, RV, FRC, ERV or")
+print("  DLCO -- which is why he pooled them. So the BMI TERM does not need a")
+print("  sex; only the BASE lung volume does. The female-majority worry falls")
+print("  on Quanjer's LEVEL, not on k_frc_bmi's SLOPE. The ruling stands and")
+print("  its recorded cost is narrower than it was.")
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")

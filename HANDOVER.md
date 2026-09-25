@@ -5,6 +5,104 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-25 (fourth entry): Jones & Nzekwu read; the obese deficit moves again
+
+**Jones RL, Nzekwu MMU, *Chest* 2006;130(3):827–833 was obtained and read at
+source.** SOURCES.md has called it *"the decisive paper"* for FRC-against-BMI
+since the obese deficit was traced out of closing capacity. 373 patients,
+BMI 20–57, **seated and awake**, body plethysmography. Figure 4 gives
+FRC(%pred) = 231.9·exp(−0.070·BMI) + 55.2 and ERV(%pred) = 587.8·exp(−0.083·BMI)
++ 6.5.
+
+**It was read off a page image, so it was checked before anything was built on
+it:** six values from the paper's own prose and four Table 1 group means all
+reproduce from those two equations, worst gap 0.74 %pred.
+
+**A limit on it:** his percentages are of *Gutierrez 2004* predicted values,
+not Quanjer's. That reference set is not held here, so **his percentages cannot
+be converted to millilitres in this repository** — everything taken from him is
+a ratio or a slope.
+
+**1. `k_frc_bmi` now has a bracket, and above BMI 37 we fall out of it.**
+Jones is seated awake, Pelosi supine anaesthetised, and Jones states Pelosi's
+effect is the larger — so they should bracket a supine awake lung, which is
+what `frc_awake()` (resting lung volume, awake, lying flat) is. Per cent of FRC
+lost per BMI unit:
+
+| BMI | Jones, seated awake | **ours** | Pelosi, supine anaesthetised |
+|---|---|---|---|
+| 22 | 3.32 | **4.17** | 7.29 |
+| 30 | 2.38 | **4.17** | 5.70 |
+| 40 | 1.42 | **4.17** | 3.44 |
+| 45 | 1.07 | **4.17** | 2.47 |
+
+We leave the bracket at **BMI 36.70**, and the reason is structural: **both
+measured curves carry a non-zero offset** (Jones +55.2 %pred, Pelosi +460 mL)
+and decay to a floor, because squeezing a chest with body mass cannot drive the
+lung to nothing. **Ours decays to zero** and is caught by the hard `rv_eff()`
+clamp instead. Two independent regressions of the quantity have the offset; we
+have none.
+
+**This is not a claim that our obese FRC values are wrong** — they agree with
+Pelosi's helium to 11% across BMI 22–50. It is that **above BMI ~37 that
+agreement is carried by the residual-volume floor, not by the BMI term.**
+
+**2. So the deficit moves to `k_rv_bmi`, which had exactly one measurement
+behind it — and Jones is a second that disagrees.**
+
+| | per cent of RV lost per BMI unit | fall over BMI 22.5 → 37.5 |
+|---|---|---|
+| Jones, n = 373, plethysmography | 0.63 | 7.9% |
+| **ours** (Reinius CT, one point) | **1.98** | **26.4%** |
+
+Ours is **3.14× steeper**. This is **measurement against measurement** and it
+is *not* resolved. Plethysmography counts gas behind closed airways and CT
+counts aerated lung, so Jones should read higher in an obese chest — the
+direction of the gap; he is seated awake and Reinius supine anaesthetised; and
+his RV is derived as TLC − VC, not measured.
+
+**The cost of "correcting" it is large.** A lower `k_rv_bmi` raises obese RV,
+raising the floor `frc_anaes()` clamps to: at Pelosi's geometry a BMI 45
+patient's anaesthetised FRC rises **+32.4%** and a BMI 50 patient's **+45.9%**.
+More starting oxygen, less closure, **slower** desaturation — and Heard's obese
+control is already too slow at 319.8 s against an IQR of 244–314. Recorded as
+information; **not** compensated elsewhere.
+
+**3. The ERV agreement we had was a compensating pair.** Our expiratory reserve
+volume is derived (`frc_awake − rv_eff`) and never fitted, so Jones's measured
+ERV is a free test. Mean absolute error against him over BMI 25–45: **3.62
+points as shipped, 7.21 with RV alone corrected** — twice as bad, and at BMI 45
+it drives our ERV to 0.4% of its lean value. The agreement comes from an FRC
+falling too fast and an RV falling too fast, subtracting. **The two cannot be
+fixed one at a time**; both want the same missing asymptote.
+
+**4. It bears on the open Buist & Ross ruling.** That ruling computes closing
+capacity as a percentage of a **Quanjer TLC, which has no weight term**. Jones
+measures TLC falling 0.50 %pred per BMI unit, so Quanjer overestimates the
+obese lung by **+5.3% at BMI 30, +11.2% at 40, +14.4% at 45** — and closing
+capacity with it. This does not sink the route; it quantifies a correctable
+bias in it. But the earlier costing (Perilli 12.53 → 9.11%) used the
+uncorrected TLC and therefore **overstates** how far the obese shunt would fall.
+
+**5. And it softens the cost recorded against the male ruling.** Jones reports
+**no significant difference between men and women in the best-fit regressions**
+for the effect of BMI on TLC, VC, RV, FRC, ERV or DLCO — which is why he pooled
+them. So the BMI *term* does not need a sex; only the base volume does. The
+female-majority worry falls on Quanjer's **level**, not on `k_frc_bmi`'s
+**slope**.
+
+**And one document error caught in passing.** SOURCES.md §3 still listed the
+FRC regression as *"the largest uncited lever in the model — no author, journal
+or year anywhere"*. Quanjer was read at source **the day before** and the code
+comment was updated; that table was not. Corrected, with the three real
+remaining departures (age term unimplemented, seated-vs-supine level, range
+unguarded) separated from the citation question they had been conflated with.
+It is exactly the rot CLAUDE.md warns of: prose in a markdown table. The
+Quanjer numbers that went into `handover_numbers.py` could not drift that way,
+and did not.
+
+**Nothing was changed in the model.** `apnoea_core.py` is comments only.
+
 ## Current state — 2026-09-25 (third entry): two rulings taken
 
 **RULED: this is a male model.** Quanjer's men's FRC and TLC equations are used

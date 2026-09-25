@@ -186,6 +186,25 @@ class Patient:
     # out of band, and a +-30% error in k_frc_bmi walks the obese benchmark out
     # in BOTH directions. For scale, Hufner 1.34->1.39 moves desaturation by
     # under 1%. Source this before release: see SOURCES.md.
+    #
+    # AND k_frc_bmi NOW HAS A BRACKET, 2026-09-25. Jones & Nzekwu 2006
+    # (seated awake, n = 373) and Pelosi 1998 (supine anaesthetised) measure
+    # the same decline, and Jones states that Pelosi's absolute effect is the
+    # larger -- so the two should BRACKET a supine awake lung, which is what
+    # frc_awake() is. Per cent of FRC lost per BMI unit:
+    #     BMI     Jones    ours    Pelosi
+    #      22      3.32    4.17     7.29    <- inside the bracket
+    #      30      2.38    4.17     5.70    <- inside
+    #      40      1.42    4.17     3.44    <- STEEPER THAN BOTH
+    #      45      1.07    4.17     2.47    <- STEEPER THAN BOTH
+    # We leave the bracket at BMI 36.70, and THE REASON IS STRUCTURAL: both
+    # measured curves carry a non-zero offset (Jones +55.2 %pred, Pelosi
+    # +460 mL) and so decay to a floor, because squeezing a chest with body
+    # mass cannot drive the lung to nothing. Ours decays to ZERO and is
+    # caught by the hard rv_eff() clamp instead.
+    # The obese FRC VALUES still agree with Pelosi's helium to 11% across
+    # BMI 22-50 -- but above BMI 37 that agreement is the FLOOR's doing and
+    # not this parameter's. NOT CHANGED: it needs a ruling.
     frc_ref: float = 2500.0      # mL supine awake at BMI 22, height 1.75
     k_frc_bmi: float = 0.0417    # exponential decline of FRC per BMI unit
     frc_drop: float = 400.0      # mL lost at induction (ICSM 300-500)
@@ -341,6 +360,25 @@ class Patient:
     # SHAPE of the decline, only that a flat 1100 is wrong. Before this,
     # a BMI 45-47 patient was floored at RV 1100 while the measured FRC was
     # 697, i.e. the model insisted on more gas than the CT could find.
+    #
+    # A SECOND MEASUREMENT ARRIVED 2026-09-25 AND IT DISAGREES. Jones &
+    # Nzekwu, Chest 2006;130(3):827-33, n = 373, measured RV seated and awake
+    # by body plethysmography: it falls 0.63% per BMI unit against our 1.98%,
+    # so WE ARE 3.14x STEEPER. This is measurement against measurement, not
+    # guess against measurement, and it is NOT resolved. Reasons for care:
+    # plethysmography counts gas behind closed airways while CT counts
+    # aerated lung, so in an obese chest Jones should read the higher of the
+    # two -- which is the direction of the gap; he is seated awake and
+    # Reinius supine anaesthetised; and his RV is itself derived as TLC - VC
+    # on a plethysmographic FRC, not measured.
+    #
+    # AND IT IS NOW THE PARAMETER THAT SETS OBESE FRC. Above about BMI 37
+    # frc_anaes() sits on this floor rather than on the BMI term, so
+    # k_rv_bmi -- not k_frc_bmi -- is what obese lung volume actually rests
+    # on. Adopting Jones's value would raise a BMI 45 anaesthetised FRC by
+    # 32% and slow desaturation further, where Heard's obese control is
+    # already too slow. NOT DONE: it needs a ruling, not an edit.
+    # See SOURCES.md and handover_numbers.py.
     k_rv_bmi: float = 0.0198
     stiff_below_rv: float = 0.15 # compliance retained below RV
     p_collapse: float = P_COLLAPSE   # cmH2O floor on recoil. Minus the
