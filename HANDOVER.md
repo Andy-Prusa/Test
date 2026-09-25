@@ -5,6 +5,39 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-25 (ninth entry): the FRC adoption swept across BMI
+
+Four spot patients were measured when Pelosi's shape was adopted.
+`adoption_sweep.py` now sweeps it, and **the effect peaks in the middle, not at
+the obese end** — which four spot patients could not have shown.
+
+| BMI | legacy | adopted | change | |
+|---|---|---|---|---|
+| 24 | 369.4 s | 355.8 | −13.6 | −3.7% |
+| **28** | 284.4 | 261.4 | **−22.9** | −8.1% |
+| 32 | 222.2 | 200.0 | −22.2 | −10.0% |
+| **36** | 181.1 | 159.8 | −21.2 | **−11.7%** |
+| 40 | 149.0 | 133.2 | −15.8 | −10.6% |
+| 44 | 123.9 | 118.7 | −5.2 | −4.2% |
+| 48 | 107.2 | 107.2 | 0.0 | — |
+
+Time to SpO₂ 90%, obstructed airway after preoxygenation, 1.65 m, age 45.
+
+**Three peaks in three places**, and the difference is the finding:
+
+| | peaks at | |
+|---|---|---|
+| FRC removed | BMI 34 | 132 mL |
+| seconds lost | **BMI 28** | −22.9 s |
+| per cent lost | BMI 36 | −11.7% |
+
+**Nothing moves at either end, for two different reasons.** Below BMI 22 the
+two forms agree exactly by construction; above about BMI 48 both are already
+floored at residual volume. So the obese-but-not-extreme patient loses the most
+time, because the morbidly obese one is already floored and has little left to
+lose. **A model change judged only at the extremes would have looked inert.**
+
+
 ## Current state — 2026-09-25 (eighth entry): Roy 1963 read — the last incomplete citation is closed
 
 **Roy SB, Bhatia ML, Mathur VS, Virmani S.** Hemodynamic effects of chronic

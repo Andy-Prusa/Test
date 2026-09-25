@@ -3663,6 +3663,52 @@ print("  in this model, INCLUDING ACUTE BLOOD LOSS, where the circulation has")
 print("  had no months in which to adapt. NOTHING IN THIS PAPER LICENSES THAT")
 print("  EXTENSION, and the model makes it silently.")
 
+# ---------------------------------------------------------------------------
+# THE ADOPTION SWEPT ACROSS BMI -- 2026-09-25
+#
+# Four spot patients were measured when Pelosi's shape was adopted. The sweep
+# (adoption_sweep.py, in this repository) shows the effect PEAKS IN THE MIDDLE
+# rather than at the obese end, and that three different ways of measuring it
+# peak in three different places. The FRC and shunt columns are cheap and are
+# checked here; the desaturation times need 34 full simulations and are not.
+# ---------------------------------------------------------------------------
+print("\nTHE FRC ADOPTION, SWEPT ACROSS BMI")
+class _Leg(Patient): frc_legacy_exp = True
+print("  1.65 m, age 45, hb 14, supine. Anaesthetised FRC, legacy -> adopted:")
+for _b, _wl, _wn in ((22.0, 1905.0, 1905.0), (28.0, 1395.0, 1272.0),
+                     (34.0, 1048.0, 916.0), (40.0, 816.0, 716.0),
+                     (48.0, 606.0, 606.0)):
+    _k = dict(weight=_b * 1.65 ** 2, height=1.65, age=45.0, hb=14.0, tilt_deg=0.0)
+    check(f"BMI {_b:.0f}: frc_anaes legacy", _Leg(**_k).frc_anaes(), _wl, 1.0, " mL")
+    check(f"  ... adopted", Patient(**_k).frc_anaes(), _wn, 1.0, " mL")
+_gap = max((_Leg(weight=b * 1.65 ** 2, height=1.65, age=45.0, hb=14.0,
+                 tilt_deg=0.0).frc_anaes()
+            - Patient(weight=b * 1.65 ** 2, height=1.65, age=45.0, hb=14.0,
+                      tilt_deg=0.0).frc_anaes(), b)
+           for b in range(20, 53, 2))
+check("largest FRC gap, in mL", _gap[0], 132.0, 1.0, " mL")
+check("  ... which occurs at BMI", float(_gap[1]), 34.0, 0.0, "")
+print("    NOTHING MOVES AT EITHER END, for two different reasons: below")
+print("    BMI 22 the two forms agree EXACTLY by construction, and above")
+print("    about BMI 48 both are already floored at residual volume.")
+
+print("\n  TIME TO SpO2 90%, obstructed airway after preoxygenation.")
+print("  RECORDED, NOT RECOMPUTED -- 34 simulations of 1500 s. Regenerate")
+print("  with `python3 adoption_sweep.py`.")
+print("    BMI   legacy   adopted   change     as %")
+for _b, _t0, _t1 in ((24, 369.4, 355.8), (28, 284.4, 261.4), (32, 222.2, 200.0),
+                     (36, 181.1, 159.8), (40, 149.0, 133.2), (44, 123.9, 118.7),
+                     (48, 107.2, 107.2)):
+    print(f"    {_b:3d}   {_t0:6.1f}   {_t1:6.1f}   {_t1-_t0:+6.1f} s  "
+          f"{100*(_t1-_t0)/_t0:+6.1f}%")
+print("    THREE PEAKS IN THREE PLACES, and the difference matters:")
+print("      FRC removed          peaks at BMI 34   132 mL")
+print("      seconds lost         peaks at BMI 28   -22.9 s")
+print("      per cent lost        peaks at BMI 36   -11.7%")
+print("    The obese-but-not-extreme patient loses the most TIME because the")
+print("    morbidly obese one is already floored and has little left to lose.")
+print("    A model change judged only at the extremes would have looked inert.")
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")
