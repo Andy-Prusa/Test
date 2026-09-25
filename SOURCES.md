@@ -1873,7 +1873,10 @@ error.
 
 **AND CORRECTING IT MAKES THE OBESE BENCHMARK WORSE, WHICH IS THE POINT.**
 Removing the BMI term LOWERS obese CC, giving less closure, less shunt and
-SLOWER desaturation — and Heard is already too slow at 319.8 s against an IQR
+SLOWER desaturation — and Heard's control already sits near the top of its band
+(**307.6 s, PASS**; this said "already too slow at 319.8 s" until 2026-09-25,
+quoting a *before* value from a superseded table as though it were current)
+against an IQR
 of 244-314. Re-anchoring the age terms only partly offsets it: at Heard's age
 42, a steeper slope adds ~264 mL, a corrected intercept removes ~180 mL, and
 dropping the BMI term removes ~437 mL at BMI 34.7. **Net, a properly anchored
@@ -2400,7 +2403,9 @@ and not an edit. A lower `k_rv_bmi` raises obese RV, which raises the floor
 
 A BMI 45 patient's anaesthetised FRC would rise by a **third**: more starting
 oxygen and less airway closure, so **slower** desaturation — and Heard's obese
-control is already too **slow** at 319.8 s against an IQR of 244–314. Per
+control already sits near the top of its band — **307.6 s, PASS**, not the
+"319.8 s" this said until 2026-09-25, which was a *before* value from a
+superseded table — against an IQR of 244–314. Per
 CLAUDE.md that is recorded as information and **not** compensated elsewhere.
 
 #### 3. The ERV agreement we had was a compensating pair
@@ -2459,6 +2464,54 @@ female-majority worry falls on Quanjer's **level**, not on `k_frc_bmi`'s
 It has **no anaesthetised and no supine measurement at all**, so it cannot
 settle the posture step directly; it is a bound and a shape, not a level. And
 its patients are all white, which it states as a limitation itself.
+
+#### The benchmark cost, measured — 2026-09-25
+
+Ruled "6 y". Four full `test_validation.py` runs, regenerable with
+`variant_cost.py <variant>`. Bands in brackets.
+
+| | shipped | **B** asymptote at RV | **C** Pelosi shape | **D** Jones RV |
+|---|---|---|---|---|
+| **blocking failures** | **4** | **5** | **4** | **5** |
+| Heard control, SpO₂<95% [244–314 s] | 307.6 PASS | **369.9 FAIL** | **272.0 PASS** | 307.6 PASS |
+| Toner sham, SpO₂<95% [380–525 s] | 446.9 PASS | 454.5 PASS | 439.3 PASS | 446.9 PASS |
+| tilt, non-obese 20° [15–40%] | 28.2 PASS | 27.6 PASS | 28.0 PASS | 28.1 PASS |
+| tilt, BMI 44 at 25° [15–40%] | 35.9 PASS | 28.5 PASS | 38.4 PASS | **9.9 FAIL** |
+| tilt, BMI 35 at 30° [20–45%] | 50.5 FAIL | 45.9 FAIL | 50.6 FAIL | 50.4 FAIL |
+| *mean \|error\| vs Pelosi's measured FRC* | *7.79%* | *38.28%* | ***1.86%*** | *23.50%* |
+
+The `tilt, BMI 35 at 30°` row is one of this branch's four **ruled-open** rows
+and fails in every column, so it separates nothing.
+
+**C costs nothing and buys a great deal.** Same four blocking rows as shipped,
+by the same four names. Agreement with Pelosi's measured FRC improves
+**fourfold**. And Heard's obese control moves from the **top** of its band
+(307.6 of 244–314) to the **middle** (272.0) — a 35-second move on a headline
+clinical benchmark, in the right direction, from a change that introduces no
+parameter and was not fitted to it.
+
+**B breaks Heard, which is the measurement that motivated it.** Bolting an
+asymptote under an exponent calibrated without one inflates the obese lung, the
+obese patient lasts 369.9 s, and the row leaves its band. Recorded, **not**
+compensated.
+
+**D destroys the obese tilt response**, and the mechanism is worth stating:
+with Jones's RV slope the obese lung is **pinned at its floor**, and head-up
+tilt works by *raising* FRC — so there is almost nothing left to lift. The
+benefit collapses from 35.9% to **9.9%**, out of band, against four randomised
+trials that measure roughly +30%. That is a **second, independent** argument
+against transplanting Jones's seated-awake RV into this model, on top of the
+negative-expiratory-reserve impossibility above.
+
+**What this is not.** C being better on benchmarks is *corroboration*, not the
+argument. The argument is that C carries a **measured shape** — Pelosi's own
+FRC(BMI)/FRC(22) — where the shipped form carries an exponent fitted without
+the offset that every measurement of this quantity has. Per CLAUDE.md a change
+needs a mechanism, not a fit; C has one, and the benchmark table is the check
+that the mechanism does not cost something elsewhere. **It has not been
+adopted**, and adopting it means changing `model.js` in the same commit.
+
+---
 
 ### Pelosi re-inverted through a corrected cardiac output — 2026-09-25
 

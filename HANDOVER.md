@@ -5,6 +5,84 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-25 (fifth entry): three rulings, and three of my own claims retracted
+
+Ruled **"6 y 7 y 8 y"** on three standing offers. All three are done. Along the
+way three things this file or `SOURCES.md` asserted turned out to be wrong, and
+each is retracted rather than quietly amended.
+
+**8. The PR is out of draft.**
+
+**7. Roughly half the shunt's BMI dependence is a cardiac-output artefact.**
+`shunt_base_eff` was fitted by inverting Pelosi's measured oxygenation *through
+this model*, so it inherited our cardiac output — the one Tokics showed has the
+wrong **gradient**. Re-inverted through corrected ones:
+
+| inverted through | BMI 22 | BMI 50 | factor |
+|---|---|---|---|
+| our shipped cardiac output | 3.47% | 14.12% | **×4.07** |
+| a power-law CO through Tokics + Perilli | 6.31% | 11.40% | **×1.81** |
+| a flat CO at 5.30 L/min | 5.44% | 12.46% | **×2.29** |
+
+Both corrections roughly **halve** it, despite assuming different things. Our
+law's worst residual is 0.25 pp against the inversion **it was fitted to** and
+**2.84 pp** against a corrected one — worse than the 0.49 pp the re-key was
+judged on. The cardiac output is **upstream** of the shunt law, so refitting
+the shunt while it is wrong is fitting *around* the error. Caveats are recorded
+with it: the −0.3155 exponent is two points from two studies, published by
+nobody, extrapolating below both anchors at the lean end. **A sensitivity
+probe, not a parameter. Nothing was changed.**
+
+**6. The offset form is implemented behind two switches and costed.** Four full
+suite runs, regenerable with `variant_cost.py`:
+
+| | shipped | **B** asymptote at RV | **C** Pelosi shape | **D** Jones RV |
+|---|---|---|---|---|
+| blocking failures | **4** | **5** | **4** | **5** |
+| Heard control [244–314 s] | 307.6 PASS | **369.9 FAIL** | **272.0 PASS** | 307.6 PASS |
+| tilt, BMI 44 at 25° [15–40%] | 35.9 PASS | 28.5 PASS | 38.4 PASS | **9.9 FAIL** |
+| mean \|error\| vs Pelosi's FRC | 7.79% | 38.28% | **1.86%** | 23.50% |
+
+**C costs nothing and buys a great deal** — same four blocking rows by the same
+four names, fourfold better agreement with Pelosi, and Heard's obese control
+moves from the top of its band to the middle. It introduces **no parameter**:
+it carries Pelosi's own measured FRC(BMI)/FRC(22) as a shape with the level
+left ours, exactly what the model already does with Quanjer's height term.
+**Not adopted** — adopting it means changing `model.js` in the same commit.
+
+**B breaks the very measurement that motivated it**, because the offset and the
+exponent are not independent: `k_frc_bmi` = 0.0417 was calibrated with no
+offset, so bolting an asymptote underneath can only inflate the obese lung.
+**D destroys the obese tilt response** (35.9% → 9.9%): with Jones's RV the
+obese lung is pinned at its floor, and tilt works by *raising* FRC, so there is
+nothing left to lift.
+
+### Three retractions
+
+**The `k_rv_bmi` conflict I recorded in the fourth entry was overstated.**
+Jones's RV slope puts residual volume **above** Pelosi's *measured*
+anaesthetised FRC from **BMI 33.6** up — an expiratory reserve of −251 mL at
+BMI 45, which is impossible. `rv` is documented "ANAESTHETISED SUPINE"; Jones
+measured **seated awake**. Not the same quantity. What survives: Reinius's
+single CT point is still the only anchor for the supine anaesthetised slope,
+and the seated-to-anaesthetised fall in RV — **a step this model does not
+represent at all** — must be large in the obese.
+
+**"Heard is already too slow at 319.8 s" was wrong twice over**, and I repeated
+it in four files and several commit messages. 319.8 is the *before* value of a
+change made on 2026-09-23; the current shipped figure is **307.6 s and it
+PASSES**. The direction of the argument survives — variant B slows it to 369.9
+and it fails — but it was not already failing.
+
+**"Four citations cannot be ordered" was wrong on all four counts.** Flin's
+title is in `editorial.md`; Byun's author and title are in §2a of `SOURCES.md`;
+Kaiser's author is here in `HANDOVER.md` and **the paper was read on
+2026-09-22**; Varat's author is in §2a. I asserted all four from one list
+without grepping the repository — *reasoning from what a document does not
+say*, the move CLAUDE.md forbids by name. It also **concealed the one citation
+that really is incomplete**: *Circulation* 1963;28:346, author unrecorded, from
+which `hb_co_exp` = 1.535 is derived.
+
 ## Current state — 2026-09-25 (fourth entry): Jones & Nzekwu read; the obese deficit moves again
 
 **Jones RL, Nzekwu MMU, *Chest* 2006;130(3):827–833 was obtained and read at
@@ -65,7 +143,12 @@ his RV is derived as TLC − VC, not measured.
 raising the floor `frc_anaes()` clamps to: at Pelosi's geometry a BMI 45
 patient's anaesthetised FRC rises **+32.4%** and a BMI 50 patient's **+45.9%**.
 More starting oxygen, less closure, **slower** desaturation — and Heard's obese
-control is already too slow at 319.8 s against an IQR of 244–314. Recorded as
+control is already near the top of its band. **CORRECTED 2026-09-25:** this
+read "already too slow at 319.8 s", which was wrong twice over — 319.8 is the
+*before* value of a change made on 2026-09-23, and the current shipped figure
+is **307.6 s, which PASSES** inside 244–314. The direction of the argument
+survives (variant B slows it to 369.9 s and it FAILS), but it is not already
+failing. Recorded as
 information; **not** compensated elsewhere.
 
 **3. The ERV agreement we had was a compensating pair.** Our expiratory reserve
