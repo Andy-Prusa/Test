@@ -5,6 +5,44 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-25 (second entry)
+
+**Tokics 1996 was read at source.** The full author list is now a repository
+record — Tokics L, Hedenstierna G, Svensson L, Brismar B, Cederlund T,
+Lundquist H, Strandberg A, *J Appl Physiol* 1996;81(4):1822-1833 — where this
+repository had only "Tokics L, et al." and an author list supplied from memory
+had already been retracted once.
+
+**1. The cohort BMI, which SOURCES.md said was recorded nowhere.** Table 1 gives
+every height and weight: **mean BMI 25.20** (SD 2.79), **range 20.7–29.3**, mean
+1.756 m / 77.4 kg / 48.7 y, 3 women and 7 men. **Not one patient is obese.** So
+this is a normal-weight anchor and cannot speak to the obese end — which is part
+of what it has been used for.
+
+**2. THE 1.3 IS A STANDARD ERROR.** Table 3's footnote, verbatim: *"Values are
+means ± SE; n = 10."* The SD is 1.3 × √10 = **4.11**. **Every "in SD of Tokics
+5.0 (1.3)" this repository computed used a band 3.16× too narrow.** Our lean
+shunt is −0.34 SD from his mean, not −1.07. Corrected in SOURCES.md and
+`handover_numbers.py`.
+
+**3. The cardiac output finding, and it is the important one.**
+
+| | ours | measured | |
+|---|---|---|---|
+| Tokics lean, 77 kg | **4.04** | 5.7 | **−29%** |
+| Perilli obese, 125 kg | **5.78** | 4.9 | **+18%** |
+| change across the span | **+43%** | **−14%** | |
+
+**The sign of the gradient is wrong.** `co_anaes` scales on weight^0.75, so we
+rise 43% where the measurements fall 14%. This reframes a standing caveat: "our
+cardiac output is ~18% high" is **not an offset** — at the lean end we are 29%
+*low*. It matters beyond the row, because via Dantzker 1980 cardiac output is
+itself a shunt-reduction mechanism and **every shunt this repository inverted
+was inverted through this cardiac output.** Neither paper reports haemoglobin,
+so `hb 14` is ours in both; the cohorts differ by 12 years.
+
+22 new checks, all passing. No model code changed.
+
 ## Current state — 2026-09-25
 
 **Quanjer 1993 was read at source and it settled two things at once.** The PDF

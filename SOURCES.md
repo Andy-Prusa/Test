@@ -683,7 +683,7 @@ the old curve could not see:
 | Reinius, PaO₂/FiO₂ | 251.7 | **261.6** | 252 (groups 225–266) |
 | Valenza, supine PaO₂ | 171.4 (−0.11 SD) | **182.3 (+0.11 SD)** | 177 ± 50 |
 | Gander, PaO₂ before apnoea | 312.9 (+0.51 SD) | **321.7 (+0.58 SD)** | 243 ± 136 |
-| Tokics, lean baseline shunt | 3.71% | **3.61%** | 5.0 ± 1.3 |
+| Tokics, lean baseline shunt | 3.71% | **3.61%** | 5.0, **SE** 1.3 (SD 4.11) |
 
 Reinius loses a near-exact hit — 251.7 was within three tenths of a mmHg — and
 lands at the top of his groups' range but still inside it. Valenza improves and
@@ -836,7 +836,7 @@ earlier anchor without being asked to — none of them entered the fit:
 |---|---|---|
 | Reinius BMI 45, FiO₂ 0.50 | PaO₂/FiO₂ **251.7** | **252** (groups 225–266) |
 | Valenza BMI 42, FiO₂ 0.60 | PaO₂ **171.4** | 177 (50) → **−0.11 SD** |
-| Tokics, lean BMI 22.9 | **3.71%** | 5.0 (1.3) → **−1.00 SD** |
+| Tokics, lean BMI 22.9 | **3.71%** | 5.0, **SE** 1.3 → SD 4.11 → **−0.31 SD** |
 | Pelosi BMI 22 / 45, FiO₂ 0.40 | 180.9 / 104.3 | his curve 180.8 / 104.6 |
 
 **And Gander improved again, on an apnoea protocol none of the anchors share:**
@@ -1186,13 +1186,15 @@ the same 5%.** That is the defect this branch was forked to find, and it was
 invisible until a measured obese shunt existed to compare against.
 
 The 5% is not wrong where it came from: Tokics 1996 Table 3 measures inert-gas
-shunt under anaesthesia at **5.0 (1.3) %**, and `handover_numbers.py` checks
-that and passes. **But Tokics's patients were not morbidly obese.** Two
-anchors, two populations:
+shunt under anaesthesia at **5.0%, SE 1.3 (SD 4.11 — see the Tokics section,
+read at source 2026-09-25; the 1.3 is a STANDARD ERROR and was read here as an
+SD)**. **And Tokics's patients were not morbidly obese** — his cohort BMI is
+25.2, highest 29.3, which is now computed from his Table 1 rather than assumed.
+Two anchors, two populations:
 
 | population | shunt | source |
 |---|---|---|
-| anaesthetised, normal weight | 5.0 (1.3) % | Tokics 1996, inert gas |
+| anaesthetised, normal weight (BMI 25.2) | 5.0%, SE 1.3 (SD 4.11) | Tokics 1996, inert gas |
 | anaesthetised, BMI 45 | **11 (6) % measured / 11.9% inferred** | Reinius 2009 |
 
 That is the raw material for a BMI-dependent `shunt_base` anchored on two
@@ -1984,6 +1986,87 @@ benchmark.
 
 ---
 
+### Tokics 1996 — READ AT SOURCE 2026-09-25, and the 1.3 is a standard error
+
+**Tokics L, Hedenstierna G, Svensson L, Brismar B, Cederlund T, Lundquist H,
+Strandberg A.** V̇/Q̇ distribution and correlation to atelectasis in
+anesthetized paralyzed humans. *J Appl Physiol* 1996;81(4):1822-1833.
+Uploaded to the session and read. **The full author list is now a repository
+record**; this file previously had only "Tokics L, et al.", and an author list
+supplied from memory earlier in this project was explicitly retracted.
+
+#### 1. The cohort BMI, which this file said was recorded nowhere
+
+**Table 1 gives every height and weight.** Computed from it:
+
+| | |
+|---|---|
+| mean BMI | **25.20** (SD 2.79) |
+| range | **20.7 – 29.3** |
+| mean height / weight / age | 1.756 m, 77.4 kg, 48.7 y |
+| sex | 3 women, 7 men |
+
+**Not one patient is obese.** The highest BMI in the study is 29.3. So this is a
+**normal-weight anchor** and cannot speak to the obese end at all — which is
+part of what it has been used for.
+
+#### 2. THE 1.3 IS A STANDARD ERROR, NOT A STANDARD DEVIATION
+
+Table 3's footnote, verbatim: *"Values are means ± SE; n = 10."*
+
+With n = 10 the standard deviation is SE × √10:
+
+| Table 3 value | as published | implied SD |
+|---|---|---|
+| shunt Q̇s | 5.0 ± **SE** 1.3 % | **4.11** |
+| low V/Q Q̇low | 7.1 ± SE 1.8 % | 5.69 |
+| log Q̇SD (perfusion) | 1.18 ± SE 0.12 | 0.38 |
+| log V̇SD (ventilation) | 0.62 ± SE 0.05 | 0.16 |
+| cardiac output | 5.7 ± SE 0.3 l/min | 0.95 |
+| PaO₂ | 159.1 ± SE 10.1 Torr | 31.94 |
+
+**Every "in SD of Tokics 5.0 (1.3)" this repository computed used a band 3.16×
+too narrow.** Our lean shunt is −0.34 SD from his mean, not −1.07. This is the
+same class of error as the ±SD/±SE confusions this project has caught before,
+and it was introduced by recording a bracketed number without its footnote.
+
+#### 3. The cardiac output finding, and it is the important one
+
+Tokics measures **5.7 l/min** anaesthetised in a 77 kg cohort. Perilli measures
+**4.9** in a 125 kg one. **Ours goes the other way:**
+
+| | ours | measured | error |
+|---|---|---|---|
+| Tokics lean, 77 kg | **4.04** | 5.7 | **−29%** |
+| Perilli obese, 125 kg | **5.78** | 4.9 | **+18%** |
+| change across the span | **+43%** | **−14%** | |
+
+**The sign of the gradient is wrong.** `co_anaes` scales on weight^0.75, so we
+rise 43% across that span while the two measurements fall 14%.
+
+This **reframes a standing caveat**. The repository has been recording "our
+cardiac output is ~18% high" as though it were an offset. It is not: at the lean
+end we are 29% *low*. And it matters beyond the row — via Dantzker 1980 cardiac
+output is itself a shunt-reduction mechanism, and **every shunt this repository
+inverted was inverted through this cardiac output.**
+
+*Caveats, because they are not nothing:* neither paper reports haemoglobin, so
+`hb 14` is ours in both; the cohorts differ by 12 years of age; and Perilli's
+4.9 is his phase-4 supine value.
+
+#### 4. What else the paper supplies
+
+Our shunt at his own cohort mean is **4.08%** against his 5.0 (SD 4.11) —
+**−0.22 SD**. His atelectatic area was 2.2 (SE 0.7) % at the diaphragm and 1.8
+(SE 0.7) % 5 cm cranial, correlating with shunt at **r = 0.91, P < 0.001**. Nine
+of ten patients developed atelectasis; **none had any while awake**, and shunt
+did not exceed 1% in any patient awake.
+
+The study was **FiO₂ 0.40–0.43, halothane, ZEEP, supine, paralysed** — so it is
+directly comparable with Pelosi's FiO₂ 0.40 and with our ventilated anchors.
+
+---
+
 ### Quanjer 1993 — READ AT SOURCE 2026-09-25, and it settles two things at once
 
 **Quanjer PH, Tammeling GJ, Cotes JE, Pedersen OF, Peslin R, Yernault J-C.**
@@ -2627,10 +2710,13 @@ primary source, not a search.** The first two are the ones that matter most:
       which is currently OURS and not Gander's
 - [ ] **Eichenberger A, et al.** Morbid obesity and postoperative pulmonary
       atelectasis. *Anesth Analg* 2002;95(6):1788-92 — citation confirmed
-- [ ] **Tokics L, et al.** 1996 — the 5.0 (1.3) % inert-gas shunt is checked by
-      `handover_numbers.py` from this file's record, NOT from the page. If
-      `shunt_base` becomes BMI-dependent that figure becomes a load-bearing
-      anchor and must be read at source, as Reinius 2009 was
+- [x] **Tokics L, Hedenstierna G, Svensson L, Brismar B, Cederlund T,
+      Lundquist H, Strandberg A.** V̇/Q̇ distribution and correlation to
+      atelectasis in anesthetized paralyzed humans. *J Appl Physiol*
+      1996;81(4):1822-1833. **OBTAINED AND READ 2026-09-25** — see its own
+      section above. It was right that this had to be read at source: the
+      1.3 is a STANDARD ERROR, the cohort BMI is 25.2 with nobody obese, and
+      its cardiac output exposes a wrong gradient in ours
 
 ---
 

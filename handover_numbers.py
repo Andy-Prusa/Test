@@ -134,12 +134,20 @@ print("  they must be re-run on a patient whose compartments differ. On the")
 print("  Gander patient (15.79% unwashed) tau_mix 5 -> 300 s moves")
 print("  desaturation by 1.25 s and vq_log_sd is STILL exactly inert --")
 print("  see 'vq_log_sd IS A DEAD PARAMETER' below.")
-check("baseline shunt (Tokics Table 3 measured 5.0 +- 1.3%)",
-      100 * ro['shunt'][0], 5.0, 0.5, " %")
-print("    Tokics' inert-gas shunt under anaesthesia is 5.0 +- 1.3% (Table 3,")
-print("    read from the page 2026-09-16). HANDOVER used to record it as 7.0,")
-print("    one of nine values transposed 5-for-7. We LAND on the measurement,")
-print("    we do not sit under it.")
+check("baseline shunt at the default patient [Tokics 5.0, SE 1.3]",
+      100 * ro['shunt'][0], 3.61, 0.05, " %")
+print("    CORRECTED 2026-09-25, THE PAPER HAVING BEEN READ AT SOURCE. Two")
+print("    things in the old note were wrong.")
+print("    (a) THE 1.3 IS A STANDARD ERROR, NOT A STANDARD DEVIATION. Table 3")
+print("        footnote, verbatim: \"Values are means 6 SE; n 5 10.\" So the")
+print("        SD is 1.3*sqrt(10) = 4.11, and every 'in SD of 5.0 (1.3)' this")
+print("        repository computed used a band 3.16 times too narrow.")
+print("    (b) 'We LAND on the measurement, we do not sit under it' was true")
+print("        when shunt_base was a flat 5% for everyone. The re-key of")
+print("        2026-09-24 made it 3.61% here, so that sentence is struck.")
+print("    Against the CORRECT SD the row is comfortable either way:")
+print("        3.61 against 5.0, SD 1.30 (the old misreading):  -1.07 SD")
+print("        3.61 against 5.0, SD 4.11 (SE corrected)      :  -0.34 SD")
 
 # ---------------------------------------------------------------------------
 print("\nsv_itp_gain -- nearly inert on the knot (human data give 0.0033-0.00476)")
@@ -2804,6 +2812,84 @@ print("     and needs a ruling.")
 print("  5. THE RANGE WE LEAVE. Table 6 applies to ages 18-70 (below 25, enter")
 print("     25) and heights 1.55-1.95 m in men, 1.45-1.80 m in women. Our")
 print("     crossover sweeps run outside it at both ends.")
+
+# ---------------------------------------------------------------------------
+print("\nTOKICS 1996 READ AT SOURCE 2026-09-25 -- the cohort BMI, and an SE")
+print("  Tokics L, Hedenstierna G, Svensson L, Brismar B, Cederlund T,")
+print("  Lundquist H, Strandberg A. V/Q distribution and correlation to")
+print("  atelectasis in anesthetized paralyzed humans. J Appl Physiol")
+print("  1996;81(4):1822-1833. SOURCES.md recorded only 'Tokics L, et al.';")
+print("  the full list above is now read from the page.")
+
+# Table 1, subject data, read at source: sex, age yr, height cm, weight kg
+_TOK = [("F", 65, 155, 68), ("F", 62, 162, 77), ("F", 32, 174, 72),
+        ("M", 36, 183, 80), ("M", 58, 179, 85), ("M", 60, 182, 74),
+        ("M", 49, 180, 67), ("M", 56, 185, 88), ("M", 20, 178, 75),
+        ("M", 49, 178, 88)]
+_tb = np.array([w / ((h / 100.0) ** 2) for _, _, h, w in _TOK])
+_th = np.array([h / 100.0 for _, _, h, _ in _TOK])
+_tw = np.array([float(w) for _, _, _, w in _TOK])
+_ta = np.array([float(a) for _, a, _, _ in _TOK])
+
+print("  1. THE COHORT BMI, which this repository said was recorded NOWHERE.")
+print("     Table 1 gives every height and weight, so it is computable:")
+check("Tokics cohort mean BMI", float(_tb.mean()), 25.20, 0.02, "")
+check("  ... its SD across the 10", float(_tb.std(ddof=1)), 2.79, 0.02, "")
+check("  ... lowest BMI in the cohort", float(_tb.min()), 20.68, 0.02, "")
+check("  ... highest BMI in the cohort", float(_tb.max()), 29.34, 0.02, "")
+check("Tokics mean height", float(_th.mean()), 1.756, 0.001, " m")
+check("Tokics mean weight", float(_tw.mean()), 77.40, 0.05, " kg")
+check("Tokics mean age", float(_ta.mean()), 48.70, 0.05, " y")
+print("     3 women and 7 men, and NOT ONE PATIENT IS OBESE -- the highest BMI")
+print("     is 29.3. So this anchor is a NORMAL-WEIGHT anchor and cannot speak")
+print("     to the obese end at all, which is what we have been using it for.")
+
+print("  2. AND THE 1.3 IS A STANDARD ERROR. Table 3: \"means 6 SE; n 5 10.\"")
+for _nm, _m, _se, _want in (("shunt Qs, %", 5.0, 1.3, 4.11),
+                            ("low V/Q Qlow, %", 7.1, 1.8, 5.69),
+                            ("log QSD, perfusion", 1.18, 0.12, 0.38),
+                            ("log VSD, ventilation", 0.62, 0.05, 0.16),
+                            ("cardiac output, l/min", 5.7, 0.3, 0.95),
+                            ("PaO2, Torr", 159.1, 10.1, 31.94)):
+    check(f"{_nm}: SD implied by SE {_se}", _se * np.sqrt(10.0), _want, 0.02, "")
+print("     Every 'in SD of Tokics 5.0 (1.3)' in this repository used a band")
+print("     3.16x too narrow. Corrected in SOURCES.md and here.")
+
+print("  3. THE CARDIAC OUTPUT FINDING, AND IT IS THE IMPORTANT ONE.")
+print("     Tokics measures 5.7 l/min anaesthetised in a 77 kg cohort. Perilli")
+print("     measures 4.9 in a 125 kg one. OURS GOES THE OTHER WAY:")
+_pt = Patient(weight=float(_tw.mean()), height=float(_th.mean()),
+              age=float(_ta.mean()), hb=14.0, tilt_deg=0.0)
+_pp = Patient(weight=48.1 * 1.61 * 1.61, height=1.61, age=37.0, hb=14.0,
+              tilt_deg=0.0)
+check("our CO at Tokics' lean cohort [measured 5.7]", _pt.co_anaes(), 4.04,
+      0.02, " l/min")
+check("our CO at Perilli's obese cohort [measured 4.9]", _pp.co_anaes(), 5.78,
+      0.02, " l/min")
+check("  our change across 77 -> 125 kg", 100.0 * (_pp.co_anaes() / _pt.co_anaes() - 1.0),
+      43.0, 1.0, " %")
+check("  the measured change across the same span", 100.0 * (4.9 / 5.7 - 1.0),
+      -14.0, 0.5, " %")
+print("     THE SIGN OF THE GRADIENT IS WRONG. co_anaes scales on weight^0.75,")
+print("     so we rise 43% across that span while the two measurements fall")
+print("     14%. The repository's standing caveat -- 'our cardiac output is")
+print("     ~18% high' -- is therefore NOT an offset, and reading it as one")
+print("     understates the problem at the lean end, where we are 29% LOW.")
+print("     THIS MATTERS BEYOND THE ROW: via Dantzker 1980 cardiac output is")
+print("     itself a shunt-reduction mechanism, and every shunt this")
+print("     repository inverted was inverted through this CO.")
+print("     CAVEATS, because they are not nothing: neither paper reports")
+print("     haemoglobin, so hb 14 is OURS in both; the cohorts differ by 12")
+print("     years of age; Perilli's 4.9 is his phase-4 supine value.")
+
+print("  4. TWO MORE ANCHORS THE PAPER SUPPLIES, both now against correct SDs.")
+check("our shunt at Tokics' own cohort mean [5.0, SD 4.11]",
+      _pt.shunt_base_eff() * 100.0, 4.08, 0.02, " %")
+check("  ... in SD", (_pt.shunt_base_eff() * 100.0 - 5.0) / (1.3 * np.sqrt(10.0)),
+      -0.22, 0.02, " SD")
+print("     Tokics' atelectatic area was 2.2 (SE 0.7) % at the diaphragm and")
+print("     1.8 (SE 0.7) % 5 cm cranial, and his shunt correlated with it at")
+print("     r = 0.91. Nine of ten patients had atelectasis; none had any awake.")
 
 print()
 if _fails:
