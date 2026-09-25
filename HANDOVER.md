@@ -5,6 +5,34 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-25 (third entry): two rulings taken
+
+**RULED: this is a male model.** Quanjer's men's FRC and TLC equations are used
+for every patient, deliberately, and a woman is modelled as a man of the same
+height and age. **The cost is now recorded rather than implied:** over
+1.55–1.75 m at age 45 his women's equations give FRC at 0.856–0.870 of the male
+value (~14% less) and TLC at 0.834–0.837 (~16% less), and the age term differs
+ninefold — 0.001 against 0.009 — so a woman's FRC is nearly age-flat where a
+man's is not.
+
+**Who this misses, stated plainly:** Tokics' cohort was 3 women of 10;
+**Pelosi's was seven women to one man per group** — and Pelosi is the curve
+`shunt_base_eff` is fitted to. A male model is being fitted through
+female-majority data. That is a ruled limitation, not a hidden one.
+
+**RULED: the page sentence is fixed, closing an open release item.**
+`airway_scenario.html` told the recipient that "closing capacity and the
+FRC–BMI relation are parameterised, not fitted to source data". Quanjer settled
+which side of that contradiction was wrong. The footer now separates the three
+claims it conflated — Quanjer's height and age basis read at source, a BMI term
+that agrees with but was not fitted to Pelosi's helium regression, and closing
+capacity values that disagree with their own source — and tells the recipient
+the model is male.
+
+**Still open, both answered "idk":** whether to implement Buist & Ross on
+Quanjer's TLC, and whether to implement Quanjer's FRC age term / guard his
+stated range. Neither has been touched.
+
 ## Current state — 2026-09-25 (second entry)
 
 **Tokics 1996 was read at source.** The full author list is now a repository

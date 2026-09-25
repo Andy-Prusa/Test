@@ -2774,6 +2774,32 @@ check("  our frc_ref, SUPINE, same subject",
 check("  ... the supine-to-seated ratio we imply",
       Patient(weight=22 * 1.75 * 1.75, height=1.75, age=45.0).frc_awake()
       / _q_frc_m(1.75, 45.0), 0.733, 0.002, "")
+print("  1b. RULED 2026-09-25: THIS IS A MALE MODEL. Quanjer's men's equations")
+print("      are used for every patient, deliberately. The cost, from his own")
+print("      women's equations at age 45:")
+
+
+def _qf_f(h, a):
+    return (2.24 * h + 0.001 * a - 1.00) * 1000.0
+
+
+def _qt_f(h):
+    return (6.60 * h - 5.79) * 1000.0
+
+
+for _h, _wf, _wt in ((1.55, 0.856, 0.837), (1.65, 0.863, 0.836),
+                     (1.75, 0.870, 0.834)):
+    check(f"FRC women/men at {_h:.2f} m", _qf_f(_h, 45.0) / _q_frc_m(_h, 45.0),
+          _wf, 0.002, "")
+    check(f"TLC women/men at {_h:.2f} m", _qt_f(_h) / _q_tlc_m(_h), _wt,
+          0.002, "")
+print("      About 14% less FRC and 16% less TLC, and the age term differs")
+print("      NINEFOLD (0.001 against 0.009), so a woman's FRC is very nearly")
+print("      age-flat where a man's is not.")
+print("      WHO THIS MISSES: Tokics' cohort was 3 women of 10; PELOSI'S WAS")
+print("      SEVEN WOMEN TO ONE MAN per group -- and Pelosi is the curve")
+print("      shunt_base_eff is fitted to. A male model is being fitted through")
+print("      female-majority data. Ruled, recorded, and not small.")
 print("     SO THE MODEL TAKES QUANJER'S SHAPE AND SETS ITS OWN LEVEL. Quanjer")
 print("     measures SEATED (his section 6.1); frc_ref is supine. 0.73 is the")
 print("     right sort of size for the supine fall but is not itself sourced.")
@@ -2890,6 +2916,75 @@ check("  ... in SD", (_pt.shunt_base_eff() * 100.0 - 5.0) / (1.3 * np.sqrt(10.0)
 print("     Tokics' atelectatic area was 2.2 (SE 0.7) % at the diaphragm and")
 print("     1.8 (SE 0.7) % 5 cm cranial, and his shunt correlated with it at")
 print("     r = 0.91. Nine of ten patients had atelectasis; none had any awake.")
+
+# ---------------------------------------------------------------------------
+print("\nGUNNARSSON 1991 -- A CONDENSATION, NOT THE PAPER. Uploaded 2026-09-25.")
+print("  What was uploaded is the SURVEY OF ANESTHESIOLOGY digest: two pages of")
+print("  condensed abstract plus an editorial Comment by J. Briegel and Th.")
+print("  Bein. The paper itself is")
+print("    Gunnarsson L, Tokics L, Gustavsson H, Hedenstierna G. Influence of")
+print("    age on atelectasis formation and gas exchange impairment during")
+print("    general anaesthesia. Br J Anaesth 1991;66:423-432.")
+print("  and it is NOT held. Everything below is SECOND-HAND, and the scan")
+print("  carries no text layer, so the figures were read off an image with no")
+print("  machine cross-check. Nothing here is written into any parameter.")
+print("  Same group as the Tokics 1996 anchor -- Tokics is second author,")
+print("  Hedenstierna senior -- so it is methodologically continuous with it.")
+
+print("  WHAT IT CLAIMS, and it looks like a challenge to our age dependence:")
+print("    shunt (V/Q < 0.005) vs age        NO CORRELATION")
+print("    atelectasis vs age                NOT ASSOCIATED")
+print("    low V/Q (0.005-0.1) vs age        r = 0.35, P < 0.05 anaesthetised")
+print("    venous admixture vs age           r = 0.42, P < 0.05")
+print("    log SD Q vs age                   r = 0.52, P < 0.01")
+print("    PAO2-PaO2 vs age                  r = 0.34, P < 0.05")
+print("  n = 45 (36 men, 9 women), 23-69 yr, mean 46, elective abdominal")
+print("  surgery, mean FiO2 0.4, halothane or enflurane. 39 of 45 had")
+print("  atelectasis; shunt correlated strongly with atelectatic area.")
+
+_GA = np.arange(23.0, 70.0, 1.0)
+_gsh, _guw = [], []
+for _a in _GA:
+    _gp = Patient(weight=24 * 1.75 * 1.75, height=1.75, age=float(_a), hb=14.0,
+                  tilt_deg=0.0)
+    _gsh.append(_gp.shunt_base_eff() * 100.0)
+    _guw.append(_gp.unwashed_fraction() * 100.0)
+_gsh, _guw = np.array(_gsh), np.array(_guw)
+print("  OURS OVER THE SAME AGE RANGE, lean supine BMI 24 (his BMI is not in")
+print("  the condensation, which is itself a gap):")
+check("our shunt_base at age 23", float(_gsh[0]), 3.23, 0.02, " %")
+check("our shunt_base at age 46", float(_gsh[23]), 3.81, 0.02, " %")
+check("our shunt_base at age 69", float(_gsh[-1]), 4.45, 0.02, " %")
+check("  ... the rise across his range", 100.0 * (_gsh[-1] / _gsh[0] - 1.0),
+      38.0, 1.0, " %")
+check("our unwashed low-V/Q at age 23", float(_guw[0]), 0.00, 0.02, " %")
+check("our unwashed low-V/Q at age 69", float(_guw[-1]), 3.05, 0.02, " %")
+print("    A CAUTION ON COMPARING THESE AT ALL: our shunt is a SMOOTH MONOTONE")
+print("    FUNCTION of age, so its correlation with age is 1 by construction.")
+print("    His r values are across 45 patients with real scatter. The")
+print("    comparable quantity is the SIZE of the age effect, +38% across")
+print("    23-69, against his report of none.")
+
+print("  AND THE NUANCE THAT MAY DISSOLVE IT ENTIRELY. shunt_base_eff was")
+print("  fitted by inverting PELOSI'S PaO2/PAO2 through this model, which makes")
+print("  it an EFFECTIVE VENOUS ADMIXTURE -- shunt PLUS low V/Q -- and not a")
+print("  true inert-gas shunt. Gunnarsson's VENOUS ADMIXTURE DOES rise with age,")
+print("  r = 0.42. So our age dependence may be CORRECT and the conflict may be")
+print("  a naming problem. This repository has been wrong before by reasoning")
+print("  from a quantity's label rather than its definition, so it is recorded")
+print("  as OPEN and nothing is changed on it.")
+print("  WHAT WOULD SETTLE IT: his tables of shunt and low-V/Q against age,")
+print("  which a two-page condensation does not carry. The primary paper is on")
+print("  the wanted list.")
+
+_gp = Patient(weight=24 * 1.75 * 1.75, height=1.75, age=46.0, hb=14.0,
+              tilt_deg=0.0)
+print("  ONE THING IT DOES CONFIRM, and it is not nothing:")
+check("co_drop_frac: our anaesthetised CO as a fraction of awake",
+      1.0 - _gp.co_drop_frac, 0.75, 0.005, "")
+print("    He reports anaesthesia dropping cardiac output to 70-85% of awake.")
+print("    We sit at 75%, inside his range -- an independent confirmation of a")
+print("    parameter, from a source that was not used to set it.")
 
 print()
 if _fails:

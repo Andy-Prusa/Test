@@ -1986,6 +1986,69 @@ benchmark.
 
 ---
 
+### Gunnarsson 1991 — A CONDENSATION WAS UPLOADED, NOT THE PAPER
+
+**What was uploaded on 2026-09-25 is the *Survey of Anesthesiology* digest** —
+two pages of condensed abstract plus an editorial *Comment* by J. Briegel and
+Th. Bein. The paper itself is
+
+**Gunnarsson L, Tokics L, Gustavsson H, Hedenstierna G.** Influence of age on
+atelectasis formation and gas exchange impairment during general anaesthesia.
+*Br J Anaesth* 1991;66:423-432.
+
+and it is **not held**. Everything below is **second-hand**, and the scan
+carries **no text layer**, so the figures were read off an image with no machine
+cross-check. **Nothing from it has been written into any parameter.** It is the
+same group as the Tokics 1996 anchor — Tokics is second author, Hedenstierna
+senior — so it is methodologically continuous with it.
+
+#### What it claims, and why it looks like a challenge
+
+| | |
+|---|---|
+| shunt (V̇/Q̇ < 0.005) vs age | **no correlation** |
+| atelectasis vs age | **not associated** |
+| low V/Q (0.005–0.1) vs age | r = 0.35, P < 0.05 (anaesthetised) |
+| venous admixture vs age | r = 0.42, P < 0.05 |
+| log SD Q̇ vs age | r = 0.52, P < 0.01 |
+| P(A−a)O₂ vs age | r = 0.34, P < 0.05 |
+
+n = 45 (36 men, 9 women), 23–69 y, mean 46, elective abdominal surgery, mean
+FiO₂ 0.4, halothane or enflurane. 39 of 45 had atelectasis, and shunt
+correlated strongly with atelectatic area. The editorial comment calls it *"the
+surprising result … that neither atelectasis formation nor shunt depended on the
+patients age."*
+
+**Our re-keyed shunt rises 3.23 → 4.45% across his age range, +38%.**
+
+#### The nuance that may dissolve it entirely
+
+`shunt_base_eff` was fitted by inverting **Pelosi's PaO₂/PAO₂** through this
+model. That makes it an **effective venous admixture** — shunt *plus* low V/Q —
+not a true inert-gas shunt. **Gunnarsson's venous admixture does rise with age,
+r = 0.42.** So our age dependence may be correct, and the conflict may be a
+naming problem rather than a defect.
+
+This repository has been wrong before by reasoning from a quantity's label
+rather than its definition, so it is recorded as **open** and nothing is changed
+on it. **What would settle it** is his tables of shunt and low-V/Q against age,
+which a two-page condensation does not carry.
+
+*A caution on the comparison itself:* our shunt is a smooth monotone function of
+age, so its correlation with age is 1 by construction. His r values are across
+45 patients with real scatter. The comparable quantity is the **size** of the
+age effect, not its r.
+
+#### One thing it does confirm
+
+He reports anaesthesia dropping cardiac output to **70–85% of the awake value**.
+`co_drop_frac` puts us at **75%** — inside his range, and from a source that was
+not used to set it. Given that the Tokics reading has just shown our cardiac
+output to have the wrong *gradient* against body mass, an independent
+confirmation of the *induction drop* usefully separates the two questions.
+
+---
+
 ### Tokics 1996 — READ AT SOURCE 2026-09-25, and the 1.3 is a standard error
 
 **Tokics L, Hedenstierna G, Svensson L, Brismar B, Cederlund T, Lundquist H,
@@ -2095,10 +2158,18 @@ coefficient.** Now cited in the code.
 
 **Three things follow, and they are not all comfortable:**
 
-- **It is the MEN'S equation and this model has no sex.** Women's FRC carries an
-  age term of 0.001 against men's 0.009 — nine times smaller, essentially flat.
-  Applying a male line to every patient is a real approximation that is now
-  visible and costed nowhere.
+- **It is the MEN'S equation — and as of 2026-09-25 that is a RULING, not an
+  accident.** *This is a male model.* Quanjer's men's equations are used for
+  every patient, deliberately, and a woman is modelled as a man of the same
+  height and age. **The cost is recorded rather than waved at:** over
+  1.55–1.75 m at age 45 his own women's equations give FRC at **0.856–0.870**
+  of the male value (about 14% less) and TLC at **0.834–0.837** (about 16%
+  less), and the age term differs ninefold — 0.001 against 0.009 — so a woman's
+  FRC is very nearly age-flat where a man's is not.
+  **Who this misses:** Tokics' cohort was 3 women of 10; **Pelosi's was seven
+  women to one man per group** — and Pelosi is the curve `shunt_base_eff` is
+  fitted to. A male model is being fitted through female-majority data. Ruled,
+  recorded, and not small.
 - **Quanjer measures SEATED.** His §6.1: *"Measurements are made with the
   subject seated upright; other postures should be noted, as they affect lung
   volumes."* `frc_ref` 2500 mL is **supine**. At 1.75 m and age 45 Quanjer
@@ -2112,9 +2183,16 @@ coefficient.** Now cited in the code.
 **And it settles the contradiction the audit could not close.**
 `airway_scenario.html` tells the recipient the FRC–BMI relation is
 *"parameterised, not fitted to source data"*; `apnoea_core.py` said *"anchored
-to the standing predicted-FRC regression"*. **The code was right and the page is
-wrong** — the height term is Quanjer's, read from the page. That closes one of
-the open release items.
+to the standing predicted-FRC regression"*. **The code was right and the page was
+wrong** — the height term is Quanjer's, read from the page.
+
+**FIXED 2026-09-25 by ruling.** The page footer now separates the three claims
+that sentence conflated: the FRC relation's height and age basis is Quanjer,
+read at source; its BMI term is parameterised and agrees with but was not fitted
+to Pelosi's measured helium regression; and closing capacity's values are
+placeholders that disagree with their own source. It also now tells the
+recipient, in the page itself, that the model is male. **That closes the open
+release item.**
 
 #### 2. The TLC that blocked Buist & Ross, and it has no age term
 
@@ -2613,9 +2691,12 @@ Documentary, needing no library:
 - [x] the FRC regression's missing provenance recorded in the code
 - [ ] stamp `CITATION.cff` `version` and `date-released` at release, or delete
       both fields and point to `PROVENANCE.txt`
-- [ ] reconcile `airway_scenario.html`'s "parameterised, not fitted to source
+- [x] reconcile `airway_scenario.html`'s "parameterised, not fitted to source
       data" against `apnoea_core.py`'s "anchored to the standing predicted-FRC
-      regression" — one of them is wrong
+      regression" — one of them is wrong. **CLOSED 2026-09-25.** Quanjer 1993
+      read at source settled it: the code was right, the page was wrong. The
+      footer is rewritten to separate the three claims it conflated, and now
+      also tells the recipient the model is male
 - [ ] complete or strike the `"Chest"` citation — §2a names a candidate
       (Kiely 1996, PMID 8625670) which must be **confirmed by reading**, not
       pasted in
@@ -2702,6 +2783,13 @@ primary source, not a search.** The first two are the ones that matter most:
 - [ ] **Jones RL, Nzekwu MM.** The effects of body mass index on lung volumes.
       *Chest* 2006;130(3):827-33. Already called "the decisive paper" above;
       the citation is now confirmed from a primary source
+- [ ] **Gunnarsson L, Tokics L, Gustavsson H, Hedenstierna G.** Influence of
+      age on atelectasis formation and gas exchange impairment during general
+      anaesthesia. *Br J Anaesth* 1991;66:423-432. **A CONDENSATION IS HELD,
+      NOT THE PAPER** (Survey of Anesthesiology digest, uploaded 2026-09-25).
+      Wanted for its tables of shunt and low-V/Q against age, which would
+      settle whether our shunt's age dependence is a defect or a naming
+      problem — see its section above.
 - [ ] **Damia G, et al.** Perioperative changes in functional residual capacity
       in morbidly obese patients. *Br J Anaesth* 1988;60(5):574-8
 - [ ] **Berthoud MC, Peacock JE, Reilly CS.** Effectiveness of preoxygenation
