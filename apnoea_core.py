@@ -1945,7 +1945,10 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
         # oxygen consumed is SMALLER than that oxygen by the volume the CO2
         # now occupies. A. Heard put this in mass terms on 2026-09-26: at
         # ~30 mL/min of alveolar CO2 output, an hour of apnoeic oxygenation
-        # costs about 2 L of lung oxygen, so the technique is CO2-limited and
+        # costs 1800 mL of oxygen held in 2034 mL of lung -- his 33.9 mL/min
+        # and 2034 mL are volumes of ALVEOLAR GAS, being 30 and 1800 divided
+        # by the alveolar oxygen fraction (760-47-40)/760 = 0.8855, so the
+        # like-for-like rate here is 30.0 mL O2/min -- so the technique is
         # finite even in the lean, and reaches its limit sooner in a smaller
         # lung. That is the mechanism by which FRC still governs apnoea time
         # when the store is being topped up -- via falling FAO2, not via
@@ -1954,10 +1957,11 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
         # THE MODEL RUNS THIS TOO SLOWLY, and the size is recorded rather
         # than tuned. Measured in `handover_numbers.py`: the loss opens at
         # 19.4-21.4 mL/min over minutes 2-10 and DECAYS to a 60-minute mean of
-        # 10.6-13.4 across BMI 22-45, against Heard's ~30-34 sustained. It
-        # decays because rising PaCO2 closes the alveolar-venous CO2 gradient.
-        # So the shortfall is about 1.6x at the start and about 2.5x over the
-        # hour -- it is not a constant offset. The CO2 channel
+        # 10.6-13.4 across BMI 22-45, against Heard's 30.0 mL O2/min. It
+        # decays because rising PaCO2 closes the alveolar-venous CO2 gradient,
+        # and it keeps decaying: the 4-hour mean is 6.0. So the shortfall is
+        # about 1.4x at the start, 2.2x over an hour and 5.0x over four --
+        # it is not a constant offset. The CO2 channel
         # being slow is ALREADY a tracked failure -- Stock 1989 obstructed
         # slope, 3.4 mmHg/min measured, this model 2.0 -- and these are the
         # same defect seen from two ends. It is why the oxygenated case

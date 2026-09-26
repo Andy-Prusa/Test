@@ -10,9 +10,23 @@ implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 **A. Heard's argument, and it overturned what this session had told him.**
 Carbon dioxide entering the alveolus displaces oxygen from a fixed-volume
 lung, so the oxygen store falls even on 100% oxygen, and falls faster in a
-small lung. At ~30 mL/min of alveolar CO2 output an hour costs about 2 L of
-lung oxygen: apnoeic oxygenation is **finite and CO2-limited even in the
-lean**, and reaches its limit sooner in an obese patient.
+small lung. At ~30 mL/min of alveolar CO2 output an hour costs **1,800 mL of
+oxygen, held in 2,034 mL of lung**: apnoeic oxygenation is **finite and
+CO2-limited even in the lean**, and reaches its limit sooner in an obese
+patient.
+
+**His two figures reproduce to the last digit**, and both are volumes of
+ALVEOLAR GAS rather than of oxygen — the distinction matters because an
+earlier draft of this entry compared them against an oxygen mass. His
+"(0.87)" is the alveolar oxygen fraction of TOTAL pressure,
+`(760 - 47 - 40)/760 = 0.8855`:
+
+| his figure | derivation | value |
+|---|---|---|
+| 33.9 mL/min | 30 / 0.8855 | 33.88 mL of **lung gas** per minute |
+| 2,034 mL | 1800 / 0.8855 | 2,033 mL of **lung**, holding 1,800 mL of O2 |
+
+So the like-for-like rate against this model is **30.0 mL of O2 per minute**.
 
 **The mechanism was already in the code**, at the aventilatory mass flow:
 
@@ -47,9 +61,24 @@ gradient:
 | 3 | 1127 mL | 0.402 | 230.0 | 99.2% | 3.6 mL/min |
 | 4 | 988 mL | 0.352 | 261.0 | 98.6% | 2.3 mL/min |
 
-Heard's 33.9 mL/min **sustained** empties that store at 61.9 min. This model
-averages 6.0 mL/min over four hours — **about 5x too slow**, not the 2.5x a
-60-minute window suggests.
+Against his 30.0 mL of O2 per minute, sustained:
+
+| window | model | too slow by |
+|---|---|---|
+| minutes 2–10 | 21.4 mL O2/min | 1.4x |
+| 60-minute mean | 13.4 mL O2/min | 2.2x |
+| 4-hour mean | 6.0 mL O2/min | **5.0x** |
+
+**His rate on this model's own stores** is the clearest form of it:
+
+| BMI | lung O2 at t=0 | lasts |
+|---|---|---|
+| 22.0 | 2440 mL | 81.3 min |
+| 34.5 | 1279 mL | 42.6 min |
+| 45.0 | 975 mL | **32.5 min** |
+
+An hour of apnoeic oxygenation is comfortable at BMI 22 and is **already
+over** at BMI 45.
 
 **This is ONE defect with the Stock failure, not two.** Stock 1989 measured
 3.4 mmHg/min under obstruction; the suite has us at 2.0, KNOWN_OPEN since

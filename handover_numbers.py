@@ -3968,10 +3968,31 @@ print("    by FAO2 falling, and falling FASTER in a smaller lung. At BMI 45")
 print("    FAO2 is a third of its starting value at one hour; at BMI 22 it is")
 print("    two thirds. A previous reply in this session said FRC stops")
 print("    mattering once oxygen is supplied. That was wrong.")
-print("    HEARD'S FIGURE IS 33.9 mL/min, SUSTAINED. Against it this model")
-print(f"    opens at {_co2rates[0]/33.9:.2f} of the rate and averages about")
-print("    0.40 over the hour, so it overstates how long apnoeic oxygenation")
-print("    lasts by something between 1.6x and 2.5x.")
+# HEARD'S 33.9 IS LUNG GAS, NOT OXYGEN -- he said so on 2026-09-26 and the
+# earlier write-up of this section had compared it against an oxygen mass.
+# His "(0.87)" is the alveolar oxygen fraction of TOTAL pressure:
+_FAO2_HEARD = (PB - PH2O - 40.0) / PB            # = 0.8855
+_HEARD_GAS = 30.0 / _FAO2_HEARD                  # = 33.88 mL of lung gas/min
+_HEARD_O2 = 30.0                                 # = the oxygen inside it
+print(f"    HEARD'S ARITHMETIC, CHECKED: 30 / {_FAO2_HEARD:.4f} = {_HEARD_GAS:.2f}")
+print(f"    mL of LUNG GAS per minute, and 1800 / {_FAO2_HEARD:.4f} = "
+      f"{1800/_FAO2_HEARD:.0f} mL")
+print("    of LUNG for an hour. His 33.9 and his 2,034 reproduce to the last")
+print("    digit. BOTH ARE VOLUMES OF ALVEOLAR GAS, not of oxygen: 2,034 mL")
+print("    is the FRC required, and the oxygen inside it is 1,800 mL.")
+print("    SO THE LIKE-FOR-LIKE COMPARISON IS AGAINST 30.0 mL O2/min, and an")
+print("    earlier version of this section wrongly used 33.9:")
+print(f"      model, minutes 2-10   {_co2rates[0]:>5.1f} mL O2/min   "
+      f"{_HEARD_O2/_co2rates[0]:.1f}x too slow")
+print(f"      model, 60-min mean     13.4 mL O2/min   "
+      f"{_HEARD_O2/13.4:.1f}x too slow")
+print(f"      model, 4-hour mean      6.0 mL O2/min   "
+      f"{_HEARD_O2/6.0:.1f}x too slow")
+print("    HIS RATE ON THIS MODEL'S OWN STORES, which is the clearest form:")
+for _b, _o in ((22.0, 2440), (34.5, 1279), (45.0, 975)):
+    print(f"      BMI {_b:>4.1f}  lung O2 {_o:>4d} mL  ->  {_o/_HEARD_O2:>5.1f} min")
+print("    An hour of apnoeic oxygenation is comfortable at BMI 22 and is")
+print("    ALREADY OVER at BMI 45. That is his point, in his own units.")
 print("    IT DOES NOT TERMINATE INSIDE 4 HOURS, and the rate collapse is")
 print("    why. BMI 22, 14400 s at dt=0.2, same conditions:")
 print("       hour   lung O2    FAO2   PaCO2    SpO2   loss over that hour")
