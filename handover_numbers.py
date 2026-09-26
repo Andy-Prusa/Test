@@ -34,6 +34,41 @@ DT = 0.05
 _fails = []
 
 
+# ---------------------------------------------------------------------------
+# THE RETIREMENT SWITCHES, hoisted here 2026-09-26 so that EVERY block below
+# can pin a historical number to the model that produced it.
+#
+# WHY THIS MATTERS MORE THAN IT LOOKS. On 2026-09-26 eleven checks in this file
+# were found failing, and the first guess -- that the closing-capacity redesign
+# of that morning had done it -- was wrong. Four shunt values turned out to have
+# been measured against an FRC form retired the PREVIOUS DAY, and a
+# desaturation time against that same form plus an older blood-gas cadence.
+# Neither had anything to do with closing capacity. A recorded number whose
+# model cannot be named is a number that cannot be argued with, which is the
+# Ellis-comparator failure in the docstring above, arriving by a new route.
+#
+# So: when a value here moves because the model was corrected, DO NOT retype
+# it. Pin the old one to the switch that reproduces it and add the new one
+# beside it. Both then stay checkable, and the diff says what changed.
+class _Retired(Patient):
+    """Closing capacity as it was before 2026-09-26: three unsourced constants."""
+
+    cc_legacy = True
+
+
+class _LegacyFrc(Patient):
+    """Anaesthetised FRC as it was before 2026-09-25: the exponential form."""
+
+    frc_legacy_exp = True
+
+
+class _PreBoth(Patient):
+    """Both of the above: the model as it stood at the 2026-09-22 ruling."""
+
+    cc_legacy = True
+    frc_legacy_exp = True
+
+
 def _forced_shunt(value):
     """Patient subclass whose baseline shunt is forced to `value`.
 
@@ -62,8 +97,9 @@ def check(what, got, want, tol, unit=""):
 def run(duration=360.0, obstructed=True, **kw):
     """One sealed (or patent) run at the Stock reference patient."""
     fgo2 = kw.pop('fgo2', 0.21 if obstructed else 1.0)
-    p = Patient(weight=kw.pop('weight', 70), height=kw.pop('height', 1.75),
-                age=kw.pop('age', 45), hb=kw.pop('hb', 15.0), **kw)
+    _cls = kw.pop('cls', Patient)
+    p = _cls(weight=kw.pop('weight', 70), height=kw.pop('height', 1.75),
+             age=kw.pop('age', 45), hb=kw.pop('hb', 15.0), **kw)
     ep = AirwayEpoch(duration, resistance=OBS if obstructed else 2.0, fgo2=fgo2)
     return simulate(p, [ep], dt=DT, stop_sao2=0.0)
 
@@ -2528,34 +2564,6 @@ _CH = 1.75
 def _buist_cc(age, tlc):
     """Buist & Ross 1973 combined regression, in mL, against a given TLC."""
     return tlc * (0.525 * age + 14.348) / 100.0
-
-
-class _Retired(Patient):
-    """The closing-capacity curve retired on 2026-09-26.
-
-    Pinned here, rather than deleted, because every number this block
-    recorded before the change was measured against it. A historical value
-    that cannot be reproduced is worth nothing -- the Ellis comparator rows
-    are the cautionary example -- so the switch stays in apnoea_core.py and
-    the old numbers keep their checks.
-    """
-
-    cc_legacy = True
-
-
-class _LegacyFrc(Patient):
-    """The EXPONENTIAL lung-volume form retired on 2026-09-25.
-
-    Needed below because several numbers this file recorded turn out to have
-    been measured against it, not against anything to do with CC.
-    """
-
-    frc_legacy_exp = True
-
-
-class _PreBoth(Patient):
-    cc_legacy = True
-    frc_legacy_exp = True
 
 
 def _cp(age, bmi=22.0, cls=Patient):
