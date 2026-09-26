@@ -516,7 +516,7 @@ def test_hardcoded_constants():
         # company on that ruling before a human did, which is exactly
         # what a run-and-compare cannot see because every scenario uses
         # the defaults.
-        ("k_frc_bmi", pt.k_frc_bmi, 0.0012, "model.js:105 P.kFrcBmi, default 0.0012"),
+        ("k_frc_bmi", pt.k_frc_bmi, 0.01074, "model.js:105 P.kFrcBmi, default 0.01074"),
         ("vo2_drop_per_kg", pt.vo2_drop_per_kg, 0.27, "model.js:68 -0.27*weight"),
         ("co_drop_frac", pt.co_drop_frac, 0.25, "model.js:69 *0.75"),
         ("rq", pt.rq, 0.8, "model.js:78 vco2m=vo2*0.8"),

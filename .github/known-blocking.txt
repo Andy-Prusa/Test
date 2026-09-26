@@ -23,7 +23,13 @@ ICSM jet, PaCO2 at cricothyroidotomy
 # gives tilt both routes is an open question and the four trials cannot
 # separate them. Recorded, not compensated.
 
-tilt, BMI 35 at 30 deg
+tilt, BMI 43 at 90 deg [Altermatt's own configuration]
+
+# RENAMED 2026-09-26. Was "tilt, BMI 35 at 30 deg". Altermatt 2005 was read
+# at source that day and the row was testing a configuration the paper never
+# used: he measured BMI 43 at 90 degrees, tilted during PRE-OXYGENATION ONLY
+# with both groups supine for the apnoea. The name changes because the test
+# changed; the row stays blocking because it has not been shown to pass.
 
 # REMOVED 2026-09-23, because it now PASSES: 'Heard control, time to SpO2<95%'
 # went 319.8 -> 310.2 s against a band of 244-314, fixed by the same low-V/Q

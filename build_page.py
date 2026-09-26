@@ -407,7 +407,7 @@ const STARTS=[[0,'From induction'],[120,'After mask ventilation fails'],
  [160,'After the LMA fails'],[280,'At laryngoscopy'],
  [370,'After failed intubation attempts']];
 
-const BASE={age:45,lmaOpens:true,frcRef:2500,frcDrop:400,tiltDeg:25,
+const BASE={age:45,lmaOpens:true,frcRef:2860,frcDrop:400,tiltDeg:25,
  ccAt20:1800,ccPerYear:20,ccPerBmi:45,ccK:1.5,vo2Ref:250,coRef:5,crs:75,
  vArt:1.0,vVen:2.0,vTisO2:1.5,feo2:0.87,rv:1100,kRvBmi:0.0198,pCollapse:-149.5461,nVq:80};
 const P=Object.assign({},BASE);

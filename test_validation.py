@@ -468,8 +468,28 @@ def test_positioning_trials():
         return (out[1] / out[0] - 1) * 100
     check("tilt, non-obese 20 deg", gain(70, 1.75, 15, 20, 95), 15, 40, " %",
           "clinical; Lane +36%, Ramkumar +24%")
-    check("tilt, BMI 35 at 30 deg", gain(95, 1.65, 14, 30, 90), 20, 45, " %",
-          "clinical; Altermatt +32%")
+    # CORRECTED 2026-09-26 AGAINST THE PAPER, read at source that day. This
+    # row tested 30 degrees at BMI 35. ALTERMATT MEASURED NONE OF THAT:
+    #   BMI 43 (5) and 43 (6), 116 kg, 1.63/1.66 m -- not BMI 35
+    #   SITTING, "as close as possible to 90 degrees head up" -- not 30
+    #   and the tilt was applied DURING PRE-OXYGENATION ONLY: "Group 1
+    #   patients were then returned to the initial supine position", so BOTH
+    #   GROUPS WERE SUPINE FOR THE APNOEA
+    # The +32% arithmetic is right (214/162 from the abstract; the Results
+    # text says 216/164, and the paper is inconsistent with itself there).
+    # Everything it was being compared against was not.
+    #
+    # THE PROTOCOL STILL CANNOT BE REPRODUCED. This model's FRC is fixed for
+    # a run, so it cannot be tilted for pre-oxygenation and flat for the
+    # apnoea. Tilting throughout gives MORE benefit than Altermatt's
+    # protocol, so the model's number should EXCEED his +32% if the model is
+    # otherwise right, and the band is set as a lower bound rather than a
+    # bracket. That is a weaker test than it looks and is labelled so.
+    check("tilt, BMI 43 at 90 deg [Altermatt's own configuration]",
+          gain(116, 1.63, 14, 90, 90), 32, 90, " %",
+          "clinical; Altermatt 214 (28) vs 162 (38) s = +32%, but tilted for "
+          "PRE-OXYGENATION ONLY -- both groups supine for the apnoea, which "
+          "this model cannot express, so +32% is a FLOOR not a target")
     check("tilt, BMI 44 at 25 deg", gain(120, 1.65, 14, 25, 92), 15, 40, " %",
           "clinical; Dixon +32%")
 

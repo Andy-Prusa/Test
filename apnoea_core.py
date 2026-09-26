@@ -218,7 +218,9 @@ class Patient:
     # The obese FRC VALUES still agree with Pelosi's helium to 11% across
     # BMI 22-50 -- but above BMI 37 that agreement is the FLOOR's doing and
     # not this parameter's. NOT CHANGED: it needs a ruling.
-    frc_ref: float = 2500.0      # mL supine awake at BMI 22, height 1.75
+    # 2500 -> 2860, RULED 2026-09-26 with k_frc_bmi above. Solved jointly
+    # from Watson & Pride's two supine cohorts; see k_frc_bmi.
+    frc_ref: float = 2860.0      # mL supine awake at BMI 22, height 1.75
     # RE-ANCHORED ON DAMIA 1988, RULED 2026-09-26. Was 0.0417.
     #
     # Damia measured AWAKE SUPINE FRC by helium dilution in 18 morbidly obese
@@ -252,7 +254,35 @@ class Patient:
     # seated at the same BMI would make supine EXCEED seated. Ruled in Damia's
     # favour 2026-09-26; Watson & Pride would break the tie and has not been
     # obtained.
-    k_frc_bmi: float = 0.0012    # exponential decline of FRC per BMI unit
+    # RE-SOLVED ON WATSON & PRIDE 2005, RULED 2026-09-26, and this PARTIALLY
+    # SUPERSEDES the Damia re-anchor taken earlier the same day (0.0417 ->
+    # 0.0012 -> 0.01074). Both rulings were right on their own evidence and
+    # the reason they differ is worth keeping.
+    #
+    # Damia measured SUPINE FRC in 18 patients spanning BMI 37 to 67 and the
+    # fraction of predicted is FLAT across that range (t = -0.20 on 16 df).
+    # Watson & Pride measured SITTING AND SUPINE IN THE SAME SUBJECTS, two
+    # cohorts by one method in one paper, at BMI 22.5 and 43.4 -- and supine
+    # FRC FALLS, 2690 mL to 2220 mL. Neither contradicts the other: the curve
+    # falls between BMI 22 and about 43 and is flat above it. That is an
+    # OFFSET form, the same shape Jones and Pelosi both publish.
+    #
+    # A SINGLE EXPONENTIAL CANNOT DO BOTH, and this model's awake curve is a
+    # single exponential with no offset. Solving its own form for the two
+    # Watson & Pride points gives k = 0.01074 with frc_ref 2860 mL, exact on
+    # both. The cost is that it keeps decaying past BMI 43 where Damia says
+    # it should not: at BMI 48.4 it gives 2054 against Damia's 2180 (-5.8%)
+    # and at 53.2 it gives 1951 against 2250 (-13.3%). Damia was NOT used in
+    # the fit, so those are an independent check, and they are the residual
+    # this form cannot remove.
+    #
+    # WHY THIS PAIR AND NOT DAMIA'S FLATNESS: Watson & Pride measure BOTH
+    # POSTURES IN THE SAME SUBJECTS, which is the only direct measurement of
+    # the quantity this parameter carries, and they span the lean end where
+    # Damia has no patients at all. Giving the awake curve an offset would
+    # honour both and is the right next change; it is not taken here because
+    # it is a structural change and needs its own ruling.
+    k_frc_bmi: float = 0.01074   # exponential decline of FRC per BMI unit
     frc_drop: float = 400.0      # mL lost at induction (ICSM 300-500)
     # Bed tilt, degrees. Positive is head-up / reverse Trendelenburg. Head-up
     # lifts the abdominal contents off the diaphragm, so it raises FRC and the
