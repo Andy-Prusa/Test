@@ -417,7 +417,17 @@ function derive(P){
   const _at22=_base-Math.min(P.frcDrop,0.25*_base);
   const _pel=_at22*_pf(bmi)/_pf(22);
   const frc=Math.max(rvEff,Math.min(_cap,_pel)*(P.frcScale||1));
-  const cc=(P.ccAt20+P.ccPerYear*(P.age-20)+P.ccPerBmi*Math.max(0,bmi-25))*hf*(P.ccScale||1);
+  // RULED 2026-09-26: closing capacity is BUIST & ROSS ON A PREDICTED TLC.
+  //   CC/TLC (per cent) = 0.525*age + 14.348   Buist & Ross 1973, combined
+  //   TLC = 7.99*height(m) - 7.08 litres       Quanjer 1993 Table 6, men
+  // The height factor is gone because Quanjer's TLC already carries height.
+  // ccTlcBmi applies Jones & Nzekwu's -0.50 %predicted per BMI unit, since
+  // Quanjer's TLC has no weight term and the obese lung is measurably
+  // smaller. Mirrors apnoea_core.py closing_capacity().
+  const _ccTlcB=(P.ccTlcBmi===false)?1:(98.7-0.50*(bmi-22.5))/98.7;
+  const _ccFrac=((P.ccBuistSlope===undefined?0.525:P.ccBuistSlope)*P.age
+                +(P.ccBuistIntercept===undefined?14.348:P.ccBuistIntercept))/100;
+  const cc=(7.99*P.height-7.08)*1000*_ccTlcB*_ccFrac*(P.ccScale||1);
   const vo2=P.vo2Ref*Math.pow(abw/70,0.75)*(P.bmrScale||1)-0.27*P.weight;
   // The circulation's answer to anaemia. Exactly 1 at and above the
   // threshold, so a normal patient is untouched by it. Anchors and the fit

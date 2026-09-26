@@ -540,6 +540,21 @@ class Patient:
     # TLC the obese shunt FALLS -- Perilli 12.53 -> 9.11%, Reinius 11.47 ->
     # 9.31%, Pelosi BMI 45 12.09 -> 10.22% -- so it moves every benchmark and
     # needs a ruling. See handover_numbers.py, which now regenerates all of it.
+    # BUIST & ROSS ON A PREDICTED TLC -- ruled 2026-09-26. See
+    # closing_capacity(). These two are the published regression, not a fit:
+    #     CC/TLC (per cent) = 0.525 * age + 14.348 +- 4.34
+    cc_buist_slope: float = 0.525      # per cent of TLC per year of age
+    cc_buist_intercept: float = 14.348  # per cent of TLC at age 0
+    cc_tlc_bmi: bool = True            # apply Jones's TLC-vs-BMI correction
+    # RETIRED 2026-09-26, kept only so cc_legacy=True can reproduce the old
+    # curve for the cost table. cc_per_bmi in particular had NO support: both
+    # Milic-Emili and BJA Education say obesity does not raise closing
+    # capacity, and it is now gone rather than re-fitted.
+    # NOT a dataclass field, deliberately: an annotated field's default is
+    # baked into __init__, so a subclass setting it is silently overwritten.
+    # That cost a measurement today. As a plain class attribute a subclass CAN
+    # flip it, which is how variant_cost.py reaches the retired curve.
+    cc_legacy = False
     cc_at_20: float = 1800.0
     cc_per_year: float = 20.0
     cc_per_bmi: float = 45.0
@@ -992,10 +1007,56 @@ class Patient:
         pel = at22 * self._pelosi_frc(self.bmi()) / self._pelosi_frc(22.0)
         return max(self.rv_eff(), min(cap, pel))
 
+    @staticmethod
+    def quanjer_tlc(height):
+        """Predicted total lung capacity, litres. Quanjer 1993 Table 6, MEN.
+
+        TLC = 7.99H - 7.08, H in metres, RSD 0.70. Read at source 2026-09-25.
+        No age term, which Gutierrez 2004 independently agrees with.
+        """
+        return 7.99 * height - 7.08
+
     def closing_capacity(self):
-        return (self.cc_at_20
-                + self.cc_per_year * (self.age - 20.0)
-                + self.cc_per_bmi * max(0.0, self.bmi() - 25.0)) * self.height_factor()
+        """The lung volume below which airways start to shut.
+
+        RULED 2026-09-26: this is now BUIST & ROSS ON A PREDICTED TLC, which
+        is what the source actually says, instead of three constants that
+        disagreed with it.
+
+            CC/TLC (per cent) = 0.525 * age + 14.348 +- 4.34
+                Buist AS, Ross BB, Am Rev Respir Dis 1973;107:744-752,
+                read at source. Their COMBINED regression (men and women).
+            TLC = 7.99 * height(m) - 7.08 litres
+                Quanjer 1993 Table 6, men. The model is male by ruling.
+
+        WHAT THIS RETIRES. cc_at_20, cc_per_year and cc_per_bmi were unsourced
+        VALUES that disagreed with a source this repository holds. cc_per_bmi
+        goes entirely, and that is the point rather than a side effect: BOTH
+        Milic-Emili AND BJA Education say closing capacity is not raised by
+        obesity, and a term with no support is gone rather than re-fitted.
+        Obesity now reaches closure the way the physiology says it does --
+        by lowering FRC toward an unchanged closing capacity.
+
+        THE BMI TERM ON TLC IS A SEPARATE QUESTION, and is a switch rather
+        than an assumption. Quanjer's TLC has NO weight term, but Jones &
+        Nzekwu measured TLC falling 0.50 per cent of predicted per BMI unit,
+        so a Quanjer TLC overestimates the obese lung -- +11.2% at BMI 40.
+        cc_tlc_bmi carries that correction; it defaults ON because leaving it
+        off means knowingly using a TLC the measurement contradicts.
+        """
+        if self.cc_legacy:
+            # The retired form, kept ONLY so variant_cost.py can regenerate
+            # the table this ruling was made on.
+            return (self.cc_at_20
+                    + self.cc_per_year * (self.age - 20.0)
+                    + self.cc_per_bmi * max(0.0, self.bmi() - 25.0)) * self.height_factor()
+        tlc = self.quanjer_tlc(self.height) * 1000.0
+        if self.cc_tlc_bmi:
+            # Jones & Nzekwu, Fig 3: -0.50 %predicted per BMI unit, anchored
+            # at their 20-25 group (mean BMI 22.5, TLC 98.7% of predicted).
+            tlc *= (98.7 - 0.50 * (self.bmi() - 22.5)) / 98.7
+        frac = (self.cc_buist_slope * self.age + self.cc_buist_intercept) / 100.0
+        return tlc * frac
 
     def vo2_anaes(self):
         # metabolic rate on adjusted body weight; cardiac output on total
