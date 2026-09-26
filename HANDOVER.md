@@ -42,7 +42,22 @@ compensated neither way.
 
 **It costs nothing in the suite.** Two full runs, 38 checks each: **both
 columns 34 pass, 2 fail, 2 worse — the same four, at the same values.** Only 13
-of 38 move at all. Two not to call clean: `tilt, BMI 35 at 30°` was already
+of 38 move at all.
+
+> **Regenerating this.** These are suite results, not `handover_numbers.py`
+> checks — a full run is 15–30 minutes, which is why `variant_cost.py` is kept
+> out of both the hook and `handover_numbers.py`. Three commands reproduce the
+> whole comparison from scratch:
+>
+> ```
+> python3 variant_cost.py cc_legacy > retired.out
+> python3 test_validation.py        > adopted.out
+> python3 variant_cost.py --diff retired.out adopted.out
+> ```
+>
+> The per-row figures below come out of that third command. Nothing here was
+> typed from memory, and nothing here needs a file that is not in the
+> repository. Two not to call clean: `tilt, BMI 35 at 30°` was already
 failing and gets 0.2 worse (50.8 → 51.0 against a range ending at 45), and
 `Stock obstructed, PaO2 at 5 min` now sits 2.1 mmHg above its floor having
 fallen 17.
@@ -57,13 +72,38 @@ lean rises; both directions were written down before the change.
 of **4.60**; `ICSM jet, PaCO2` reads **53.8** against **71.70**. Both are
 `[WORSE]` — the suite's most serious verdict.
 
-**They are not from this change, and not from the Pelosi FRC adoption either.**
-`variant_cost.py pre_pelosi` undoes *both* retirements at once, putting the
-model back where it stood at the 2026-09-22 ruling that set those baselines,
-and both rows are still there at 2.0 and 54.1. Every suite output on disk
-carries them, back to 2026-09-24 08:50, and they are flat — nothing in four
-rulings has moved either by more than 0.3. One change between 22 and 24
-September did it. **Being chased; not yet narrowed.**
+**They are not from this change, from the closing-capacity redesign, or from
+the Pelosi FRC adoption.** Measured directly on the configuration
+`handover_numbers.py` grades, all four combinations of the two retirement
+switches agree:
+
+| model | obstructed PaCO₂ slope | a-A gap growth |
+|---|---|---|
+| shipped | 1.94 mmHg/min | −0.13 |
+| retired closing capacity only | 1.95 | −0.11 |
+| legacy exponential FRC only | 1.94 | −0.12 |
+| **both — the 2026-09-22 model** | **1.96** | **−0.10** |
+
+`HANDOVER` records 4.60 and +2.13 for that same configuration.
+
+**And a bisect across the whole window came back negative, which is the larger
+finding.** Eight full suite runs in eight git worktrees — every commit that
+touches `apnoea_core.py` between the 22 September ruling and the oldest
+surviving suite output — all give 1.9–2.0 and 54.1, *including `4579c4e`
+itself, the commit whose ruling recorded those rows as 4.60 and 71.70*. Nothing
+in the window moved them, because they were already here. **Those two
+`KNOWN_OPEN` values have never been reproducible from the model they were
+supposedly measured from**, so the suite has been reporting `[WORSE]` since the
+day the baseline was written. `c12b22f`, the parent of that commit, is the last
+place the 4.60 could have come from.
+
+> **Regenerating this.** The four-switch table is in `handover_numbers.py`. The
+> bisect is not — it is a measurement across git history, not of the working
+> tree — so the procedure is recorded instead: `git worktree add --detach` each
+> commit from `git log --reverse 4579c4e..1288632 -- apnoea_core.py`, run
+> `test_validation.py` in each, and read the two rows. `test_validation.py` is
+> byte-identical across that whole window, which is what makes the comparison
+> clean.
 
 **Why two days passed without anyone noticing** — both gates are deaf, each for
 a reason that looked sound alone:

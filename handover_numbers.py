@@ -128,6 +128,28 @@ def gap(r, t):
 
 
 check("obstructed PaCO2 slope 60-300 s", slope(ro), 4.60, 0.10, " mmHg/min")
+print("    ^ THIS 4.60 IS NOT REPRODUCIBLE BY ANY VERSION OF THIS MODEL, and")
+print("    the next four rows are the evidence. Chased 2026-09-26 because")
+print("    test_validation.py had been reporting the same row [WORSE] against")
+print("    a KNOWN_OPEN baseline of 4.60 for four days. Every combination of")
+print("    the two retirement switches -- including BOTH, which is the model")
+print("    as it stood at the 2026-09-22 ruling that RECORDED the 4.60 --")
+print("    gives about 1.95, and the a-A gap growth is NEGATIVE in all four")
+print("    where HANDOVER records +2.13. A bisect across every commit that")
+print("    touches apnoea_core.py in that window agrees: eight suite runs in")
+print("    eight worktrees, all 1.9-2.0, including the baseline commit itself.")
+print("    So this is not drift. Either the value was taken from a model that")
+print("    predates the ruling it was recorded with, or from a configuration")
+print("    nobody wrote down -- which is the Ellis-comparator failure again.")
+for _cls, _nm, _ws, _wg in ((Patient, "shipped", 1.94, -0.13),
+                            (_Retired, "retired CC only", 1.95, -0.11),
+                            (_LegacyFrc, "legacy exponential FRC only", 1.94, -0.12),
+                            (_PreBoth, "BOTH -- the 2026-09-22 model", 1.96, -0.10)):
+    _r = run(cls=_cls)
+    check(f"  slope, {_nm}", slope(_r), _ws, 0.02, " mmHg/min")
+    check(f"  a-A gap growth, {_nm}",
+          ((at(_r, 'paco2', 300) - at(_r, 'paco2_alv', 300))
+           - (at(_r, 'paco2', 60) - at(_r, 'paco2_alv', 60))) / 4, _wg, 0.02)
 check("obstructed PACO2 slope", (at(ro, 'paco2_alv', 300) - at(ro, 'paco2_alv', 60)) / 4, 2.61, 0.10)
 check("obstructed PvCO2 slope", (at(ro, 'pvco2', 300) - at(ro, 'pvco2', 60)) / 4, 1.80, 0.10)
 check("patent PaCO2 slope 60-300 s", slope(rp), 1.68, 0.10, " mmHg/min")
