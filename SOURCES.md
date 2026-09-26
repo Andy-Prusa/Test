@@ -3452,7 +3452,11 @@ primary source, not a search.** The first two are the ones that matter most:
 - [x] **Perilli V, et al.** *Obes Surg* 2003;13(4):605-9. **OBTAINED AND READ
       2026-09-24** — see its own section above. It supplies the tilt cost the
       model does not pay: cardiac output falls 18% at 30° head-up
-- [ ] **Perilli V, Sollazzi L, Bozza P, Modesti C, Chierichini A, Tacchino RM,
+- [x] **OBTAINED AND READ 2026-09-26.** It does NOT carry the lung volumes it
+      was wanted for -- the authors write "a limitation of our study might be
+      the lack of the direct measure of FRC". It DOES carry Ctot 32 (5)
+      mL/cmH2O at BMI 46.7 and +28% at 30 deg head-up.
+- [x] **Perilli V, Sollazzi L, Bozza P, Modesti C, Chierichini A, Tacchino RM,
       Ranieri R.** The effects of the reverse Trendelenburg position on
       respiratory mechanics and blood gases in morbidly obese patients during
       bariatric surgery. *Anesth Analg* 2000;91(6):1520-5. The EARLIER Perilli,
@@ -3490,7 +3494,10 @@ primary source, not a search.** The first two are the ones that matter most:
       us falling out of that bracket above BMI 37; it puts a SECOND
       measurement on `k_rv_bmi`, which had one; and it quantifies the obese
       TLC bias in the open Buist & Ross ruling
-- [ ] **Gunnarsson L, Tokics L, Gustavsson H, Hedenstierna G.** Influence of
+- [x] **OBTAINED AND READ IN FULL 2026-09-26** -- the paper, not the Survey of
+      Anesthesiology condensation refused on 2026-09-25. n=45 by MIGET: shunt
+      4.8 (4.1)%, log SD Q 0.67 awake to 1.04 anaesthetised, CO 6.3 -> 5.3.
+- [x] **Gunnarsson L, Tokics L, Gustavsson H, Hedenstierna G.** Influence of
       age on atelectasis formation and gas exchange impairment during general
       anaesthesia. *Br J Anaesth* 1991;66:423-432. **A CONDENSATION IS HELD,
       NOT THE PAPER** (Survey of Anesthesiology digest, uploaded 2026-09-25).
@@ -3514,7 +3521,11 @@ primary source, not a search.** The first two are the ones that matter most:
       its 35 references; absence there was never evidence.
       The nine-author list above is the paper's own, replacing Jones's
       `et al.`
-- [ ] **Watson RA, Pride NB.** Postural changes in lung volumes and
+- [x] **OBTAINED AND READ 2026-09-26**, having been ruled unavailable on
+      2026-09-25. It REVERSES the posture claim: FRC falls 740 mL supine in
+      the lean (P<0.0001) and only 70 mL in the obese (P = ns). AWAKE
+      subjects -- see tilt_gain_lean for why that matters.
+- [x] **Watson RA, Pride NB.** Postural changes in lung volumes and
       respiratory resistance in subjects with obesity. *J Appl Physiol*
       2005;98:512-517. Jones's reference 10.
       **RULED UNAVAILABLE 2026-09-25 — it cannot be obtained.** It stays on
@@ -3547,7 +3558,9 @@ primary source, not a search.** The first two are the ones that matter most:
       21. Bears on `crs` (respiratory compliance, how stiff the lungs and
       chest are), which is currently Rothen's value with NO obesity term at
       all
-- [ ] **Damia G, et al.** Perioperative changes in functional residual capacity
+- [x] **OBTAINED AND READ 2026-09-26.** n=30, FRC falls 51% on induction and
+      to 0.84 L BELOW the awake RV. Re-anchored k_frc_bmi.
+- [x] **Damia G, et al.** Perioperative changes in functional residual capacity
       in morbidly obese patients. *Br J Anaesth* 1988;60(5):574-8
 - [ ] **Berthoud MC, Peacock JE, Reilly CS.** Effectiveness of preoxygenation
       in morbidly obese patients. *Br J Anaesth* 1991;67(4):464-6. Bears
