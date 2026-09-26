@@ -53,6 +53,13 @@ VARIANTS = {
     # The Jones TLC-vs-BMI correction, ruled OFF 2026-09-26. This one is a
     # DATACLASS FIELD, not a plain class attribute -- see _variant_class.
     'cc_tlcbmi': {'cc_tlc_bmi': True},
+    # BOTH retirements undone at once: the exponential FRC form AND the
+    # three-constant closing capacity. This is the model as it stood at the
+    # 2026-09-22 ruling that set the KNOWN_OPEN baselines, so it is the run
+    # that says whether the two [WORSE] regressions -- Stock obstructed
+    # 1-5 min slope 4.60 -> 1.94, ICSM jet PaCO2 71.70 -> 53.81 -- came from
+    # the Pelosi FRC adoption or from something else again.
+    'pre_pelosi': {'frc_legacy_exp': True, 'cc_legacy': True},
 }
 
 
