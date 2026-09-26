@@ -58,6 +58,14 @@ BENCHMARK_SOURCES = [
      "limitation of our study might be the lack of the direct measure of "
      "FRC\". What it does carry is Ctot MEASURED in a BMI 46.7 cohort, "
      "which `crs` currently models as BMI-independent"),
+    ("Damia 1988, *Br J Anaesth* 60:574-8 (n=30)",
+     "anaesthetised FRC in morbid obesity, and the posture claim",
+     "2026-09-26",
+     "read at source. It FALSIFIES the model's largest untested claim -- "
+     "that lying flat costs a BMI 50 patient 63% of FRC -- by measuring "
+     "awake SUPINE FRC at BMI 53.2 as 2250 mL against Jones's SEATED 2125 "
+     "mL at BMI 50. It also disagrees with Pelosi 1998 on anaesthetised FRC "
+     "by a factor of two at the same BMI, same method, same conditions"),
 ]
 
 

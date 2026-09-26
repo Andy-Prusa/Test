@@ -936,12 +936,46 @@ class Patient:
 
     @staticmethod
     def _pelosi_frc(bmi):
-        """Pelosi 1998's measured helium regression, litres, supine anaesthetised.
+        """Anaesthetised supine FRC shape, from TWO measurements averaged.
 
-        FRC = 11.97 exp(-0.096 BMI) + 0.46, r 0.86, n = 24 over BMI 20-66.
-        Quoted in SOURCES.md and used here only as a ratio to itself.
+        Pelosi 1998:  FRC = 11.97 exp(-0.096 BMI) + 0.46 L, r 0.86, n = 24
+        over BMI 20-66, helium dilution, paralysed, supine, pre-incision.
+
+        RULED 2026-09-26: THE OFFSET IS NOW THE MEAN OF PELOSI AND DAMIA.
+        Damia 1988 (Br J Anaesth 60:574-8, read at source 2026-09-26, n = 30)
+        measured THE SAME QUANTITY BY THE SAME METHOD under the same
+        conditions and got roughly twice as much:
+
+            BMI 48.4   Pelosi 575 mL    Damia  930 mL   1.62x
+            BMI 53.2   Pelosi 532 mL    Damia 1090 mL   2.05x
+
+        Two primary sources, no procedural difference to hang it on, and the
+        model had been resting on one of them because the other had not been
+        obtained. Averaging them is not a fit to a benchmark -- neither
+        source is a benchmark, no benchmark was consulted in choosing it, and
+        the arithmetic below is fixed by the two papers with nothing free.
+
+        WHERE THE DISAGREEMENT LIVES: in the ASYMPTOTE. Solving Pelosi's own
+        functional form for the offset that passes through each Damia cohort
+        gives C = 0.8151 and 1.0175 L, mean 0.9163, against Pelosi's 0.46.
+        The exponential term is 115 mL at BMI 48 and falls; essentially all
+        of the gap is the floor the curve decays to. So the correction is ONE
+        NUMBER and introduces no new parameter:
+
+            C = (0.4600 + 0.9163) / 2 = 0.6882 L
+
+        AND THE LEAN END DOES NOT MOVE, by construction. frc_anaes() uses
+        this only as a RATIO to its own value at BMI 22, so the ratio at 22
+        is 1.0000 before and after. What ships is a FLATTER curve:
+
+            BMI      ratio before   ratio after
+             30         0.5932        0.6366
+             40         0.3759        0.4425
+             53.2       0.2790        0.3560     (+27.6%)
+
+        Regenerate the derivation with handover_numbers.py.
         """
-        return 11.97 * np.exp(-0.096 * bmi) + 0.46
+        return 11.97 * np.exp(-0.096 * bmi) + 0.6882
 
     def k_rv_bmi_eff(self):
         """How fast residual volume falls with BMI, and WHOSE measurement.

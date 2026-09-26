@@ -103,7 +103,11 @@ function derive(P){
   // Mirrors apnoea_core.py frc_anaes() -- read its docstring for why the
   // shape goes here and not on frcAwake, and why the cap is needed below
   // BMI 22 (Pelosi is steeper, and would otherwise have anaesthesia ADD gas).
-  const _pf=b=>11.97*Math.exp(-0.096*b)+0.46;
+  // RULED 2026-09-26: offset is the MEAN of Pelosi 1998 (0.46) and Damia
+  // 1988 (0.9163, solved from his two measured cohorts through Pelosi's
+  // own form). Used only as a ratio to BMI 22, so the lean end is
+  // unchanged and the curve simply gets flatter. Mirrors apnoea_core.py.
+  const _pf=b=>11.97*Math.exp(-0.096*b)+0.6882;
   const _cap=frcAwake-Math.min(P.frcDrop,0.25*frcAwake);
   const _base=P.frcRef*hf*tiltF;
   const _at22=_base-Math.min(P.frcDrop,0.25*_base);
