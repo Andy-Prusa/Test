@@ -80,17 +80,37 @@ Against his 30.0 mL of O2 per minute, sustained:
 An hour of apnoeic oxygenation is comfortable at BMI 22 and is **already
 over** at BMI 45.
 
-**This is ONE defect with the Stock failure, not two.** Stock 1989 measured
-3.4 mmHg/min under obstruction; the suite has us at 2.0, KNOWN_OPEN since
-2026-09-22. Over 4 h here PaCO2 averages 0.92 mmHg/min. Same channel, two
-symptoms. **Fixing the CO2 channel is what makes the oxygenated case
+**This is ONE defect with the Stock failure, not two**, and two independent
+published rates now say so:
+
+| source | regime | arterial CO2 rise |
+|---|---|---|
+| Stock 1989, **read at source** | obstructed | 3.4 mmHg/min |
+| Frumin 1959 via O'Loughlin 2020, n=8 | **patent, on oxygen** | 3.00 mmHg/min |
+| **this model, 4-hour mean** | patent, on oxygen | **0.92 mmHg/min** |
+
+3.7x slow against Stock, **3.3x against Frumin** — and Frumin is the one in
+the same regime as the oxygenated case above. The suite already has us at 2.0
+on Stock, KNOWN_OPEN since 2026-09-22. Same channel, two symptoms. **Fixing the CO2 channel is what makes the oxygenated case
 terminate; a compensating term would break Stock further while appearing to
 help here.**
 
-**Two retractions, both this session's own errors, both recorded in commits.**
+**Three retractions, all this session's own errors, all recorded in commits.**
 A claimed NaN at 4 h was `stop_sao2` passed as a percentage (it takes a
-fraction) — the model is finite in every channel to 14400 s. And a claimed
-Jones/Damia contradiction dissolved when Watson & Pride were read.
+fraction) — the model is finite in every channel to 14400 s. A claimed
+Jones/Damia contradiction dissolved when Watson & Pride were read. And
+"Frumin is not in this repository" was asserted from memory and is **false**:
+`SOURCES.md` §2b has carried his page 789 since 2026-09-21. What is genuinely
+unheld is **pages 790-798**, and with them the pH 6.72, the PaCO2 250 and the
+53 minutes — none of which may be cited until they arrive.
+
+**One configuration fact from the held page, load-bearing for anyone modelling
+him:** denitrogenation was 100% oxygen for **at least 30 minutes at 8 L/min or
+more** through a cuffed tube. Frumin's unwashed low-V/Q fraction — lung whose
+airway shut before preoxygenation began and which never sees the oxygen —
+should therefore be set near **zero**, not at the 28% Reinius measured after a
+clinical preoxygenation. His 18-55 min is the **surgical window, not an
+endpoint**; nothing held says why any case ended.
 
 **Regenerated 2026-09-26:** `check_sources.py --check` ok, `build_page.py
 --check` up to date, `test_validation.py` **4 blocking / 2 known-open, the
