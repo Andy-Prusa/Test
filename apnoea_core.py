@@ -254,6 +254,46 @@ class Patient:
     # seated at the same BMI would make supine EXCEED seated. Ruled in Damia's
     # favour 2026-09-26; Watson & Pride would break the tie and has not been
     # obtained.
+    # RE-SOLVED ON WATSON & PRIDE 2005, RULED 2026-09-26, and this PARTIALLY
+    # SUPERSEDES the Damia re-anchor taken earlier the same day (0.0417 ->
+    # 0.0012 -> 0.01074). Both rulings were right on their own evidence and
+    # the reason they differ is worth keeping.
+    #
+    # Damia measured SUPINE FRC in 18 patients spanning BMI 37 to 67 and the
+    # fraction of predicted is FLAT across that range (t = -0.20 on 16 df).
+    # Watson & Pride measured SITTING AND SUPINE IN THE SAME SUBJECTS, two
+    # cohorts by one method in one paper, at BMI 22.5 and 43.4 -- and supine
+    # FRC FALLS, 2690 mL to 2220 mL. Neither contradicts the other: the curve
+    # falls between BMI 22 and about 43 and is flat above it. That is an
+    # OFFSET form, the same shape Jones and Pelosi both publish.
+    #
+    # A SINGLE EXPONENTIAL CANNOT DO BOTH, and this model's awake curve is a
+    # single exponential with no offset. Solving its own form for the two
+    # Watson & Pride points gives k = 0.01074 with frc_ref 2860 mL, exact on
+    # both. The cost is that it keeps decaying past BMI 43 where Damia says
+    # it should not: at BMI 48.4 it gives 2054 against Damia's 2180 (-5.8%)
+    # and at 53.2 it gives 1951 against 2250 (-13.3%). Damia was NOT used in
+    # the fit, so those are an independent check, and they are the residual
+    # this form cannot remove.
+    #
+    # WHY THIS PAIR AND NOT DAMIA'S FLATNESS: Watson & Pride measure BOTH
+    # POSTURES IN THE SAME SUBJECTS, which is the only direct measurement of
+    # the quantity this parameter carries, and they span the lean end where
+    # Damia has no patients at all. Giving the awake curve an offset would
+    # honour both and is the right next change; it is not taken here because
+    # it is a structural change and needs its own ruling.
+    k_frc_bmi: float = 0.01074   # exponential decline of FRC per BMI unit
+    frc_drop: float = 400.0      # mL lost at induction (ICSM 300-500)
+    # Bed tilt, degrees. Positive is head-up / reverse Trendelenburg. Head-up
+    # lifts the abdominal contents off the diaphragm, so it raises FRC and the
+    # gain is larger the more abdomen there is to lift. Calibrated against
+    # four randomised trials, all of which found roughly +30% safe apnoea time
+    # for 20-25 degrees:
+    #   Lane 2005, non-obese, 20 deg:      283 -> 386 s to SpO2 95%
+    #   Ramkumar 2011, non-obese, 20 deg:  364 -> 452 s
+    #   Altermatt 2005, BMI >35, sitting:  162 -> 214 s to SpO2 90%
+    #   Dixon 2005, BMI >40, 25 deg:       +45 s, and 23% higher oxygen tension
+    tilt_deg: float = 0.0        # 0 supine, 25 typical ramped, negative = head down
     # REVERTED 2026-09-26 to 0.0130 and +0.00015, THE SAME DAY THEY WERE
     # CHANGED. Both the change and the reversal are recorded because what was
     # learned in between is the most useful thing known about this parameter,
