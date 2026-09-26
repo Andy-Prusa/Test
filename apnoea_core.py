@@ -294,8 +294,41 @@ class Patient:
     #   Altermatt 2005, BMI >35, sitting:  162 -> 214 s to SpO2 90%
     #   Dixon 2005, BMI >40, 25 deg:       +45 s, and 23% higher oxygen tension
     tilt_deg: float = 0.0        # 0 supine, 25 typical ramped, negative = head down
-    tilt_gain_lean: float = 0.0130   # FRC fraction per degree at BMI 25
-    tilt_gain_bmi: float = 0.00015   # extra per degree per BMI unit above 25
+    # RE-SOLVED ON WATSON & PRIDE 2005, RULED 2026-09-26 ("follow the
+    # Altermatt"). Was 0.0130 and +0.00015. THE OLD PAIR HAD THE SIZE WRONG BY
+    # A FACTOR OF FOUR AND THE SIGN OF THE BMI TERM WRONG OUTRIGHT.
+    #
+    # Watson & Pride measured SITTING AND SUPINE FRC IN THE SAME SUBJECTS,
+    # which IS this parameter -- tilt_factor at about 90 degrees -- with no
+    # cross-paper step and no inference:
+    #
+    #     control BMI 23.0   3.43 -> 2.69 L   tilt_factor(90) = 1.275
+    #     obese   BMI 43.4   2.29 -> 2.22 L   tilt_factor(90) = 1.032
+    #
+    # Solving 1 + 90*g at both gives tilt_gain_lean 0.003057 and
+    # tilt_gain_bmi -0.000147. The shipped pair gave tilt_factor(90) = 2.422
+    # at BMI 43.7 -- it MORE THAN DOUBLED FRC -- where 1.032 is measured. In
+    # millilitres the model raised FRC by 2921 mL on sitting a patient up
+    # where Watson & Pride measured 70 mL. A FACTOR OF 42.
+    #
+    # AND THE SIGN. The old tilt_gain_bmi was POSITIVE: head-up helped MORE as
+    # BMI rose. Watson & Pride measure it helping LESS -- 1.275 lean against
+    # 1.032 obese -- because an obese chest has already lost its expiratory
+    # reserve and has little left to recover by sitting up. The magnitude of
+    # the correction is almost exactly the old value negated.
+    #
+    # WHAT THIS COSTS, AND IT IS NOT SMALL. The form is LINEAR IN ANGLE, so
+    # anchoring it at 90 degrees necessarily shrinks it at 20-30 degrees,
+    # where Lane, Ramkumar and Dixon measured. ALTERMATT'S OWN DISCUSSION SAYS
+    # THE RELATION SATURATES: "most of the change in FRC takes place between
+    # supine and 60 degrees head-up position". A linear law cannot be right at
+    # both ends, and anchoring it on the only DIRECT measurement of the
+    # quantity is the defensible choice. The low-angle rows are expected to
+    # move and are NOT compensated. Giving tilt_factor an angle law that
+    # saturates by 60 degrees is the change that would fix both ends; it is
+    # structural and needs its own ruling.
+    tilt_gain_lean: float = 0.003057  # FRC fraction per degree at BMI 25
+    tilt_gain_bmi: float = -0.000147  # LESS gain per degree per BMI unit > 25
     vd_anat: float = 150.0
     vd_segments: int = 10
     # --- ventilation-perfusion distribution --------------------------------
