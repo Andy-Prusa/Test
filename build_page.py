@@ -331,7 +331,7 @@ const ICONS={
 syringe:'<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 28l5-5"/><path d="M8 24l-2 4 4-2"/><rect x="10.5" y="9" width="13" height="8" rx="1" transform="rotate(45 17 13)"/><path d="M13.5 19.5l-2.5-2.5M17 16l-2.5-2.5M20.5 12.5L18 10"/><path d="M22 10l5-5M24 4l4 4"/></svg>',
 mask:'<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 27c-6 0-9-4.5-9-10 0-4.5 3.5-8 9-8s9 3.5 9 8c0 5.5-3 10-9 10z"/><rect x="13" y="3" width="6" height="6" rx="1"/><path d="M11 17h10"/></svg>',
 lma:'<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="16" cy="22" rx="7" ry="8"/><ellipse cx="16" cy="22" rx="3.5" ry="4.5"/><path d="M16 14V6"/><rect x="13" y="2" width="6" height="4" rx="1"/></svg>',
-blade:'<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="19" y="3" width="7" height="13" rx="1.5"/><path d="M19 15H12C7 15 4 19 4 24c0 3 1.5 5 3 5"/><path d="M7 29c-1-2-1-4 0-6"/></svg>'};
+blade:'<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.4 5.4 C5.2 6.8 5.8 8.8 6.6 10.3 C5.8 15 6.0 19.6 7.8 23.4 C10.0 28.0 14.8 30.0 19.6 28.5 L28.2 22.7 L26.6 20.4 L19.4 25.3 C16.6 26.1 14.0 24.5 12.8 21.9 C11.4 18.7 11.6 14.3 12.5 10.3 C13.5 9.5 14.7 8.7 15.1 7.5 C15.5 6.1 14.7 4.9 13.3 4.5 L8.3 2.9 C7.0 2.5 6.7 4.1 6.4 5.4 Z"/></svg>'};
 
 // ---- THE SCENARIO, AS DATA ---------------------------------------------
 // Until 2026-09-25 the timeline was hardcoded in three places that had to be
