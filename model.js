@@ -97,7 +97,12 @@ function derive(P){
   // apnoea_core.py rv_eff(). Anchored on Reinius 2009: EELV 697 mL at
   // BMI 45 after induction and paralysis, where ERV is ~0 so FRC ~= RV.
   const rvEff=(P.rv||1100)*hf*Math.exp(-(P.kRvBmi===undefined?0.0198:P.kRvBmi)*Math.max(0,bmi-22));
-  const frcAwake=Math.max(rvEff,P.frcRef*hf*Math.exp(-0.0417*(bmi-22))*tiltF);
+  // k_frc_bmi RE-ANCHORED ON DAMIA 1988, 2026-09-26: 0.0417 -> 0.0012.
+  // His 18 morbidly obese patients give supine FRC / Quanjer seated
+  // predicted = 0.700, flat in BMI (r -0.049, t -0.20 on 16 df), against
+  // the 0.13-0.42 the old constant gave those same patients. Mirrors
+  // apnoea_core.k_frc_bmi -- see the ruling there for the Jones conflict.
+  const frcAwake=Math.max(rvEff,P.frcRef*hf*Math.exp(-(P.kFrcBmi===undefined?0.0012:P.kFrcBmi)*(bmi-22))*tiltF);
   // RULED 2026-09-25: anaesthetised FRC carries PELOSI'S MEASURED SHAPE,
   // FRC(BMI)/FRC(22) from his helium regression, with the level left ours.
   // Mirrors apnoea_core.py frc_anaes() -- read its docstring for why the

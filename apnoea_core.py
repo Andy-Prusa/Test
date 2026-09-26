@@ -219,7 +219,40 @@ class Patient:
     # BMI 22-50 -- but above BMI 37 that agreement is the FLOOR's doing and
     # not this parameter's. NOT CHANGED: it needs a ruling.
     frc_ref: float = 2500.0      # mL supine awake at BMI 22, height 1.75
-    k_frc_bmi: float = 0.0417    # exponential decline of FRC per BMI unit
+    # RE-ANCHORED ON DAMIA 1988, RULED 2026-09-26. Was 0.0417.
+    #
+    # Damia measured AWAKE SUPINE FRC by helium dilution in 18 morbidly obese
+    # patients and reports every one's sex, height and age, so the fraction of
+    # Quanjer's SEATED prediction can be computed PER PATIENT rather than from
+    # a cohort mean. Regressed against BMI inside his own cohort:
+    #
+    #     ratio = -0.00083 * BMI + 0.7378
+    #     r = -0.049,  t = -0.20 on 16 df   (|t| > 2.12 would be P<0.05)
+    #
+    # FLAT. Not "weakly falling" -- indistinguishable from a horizontal line.
+    # That slope is equivalent to k = 0.0012 near his mean BMI, which is what
+    # ships. It is kept as the measured value rather than rounded to zero
+    # because 0.0012 is a number that was computed; 0 would be a number that
+    # was chosen, and the difference between those two is the whole of this
+    # project's method.
+    #
+    # THE TWO ENDS AGREE, which is why one flat fraction is defensible at all.
+    # Damia's ratio extrapolated to BMI 22 is 0.720; the value this model
+    # already used at BMI 22, from an entirely different route, is 0.697.
+    #
+    # WHAT THE OLD 0.0417 DID: it gave Damia's own 18 patients 0.13 to 0.42 of
+    # predicted where 0.700 was measured. A factor of 35 in the decay constant.
+    #
+    # THE LIMIT OF THIS, stated because it will be forgotten otherwise: DAMIA
+    # HAS NO LEAN PATIENTS. His range is BMI 37 to 67, so this is evidence for
+    # flatness in the obese range plus agreement at one lean point, NOT a
+    # measurement across the range. AND IT CONTRADICTS JONES, who measured 373
+    # patients seated by plethysmography and found FRC falling to 62% of
+    # predicted by BMI 50. Both cannot be right: 0.70 supine against 0.62
+    # seated at the same BMI would make supine EXCEED seated. Ruled in Damia's
+    # favour 2026-09-26; Watson & Pride would break the tie and has not been
+    # obtained.
+    k_frc_bmi: float = 0.0012    # exponential decline of FRC per BMI unit
     frc_drop: float = 400.0      # mL lost at induction (ICSM 300-500)
     # Bed tilt, degrees. Positive is head-up / reverse Trendelenburg. Head-up
     # lifts the abdominal contents off the diaphragm, so it raises FRC and the

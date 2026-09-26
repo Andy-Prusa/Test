@@ -155,6 +155,7 @@ def js_params(pt, feo2):
         "tiltGainLean": pt.tilt_gain_lean, "tiltGainBmi": pt.tilt_gain_bmi,
         "ccAt20": pt.cc_at_20, "ccPerYear": pt.cc_per_year,
         "ccPerBmi": pt.cc_per_bmi, "ccK": pt.cc_k, "maxClosed": pt.max_closed,
+        "kFrcBmi": pt.k_frc_bmi,
         "ccBuistSlope": pt.cc_buist_slope,
         "ccBuistIntercept": pt.cc_buist_intercept,
         "ccTlcBmi": pt.cc_tlc_bmi,
