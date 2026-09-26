@@ -50,6 +50,14 @@ BENCHMARK_SOURCES = [
      "the author was recorded NOWHERE until this reading; it is Roy SB, "
      "Bhatia ML, Mathur VS, Virmani S, and it is a full paper, not an "
      "abstract"),
+    ("Perilli 2000, *Anesth Analg* 91:1520-5 (n=15)",
+     "respiratory compliance in morbid obesity, and the tilt response",
+     "2026-09-26",
+     "read at source. It was wanted because it might carry the lung volumes "
+     "Perilli 2003 does not; IT DOES NOT, and the authors say so: \"a "
+     "limitation of our study might be the lack of the direct measure of "
+     "FRC\". What it does carry is Ctot MEASURED in a BMI 46.7 cohort, "
+     "which `crs` currently models as BMI-independent"),
 ]
 
 
