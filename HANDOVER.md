@@ -312,8 +312,10 @@ this ruling picks one.**
 the question it would answer stays open — and that question is now *sharper*
 than when it was added, not vaguer. Gutierrez let Jones be converted to
 millilitres, and the model is thereby found to claim that lying flat costs a
-lean patient **30%** of FRC and a BMI 50 patient **63%**. **That number is now
-untestable with what is held**, and it should be treated as the model's largest
+lean patient **30%** of FRC and a BMI 50 patient **63%**. ~~That number is now
+untestable with what is held~~ — **STRUCK 2026-09-26, Damia 1988 tested it and
+it is wrong; see the eleventh entry.** What this paper would still do is break
+the Jones/Damia tie, which is now the load-bearing uncertainty. It was the model's largest
 unverified structural claim about position.
 
 **5. ADOPTED: the read-status of every source is generated, not written.**

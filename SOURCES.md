@@ -3522,7 +3522,18 @@ primary source, not a search.** The first two are the ones that matter most:
       question is now SHARPER than when it was added, not vaguer: Gutierrez
       let Jones be converted to millilitres, and the model is thereby found to
       claim that lying flat costs a lean patient **30%** of FRC and a BMI 50
-      patient **63%**. **That number is now untestable with what is held.**
+      patient **63%**. ~~That number is now untestable with what is held.~~
+      **STRUCK 2026-09-26: DAMIA 1988 TESTED IT.** Per patient, against
+      each subject's own sex, height and age, Damia's 18 give supine FRC /
+      Quanjer seated predicted = **0.700** where the model gave those same
+      patients **0.13-0.42**. Ruled, and `k_frc_bmi` re-anchored 0.0417 ->
+      0.0012. WHAT THIS PAPER WOULD STILL DO IS NARROWER AND SHARPER: break
+      the Jones/Damia tie. Jones has an obese person's SEATED FRC at 62% of
+      predicted at BMI 50; Damia has their SUPINE at 70%. Supine cannot
+      exceed seated. Watson & Pride measures POSTURAL CHANGE WITHIN THE SAME
+      SUBJECTS, which is the one quantity neither of them gives, so it does
+      not merely corroborate one -- it is the only paper held or wanted that
+      can adjudicate between them.
       It is recorded in `handover_numbers.py` so it cannot drift, and it
       should be treated as the model's largest unverified structural claim
       about position. **ADDED 2026-09-25 AND IT GOES STRAIGHT AT AN ADMITTED
