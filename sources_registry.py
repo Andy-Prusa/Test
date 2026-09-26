@@ -67,6 +67,16 @@ BENCHMARK_SOURCES = [
      "limitation of our study might be the lack of the direct measure of "
      "FRC\". What it does carry is Ctot MEASURED in a BMI 46.7 cohort, "
      "which `crs` currently models as BMI-independent"),
+    ("Rothen 1993, *Br J Anaesth* 71:788-95 (n=16)",
+     "`crs`, and the anaesthetised V/Q dispersion",
+     "2026-09-26",
+     "**WAS RECORDED AS \"SUMMARY READ\" WITH THE PDF SITTING IN THE "
+     "SESSION.** Opened 2026-09-26 and it CONFIRMS the `crs` ruling of "
+     "2026-09-22 rather than overturning it: Table II group 1 is 75 (19) "
+     "mL/cmH2O at BMI 24.9, exactly as recorded, and group 2 is 60 (15) at "
+     "BMI 27.7. Crs is measured ONLY anaesthetised -- the awake column is a "
+     "dash -- so the comparison is like-for-like, as apnoea_core.py had "
+     "already reasoned from the Methods"),
     ("Watson & Pride 2005, *J Appl Physiol* 98:512-7 (n=23)",
      "the posture cost of FRC, sitting against supine",
      "2026-09-26",
