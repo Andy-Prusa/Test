@@ -3562,7 +3562,11 @@ primary source, not a search.** The first two are the ones that matter most:
       to 0.84 L BELOW the awake RV. Re-anchored k_frc_bmi.
 - [x] **Damia G, et al.** Perioperative changes in functional residual capacity
       in morbidly obese patients. *Br J Anaesth* 1988;60(5):574-8
-- [ ] **Berthoud MC, Peacock JE, Reilly CS.** Effectiveness of preoxygenation
+- [x] **OBTAINED AND READ 2026-09-26.** It is the best obesity test held:
+      matched controls, one protocol, clock from the suxamethonium. Model
+      204 s against 196 (80) obese and 547 s against 595 (142) lean, both
+      inside 1 SD, penalty ratio 0.373 against a measured 0.329.
+- [x] **Berthoud MC, Peacock JE, Reilly CS.** Effectiveness of preoxygenation
       in morbidly obese patients. *Br J Anaesth* 1991;67(4):464-6. Bears
       directly on the end-tidal oxygen fraction in the Gander configuration,
       which is currently OURS and not Gander's

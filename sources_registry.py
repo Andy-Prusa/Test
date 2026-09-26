@@ -67,6 +67,13 @@ BENCHMARK_SOURCES = [
      "limitation of our study might be the lack of the direct measure of "
      "FRC\". What it does carry is Ctot MEASURED in a BMI 46.7 cohort, "
      "which `crs` currently models as BMI-independent"),
+    ("Berthoud 1991, *Br J Anaesth* 67:464-6 (n=12)",
+     "the obesity penalty, lean against obese under one protocol",
+     "2026-09-26",
+     "**THE BEST OBESITY TEST HELD.** Six morbidly obese against six controls "
+     "MATCHED for sex, age and height, one protocol, and the clock runs from "
+     "the suxamethonium injection so it means the same thing the model means. "
+     "196 (80) s at BMI 49 against 595 (142) s at BMI 23.1"),
     ("Rothen 1993, *Br J Anaesth* 71:788-95 (n=16)",
      "`crs`, and the anaesthetised V/Q dispersion",
      "2026-09-26",

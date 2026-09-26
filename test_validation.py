@@ -260,6 +260,54 @@ def test_heard_2017():
           750, 1e9, " s", "clinical; IQR 389-750")
 
 
+def test_berthoud_1991():
+    """Berthoud MC, Peacock JE, Reilly CS. Br J Anaesth 1991;67:464-6. CLINICAL.
+
+    READ AT SOURCE 2026-09-26. THE BEST OBESITY TEST THIS SUITE HAS, and the
+    only paper held that measures lean and obese UNDER ONE PROTOCOL WITH
+    MATCHED CONTROLS -- matched for sex, age and height, six in each arm.
+
+    Why it beats the other obesity rows. The clock runs "from the injection of
+    the suxamethonium" to SpO2 90%, so the measured interval and the model's
+    interval mean the SAME THING. Heard's clock starts at TIVA with the
+    patient still breathing, and his author confirmed on 2026-09-26 that
+    apnoea began about 45 s later -- an offset worth most of that row's
+    disagreement. There is no such offset here.
+
+    Protocol: 3 min preoxygenation, 100% O2 at 8 L/min through an AIR-TIGHT
+    seal on a Mapleson A; propofol, alfentanil, suxamethonium; trachea
+    intubated and THE TUBE DISCONNECTED from the gas supply, so apnoea runs
+    with an OPEN airway on room air. Supine.
+
+    The authors' own conclusion is the one this model makes: "All our patients
+    achieved an SpO2 of 100% within 30 s of the start of preoxygenation,
+    indicating that the likely limitation is one of size of STORED VOLUME OF
+    OXYGEN IN THE BODY, rather than ability to reach that store, or to
+    saturate the blood."
+
+    ONE ODDITY, FLAGGED NOT SMOOTHED: the obese arm reads mean 196 (SD 80) s
+    with range 55-208 s. An SD of 80 sits awkwardly in a range 153 wide whose
+    top is 12 s above the mean. The paper names the likely cause -- one BMI
+    58.4 patient "desaturated to 90% only 55 s after administration of
+    suxamethonium, and before complete onset of relaxation" -- so the mean is
+    dragged by a single outlier in six. Treat the obese arm accordingly.
+
+    Bands are +-1 SE OF THE MEAN, as for the Valenza row and for the same
+    reason: the model predicts a typical patient, so it must reproduce the
+    group mean, and against +-1 SD with n=6 almost nothing could fail.
+    """
+    import math
+    for nm, wt, bmi, mean, sd in (("obese", 123.5, 49.0, 196.0, 80.0),
+                                  ("control", 63.0, 23.1, 595.0, 142.0)):
+        h = math.sqrt(wt / bmi)
+        q = Patient(weight=wt, height=h, age=45, hb=14, tilt_deg=0.0)
+        t = time_to(patent(q, 0.21, feo2=0.90), 'spo2', 90)
+        se = sd / math.sqrt(6)
+        check(f"Berthoud {nm} BMI {bmi:.0f}, SpO2 90%", t, mean - se, mean + se,
+              " s", f"clinical; {mean:.0f} ({sd:.0f}) s, n=6, matched controls, "
+                    f"clock from suxamethonium")
+
+
 def test_oloughlin_2020():
     """O'Loughlin CJ et al. Anaesthesia 2020;75:1070-5. CLINICAL.
     BMI 25, age 47, INTRATRACHEAL catheter so pharyngeal fraction is
