@@ -346,6 +346,26 @@ class Patient:
     # discussion says "most of the change in FRC takes place between supine
     # and 60 degrees head-up position", so no linear law can be right at both
     # 20 and 90 degrees.
+    # AWAKE TILT DATA IS EXCLUDED FROM THIS PARAMETER. RULED 2026-09-26:
+    # "ignoring awake changes unless we have a conversion or 2 branches."
+    # We have NEITHER, so Watson & Pride is not used here -- see the reverted
+    # attempt above. tilt_factor() acts on the ANAESTHETISED, PARALYSED lung
+    # and only anaesthetised measurements may anchor it.
+    #
+    # WHAT THAT LEAVES: ONE POINT. Valenza 2007 is the only anaesthetised
+    # FRC-against-tilt measurement held -- 0.46 -> 0.85 L at 30 degrees, BMI
+    # 42, tilt_factor 1.848 -- and one point cannot solve two parameters.
+    # Holding tilt_gain_bmi and solving tilt_gain_lean on it gives 0.0257,
+    # double the present value, which would put the lean 20-degree row near
+    # +54% against a measured +24 to +36%. So Valenza alone cannot be adopted
+    # either, and these values stand UNCHANGED and UNSOURCED.
+    #
+    # WHAT WOULD RESOLVE IT, and it is a short list: Lane 2005, Ramkumar 2011
+    # and Dixon 2005 are anaesthetised tilt measurements at 20-25 degrees.
+    # With Valenza's 30 degrees they would give two or three anaesthetised
+    # angles and determine both parameters. None is held; all three are
+    # orderable, with identifiers in SOURCES.md. Ask of each the question
+    # Altermatt failed: WAS THE TILT MAINTAINED THROUGH THE APNOEA?
     tilt_gain_lean: float = 0.0130   # FRC fraction per degree at BMI 25
     tilt_gain_bmi: float = 0.00015   # extra per degree per BMI unit above 25
     vd_anat: float = 150.0
@@ -718,6 +738,35 @@ class Patient:
                                  # but UNQUANTIFIED here - off by default.
 
     # --- metabolic ---------------------------------------------------------
+    # vo2_ref IS CONFIRMED BY A HELD SOURCE, 2026-09-26. Farmery & Roe 1996
+    # (Br J Anaesth 76:284-91, read in full 2026-09-20 and cited NOWHERE until
+    # now) set their standard adult at "VO2 = 0.25 litre min-1". That is this
+    # value exactly. SOURCES.md recorded them as quoting Nunn's 0.20 L/min;
+    # the paper does not say that, and the audit line is corrected.
+    #
+    # THE SUBTRACTION BELOW IS THE PROBLEM, AND IT IS STILL UNCITED. Their
+    # Table 1 gives a 127 kg OBESE adult 0.378 L/min where this model gives
+    # 268 -- 41% LOW, against only 8% low at their 70 kg standard. THE DEFICIT
+    # GROWS WITH WEIGHT, which is precisely what makes this model too generous
+    # to obese patients in every apnoea row.
+    #
+    # WHY, STRUCTURALLY: Farmery & Roe scale on TOTAL body weight -- their five
+    # Table 1 rows fit weight^0.69, and 250*(127/70)^0.69 = 378 to the digit --
+    # while vo2_anaes() scales the positive term on ADJUSTED body weight and
+    # then subtracts 0.27 * TOTAL weight. Two different weight bases pulling
+    # opposite ways. Removing the subtraction alone gives 304 at 127 kg, still
+    # 20% short, so the adjusted-weight basis is itself part of it.
+    #
+    # NOT CHANGED HERE. VO2 is the dominant lever on every apnoea time -- +20%
+    # closes the entire Heard discrepancy on its own -- so it moves nothing
+    # without a ruling.
+    #
+    # Two further Table 1 comparisons, recorded because they came free:
+    #   ALVEOLAR VOLUME AGREES. 2328 against their 2500 at 70 kg, 950 against
+    #   their 1000 at 127 kg. FRC is not the defect.
+    #   CARDIAC OUTPUT IS ~25% LOW AT BOTH ENDS. 3.75 against 5.00, 5.86
+    #   against 7.56. A THIRD independent source after Gunnarsson (5.3
+    #   measured, model 3.95) and Tokics.
     vo2_ref: float = 250.0
     vo2_drop_per_kg: float = 0.27
     rq: float = 0.8

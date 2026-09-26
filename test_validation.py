@@ -248,6 +248,18 @@ def test_heard_2017():
     # conversation because the same question must be asked of Lane, Ramkumar
     # and Dixon, whose papers are not held, and because Altermatt shows the
     # answer is NOT obvious from the position alone.
+    # THE CLOCK: COUNT THE FULL 296 s. RULED 2026-09-26 by the author. The
+    # published time runs from TIVA, not from apnoea, and A. Heard first put
+    # apnoea onset at about 45 s -- which would make the target 251 s. He then
+    # corrected it twice, and both corrections point the same way:
+    #   (a) hypopnoea or complete obstruction can occur WHILE APPARENT
+    #       RESPIRATORY EFFORT IS STILL PRESENT, so gas exchange had already
+    #       stopped; those seconds belong INSIDE the apnoea, not before it.
+    #   (b) the patients received REMIFENTANIL at 4.0 ng/mL effect-site with
+    #       propofol 7.0, so they stopped breathing quickly in any case.
+    # The band therefore stays at the published IQR and nothing is subtracted.
+    # Model +19% against 296 s, where subtracting 45 s would have made it +41%.
+    #
     # Table, standard care arm, n=20: weight 105 (13) kg, height 174 (9) cm,
     # BMI 34.5 (2.8), age 42 (14), apnoea time 296 s (IQR 244-314). Every
     # axis below matches, and the band IS that published IQR.
