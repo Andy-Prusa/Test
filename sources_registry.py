@@ -40,9 +40,18 @@ BENCHMARK_SOURCES = [
     ("O'Loughlin 2020", "desaturation timing", "2026-09-21",
      "read in full; caught a load-bearing error in `editorial.md`"),
     ("Lane / Ramkumar / Altermatt / Dixon", "positioning", None,
-     "cited by surname and year only, so **not retrievable as written**"),
+     "**ORDERABLE SINCE 2026-09-23, note corrected 2026-09-26.** This row "
+     "said they were \"cited by surname and year only, so not retrievable as "
+     "written\" -- which SOURCES.md's own resolved-citations table, written "
+     "to fix exactly that, had already contradicted. All four now carry a "
+     "title and an identifier there; Altermatt is doi 10.1093/bja/aei231 and "
+     "is the one blocking `tilt, BMI 35 at 30 deg`. STILL UNREAD: the "
+     "citations were resolved by search, not by opening a page"),
     ("Kaiser 2024, *Sci Rep* 14:3617 (n=91)", "cardiac output", "2026-09-22",
-     "the title is still not recorded anywhere"),
+     "note corrected 2026-09-26: the title WAS recorded, in SOURCES.md's "
+     "resolved-citations table -- \"Carbon dioxide and cardiac output as "
+     "major contributors to cerebral oxygenation during apnoeic "
+     "oxygenation\", doi 10.1038/s41598-023-49238-3"),
     ("Varat 1972", "the circulation's response to anaemia", None,
      "a verbatim quotation from it ships in three files"),
     ("Roy 1963, *Circulation* 28:346-356 (n=51)",
