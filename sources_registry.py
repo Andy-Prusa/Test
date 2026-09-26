@@ -67,6 +67,21 @@ BENCHMARK_SOURCES = [
      "limitation of our study might be the lack of the direct measure of "
      "FRC\". What it does carry is Ctot MEASURED in a BMI 46.7 cohort, "
      "which `crs` currently models as BMI-independent"),
+    ("Watson & Pride 2005, *J Appl Physiol* 98:512-7 (n=23)",
+     "the posture cost of FRC, sitting against supine",
+     "2026-09-26",
+     "**RULED UNAVAILABLE 2026-09-25, OBTAINED AND READ 2026-09-26.** It "
+     "settles the model's largest structural claim about position and "
+     "reverses it: FRC falls 740 mL supine in the lean (P<0.0001) and only "
+     "70 mL in the obese (P = ns). It also dissolves the Jones/Damia "
+     "conflict rather than deciding it -- in obesity seated and supine are "
+     "nearly the same volume, so both papers were right"),
+    ("Altermatt 2005, *Br J Anaesth* 95:706-9 (n=40)",
+     "the obese tilt benchmark", "2026-09-26",
+     "read at source. THE BENCHMARK IS MISCONFIGURED AGAINST IT: Altermatt "
+     "measured 90 degrees (sitting), BMI 43, and tilted only during "
+     "PRE-OXYGENATION -- both groups were supine for the apnoea. "
+     "test_validation.py tests 30 degrees at BMI 35 throughout the run"),
     ("Gunnarsson 1991, *Br J Anaesth* 66:423-32 (n=45)",
      "anaesthetised shunt and V/Q dispersion, by MIGET",
      "2026-09-26",
