@@ -5,6 +5,74 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-26 (eleventh entry): apnoeic oxygenation is CO2-limited, and this model runs that channel ~5x too slow
+
+**A. Heard's argument, and it overturned what this session had told him.**
+Carbon dioxide entering the alveolus displaces oxygen from a fixed-volume
+lung, so the oxygen store falls even on 100% oxygen, and falls faster in a
+small lung. At ~30 mL/min of alveolar CO2 output an hour costs about 2 L of
+lung oxygen: apnoeic oxygenation is **finite and CO2-limited even in the
+lean**, and reaches its limit sooner in an obese patient.
+
+**The mechanism was already in the code**, at the aventilatory mass flow:
+
+```
+deficit = vo2_lung - vco2_lung - vn2
+inflow  = min(q_max, max(deficit, 0.0) + refill)
+```
+
+Only the NET absorbed volume is drawn in, so lung oxygen changes by
+`-(vco2_lung + vn2)` whatever the inspired fraction. Earlier the same day this
+session said the store was self-sustaining on oxygen and that FRC stopped
+mattering. **Both wrong**, and the line above is what says so.
+
+**FRC governs the oxygenated case — by falling FAO2, not by exhaustion.**
+3600 s, 100% O2, airway open, 30 deg head up, FEO2 0.87 at t=0:
+
+| BMI | FRC | FAO2 0 → 60 min | lung O2 0 → 60 min | PaCO2 at 60 min |
+|---|---|---|---|---|
+| 22.0 | 3544 mL | 0.870 → **0.583** | 2440 → 1634 mL | 136.3 mmHg |
+| 34.5 | 1929 mL | 0.870 → **0.408** | 1279 → 600 mL | 144.4 mmHg |
+| 45.0 | 1507 mL | 0.870 → **0.305** | 975 → 342 mL | 154.0 mmHg |
+
+**And it does not terminate.** BMI 22 at 4 h is still **98.6%**, because the
+displacement rate collapses as rising PaCO2 closes the alveolar-venous CO2
+gradient:
+
+| hour | lung O2 | FAO2 | PaCO2 | SpO2 | loss that hour |
+|---|---|---|---|---|---|
+| 0 | 2439 mL | 0.870 | 40.0 | 99.0% | — |
+| 1 | 1633 mL | 0.582 | 136.5 | 99.8% | 13.4 mL/min |
+| 2 | 1342 mL | 0.479 | 184.5 | 99.6% | 4.9 mL/min |
+| 3 | 1127 mL | 0.402 | 230.0 | 99.2% | 3.6 mL/min |
+| 4 | 988 mL | 0.352 | 261.0 | 98.6% | 2.3 mL/min |
+
+Heard's 33.9 mL/min **sustained** empties that store at 61.9 min. This model
+averages 6.0 mL/min over four hours — **about 5x too slow**, not the 2.5x a
+60-minute window suggests.
+
+**This is ONE defect with the Stock failure, not two.** Stock 1989 measured
+3.4 mmHg/min under obstruction; the suite has us at 2.0, KNOWN_OPEN since
+2026-09-22. Over 4 h here PaCO2 averages 0.92 mmHg/min. Same channel, two
+symptoms. **Fixing the CO2 channel is what makes the oxygenated case
+terminate; a compensating term would break Stock further while appearing to
+help here.**
+
+**Two retractions, both this session's own errors, both recorded in commits.**
+A claimed NaN at 4 h was `stop_sao2` passed as a percentage (it takes a
+fraction) — the model is finite in every channel to 14400 s. And a claimed
+Jones/Damia contradiction dissolved when Watson & Pride were read.
+
+**Regenerated 2026-09-26:** `check_sources.py --check` ok, `build_page.py
+--check` up to date, `test_validation.py` **4 blocking / 2 known-open, the
+same names** (no physics moved — `apnoea_core.py` gained comment only).
+`handover_numbers.py` was still running when the session ended; **run it first
+in the next session.** The numbers above are its new section.
+
+**Queue, unchanged except for one insertion:** cardiac output (~25% low on
+three sources) → **CO2 channel, inserted here on this finding** → `shunt_cc_k`
+→ V̇O2.
+
 ## Current state — 2026-09-26 (tenth entry): closing capacity stops depending on BMI
 
 **Ruled and applied.** `closing_capacity()` is now Buist & Ross 1973 on a
