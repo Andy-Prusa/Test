@@ -932,12 +932,30 @@ print("    Tokics' only volume figure is whole-lung: 'the calculated mean gas")
 print("    volume (FRC) approximates 2.0 liters', against our 2012 mL.")
 
 # ---------------------------------------------------------------------------
-print("\nSeparability -- the CO2 limb and the mechanics limb are NOT coupled")
+print("\nSeparability -- AND THE STOCK SLOPE IS NOW INERT TO EVERY LEVER")
 print("  HANDOVER said the compliance fix exposed a trade-off that 'every lung")
-print("  volume lever produces'. That was asserted, not tested. These rows are")
+print("  volume lever produces'. That was asserted, not tested. These rows were")
 print("  the test: the Moreault pressure against the Stock slope, one lever at")
-print("  a time. Mixing and dispersion move the slope by a factor of two and")
-print("  the pressure by a tenth of a percent.")
+print("  a time. THE TEST NOW REPORTS SOMETHING ELSE ENTIRELY, and the values")
+print("  below are recalculated 2026-09-26 on a ruling.")
+print("  WHAT THIS BLOCK USED TO SAY: mixing and dispersion moved the slope by")
+print("  a factor of two (3.09 to 7.56) and the pressure by a tenth of a per")
+print("  cent; the strongest mechanics lever moved the slope 17% where the")
+print("  weakest CO2 lever moved it 32%. That is how the two limbs were shown")
+print("  to be separable.")
+print("  WHAT IT SAYS NOW: every lever in the table gives 1.88-1.96 against a")
+print("  baseline of 1.94. The two CO2 levers -- tau_mix across 25 to 90 s and")
+print("  vq_log_sd across 0.50 to 1.18 -- give 1.94 EXACTLY, all four of them.")
+print("  The widest excursion any lever produces is stiff_below_rv 0.05 at")
+print("  1.88, which is 3%. A sweep that used to span a factor of 2.4 now")
+print("  spans 4%.")
+print("  SO THE SEPARABILITY CONCLUSION IS NOT MERELY STALE, IT IS UNTESTABLE")
+print("  BY THIS MEANS. You cannot show that two limbs are uncoupled using a")
+print("  lever that moves neither. The mechanics levers DO still move the")
+print("  pressure -- crs 60 gives -26.23 and crs 110 -15.10 -- so they are")
+print("  live for pressure and dead for the CO2 slope, which is the shape of")
+print("  the 'vq_log_sd IS A DEAD PARAMETER' finding of 2026-09-23 recurring")
+print("  much more widely. NOT diagnosed here, and NOT compensated.")
 from apnoea_core import PB, PH2O  # noqa: E402
 
 
@@ -958,35 +976,51 @@ def moreault_p(ml=1008.0, **kw):
 
 
 _base_p = moreault_p()
-check("baseline Moreault P at 1008 mL", _base_p, -19.8, 0.4, " cmH2O")
-for lab, kw, want_s, want_p in (
-        ("tau_mix 25", dict(tau_mix=25.0), 6.09, -19.9),
-        ("tau_mix 90", dict(tau_mix=90.0), 3.09, -19.9),
-        ("vq_log_sd 0.50", dict(vq_log_sd=0.50), 3.16, -19.8),
-        ("vq_log_sd 1.18", dict(vq_log_sd=1.18), 7.56, -19.8),
-        ("crs 60", dict(crs=60.0), 4.37, -24.2),
-        ("crs 110", dict(crs=110.0), 4.92, -14.0),
-        ("stiff_below_rv 0.05", dict(stiff_below_rv=0.05), 3.78, -30.0),
-        ("rv 900", dict(rv=900.0), 5.17, -13.3),
-        ("rv 1300", dict(rv=1300.0), 4.11, -35.8)):
-    check(f"{lab}: Stock slope", slope(run(**kw)), want_s, 0.15, " mmHg/min")
-    check(f"{lab}: Moreault P at 1008 mL", moreault_p(**kw), want_p, 0.5,
+check("baseline Moreault P at 1008 mL", _base_p, -21.49, 0.05, " cmH2O")
+# RECALCULATED 2026-09-26. The old column is kept beside each row, because the
+# point of this table is no longer the values but the COLLAPSE of their spread.
+# The slope tolerance is deliberately TIGHTENED from 0.15 to 0.02: at 0.15 a
+# lever could move this output 8% and still pass, and a sweep whose job is to
+# report inertness must not be able to hide a return to life.
+for lab, kw, want_s, was_s, want_p in (
+        ("tau_mix 25", dict(tau_mix=25.0), 1.94, 6.09, -21.49),
+        ("tau_mix 90", dict(tau_mix=90.0), 1.94, 3.09, -21.49),
+        ("vq_log_sd 0.50", dict(vq_log_sd=0.50), 1.94, 3.16, -21.49),
+        ("vq_log_sd 1.18", dict(vq_log_sd=1.18), 1.94, 7.56, -21.49),
+        ("crs 60", dict(crs=60.0), 1.93, 4.37, -26.23),
+        ("crs 110", dict(crs=110.0), 1.94, 4.92, -15.10),
+        ("stiff_below_rv 0.05", dict(stiff_below_rv=0.05), 1.88, 3.78, -34.34),
+        ("rv 900", dict(rv=900.0), 1.94, 5.17, -13.27),
+        ("rv 1300", dict(rv=1300.0), 1.93, 4.11, -37.27)):
+    check(f"{lab}: Stock slope [was {was_s} before 2026-09-26]",
+          slope(run(**kw)), want_s, 0.02, " mmHg/min")
+    check(f"{lab}: Moreault P at 1008 mL", moreault_p(**kw), want_p, 0.05,
           " cmH2O")
-print("    Neither CO2 lever moves the pressure at all. The mechanics levers")
-print("    move the slope by 4-17%, so the coupling runs ONE WAY and weakly.")
-print("    The two red limbs are separable and can be worked apart.")
+_spread = 1.96 - 1.88
+check("the whole sweep's slope spread, which used to be 4.47", _spread, 0.08,
+      0.005, " mmHg/min")
+print("    STRUCK 2026-09-26: 'the mechanics levers move the slope by 4-17%,")
+print("    so the coupling runs ONE WAY and weakly. The two red limbs are")
+print("    separable and can be worked apart.' The mechanics levers now move")
+print("    the slope by 0-3% and the CO2 levers by 0.00%. Neither CO2 lever")
+print("    moves the pressure, which is the one half of the old claim that")
+print("    survives -- but it survives trivially, because those levers now")
+print("    move nothing at all.")
 print("    stiff_below_rv 0.05 moved 4.11 -> 3.94 on 2026-09-20 with the")
 print("    recoil floor, and 3.94 -> 3.78 on 2026-09-22 with crs 85 -> 75.")
 print("    It moves on every mechanics change, and for a reason: it")
 print("    was the one setting soft enough to drive the pressure onto the old")
 print("    -50 floor, so its lever was being clipped. That was flagged when")
 print("    the sweep was first run -- it was comparing two mechanical regimes")
-print("    -- and is now gone. The conclusion is unchanged and slightly")
-print("    stronger: the strongest mechanics lever moves the slope 17% where")
-print("    the WEAKEST CO2 lever moves it 32%.")
-print("    tau_mix 90 and vq_log_sd 0.50 each put the Stock slope back inside")
-print("    its 2.4-4.4 band on their own, with the mechanics untouched, which")
-print("    is exactly why neither may be set there. A fit is not a mechanism.")
+print("    -- and is now gone.")
+print("    ALSO STRUCK 2026-09-26: 'the strongest mechanics lever moves the")
+print("    slope 17% where the WEAKEST CO2 lever moves it 32%', and 'tau_mix")
+print("    90 and vq_log_sd 0.50 each put the Stock slope back inside its")
+print("    2.4-4.4 band on their own'. NEITHER DOES ANY SUCH THING NOW: both")
+print("    leave it at 1.94, which is below that band, and the temptation the")
+print("    old note was warning against no longer exists because the lever it")
+print("    warned about has stopped working. The warning is kept anyway --")
+print("    a fit is not a mechanism -- but it is no longer load-bearing here.")
 
 # ---------------------------------------------------------------------------
 print("\nThe CO2 dissociation curve -- its CURVATURE drives the a-A gap")
