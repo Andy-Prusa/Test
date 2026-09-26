@@ -5,6 +5,112 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-26 (tenth entry): closing capacity stops depending on BMI
+
+**Ruled and applied.** `closing_capacity()` is now Buist & Ross 1973 on a
+Quanjer 1993 TLC — `CC/TLC% = 0.525·age + 14.348` times
+`TLC = 7.99·height − 7.08` litres. `cc_at_20`, `cc_per_year` and `cc_per_bmi`,
+three values with no source anywhere, are gone. Jones & Nzekwu's TLC-vs-BMI
+correction (`cc_tlc_bmi`) was **ruled off**: it layers a second source on a
+first. The code is kept, defaulting False, so the choice stays costable.
+
+**Closing capacity is now independent of body mass.** That is the substance.
+The retired curve carried 45 mL per BMI unit, so obesity moved the lung towards
+closure from both ends at once — FRC down *and* closing capacity up. Nothing
+sourced supported the second half. Obesity now reaches closure by pulling FRC
+onto a fixed closing volume and by nothing else, which is what Milic-Emili and
+BJA Education both describe.
+
+| closing capacity, 1.75 m | retired | adopted |
+|---|---|---|
+| 45 y, BMI 22 | 2300 mL | **2621** |
+| 45 y, BMI 45 | 3200 mL | **2621** |
+| 25 y, BMI 45 | 2800 mL | **1896** |
+
+**The no-free-parameter test improves and nothing was fitted.** Age at which
+closing capacity overtakes awake FRC, published ~44 y:
+
+| | crossover |
+|---|---|
+| retired | 55.0 y |
+| **adopted** | **41.7 y** |
+| adopted, FRC age term restored | 40.9 y |
+
+13.0 years of error become 2.3. The FRC age term used to make this *worse*
+(55.0 → 59.9); on the adopted curve it makes it better. Recorded either way,
+compensated neither way.
+
+**It costs nothing in the suite.** Two full runs, 38 checks each: **both
+columns 34 pass, 2 fail, 2 worse — the same four, at the same values.** Only 13
+of 38 move at all. Two not to call clean: `tilt, BMI 35 at 30°` was already
+failing and gets 0.2 worse (50.8 → 51.0 against a range ending at 45), and
+`Stock obstructed, PaO2 at 5 min` now sits 2.1 mmHg above its floor having
+fallen 17.
+
+**Shunt cost:** Pelosi BMI 45 12.40 → 10.49%, Reinius 11.77 → 9.55%, Perilli
+12.53 → 9.11%, Heard 7.68 → 7.24%, lean BMI 22 3.48 → **3.88%**. Obese falls,
+lean rises; both directions were written down before the change.
+
+### Two regressions that are nobody's fault here, and two gates that cannot see them
+
+`Stock obstructed, 1-5 min slope` reads **1.9** against a `KNOWN_OPEN` baseline
+of **4.60**; `ICSM jet, PaCO2` reads **53.8** against **71.70**. Both are
+`[WORSE]` — the suite's most serious verdict.
+
+**They are not from this change, and not from the Pelosi FRC adoption either.**
+`variant_cost.py pre_pelosi` undoes *both* retirements at once, putting the
+model back where it stood at the 2026-09-22 ruling that set those baselines,
+and both rows are still there at 2.0 and 54.1. Every suite output on disk
+carries them, back to 2026-09-24 08:50, and they are flat — nothing in four
+rulings has moved either by more than 0.3. One change between 22 and 24
+September did it. **Being chased; not yet narrowed.**
+
+**Why two days passed without anyone noticing** — both gates are deaf, each for
+a reason that looked sound alone:
+
+- `.githooks/pre-commit` blocks on the suite's non-zero exit, but the suite
+  exits non-zero whenever *anything* blocks and four rows are ruled open. It
+  fires on every commit regardless, so every commit on this branch has been
+  `--no-verify`. A gate that always fires carries no information.
+- CI runs the suite with `continue-on-error: true`, discarding the exit code
+  that carries value drift, then grades **names only** — deliberately, so a
+  baseline number is not duplicated outside `KNOWN_OPEN`. It never reads the
+  `!!` lines in the output it was handed.
+
+Between them a ruled-open row can drift arbitrarily far and CI stays green.
+**Ruled 2026-09-26: leave CI as it is.**
+
+### Numbers in this file that had stopped reproducing
+
+Chased by measurement, not reasoning. Four shunt values recorded 2026-09-25 for
+a Buist CC on Quanjer's TLC (10.22/9.31/9.11/6.50) reproduce **exactly** under
+`frc_legacy_exp`, the exponential lung-volume form retired that same day.
+Overriding `closing_capacity()` by hand gives the shipped numbers to the last
+digit, so CC was never the mover. The Heard control desaturation recorded at
+307.60 s reproduces to 0.01 s under `frc_legacy_exp` + `cc_legacy` + the
+1-second inversion cadence; the cadence accounts for 0.4 s of the 36, the FRC
+form for the rest. Both are now pinned to the switches that reproduce them in
+`handover_numbers.py` rather than deleted.
+
+**`val_shipped.out` is mislabelled.** Its provenance reads 2026-09-25 13:02 —
+41 minutes *before* the Pelosi adoption commit at 13:43. The run called
+"shipped" is the pre-adoption model.
+
+### Three defects in the costing tool
+
+1. **`cc_tlc_bmi` is a dataclass field, not a plain class attribute**, so the
+   subclass trick `variant_cost.py` uses would have been discarded by the
+   generated `__init__` — the variant would have run, printed its banner, and
+   reported *the base model's numbers under the variant's name*, silently. This
+   trap produced two wrong comparisons the same day. `_variant_class()` now
+   re-declares such fields, re-applies the decorator, **and probes an instance
+   to prove the switch took**, aborting if it did not.
+2. `variant_cost.py --diff` tabulates suite runs side by side by disagreement.
+3. **That parser was wrong twice**, both caught only by counting its rows
+   against the file. It required a space-free unit, dropping 2 benchmarks
+   including the anaemia band; then it matched only `PASS|FAIL`, so it could
+   not see `[WORSE]` at all — **and a blocked suite was reported as clean.**
+
 ## Current state — 2026-09-25 (ninth entry): the FRC adoption swept across BMI
 
 Four spot patients were measured when Pelosi's shape was adopted.
@@ -536,12 +642,13 @@ Quanjer measures **6902 mL**. They agree to **3.3%** — on a quantity the model
 did not contain, from a paper nobody here had read. The strongest independent
 check the closing-capacity block has ever had.
 
-**What it would cost, NOT APPLIED.** A Buist CC on Quanjer's own TLC drops every
-obese shunt: Perilli 12.53 → **9.11%**, Reinius 11.47 → **9.31%**, Pelosi BMI 45
-12.09 → **10.22%**, Heard 6.89 → **6.50%**. That is a redesign —
-`cc_at_20`/`cc_per_year`/`cc_per_bmi` all replaced by a predicted TLC times
-Buist's percentage, with `cc_per_bmi` disappearing on its own — and it moves
-every benchmark. **Needs a ruling.**
+**What it would cost. APPLIED 2026-09-26 on a ruling — see the tenth entry at
+the top of this file.** A Buist CC on Quanjer's own TLC drops every obese shunt.
+The four values recorded here on the day — Perilli **9.11%**, Reinius
+**9.31%**, Pelosi BMI 45 **10.22%**, Heard **6.50%** — were measured on the
+exponential FRC form retired hours earlier, and the shipped model gives 9.11 /
+9.55 / 10.49 / 7.24. Both sets are now pinned in `handover_numbers.py`, the old
+ones to `frc_legacy_exp`. `cc_at_20`, `cc_per_year` and `cc_per_bmi` are gone.
 
 **The range we leave:** Table 6 applies to ages 18–70 and heights 1.55–1.95 m in
 men; the model guards neither.

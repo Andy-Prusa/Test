@@ -730,6 +730,11 @@ of them is sourced.** This is now the largest unsourced dependency the shunt
 has, and it is a better reason to find a closing-capacity source than any that
 existed yesterday.
 
+> **CLOSED 2026-09-26.** All three are gone. `closing_capacity()` is Buist &
+> Ross 1973 on a Quanjer 1993 TLC, both read at source, and it carries no
+> body-mass term. This paragraph is kept because the chase it started is the
+> reason the source was found.
+
 ---
 
 ### Pelosi 1998 — READ IN FULL 2026-09-24, and IT CONTRADICTS THE KNEE COMMITTED THE SAME DAY
@@ -1958,8 +1963,11 @@ predicted:
 | Perilli BMI 48.1 | 12.53% | **10.31%** |
 | Heard BMI 34.7 | 6.89% | **6.38%** |
 
-**NOT APPLIED.** The 6.7 L is what the crossover *implies*, not a value read
-from anywhere, and it must not be shipped as one.
+**NOT APPLIED — and superseded 2026-09-26.** The 6.7 L was what the crossover
+*implied*, not a value read from anywhere, and it was never shipped as one.
+Quanjer's measured TLC (6902 mL at 1.75 m, read at source the following day)
+shipped instead, and it agrees with this inverted figure to 3.3%. The shunt
+column above is therefore **not** what the model now gives; see §4 below.
 
 ##### READ AT SOURCE 2026-09-25 — and both halves came in
 
@@ -2224,7 +2232,16 @@ figure, landing within 3.3% of a paper nobody here had read. **That is the
 strongest independent check the closing-capacity block has ever had**, and it
 was made before the answer was available.
 
-#### 4. What a Buist CC on Quanjer's own TLC would do — NOT APPLIED
+#### 4. What a Buist CC on Quanjer's own TLC would do — **APPLIED 2026-09-26**
+
+> **Ruled and shipped.** The table below is kept as written, because it is the
+> evidence the ruling was taken on. Two corrections to it, both measured
+> 2026-09-26: the "our shunt" and "Buist + Quanjer" columns were computed on
+> the **exponential FRC form retired on 2026-09-25**, so the shipped model
+> gives Pelosi **10.49%**, Reinius **9.55%**, Perilli **9.11%**, Heard
+> **7.24%**; and Jones & Nzekwu's TLC-vs-BMI correction was **ruled off**, so
+> closing capacity carries no body-mass term at all. Both sets of numbers are
+> pinned in `handover_numbers.py`, the old ones to `frc_legacy_exp`.
 
 | cohort | our shunt | Buist + Quanjer | CC ours → theirs |
 |---|---|---|---|
@@ -2233,11 +2250,26 @@ was made before the answer was available.
 | Perilli BMI 48.1, 1.61 m, 37 y | 12.53% | **9.11%** | 2833 → 1953 mL |
 | Heard BMI 34.7, 1.74 m, 42 y | 6.89% | **6.50%** | 2656 → 2483 mL |
 
-Every obese shunt falls. This is a **redesign, not a parameter edit**:
-`cc_at_20`, `cc_per_year` and `cc_per_bmi` would all go, replaced by a predicted
-TLC times Buist's percentage, and `cc_per_bmi` — the term both Milic-Emili and
-BJA Education contradict — would disappear on its own. It moves every benchmark
-and **needs a ruling**.
+Every obese shunt falls. This was a **redesign, not a parameter edit**, and it
+was taken: `cc_at_20`, `cc_per_year` and `cc_per_bmi` are gone, replaced by a
+predicted TLC times Buist's percentage, and `cc_per_bmi` — the term both
+Milic-Emili and BJA Education contradict — disappeared on its own.
+
+**What it actually moved, measured across two full suite runs of 38 checks:**
+*nothing that blocks.* Both columns — retired curve and adopted — come out **34
+pass, 2 fail, 2 worse, the same four at the same values.** Only 13 of 38 rows
+move at all. Regenerate with `variant_cost.py cc_legacy`, `test_validation.py`,
+then `variant_cost.py --diff`.
+
+**And the test with no free parameter in it improves**: age at which closing
+capacity overtakes awake FRC goes **55.0 → 41.7 y** against a published ~44 y.
+Nothing was fitted to it.
+
+**Two things not to call clean.** `tilt, BMI 35 at 30°` was already failing and
+this makes it 0.2 *worse*, 50.8 → 51.0 against a range ending at 45 — recorded,
+not compensated. And `Stock obstructed, PaO2 at 5 min` now sits 2.1 mmHg above
+its floor, having fallen 17; the next correction in the same direction breaks
+it.
 
 #### 5. The range we leave
 

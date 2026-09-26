@@ -2511,17 +2511,16 @@ print("    orphaned 38.7 came from a configuration nobody wrote down; the one")
 print("    in test_validation.py is written down and reproduces.")
 
 # ---------------------------------------------------------------------------
-print("\nCLOSING CAPACITY -- THE SOURCE IS FOUND, THE BLOCKER IS TLC")
-print("  Chased again 2026-09-24 on a ruling, and the first finding is that")
-print("  the chase was already done: Buist & Ross 1973 was obtained and READ")
-print("  AT SOURCE on 2026-09-23 and its combined regression is quoted")
-print("  verbatim in SOURCES.md:")
+print("\nCLOSING CAPACITY -- ADOPTED 2026-09-26, AND THE RETIRED CURVE PINNED")
+print("  Buist & Ross 1973 was read at source 2026-09-23 and its combined")
+print("  regression quoted verbatim in SOURCES.md:")
 print("      CC/TLC (per cent) = 0.525 * age(years) + 14.348 +- 4.34")
-print("  So cc_at_20/cc_per_year/cc_per_bmi are UNSOURCED VALUES, not an")
-print("  unsourced QUANTITY. Any claim that closing capacity has no source is")
-print("  wrong and this block exists to stop it being made again.")
-print("  WHAT ACTUALLY BLOCKS IT: Buist gives CC as a PERCENTAGE OF TLC and")
-print("  this model has no TLC. That is the whole of the remaining work.")
+print("  What blocked it for three days was that Buist gives CC as a")
+print("  PERCENTAGE OF TLC and this model had no TLC. Quanjer 1993 Table 6,")
+print("  read at source 2026-09-25, supplies one: TLC = 7.99*h - 7.08 litres.")
+print("  Closing capacity is now the product of the two, and cc_at_20,")
+print("  cc_per_year and cc_per_bmi -- three values with no source anywhere --")
+print("  are gone.")
 
 _CH = 1.75
 
@@ -2531,8 +2530,36 @@ def _buist_cc(age, tlc):
     return tlc * (0.525 * age + 14.348) / 100.0
 
 
-def _cp(age, bmi=22.0):
-    return Patient(weight=bmi * _CH * _CH, height=_CH, age=age, tilt_deg=0.0)
+class _Retired(Patient):
+    """The closing-capacity curve retired on 2026-09-26.
+
+    Pinned here, rather than deleted, because every number this block
+    recorded before the change was measured against it. A historical value
+    that cannot be reproduced is worth nothing -- the Ellis comparator rows
+    are the cautionary example -- so the switch stays in apnoea_core.py and
+    the old numbers keep their checks.
+    """
+
+    cc_legacy = True
+
+
+class _LegacyFrc(Patient):
+    """The EXPONENTIAL lung-volume form retired on 2026-09-25.
+
+    Needed below because several numbers this file recorded turn out to have
+    been measured against it, not against anything to do with CC.
+    """
+
+    frc_legacy_exp = True
+
+
+class _PreBoth(Patient):
+    cc_legacy = True
+    frc_legacy_exp = True
+
+
+def _cp(age, bmi=22.0, cls=Patient):
+    return cls(weight=bmi * _CH * _CH, height=_CH, age=age, tilt_deg=0.0)
 
 
 def _crossover(vol, cc):
@@ -2547,27 +2574,36 @@ def _crossover(vol, cc):
     return 0.5 * (_lo + _hi)
 
 
-print("  THE CROSSOVER TEST. Both sources put CC = FRC at ~44 years SUPINE")
-print("  (Milic-Emili 2007; BJA Education 2022). It has no free parameter in")
-print("  it, which is what makes it worth failing against.")
-check("our CC = awake FRC crossover [literature ~44 y]",
-      _crossover(lambda a: _cp(a).frc_awake(), lambda a: _cp(a).closing_capacity()),
-      55.0, 0.1, " y")
-print("    SOURCES.md recorded this as 50.6 y. IT DOES NOT REPRODUCE at any")
-print("    reading: 55.0 against awake FRC, 35.0 against anaesthetised FRC.")
-print("    A prose number that rotted, which is why it is now in this file.")
-print("    Our disagreement with the literature is therefore WIDER than the")
-print("    document claimed, not narrower.")
-check("  ... same, against anaesthetised FRC",
-      _crossover(lambda a: _cp(a).frc_anaes(), lambda a: _cp(a).closing_capacity()),
-      35.0, 0.1, " y")
+print("  THE CROSSOVER TEST, WHICH IS WHAT THE RULING RESTED ON. Both sources")
+print("  put CC = FRC at ~44 years (Milic-Emili 2007; BJA Education 2022). It")
+print("  has NO FREE PARAMETER in it, which is what makes it worth failing")
+print("  against -- and nothing here was fitted to it.")
+check("RETIRED curve: CC = awake FRC crossover [literature ~44 y]",
+      _crossover(lambda a: _cp(a, cls=_Retired).frc_awake(),
+                 lambda a: _cp(a, cls=_Retired).closing_capacity()),
+      55.00, 0.05, " y")
+check("ADOPTED curve: CC = awake FRC crossover [literature ~44 y]",
+      _crossover(lambda a: _cp(a).frc_awake(),
+                 lambda a: _cp(a).closing_capacity()),
+      41.66, 0.05, " y")
+print("    13.0 years of error become 2.3. SOURCES.md once recorded the old")
+print("    figure as 50.6 y and it DOES NOT REPRODUCE at any reading: a prose")
+print("    number that rotted, which is why it is now in this file.")
+check("  ... retired, against anaesthetised FRC",
+      _crossover(lambda a: _cp(a, cls=_Retired).frc_anaes(),
+                 lambda a: _cp(a, cls=_Retired).closing_capacity()),
+      35.00, 0.05, " y")
+check("  ... adopted, against anaesthetised FRC",
+      _crossover(lambda a: _cp(a).frc_anaes(),
+                 lambda a: _cp(a).closing_capacity()),
+      30.62, 0.05, " y")
 
 print("  AND OUR FRC IS AGE-FLAT, WHICH IS A SECOND FAULT IN THE SAME TEST.")
 print("  height_factor() quotes a regression carrying 0.009*age and then does")
 print("  not implement the age term, so at BMI 22 frc_awake is frc_ref at")
-print("  EVERY age. Giving the term back makes the crossover WORSE, 55.0 ->")
-print("  59.9 y, because that regression has FRC RISING with age. Recorded,")
-print("  not compensated: it is evidence the error is not all in CC.")
+print("  EVERY age. Giving the term back USED to make the crossover worse")
+print("  (55.0 -> 59.9 y). On the adopted curve it makes it BETTER, 41.7 ->")
+print("  40.9 y. Recorded either way, and compensated neither way.")
 
 
 def _frc_aged(age):
@@ -2575,16 +2611,39 @@ def _frc_aged(age):
     return 2500.0 * _f(age) / _f(45.0)
 
 
-check("crossover once FRC carries its own age term [~44 y]",
-      _crossover(_frc_aged, lambda a: _cp(a).closing_capacity()), 59.92, 0.05, " y")
+check("retired, once FRC carries its own age term [~44 y]",
+      _crossover(_frc_aged, lambda a: _cp(a, cls=_Retired).closing_capacity()),
+      59.92, 0.05, " y")
+check("adopted, once FRC carries its own age term [~44 y]",
+      _crossover(_frc_aged, lambda a: _cp(a).closing_capacity()), 40.91, 0.05, " y")
 
-print("  WHAT TLC WOULD BUIST & ROSS NEED? Solving the crossover for TLC is")
-print("  the one thing that can be done WITHOUT the Quanjer paper, because")
-print("  the 44-year target is itself a published number:")
+print("  CLOSING CAPACITY IS NOW INDEPENDENT OF BODY MASS, which is the whole")
+print("  substance of the change. The retired curve carried cc_per_bmi = 45 mL")
+print("  per BMI unit, so obesity moved the lung towards closure from BOTH")
+print("  ends at once -- FRC down AND closing capacity up. Nothing sourced")
+print("  ever supported the second half.")
+for _a, _b, _wold, _wnew in ((25, 22, 1900.0, 1896.0), (25, 45, 2800.0, 1896.0),
+                             (45, 22, 2300.0, 2621.0), (45, 45, 3200.0, 2621.0),
+                             (65, 22, 2700.0, 3346.0), (65, 45, 3600.0, 3346.0)):
+    check(f"CC at {_a} y BMI {_b}, retired",
+          _cp(_a, _b, cls=_Retired).closing_capacity(), _wold, 1.0, " mL")
+    check(f"  ... adopted", _cp(_a, _b).closing_capacity(), _wnew, 1.0, " mL")
+print("    Read the adopted column down: 1896, 1896 / 2621, 2621 / 3346, 3346.")
+print("    Identical at BMI 22 and BMI 45. Obesity now reaches closure by")
+print("    pulling FRC down onto a fixed closing volume and by nothing else,")
+print("    which is what Milic-Emili and BJA Education both describe.")
+
+print("  WHAT TLC WOULD BUIST & ROSS NEED? This was computed BEFORE Quanjer")
+print("  was read, by solving the crossover for TLC -- the one thing that")
+print("  could be done without the paper, because the 44-year target is")
+print("  itself published. It is kept because the later block grades Quanjer")
+print("  against it, and that comparison is the strongest independent check")
+print("  in this file.")
 _lo, _hi = 3000.0, 14000.0
 for _ in range(60):
     _m = 0.5 * (_lo + _hi)
-    if _crossover(lambda a: _cp(a).frc_awake(), lambda a, _t=_m: _buist_cc(a, _t)) > 44.0:
+    if _crossover(lambda a: _cp(a).frc_awake(),
+                  lambda a, _t=_m: _buist_cc(a, _t)) > 44.0:
         _lo = _m
     else:
         _hi = _m
@@ -2601,30 +2660,55 @@ for _ in range(60):
 check("  ... and again with the FRC age term restored",
       0.5 * (_lo + _hi), 6658.0, 3.0, " mL")
 print("    THE TWO AGREE TO 0.3%, so the TLC the crossover implies does NOT")
-print("    depend on the unresolved FRC age-term question. About 6.7 L for a")
-print("    1.75 m subject is a plausible TLC, so Buist & Ross and the")
-print("    crossover test are consistent with each other while OUR")
-print("    regression is consistent with neither.")
+print("    depend on the unresolved FRC age-term question.")
 
-print("  WHAT IT WOULD COST. Buist CC is LOWER than ours for every obese")
-print("  cohort, so the shunt FALLS -- the direction SOURCES.md predicted:")
-for _nm, _h, _b, _a, _want in (("Pelosi BMI 45", 1.64, 45.0, 52.0, 11.16),
-                               ("Reinius BMI 45", 1.70, 45.0, 42.0, 9.53),
-                               ("Perilli BMI 48.1", 1.61, 48.1, 37.0, 10.31),
-                               ("Heard BMI 34.7", 1.74, 34.7, 42.0, 6.38)):
-    class _BuistCC(Patient):
-        def closing_capacity(self, _t=_TLC44):
+print("  WHAT IT COST. Buist CC is LOWER than the retired curve for every")
+print("  obese cohort, so the shunt FALLS -- the direction SOURCES.md")
+print("  predicted in writing before the change was made:")
+for _nm, _h, _b, _a, _wold, _wnew in (
+        ("Pelosi BMI 45", 1.64, 45.0, 52.0, 12.40, 10.49),
+        ("Reinius BMI 45", 1.70, 45.0, 42.0, 11.77, 9.55),
+        ("Perilli BMI 48.1", 1.61, 48.1, 37.0, 12.53, 9.11),
+        ("Heard BMI 34.7", 1.74, 34.7, 42.0, 7.68, 7.24),
+        ("lean BMI 22", 1.75, 22.0, 45.0, 3.48, 3.88)):
+    _kw = dict(weight=_b * _h * _h, height=_h, age=_a, hb=14.0, tilt_deg=0.0)
+    check(f"{_nm}: shunt, retired", _Retired(**_kw).shunt_base_eff() * 100.0,
+          _wold, 0.05, " %")
+    check(f"  ... adopted", Patient(**_kw).shunt_base_eff() * 100.0,
+          _wnew, 0.05, " %")
+print("    Obese shunt falls 2-3.4 points, lean rises 0.4. BOTH directions")
+print("    were written down before the change, which is the only reason")
+print("    they are worth anything.")
+print("  AND IT COST NOTHING IN THE SUITE. Two full runs, 38 checks each:")
+print("    BOTH columns 34 pass, 2 fail, 2 worse -- THE SAME FOUR, at the")
+print("    same values. Regenerate with:")
+print("      python3 variant_cost.py cc_legacy > retired.out")
+print("      python3 test_validation.py        > adopted.out")
+print("      python3 variant_cost.py --diff retired.out adopted.out")
+
+print("\n  FORENSICS: FOUR NUMBERS IN THIS FILE THAT STOPPED REPRODUCING, AND")
+print("  WHY IT WAS NOT CLOSING CAPACITY. Chased 2026-09-26 when the four")
+print("  shunt values recorded for 'Buist CC on Quanjer's own TLC' came back")
+print("  wrong on three of four. Overriding closing_capacity() BY HAND gives")
+print("  the shipped numbers to the last digit, so CC was never the mover.")
+print("  The mover is frc_legacy_exp -- the exponential lung-volume form")
+print("  retired 2026-09-25 -- and it reproduces all four EXACTLY:")
+for _nm, _h, _b, _a, _want in (("Pelosi BMI 45", 1.64, 45.0, 52.0, 10.22),
+                               ("Reinius BMI 45", 1.70, 45.0, 42.0, 9.31),
+                               ("Perilli BMI 48.1", 1.61, 48.1, 37.0, 9.11),
+                               ("Heard BMI 34.7", 1.74, 34.7, 42.0, 6.50)):
+    class _QCC(_LegacyFrc):
+        def closing_capacity(self, _t=(7.99 * _h - 7.08) * 1000.0):
             return _buist_cc(self.age, _t)
-    _q = _BuistCC(weight=_b * _h * _h, height=_h, age=_a, hb=14.0, tilt_deg=0.0)
-    _now = Patient(weight=_b * _h * _h, height=_h, age=_a, hb=14.0, tilt_deg=0.0)
-    check(f"{_nm}: shunt on a Buist CC at TLC {_TLC44:.0f} "
-          f"[ours {_now.shunt_base_eff()*100:.2f}%]",
-          _q.shunt_base_eff() * 100.0, _want, 0.05, " %")
-print("    NOT APPLIED. Implementing Buist faithfully needs a predicted TLC,")
-print("    and the TLC source -- Quanjer/ECSC 1993, which Milic-Emili uses --")
-print("    could not be read: this environment's network policy blocks every")
-print("    primary host. The 6.7 L above is what the crossover IMPLIES, not a")
-print("    value read from anywhere, and it must not be shipped as one.")
+    check(f"{_nm}: shunt as RECORDED 2026-09-25, on the legacy FRC form",
+          _QCC(weight=_b * _h * _h, height=_h, age=_a, hb=14.0,
+               tilt_deg=0.0).shunt_base_eff() * 100.0, _want, 0.05, " %")
+print("    So those four rows were measured against a lung-volume form that")
+print("    had already been retired when they were written. They are kept,")
+print("    pinned to the switch that reproduces them, rather than deleted.")
+print("  AND val_shipped.out IS MISLABELLED. Its provenance line reads")
+print("  2026-09-25 13:02, forty-one minutes BEFORE the Pelosi adoption")
+print("  commit at 13:43. The run called 'shipped' is the PRE-adoption model.")
 
 # ---------------------------------------------------------------------------
 print("\nIS DESATURATION ROBUST? ASKED 2026-09-25, AND IT SPLITS IN TWO")
@@ -2819,22 +2903,33 @@ print("     A quantity the model did not contain, inverted out of a published")
 print("     44-year crossover, landing within 3.3% of a paper nobody here had")
 print("     read. That is the strongest independent check this block has had.")
 
-print("  4. WHAT A BUIST CC ON QUANJER'S OWN TLC WOULD DO. NOT APPLIED.")
-for _nm, _h, _b, _a, _want in (("Pelosi BMI 45", 1.64, 45.0, 52.0, 10.22),
-                               ("Reinius BMI 45", 1.70, 45.0, 42.0, 9.31),
+print("  4. A BUIST CC ON QUANJER'S OWN TLC -- APPLIED 2026-09-26 on a ruling.")
+print("     These four rows were written when it was still a proposal. They")
+print("     now grade the SHIPPED model, and the assertion worth making is")
+print("     that the hand-built _QCC below and the shipped closing_capacity()")
+print("     agree EXACTLY -- if they ever diverge, one of them has drifted.")
+for _nm, _h, _b, _a, _want in (("Pelosi BMI 45", 1.64, 45.0, 52.0, 10.49),
+                               ("Reinius BMI 45", 1.70, 45.0, 42.0, 9.55),
                                ("Perilli BMI 48.1", 1.61, 48.1, 37.0, 9.11),
-                               ("Heard BMI 34.7", 1.74, 34.7, 42.0, 6.50)):
+                               ("Heard BMI 34.7", 1.74, 34.7, 42.0, 7.24)):
     class _QCC(Patient):
         def closing_capacity(self, _t=_q_tlc_m(_h)):
             return _buist_cc(self.age, _t)
-    _q = _QCC(weight=_b * _h * _h, height=_h, age=_a, hb=14.0, tilt_deg=0.0)
-    _n = Patient(weight=_b * _h * _h, height=_h, age=_a, hb=14.0, tilt_deg=0.0)
-    check(f"{_nm}: shunt on Buist + Quanjer TLC [ours {_n.shunt_base_eff()*100:.2f}%]",
-          _q.shunt_base_eff() * 100.0, _want, 0.05, " %")
-print("     Every obese shunt FALLS, so this is a redesign and not a parameter")
-print("     edit: cc_at_20/cc_per_year/cc_per_bmi would all go, replaced by a")
-print("     predicted TLC times Buist's percentage. It moves every benchmark")
-print("     and needs a ruling.")
+    _kw = dict(weight=_b * _h * _h, height=_h, age=_a, hb=14.0, tilt_deg=0.0)
+    _q = _QCC(**_kw)
+    _n = Patient(**_kw)
+    check(f"{_nm}: shunt, hand-built Buist + Quanjer", _q.shunt_base_eff() * 100.0,
+          _want, 0.05, " %")
+    check(f"  ... and the SHIPPED model, which must match",
+          _n.shunt_base_eff() * 100.0, _want, 0.05, " %")
+print("     Every obese shunt FELL and the lean one rose, which is why this")
+print("     was a redesign and not a parameter edit: cc_at_20, cc_per_year")
+print("     and cc_per_bmi are gone, replaced by a predicted TLC times")
+print("     Buist's percentage. The benchmark cost is in the CLOSING CAPACITY")
+print("     block above -- 38 checks, and the blocking set does not move.")
+print("     THE VALUES THESE ROWS USED TO CARRY -- 10.22/9.31/9.11/6.50 --")
+print("     were measured on the RETIRED exponential FRC form, not on")
+print("     anything to do with CC. See the forensics above.")
 print("  5. THE RANGE WE LEAVE. Table 6 applies to ages 18-70 (below 25, enter")
 print("     25) and heights 1.55-1.95 m in men, 1.45-1.80 m in women. Our")
 print("     crossover sweeps run outside it at both ends.")
