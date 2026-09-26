@@ -65,8 +65,30 @@ REGRESSIONS = []
 # regression. Set from what the number does under ordinary parameter work, not
 # from what would be convenient.
 KNOWN_OPEN = {
+    # CORRECTED 2026-09-26 on a ruling, from 4.60 to 1.94. THE OLD VALUE WAS
+    # MEASURED ON THE WRONG COMMIT. Proven, not inferred: a full suite run at
+    # c12b22f -- the PARENT of 4579c4e, the V/Q category-error fix whose own
+    # ruling recorded this baseline -- gives exactly 4.6, and every commit from
+    # 4579c4e forward gives 1.9-2.0. Nine suite runs in nine worktrees, and
+    # test_validation.py is byte-identical across the whole window, so the
+    # checks cannot be what moved.
+    #
+    # So the 2026-09-22 ruling took the NAMES from after the fix and the VALUES
+    # from before it. The tell is "ICSM jet, PaO2 at cricothyroidotomy", which
+    # PASSES at c12b22f and fails after: the names were right. This row has
+    # therefore been reporting [WORSE] since the day it was written, and the
+    # hook has blocked every commit on that basis for four days.
+    #
+    # A NOTE ON THE TOLERANCE, left at 0.40 deliberately. It is now 21% of the
+    # value rather than 9%, which is looser than it looks -- but retightening it
+    # in the same edit that moves the value would be two changes at once, and
+    # the honest number to set it from is what this output does under ordinary
+    # parameter work. That is currently NOTHING: see the lever sweep in
+    # handover_numbers.py, where tau_mix, vq_log_sd, crs and rv all leave this
+    # slope at 1.94. Until that inertness is diagnosed there is no defensible
+    # basis for a tighter figure, and inventing one would be tuning.
     "Stock obstructed, 1-5 min slope":
-        (4.60, 0.40, "the a-A CO2 gap under obstruction; located, not fixed. "
+        (1.94, 0.40, "the a-A CO2 gap under obstruction; located, not fixed. "
                      "See HANDOVER 'Where the Stock residual actually lives'"),
     # REMOVED 2026-09-22, BECAUSE THEY NOW PASS. Rule 3 at the head of this
     # table says a row that starts passing must come out rather than be left
@@ -78,8 +100,10 @@ KNOWN_OPEN = {
     # The PaO2 row passes at the BOTTOM EDGE of its band, 157 against a
     # central 314, and about 139 mmHg of alveolar-to-arterial gradient is
     # still unexplained at zero shunt. Passing is not the same as solved.
+    # CORRECTED 2026-09-26 on the same ruling and for the same reason, 71.7 ->
+    # 53.8. c12b22f gives 71.7 to the digit; everything after it gives 53.8-54.1.
     "ICSM jet, PaCO2 at cricothyroidotomy":
-        (71.7, 3.0, "rides the same CO2 limb as the Stock slope. MODEL "
+        (53.8, 3.0, "rides the same CO2 limb as the Stock slope. MODEL "
                     "comparator, and Laviola's simulator has no V/Q "
                     "distribution, so it cannot arbitrate either way"),
 }
