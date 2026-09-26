@@ -233,8 +233,21 @@ def test_heard_2017():
     #     position", and NO repositioning is described anywhere afterwards.
     #   Altermatt Methods: "Group 1 patients were then RETURNED to the initial
     #     supine position", before induction.
-    # One paper states a return and the other does not. tilt_deg=30 matches
-    # Heard's stated position.
+    # One paper states a return and the other does not.
+    #
+    # AND IT IS NOW CONFIRMED BY THE AUTHOR, NOT INFERRED. A. Heard, the
+    # trial's registered Principal Investigator (ACTRN12613000697785),
+    # confirmed on 2026-09-26: "It was my study, they remained at 30 degrees
+    # throughout the study." So tilt_deg=30 is correct for the WHOLE run, not
+    # merely for pre-oxygenation.
+    #
+    # THIS IS A PROTOCOL CLARIFICATION AND CARRIES NO UNPUBLISHED DATA. It
+    # adds no number, no result and no cohort value -- the paper already
+    # states the 30 degree reverse Trendelenburg position, and this says only
+    # that it was not rescinded. Recorded here rather than left in a
+    # conversation because the same question must be asked of Lane, Ramkumar
+    # and Dixon, whose papers are not held, and because Altermatt shows the
+    # answer is NOT obvious from the position alone.
     # Table, standard care arm, n=20: weight 105 (13) kg, height 174 (9) cm,
     # BMI 34.5 (2.8), age 42 (14), apnoea time 296 s (IQR 244-314). Every
     # axis below matches, and the band IS that published IQR.
