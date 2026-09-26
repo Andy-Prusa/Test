@@ -545,7 +545,14 @@ class Patient:
     #     CC/TLC (per cent) = 0.525 * age + 14.348 +- 4.34
     cc_buist_slope: float = 0.525      # per cent of TLC per year of age
     cc_buist_intercept: float = 14.348  # per cent of TLC at age 0
-    cc_tlc_bmi: bool = True            # apply Jones's TLC-vs-BMI correction
+    # RULED OFF 2026-09-26. Jones & Nzekwu measured TLC falling 0.50 per cent
+    # of predicted per BMI unit, and Quanjer's TLC has no weight term, so
+    # applying it is defensible -- but it is a SECOND source layered on a
+    # first, and the ruling is to take Buist on Quanjer plain. With this off,
+    # closing capacity is INDEPENDENT OF BMI, which is what both Milic-Emili
+    # and BJA Education say. Obesity reaches closure by lowering FRC, and by
+    # nothing else.
+    cc_tlc_bmi: bool = False           # Jones's TLC-vs-BMI correction
     # RETIRED 2026-09-26, kept only so cc_legacy=True can reproduce the old
     # curve for the cost table. cc_per_bmi in particular had NO support: both
     # Milic-Emili and BJA Education say obesity does not raise closing
@@ -1054,6 +1061,8 @@ class Patient:
         if self.cc_tlc_bmi:
             # Jones & Nzekwu, Fig 3: -0.50 %predicted per BMI unit, anchored
             # at their 20-25 group (mean BMI 22.5, TLC 98.7% of predicted).
+            # OFF by ruling -- see the parameter. Kept so the choice stays
+            # visible and costable rather than becoming invisible.
             tlc *= (98.7 - 0.50 * (self.bmi() - 22.5)) / 98.7
         frac = (self.cc_buist_slope * self.age + self.cc_buist_intercept) / 100.0
         return tlc * frac

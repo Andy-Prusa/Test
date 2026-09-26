@@ -424,7 +424,7 @@ function derive(P){
   // ccTlcBmi applies Jones & Nzekwu's -0.50 %predicted per BMI unit, since
   // Quanjer's TLC has no weight term and the obese lung is measurably
   // smaller. Mirrors apnoea_core.py closing_capacity().
-  const _ccTlcB=(P.ccTlcBmi===false)?1:(98.7-0.50*(bmi-22.5))/98.7;
+  const _ccTlcB=(P.ccTlcBmi===true)?(98.7-0.50*(bmi-22.5))/98.7:1;   // OFF by ruling
   const _ccFrac=((P.ccBuistSlope===undefined?0.525:P.ccBuistSlope)*P.age
                 +(P.ccBuistIntercept===undefined?14.348:P.ccBuistIntercept))/100;
   const cc=(7.99*P.height-7.08)*1000*_ccTlcB*_ccFrac*(P.ccScale||1);
