@@ -3918,6 +3918,71 @@ print("    The obese-but-not-extreme patient loses the most TIME because the")
 print("    morbidly obese one is already floored and has little left to lose.")
 print("    A model change judged only at the extremes would have looked inert.")
 
+# ---------------------------------------------------------------------------
+# WHY APNOEIC OXYGENATION IS FINITE -- and how far this model is from saying so
+#
+# A. Heard, 2026-09-26: "The 30 mls co2 output means every minute even with
+# 100% o2 (0.87) means we lose 33.9 mls of o2 from our stores, so to last 60
+# minutes you need 2,034 mL of o2 in your lungs to survive. It's never
+# infinite. In an obese patient this happens faster due to their reduced frc
+# even if 30 degrees head up."
+#
+# The mass balance in apnoea_core is already this: only the NET absorbed
+# volume is entrained, so lung oxygen falls at (alveolar VCO2 + returning
+# VN2) whatever the inspired fraction. This section MEASURES that rate,
+# because the preceding session asserted the opposite from memory and the
+# rule in CLAUDE.md is that a number you did not just compute is not a number.
+print("\n  APNOEIC OXYGENATION IS CO2-LIMITED, NOT INFINITE (Heard 2026-09-26).")
+print("  Oxygen at the lips, airway open, 30 deg head-up, FEO2 0.87 at t=0.")
+print("  Lung oxygen must fall at the rate CO2 enters the alveolus.")
+print(f"    {'BMI':>5} {'FRC':>6} {'lung O2':>8} {'loss rate':>11} {'60 min costs':>13}")
+_co2rates = []
+for _b in (22.0, 34.5, 45.0):
+    _h = 1.74
+    _p = Patient(weight=_b*_h*_h, height=_h, age=42, hb=14, tilt_deg=30.0)
+    _r = simulate(_p, [AirwayEpoch(600, resistance=2.0, fgo2=1.00)], dt=0.1,
+                  feo2_start=0.87, stop_sao2=0.0)
+    _t = np.asarray(_r['t']); _lo = np.asarray(_r['lung_o2'])
+    # rate over minutes 2-10, past the initial dead-space transient
+    _a = float(np.interp(120.0, _t, _lo)); _z = float(np.interp(600.0, _t, _lo))
+    _rate = (_a - _z) / 8.0
+    _co2rates.append(_rate)
+    print(f"    {_b:>5.1f} {_p.frc_anaes():>6.0f} {_lo[0]:>8.0f} "
+          f"{_rate:>8.1f}/min {_rate*60:>10.0f} mL")
+check("  loss rate at BMI 22", _co2rates[0], 21.4, 1.5, " mL/min")
+check("  loss rate at BMI 45", _co2rates[2], 19.4, 1.5, " mL/min")
+print("    THE RATE DECAYS, which the window above is chosen to exclude. As")
+print("    PaCO2 rises the alveolar-venous CO2 gradient closes, so alveolar")
+print("    CO2 output falls and with it the rate the oxygen store is")
+print("    displaced. Over a full hour the MEAN rate is much lower. RECORDED,")
+print("    NOT RECOMPUTED -- three 3600 s runs at dt=0.05, about 12 minutes.")
+print("      BMI   FAO2 0->60min   lung O2 0->60min   mean loss   PaCO2 at 60")
+for _b, _f0, _f1, _o0, _o1, _pc in ((22.0, 0.870, 0.583, 2440, 1634, 136.3),
+                                     (34.5, 0.870, 0.408, 1279,  600, 144.4),
+                                     (45.0, 0.870, 0.305,  975,  342, 154.0)):
+    print(f"      {_b:>4.1f}   {_f0:.3f}->{_f1:.3f}      {_o0:>4d}->{_o1:<4d} mL"
+          f"    {(_o0-_o1)/60.0:>5.1f}/min   {_pc:>6.1f} mmHg")
+print("    FRC GOVERNS THE OXYGENATED CASE AFTER ALL, and this table is how.")
+print("    Not by the store running out -- it does not, inside an hour -- but")
+print("    by FAO2 falling, and falling FASTER in a smaller lung. At BMI 45")
+print("    FAO2 is a third of its starting value at one hour; at BMI 22 it is")
+print("    two thirds. A previous reply in this session said FRC stops")
+print("    mattering once oxygen is supplied. That was wrong.")
+print("    HEARD'S FIGURE IS 33.9 mL/min, SUSTAINED. Against it this model")
+print(f"    opens at {_co2rates[0]/33.9:.2f} of the rate and averages about")
+print("    0.40 over the hour, so it overstates how long apnoeic oxygenation")
+print("    lasts by something between 1.6x and 2.5x.")
+print("    ONE THING NOT ESTABLISHED: whether the oxygenated case terminates")
+print("    at all in this model. A 14400 s run at dt=0.2 returned NaN before")
+print("    any desaturation, so the termination time is UNKNOWN, not long.")
+print("    The 4 h numerical failure is itself unexplained and untracked.")
+print("    THIS IS NOT A NEW DEFECT. The same channel already fails Stock")
+print("    1989 in the same direction and by a similar factor -- obstructed")
+print("    PaCO2 slope 3.4 mmHg/min measured, this model about 2.0, tracked")
+print("    in test_validation.py KNOWN_OPEN. The two are one defect seen from")
+print("    two ends, and fixing the CO2 channel is what makes the oxygenated")
+print("    case terminate. DO NOT reach for a compensating parameter.")
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")
