@@ -468,28 +468,41 @@ def test_positioning_trials():
         return (out[1] / out[0] - 1) * 100
     check("tilt, non-obese 20 deg", gain(70, 1.75, 15, 20, 95), 15, 40, " %",
           "clinical; Lane +36%, Ramkumar +24%")
-    # CORRECTED 2026-09-26 AGAINST THE PAPER, read at source that day. This
-    # row tested 30 degrees at BMI 35. ALTERMATT MEASURED NONE OF THAT:
-    #   BMI 43 (5) and 43 (6), 116 kg, 1.63/1.66 m -- not BMI 35
-    #   SITTING, "as close as possible to 90 degrees head up" -- not 30
-    #   and the tilt was applied DURING PRE-OXYGENATION ONLY: "Group 1
-    #   patients were then returned to the initial supine position", so BOTH
-    #   GROUPS WERE SUPINE FOR THE APNOEA
-    # The +32% arithmetic is right (214/162 from the abstract; the Results
-    # text says 216/164, and the paper is inconsistent with itself there).
-    # Everything it was being compared against was not.
+    # RETIRED 2026-09-26, RULED: "we only need up to the highest tilt studied
+    # and only if anaesthetised". This row tested 90 degrees against Altermatt
+    # 2005. IT IS NOT AN ANAESTHETISED TILT AT ALL, which the paper says in
+    # its own Methods and which nobody here had noticed:
     #
-    # THE PROTOCOL STILL CANNOT BE REPRODUCED. This model's FRC is fixed for
-    # a run, so it cannot be tilted for pre-oxygenation and flat for the
-    # apnoea. Tilting throughout gives MORE benefit than Altermatt's
-    # protocol, so the model's number should EXCEED his +32% if the model is
-    # otherwise right, and the band is set as a lower bound rather than a
-    # bracket. That is a weaker test than it looks and is labelled so.
-    check("tilt, BMI 43 at 90 deg [Altermatt's own configuration]",
-          gain(116, 1.63, 14, 90, 90), 32, 90, " %",
-          "clinical; Altermatt 214 (28) vs 162 (38) s = +32%, but tilted for "
-          "PRE-OXYGENATION ONLY -- both groups supine for the apnoea, which "
-          "this model cannot express, so +32% is a FLOOR not a target")
+    #   "patients were instructed and trained to take eight deep breaths"
+    #   "Group 1 patients ... sat as close as possible to 90 deg head up"
+    #   "Group 1 patients were then RETURNED to the initial supine position"
+    #   "Immediately after, with all patients in supine position ... induction
+    #    of anaesthesia was achieved with fentanyl ... thiopentone"
+    #
+    # The patient was AWAKE and BREATHING at 90 degrees, and supine and
+    # paralysed for the apnoea. tilt_factor acts on the anaesthetised lung, so
+    # Altermatt constrains it NOWHERE. The row is gone rather than re-banded.
+    #
+    # THE HIGHEST ANAESTHETISED TILT IN ANY PAPER THIS PROJECT HOLDS IS 30
+    # DEGREES -- Valenza 2007's beach chair and Perilli 2000/2003's reverse
+    # Trendelenburg, both anaesthetised and paralysed. The model is therefore
+    # validated to 30 degrees and NO FURTHER, and what it does at 90 is
+    # outside the evidence rather than wrong against it.
+    #
+    # REPLACED BY THE DIRECT MEASUREMENT. Valenza measured end-expiratory lung
+    # volume by closed-circuit helium dilution, supine against 30 degrees, in
+    # 20 anaesthetised paralysed patients at BMI 42: 0.46 (0.1) -> 0.85 (0.3)
+    # litres, P < 0.001. That is tilt_factor itself, in the right state, at an
+    # angle the model is meant to cover -- a far better test than any
+    # apnoea-time proxy, and it needs no simulation at all.
+    _vz = dict(weight=42 * 1.70 ** 2, height=1.70, age=37, hb=14.0)
+    check("Valenza tilt_factor at 30 deg, BMI 42 [ANAESTHETISED]",
+          Patient(**_vz, tilt_deg=30.0).tilt_factor(), 1.70, 2.00, " x",
+          "clinical; 0.46 (0.1) -> 0.85 (0.3) L, helium dilution, n=20, "
+          "= 1.848. Band is +-1 SE OF THE MEAN (0.17), not +-1 SD across "
+          "patients (0.77): the model predicts a typical patient, so it must "
+          "reproduce the group mean, and against the population SD almost "
+          "nothing could fail")
     check("tilt, BMI 44 at 25 deg", gain(120, 1.65, 14, 25, 92), 15, 40, " %",
           "clinical; Dixon +32%")
 

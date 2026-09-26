@@ -21,7 +21,6 @@ ICSM jet, PaO2 at cricothyroidotomy
 # gives tilt both routes is an open question and the four trials cannot
 # separate them. Recorded, not compensated.
 
-tilt, BMI 43 at 90 deg [Altermatt's own configuration]
 
 # RENAMED 2026-09-26. Was "tilt, BMI 35 at 30 deg". Altermatt 2005 was read
 # at source that day and the row was testing a configuration the paper never
@@ -67,3 +66,11 @@ tilt, BMI 43 at 90 deg [Altermatt's own configuration]
 # frc_ref and k_frc_bmi in 48ffe03:
 #   Heard control, time to SpO2<95%   274.4 -> 353.7 s   band 244-314
 #   tilt, BMI 44 at 25 deg             39.1 -> 42.3 %    band 15-40
+
+# REMOVED 2026-09-26, RULED: the model is validated only to the highest tilt
+# studied IN ANAESTHETISED PATIENTS, which is 30 degrees (Valenza 2007 beach
+# chair; Perilli 2000/2003 reverse Trendelenburg). Altermatt's 90 degrees was
+# an AWAKE tilt -- his Methods return the patient supine before induction --
+# so it constrained tilt_factor nowhere and the row tested nothing. It is
+# replaced by a direct check of tilt_factor at 30 degrees against Valenza's
+# measured 0.46 -> 0.85 L.
