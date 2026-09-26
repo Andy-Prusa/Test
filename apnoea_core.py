@@ -254,81 +254,60 @@ class Patient:
     # seated at the same BMI would make supine EXCEED seated. Ruled in Damia's
     # favour 2026-09-26; Watson & Pride would break the tie and has not been
     # obtained.
-    # RE-SOLVED ON WATSON & PRIDE 2005, RULED 2026-09-26, and this PARTIALLY
-    # SUPERSEDES the Damia re-anchor taken earlier the same day (0.0417 ->
-    # 0.0012 -> 0.01074). Both rulings were right on their own evidence and
-    # the reason they differ is worth keeping.
+    # REVERTED 2026-09-26 to 0.0130 and +0.00015, THE SAME DAY THEY WERE
+    # CHANGED. Both the change and the reversal are recorded because what was
+    # learned in between is the most useful thing known about this parameter,
+    # and neither value is right.
     #
-    # Damia measured SUPINE FRC in 18 patients spanning BMI 37 to 67 and the
-    # fraction of predicted is FLAT across that range (t = -0.20 on 16 df).
-    # Watson & Pride measured SITTING AND SUPINE IN THE SAME SUBJECTS, two
-    # cohorts by one method in one paper, at BMI 22.5 and 43.4 -- and supine
-    # FRC FALLS, 2690 mL to 2220 mL. Neither contradicts the other: the curve
-    # falls between BMI 22 and about 43 and is flat above it. That is an
-    # OFFSET form, the same shape Jones and Pelosi both publish.
+    # WHAT WATSON & PRIDE 2005 MEASURE, and it is damning for these values.
+    # Sitting and supine FRC IN THE SAME SUBJECTS is exactly tilt_factor at
+    # about 90 degrees, with no cross-paper step and no inference:
     #
-    # A SINGLE EXPONENTIAL CANNOT DO BOTH, and this model's awake curve is a
-    # single exponential with no offset. Solving its own form for the two
-    # Watson & Pride points gives k = 0.01074 with frc_ref 2860 mL, exact on
-    # both. The cost is that it keeps decaying past BMI 43 where Damia says
-    # it should not: at BMI 48.4 it gives 2054 against Damia's 2180 (-5.8%)
-    # and at 53.2 it gives 1951 against 2250 (-13.3%). Damia was NOT used in
-    # the fit, so those are an independent check, and they are the residual
-    # this form cannot remove.
+    #     control BMI 23.0    3.43 -> 2.69 L    tilt_factor(90) = 1.275
+    #     obese   BMI 43.4    2.29 -> 2.22 L    tilt_factor(90) = 1.032
     #
-    # WHY THIS PAIR AND NOT DAMIA'S FLATNESS: Watson & Pride measure BOTH
-    # POSTURES IN THE SAME SUBJECTS, which is the only direct measurement of
-    # the quantity this parameter carries, and they span the lean end where
-    # Damia has no patients at all. Giving the awake curve an offset would
-    # honour both and is the right next change; it is not taken here because
-    # it is a structural change and needs its own ruling.
-    k_frc_bmi: float = 0.01074   # exponential decline of FRC per BMI unit
-    frc_drop: float = 400.0      # mL lost at induction (ICSM 300-500)
-    # Bed tilt, degrees. Positive is head-up / reverse Trendelenburg. Head-up
-    # lifts the abdominal contents off the diaphragm, so it raises FRC and the
-    # gain is larger the more abdomen there is to lift. Calibrated against
-    # four randomised trials, all of which found roughly +30% safe apnoea time
-    # for 20-25 degrees:
-    #   Lane 2005, non-obese, 20 deg:      283 -> 386 s to SpO2 95%
-    #   Ramkumar 2011, non-obese, 20 deg:  364 -> 452 s
-    #   Altermatt 2005, BMI >35, sitting:  162 -> 214 s to SpO2 90%
-    #   Dixon 2005, BMI >40, 25 deg:       +45 s, and 23% higher oxygen tension
-    tilt_deg: float = 0.0        # 0 supine, 25 typical ramped, negative = head down
-    # RE-SOLVED ON WATSON & PRIDE 2005, RULED 2026-09-26 ("follow the
-    # Altermatt"). Was 0.0130 and +0.00015. THE OLD PAIR HAD THE SIZE WRONG BY
-    # A FACTOR OF FOUR AND THE SIGN OF THE BMI TERM WRONG OUTRIGHT.
+    # THESE PARAMETERS GIVE 2.170 AND 2.418. The shipped model MORE THAN
+    # DOUBLES FRC on sitting a patient up -- at BMI 43.7 it adds 2921 mL where
+    # 70 mL is measured, a FACTOR OF 42 -- and its BMI term has the OPPOSITE
+    # SIGN to the measurement: it makes head-up help MORE as BMI rises where
+    # Watson & Pride measure it helping LESS, because an obese chest has
+    # already lost the expiratory reserve there is to recover. Nothing had
+    # ever tested this, because no benchmark ran at 90 degrees until the
+    # Altermatt row was corrected on 2026-09-26.
     #
-    # Watson & Pride measured SITTING AND SUPINE FRC IN THE SAME SUBJECTS,
-    # which IS this parameter -- tilt_factor at about 90 degrees -- with no
-    # cross-paper step and no inference:
+    # WHY THE MEASURED VALUES WERE NEVERTHELESS REVERTED. Solving on them
+    # (0.003057 and -0.000147) made the model CLINICALLY FALSE: the obese
+    # 90-degree row went to -3.5%, i.e. sitting a morbidly obese patient up
+    # made them desaturate FASTER, because this model also carries a
+    # cardiac-output cost for head-up tilt from Perilli 2003, and once the FRC
+    # benefit shrinks to 3% that cost dominates. All four positioning trials
+    # measure a 24-36% IMPROVEMENT. The three tilt rows went 29.6 -> 6.1,
+    # 42.3 -> -0.1 and 140.5 -> -3.5 per cent.
     #
-    #     control BMI 23.0   3.43 -> 2.69 L   tilt_factor(90) = 1.275
-    #     obese   BMI 43.4   2.29 -> 2.22 L   tilt_factor(90) = 1.032
+    # AND THE REASON IS A STATE MISMATCH, WHICH IS THIS PROJECT'S RECURRING
+    # ERROR. WATSON & PRIDE MEASURED AWAKE, SPONTANEOUSLY BREATHING SUBJECTS
+    # WITH INTACT MUSCLE TONE. tilt_factor acts on the ANAESTHETISED,
+    # PARALYSED lung, where the chest wall is relaxed and the diaphragm rides
+    # cranially, so posture may matter far more than it does awake. That is
+    # the same error as vq_log_sd carrying an awake dispersion (0.70 against a
+    # measured 0.95-1.04 anaesthetised), and it is what Rothen's Table II
+    # avoids by having no awake column for Crs at all.
     #
-    # Solving 1 + 90*g at both gives tilt_gain_lean 0.003057 and
-    # tilt_gain_bmi -0.000147. The shipped pair gave tilt_factor(90) = 2.422
-    # at BMI 43.7 -- it MORE THAN DOUBLED FRC -- where 1.032 is measured. In
-    # millilitres the model raised FRC by 2921 mL on sitting a patient up
-    # where Watson & Pride measured 70 mL. A FACTOR OF 42.
+    # SO BOTH VALUES ARE WRONG. These are wrong at 90 degrees by a factor of
+    # two and wrong in the sign of their BMI term. The measured ones are wrong
+    # in the state they were measured in, and are contradicted by every
+    # clinical trial of the thing the model actually predicts.
     #
-    # AND THE SIGN. The old tilt_gain_bmi was POSITIVE: head-up helped MORE as
-    # BMI rose. Watson & Pride measure it helping LESS -- 1.275 lean against
-    # 1.032 obese -- because an obese chest has already lost its expiratory
-    # reserve and has little left to recover by sitting up. The magnitude of
-    # the correction is almost exactly the old value negated.
-    #
-    # WHAT THIS COSTS, AND IT IS NOT SMALL. The form is LINEAR IN ANGLE, so
-    # anchoring it at 90 degrees necessarily shrinks it at 20-30 degrees,
-    # where Lane, Ramkumar and Dixon measured. ALTERMATT'S OWN DISCUSSION SAYS
-    # THE RELATION SATURATES: "most of the change in FRC takes place between
-    # supine and 60 degrees head-up position". A linear law cannot be right at
-    # both ends, and anchoring it on the only DIRECT measurement of the
-    # quantity is the defensible choice. The low-angle rows are expected to
-    # move and are NOT compensated. Giving tilt_factor an angle law that
-    # saturates by 60 degrees is the change that would fix both ends; it is
-    # structural and needs its own ruling.
-    tilt_gain_lean: float = 0.003057  # FRC fraction per degree at BMI 25
-    tilt_gain_bmi: float = -0.000147  # LESS gain per degree per BMI unit > 25
+    # WHAT WOULD SETTLE IT: Lane 2005, Ramkumar 2011 and Dixon 2005 are the
+    # ANAESTHETISED tilt measurements and this parameter should be solved
+    # against them, not against an awake volume study. All three are orderable
+    # -- citations in SOURCES.md -- and none is held. A saturating angle law
+    # is needed as well: the form here is LINEAR, and Altermatt's own
+    # discussion says "most of the change in FRC takes place between supine
+    # and 60 degrees head-up position", so no linear law can be right at both
+    # 20 and 90 degrees.
+    tilt_gain_lean: float = 0.0130   # FRC fraction per degree at BMI 25
+    tilt_gain_bmi: float = 0.00015   # extra per degree per BMI unit above 25
     vd_anat: float = 150.0
     vd_segments: int = 10
     # --- ventilation-perfusion distribution --------------------------------

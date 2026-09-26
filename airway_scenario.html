@@ -392,13 +392,14 @@ function derive(P){
   // lung volumes scale with height; adiposity only modifies them
   const hf=(2.34*P.height-1.09)/(2.34*1.75-1.09);
   // bed tilt: head-up lifts the abdomen off the diaphragm and raises FRC
-  // RE-SOLVED ON WATSON & PRIDE 2005, 2026-09-26: 0.0130 -> 0.003057 and
-  // +0.00015 -> -0.000147. They measured sitting and supine FRC in the SAME
-  // subjects, which is tilt_factor at ~90 degrees: 1.275 lean, 1.032 obese.
-  // The old pair gave 2.422 at BMI 43.7 and had the BMI term's SIGN wrong.
-  // Mirrors apnoea_core.tilt_gain_lean / tilt_gain_bmi.
-  const tg=(P.tiltGainLean===undefined?0.003057:P.tiltGainLean)
-          +(P.tiltGainBmi===undefined?-0.000147:P.tiltGainBmi)*Math.max(0,bmi-25);
+  // REVERTED 2026-09-26, same day as the change. Watson & Pride measure
+  // tilt_factor(90) as 1.275 lean and 1.032 obese where these give 2.170 and
+  // 2.418, and their BMI term has the opposite sign -- but they measured
+  // AWAKE subjects and this acts on the ANAESTHETISED lung. Solving on them
+  // made the model say head-up tilt HARMS obese patients, against four
+  // clinical trials. See apnoea_core.tilt_gain_lean for the full account.
+  const tg=(P.tiltGainLean===undefined?0.0130:P.tiltGainLean)
+          +(P.tiltGainBmi===undefined?0.00015:P.tiltGainBmi)*Math.max(0,bmi-25);
   const tiltF=Math.max(0.45,1+(P.tiltDeg||0)*tg);
   // FRC CANNOT BE LESS THAN RESIDUAL VOLUME. Floor added 2026-09-23 and it
   // is `rv`, not a constant. This line used to floor at 300 while
