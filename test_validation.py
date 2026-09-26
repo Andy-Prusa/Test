@@ -224,6 +224,20 @@ def test_heard_2017():
     alveolar oxygen is a weak constraint on the oxygen limb, which is the
     same conclusion the V/Q work reached from the other direction.
     """
+    # CONFIGURATION VERIFIED LINE BY LINE AGAINST THE PAPER 2026-09-26, after
+    # Altermatt 2005 was found to tilt the patient only while AWAKE. Heard is
+    # NOT the same case, and the difference is stated in both papers rather
+    # than inferred from either's silence:
+    #   Heard Methods: "Preoxygenation was conducted with patients
+    #     spontaneously ventilating ... in the 30 degree reverse Trendelenburg
+    #     position", and NO repositioning is described anywhere afterwards.
+    #   Altermatt Methods: "Group 1 patients were then RETURNED to the initial
+    #     supine position", before induction.
+    # One paper states a return and the other does not. tilt_deg=30 matches
+    # Heard's stated position.
+    # Table, standard care arm, n=20: weight 105 (13) kg, height 174 (9) cm,
+    # BMI 34.5 (2.8), age 42 (14), apnoea time 296 s (IQR 244-314). Every
+    # axis below matches, and the band IS that published IQR.
     p = Patient(weight=105, height=1.74, age=42, hb=14, tilt_deg=30)
     t = time_to(patent(p, 0.21, feo2=0.80), 'spo2', 95)
     check("Heard control, time to SpO2<95%", t, 244, 314, " s",
