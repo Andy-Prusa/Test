@@ -3949,6 +3949,9 @@ for _b in (22.0, 34.5, 45.0):
     _co2rates.append(_rate)
     print(f"    {_b:>5.1f} {_p.frc_anaes():>6.0f} {_lo[0]:>8.0f} "
           f"{_rate:>8.1f}/min {_rate*60:>10.0f} mL")
+print("      (the last column extrapolates the EARLY rate and is therefore an")
+print("       upper bound -- the measured 60-minute losses are in the table")
+print("       below and are about 60% of it)")
 check("  loss rate at BMI 22", _co2rates[0], 21.4, 1.5, " mL/min")
 check("  loss rate at BMI 45", _co2rates[2], 19.4, 1.5, " mL/min")
 print("    THE RATE DECAYS, which the window above is chosen to exclude. As")
@@ -4003,9 +4006,12 @@ for _h, _o, _f, _pc, _sp, _lr in ((0, 2439, 0.870,  40.0, 99.0,  None),
                                    (4,  988, 0.352, 261.0, 98.6,  2.3)):
     _s = f"{_lr:>5.1f} mL/min" if _lr else "     --"
     print(f"       {_h:>4}   {_o:>7d}   {_f:.3f}  {_pc:>6.1f}  {_sp:>5.1f}%   {_s}")
-print("    SO THE SHORTFALL IS NOT 2.5x, IT IS ABOUT 5x OVER HOURS. Heard's")
-print("    33.9 mL/min SUSTAINED would empty the BMI 22 store at 61.9 min.")
-print("    This model averages 6.0 mL/min over 4 h and is still at 98.6%.")
+print("    SO THE SHORTFALL GROWS WITH TIME: 1.4x over ten minutes, 2.2x")
+print("    over an hour, 5.0x over four. It is not a constant scale factor,")
+print("    which is the single most important thing for whoever fixes this:")
+print("    a multiplier tuned on the early window would fit ten minutes and")
+print("    miss the hour. The fault is in how the alveolar-venous CO2")
+print("    gradient closes, not in the size of the initial output.")
 print("    Cross-check on the same defect from the CO2 side: PaCO2 reaches")
 print("    261 mmHg at 240 min, a MEAN OF 0.92 mmHg/min. Three sources, in")
 print("    descending order of how well this repository holds them:")
