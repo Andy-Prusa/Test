@@ -2999,6 +2999,56 @@ print("     25) and heights 1.55-1.95 m in men, 1.45-1.80 m in women. Our")
 print("     crossover sweeps run outside it at both ends.")
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+print("\nDAMIA 1988 READ AT SOURCE 2026-09-26 -- the posture claim, per patient")
+print("  Damia G, Mascheroni D, Croci M, Tarenzi L. Perioperative changes in")
+print("  functional residual capacity in morbidly obese patients. Br J Anaesth")
+print("  1988;60:574-8. n=30, helium dilution, SUPINE -- the paper says so")
+print("  twice -- awake the day before, then 5 min before and 20 min after")
+print("  induction with full paralysis, before the laparotomy incision.")
+print("  THE COMPARISON IS PER PATIENT, using each one's own sex, height and")
+print("  age against Quanjer's SEATED prediction. An earlier version of this")
+print("  went through Jones's %predicted converted at OUR reference geometry,")
+print("  which imported an assumption the paper does not make. This does not.")
+# Table I (age, weight kg, height cm, sex) with Table II FRC and RV, litres.
+_DAM = [(49,158,185,'M',2.67,2.63),(36,182,175,'M',1.98,1.76),(47,189,168,'M',1.94,1.94),
+        (39,137,163,'F',2.32,2.10),(37,135,169,'F',2.46,2.06),(49,145,169,'F',1.75,1.71),
+        (39,150,150,'F',1.94,1.76),(42,115,166,'F',2.12,2.06),(53,172,174,'M',2.74,2.42),
+        (38,205,185,'M',3.17,2.86),(44,181,176,'M',3.19,3.01),(35,106,148,'F',1.00,0.73),
+        (46,101,162,'F',1.45,1.27),(46,196,178,'M',1.79,1.74),(33,159,165,'F',1.62,1.26),
+        (43,120,180,'M',2.91,2.73),(43,154,160,'F',1.40,1.27),(55,133,166,'F',1.65,1.60)]
+_qm = lambda h, a: 2.34 * h + 0.009 * a - 1.09          # Quanjer 1993 Table 6, men
+_qf = lambda h, a: 2.24 * h + 0.001 * a - 1.00          # ... and women, SEATED
+_sf = _sp = 0.0
+_ratios = []
+for _a, _w, _hc, _sx, _f, _rv in _DAM:
+    _h = _hc / 100.0
+    _pr = _qm(_h, _a) if _sx == 'M' else _qf(_h, _a)
+    _sf += _f
+    _sp += _pr
+    _ratios.append(Patient(weight=_w, height=_h, age=_a, hb=14.0,
+                           tilt_deg=0.0).frc_awake() / 1000.0 / _pr)
+check("Damia cohort mean BMI", sum(_w / (_hc / 100.0) ** 2 for _, _w, _hc, _, _, _
+                                   in _DAM) / len(_DAM), 53.6, 0.1, "")
+check("Damia supine FRC / Quanjer SEATED predicted, n=18", _sf / _sp, 0.700, 0.002, "")
+check("  ... the model's same ratio, lowest of the 18", min(_ratios), 0.13, 0.01, "")
+check("  ... highest of the 18", max(_ratios), 0.42, 0.01, "")
+_lean = Patient(weight=22 * 1.75 ** 2, height=1.75, age=45, hb=14.0, tilt_deg=0.0)
+check("the model's OWN supine/seated ratio at BMI 22",
+      _lean.frc_awake() / 1000.0 / _qm(1.75, 45.0), 0.697, 0.005, "")
+print("    0.700 MEASURED IN THE MORBIDLY OBESE against 0.697 THE MODEL USES")
+print("    FOR A LEAN PATIENT. The posture fraction Damia measures at mean BMI")
+print("    53.6 is the one this model already applies at BMI 22, to 0.4%. The")
+print("    model gives these same 18 patients 0.13-0.42. So the lean end is")
+print("    corroborated and the BMI DEPENDENCE is the error.")
+print("  AND A TENSION THAT IS NOT RESOLVED. Quanjer predicts seated FRC for")
+print("  NORMAL subjects. Jones measured that an obese person's OWN seated FRC")
+print("  is about 62% of predicted at BMI 50. If Jones and Damia are both")
+print("  right then supine/seated = 0.70/0.62 = 1.13 -- supine HIGHER than")
+print("  seated, which cannot be. At least one is wrong at the obese end and")
+print("  NOTHING HERE DECIDES WHICH. Watson & Pride measures posture directly")
+print("  and is the paper that would break the tie.")
+
 print("\nTOKICS 1996 READ AT SOURCE 2026-09-25 -- the cohort BMI, and an SE")
 print("  Tokics L, Hedenstierna G, Svensson L, Brismar B, Cederlund T,")
 print("  Lundquist H, Strandberg A. V/Q distribution and correlation to")

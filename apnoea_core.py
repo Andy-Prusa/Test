@@ -1046,7 +1046,35 @@ class Patient:
         base = self.frc_ref * self.height_factor() * self.tilt_factor()
         at22 = base - min(self.frc_drop, 0.25 * base)
         pel = at22 * self._pelosi_frc(self.bmi()) / self._pelosi_frc(22.0)
-        return max(self.rv_eff(), min(cap, pel))
+        # THE RESIDUAL-VOLUME FLOOR IS GONE, RULED 2026-09-26. It was added
+        # 2026-09-23 with the argument, in this file, that "FRC < RV is not a
+        # marginal case, it is impossible". DAMIA 1988 MEASURED IT: "Immediately
+        # after anaesthesia, FRC decreased to values lower (P<0.01) than the
+        # initial value for RV (0.84 +- 0.6 litre less than the baseline RV)",
+        # n=18 morbidly obese, preoperative RV 1.94 L against 1.09 L after
+        # induction. They anticipated the artefact objection and answered it:
+        # Westbrook saw it by body plethysmograph, Ford in three overweight
+        # patients postoperatively. So it is not a helium-dilution artefact.
+        #
+        # The impossibility argument conflates two different volumes. RV is
+        # what remains after a MAXIMAL VOLUNTARY exhalation by an AWAKE patient
+        # using their expiratory muscles. Anaesthesia with paralysis removes
+        # that muscle tone and lets the diaphragm ride cranially under
+        # abdominal mass, so the passive relaxation volume of a paralysed obese
+        # chest can sit BELOW the awake RV. Nothing is violated.
+        #
+        # AND THE FLOOR IS NO LONGER LOAD-BEARING ANYWAY. It was doing real
+        # work when this curve was a zero-asymptote exponential that decayed
+        # toward nothing. The offset form adopted 2026-09-25, with the averaged
+        # offset of 2026-09-26, carries its OWN asymptote -- the curve cannot
+        # fall below at22 * 0.6882/_pelosi_frc(22) whatever the BMI -- so the
+        # clamp is now redundant as well as contradicted.
+        #
+        # The legacy branch above KEEPS its floor, and must: the exponential it
+        # restores has no offset and decays to zero, so without the clamp it
+        # returns unphysical volumes. That is the difference between a floor
+        # that patches a bad functional form and one that states physiology.
+        return min(cap, pel)
 
     @staticmethod
     def quanjer_tlc(height):

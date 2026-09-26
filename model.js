@@ -112,7 +112,14 @@ function derive(P){
   const _base=P.frcRef*hf*tiltF;
   const _at22=_base-Math.min(P.frcDrop,0.25*_base);
   const _pel=_at22*_pf(bmi)/_pf(22);
-  const frc=Math.max(rvEff,Math.min(_cap,_pel)*(P.frcScale||1));
+  // RV FLOOR REMOVED HERE 2026-09-26, mirroring apnoea_core.frc_anaes().
+  // Damia 1988 measured anaesthetised FRC 0.84 L BELOW awake RV in 18
+  // morbidly obese patients. A paralysed chest has no expiratory muscle
+  // tone, so its passive volume may sit below a volume the awake patient
+  // reached by effort. THE AWAKE FLOOR ON LINE ABOVE STAYS: awake FRC
+  // below awake RV would be the same patient with the same muscles, and
+  // that really is impossible.
+  const frc=Math.min(_cap,_pel)*(P.frcScale||1);
   // RULED 2026-09-26: closing capacity is BUIST & ROSS ON A PREDICTED TLC.
   //   CC/TLC (per cent) = 0.525*age + 14.348   Buist & Ross 1973, combined
   //   TLC = 7.99*height(m) - 7.08 litres       Quanjer 1993 Table 6, men
