@@ -68,8 +68,8 @@ is recorded in `HANDOVER.md` as the oldest failure mode here.
 |---|---|---|
 | ~~**Heard A, et al.** *Anesth Analg* 2017;124:1162-7~~ **OBTAINED AND READ 2026-09-22** | — | **CLOSED.** Moved to §1b. The band is confirmed as an IQR and was right; the configuration was wrong in four ways and is corrected |
 | **The four positioning trials: Lane 2005, Ramkumar 2011, Altermatt 2005, Dixon 2005.** Surnames and years only | `tilt_gain_lean` and `tilt_gain_bmi`, stated in `apnoea_core.py` as "calibrated against four randomised trials", then graded by three bands set from those same four | **Not retrievable as cited, by anyone, including us.** Also a fit graded by its own calibration target (§6). The limb is not confined to the positioning test: the obese buccal configuration runs `tilt_deg=25` |
-| **The one-lung-ventilation narrative review**, doi 10.3390/jcm15135078. No author or title recorded | `protocol/evidence.md` calls it "obtained and read" and draws an **absence** claim from it | Reasoning from what a document does not contain is the move CLAUDE.md forbids outright. Open access |
-| ***Circulation* 1963;28:346**, "Hemodynamic Effects of Chronic Severe Anemia". **No author recorded** | `hb_co_exp` = 1.535, derived from it; a band in `test_validation.py` | The band grades the fit against the number the fit was made from. Whether it is a paper or a meeting abstract is **unknown**, and that changes whether the "CLINICAL" label is honest |
+| **The one-lung-ventilation narrative review**, doi 10.3390/jcm15135078. ~~No author or title recorded~~ — **BOTH ARE RECORDED, further down this same section** (Byun S-H, *Optimizing Lung Collapse During One-Lung Ventilation*), a self-contradiction inside one file, caught 2026-09-25 | `protocol/evidence.md` calls it "obtained and read" and draws an **absence** claim from it | Reasoning from what a document does not contain is the move CLAUDE.md forbids outright. Open access |
+| **Roy SB, Bhatia ML, Mathur VS, Virmani S.** Hemodynamic effects of chronic severe anemia. *Circulation* 1963;**28**(3):346-356 | `hb_co_exp` = 1.535, derived from it; a band in `test_validation.py` | ~~No author recorded~~ **OBTAINED AND READ AT SOURCE 2026-09-25** — see its own section below. It is a **full paper, not an abstract**, so the "CLINICAL" label is honest. But this file's suspicion was right and understated: the band does grade the fit against the number the fit was made from, **and that number is not in the paper** |
 | **Varat MA, Adolph RJ, Fowler NO.** *Am Heart J* 1972;83:415-26 | `hb_co_threshold` = 7.0 | A **verbatim quotation in quotation marks** ships in three files from a paper nobody here has read |
 | **Laviola 2026, main text** (SDC held) | ~~a band sourced "~510 s"~~ **STRUCK 2026-09-22**, plus the scorecard row and the claim that "two independently built models agree" | **The 510 s is in no document held.** The band that rested on it has been removed from `test_validation.py` by ruling; see §1b. The SDC gives the state at SaO2 40%, explicitly not the time to it, and names no journal, volume or DOI — the citation in `test_validation.py` is the repository speaking, not the document |
 | **Siggaard-Andersen O.** The van Slyke equation. *Scand J Clin Lab Invest Suppl* 1977;146:15-20, doi 10.3109/00365517709098927 | the non-bicarbonate buffer term `(9.5 + 1.63·cHb)` in `bloodgas.py` — the pH at which every CO2 content and every PaCO2 slope is computed | `bloodgas.py` defends its unit convention with an **unsourced assertion**, which is the exact pattern of the Douglas `[Hb]` bug this same file shipped once. The DOI above was read off the held Laviola SDC's reference list, so it is sound |
@@ -269,6 +269,2580 @@ limb has ever been tested against outside Stock's eight sampled points.
 
 ---
 
+### Gander 2005 — the morbidly obese benchmark, and it says the shunt is ABSENT
+
+**Gander S, Frascarolo P, Suter M, Spahn DR, Magnusson L.** Positive
+end-expiratory pressure during induction of general anesthesia increases
+duration of nonhypoxic apnea in morbidly obese patients. *Anesth Analg*
+2005;100(2):580-4. Held and read 2026-09-23.
+
+**This is the dataset this file has called "the single most valuable missing
+dataset" since before 2026-09-22.** n=30 morbidly obese, control arm n=15
+(11 with blood gases), **BMI 47 (6)**, age 38 (12), 13/15 female. Five minutes
+of 100% O2 with NO CPAP, induction, mechanical ventilation without PEEP, then
+apnoea to SpO2 90%.
+
+| | control | PEEP group |
+|---|---|---|
+| apnoea to SpO2 90% | **127 (43) s** | 188 (46) s |
+| PaO2 before apnoea | **243 (136) mmHg** | 376 (145) |
+| PaCO2 before apnoea | 46 (6) | 47 (11) |
+| PaO2 at SpO2 92% | **68 (10)** | 64 (11) |
+| PaCO2 at SpO2 92% | **53 (4)** | — |
+
+BMI against apnoea duration: **R2 0.51, P 0.003 in the control arm**, and
+R2 0.14 (NS) in the PEEP arm — the BMI effect is abolished by preventing
+atelectasis, which is the mechanism demonstrated by its own removal.
+
+**OUR MODEL AT BMI 47.** Recomputed 2026-09-23 after residual volume was
+made BMI-dependent (see Reinius 2009 below). The configuration is now written
+down and scripted in `handover_numbers.py`, so it cannot go the way of the
+Ellis rows: height 1.70 m, weight 47 x 1.70^2 = 135.8 kg, age 38, Hb 14,
+end-tidal oxygen at the start 0.90, starting PaCO2 46, patent airway on room
+air. Three of these — height, Hb, and how well they preoxygenated — are OURS,
+not Gander's; the paper gives BMI and age only.
+
+| | ours, flat RV | ours, BMI-dependent RV | measured |
+|---|---|---|---|
+| PaO2 before apnoea | 563.8 | **563.8** | **243 (136)** |
+| shunt at t=0 | 5.0% | **5.01%** | implied ~20%+ |
+| time to SpO2 90% | 251.2 s | **164.4 s** | **127 (43)** |
+| PaO2 at SpO2 92% | 43.3 | 44.2 | 68 (10) |
+| PaCO2 at SpO2 92% | 51.5 | 55.6 | 53 (4) |
+
+**The last two rows are NOT a disagreement — see "The 'PaO2 at SpO2 92%' row
+was a comparison error" below.** They compare at the moment our simulated
+*oximeter* reads 92%, by which time the true arterial saturation is 75%.
+Compared at true saturation 92%, we give PaO2 **71.7** against their 68 (10),
+inside one standard deviation. What survives is a question about the
+oximeter-lag model, not about oxygen.
+
+**The timing disagreement is now inside one standard deviation** — 164 s
+against 127 (43), whose 1 SD band is 84–170 s. It was 251 s. Nothing about
+this benchmark entered the choice of `k_rv_bmi`, which was fixed by Reinius's
+CT volume and Holley's ERV threshold before this was run.
+
+**The oxygen disagreement did not move at all.** PaO2 before apnoea is 563.8
+either way, to one decimal place, because the arterial oxygen tension at the
+moment apnoea starts is set by preoxygenation and by gas exchange, not by how
+much gas is in the lung. That is the cleanest available statement of where the
+remaining defect is: **not in lung volume.**
+
+**OUR MORBIDLY OBESE PATIENT CARRIES THE LEAN BASELINE SHUNT.** 5.0% at BMI
+47. The collapse machinery contributes essentially nothing at the point where
+a real patient is most atelectatic. Their PaO2 243 on FiO2 1.0 with PaCO2 46
+implies an alveolar PO2 near 655 and an a-A gradient near 410 mmHg — a shunt
+measurement in all but name. (That arithmetic is ours; they report no shunt
+fraction. n=11 with SD 136 on a mean of 243, so the scatter is large.)
+
+**THE TIMING ERROR WENT UP, THEN CAME BACK DOWN, AND BOTH MOVES WERE RIGHT.**
+Before any floor, expiratory reserve volume was **-466 mL** — impossible — and
+we took 166 s against a measured 127. Flooring FRC at a flat residual volume
+removed the impossibility and the answer went to **251 s**: the unphysical
+negative ERV had been hiding half the error by giving the patient an impossibly
+small oxygen store. Making residual volume itself fall with BMI, on Reinius's
+measurement, brings it to **164 s**. That is close to the original 166 s and it
+is worth being explicit that this is NOT a return to the old answer by a
+roundabout route — the old 166 s came from a negative ERV, the new 164 s comes
+from an ERV of zero, which is what Holley measured in this population.
+
+**AND IT SETTLES WHERE THE DEFECT CANNOT BE.** FRC is now at its floor, so the
+oxygen store cannot be reduced further by any parameter. **At BMI 47 the FRC
+route is exhausted.** Whatever is missing is in GAS EXCHANGE — shunt or low
+V/Q — not in lung volume.
+
+Also available and unused: an obese CO2 slope, 46 -> 53 mmHg over ~127 s,
+about 3.3 mmHg/min. We hold no obese CO2 comparator at all.
+
+### Hedenstierna 2020 — READ. THE SHUNT CEILING IS CORRECT AND I WAS WRONG
+
+**Hedenstierna G, Tokics L, Reinius H, Rothen HU, Ostberg E, Ohrvik J.**
+Higher age and obesity limit atelectasis formation during anaesthesia: an
+analysis of computed tomography data in 243 subjects. *Br J Anaesth*
+2020;124(3):336-344. doi 10.1016/j.bja.2019.11.026. **Held and read
+2026-09-23.** n=243, age 18-78, **BMI 18-52**, CT awake and during
+anaesthesia, preoxygenated FIO2 >0.8 then ventilated FIO2 >=0.3, no PEEP.
+
+**THIS REVERSES A DIAGNOSIS GIVEN WITH CONFIDENCE EARLIER THE SAME DAY.**
+It was recorded here that our shunt saturation — 7.2% at BMI 26.4 rising only
+to 9.8% at BMI 39.6 — was "a structural ceiling" and a defect, on the
+strength of a TWO-POINT extrapolation from Rothen. **The saturation is
+correct.**
+
+**THEY FIT A BROKEN LINE WITH THE KNEE AT BMI 30.** Abstract: "Log
+atelectasis area was also related to a **broken-line function of the BMI with
+the knee at 30 kg m-2** (r2=0.06; P<0.001)." Conclusions: "Atelectasis
+increased with BMI in normal and overweight patients, but showed **no further
+increase in obese subjects (BMI >=30)**."
+
+| BMI | our shunt | Hedenstierna |
+|---|---|---|
+| 26.4 | 7.2% | rising limb, below the knee |
+| 29.7 | 8.4% | approaching the knee |
+| 34.7 | 9.5% | plateau |
+| 39.6 | 9.8% | plateau |
+
+**Our collapse machinery already produces the shape they measured.** And
+Rothen's two groups (BMI 24.9 -> 4.7%, BMI 27.7 -> 9.9%) sit on the RISING
+LIMB BELOW THE KNEE, which is exactly why extrapolating them past 30 gave
+nonsense. This file had already flagged that extrapolation as invalid
+because it yields negative shunt below BMI 22, and then leaned on it anyway.
+
+**AND THEY SEPARATE THE TWO MECHANISMS EXPLICITLY.** Introduction: "Atelectasis
+causes **shunting** of blood through non-ventilated lung tissue, which,
+together with **ventilation/perfusion mismatch caused mainly by AIRWAY
+CLOSURE**, impedes oxygenation of blood."
+
+**THEIR RESULTS SHOW THE TWO DECOUPLE, and the age data are the cleanest
+demonstration:** "Atelectasis increased with increasing age up to 50 yr, and
+then decreased with further increase in age... **The P/F ratio, in contrast,
+decreased with increasing age even beyond the age of 50 yr.**"
+
+Atelectasis peaks at 50 and falls; oxygenation keeps worsening. **So the
+worsening oxygenation is NOT atelectasis-driven.** The same holds across BMI:
+atelectasis plateaus above 30 while P/F keeps falling in the obese (P<0.001
+between BMI groups during anaesthesia; PaO2 P=0.003).
+
+Other numbers read from the page: atelectasis present in **90%** of subjects,
+median **7.0 cm2** (IQR 2.8-12.5), mean 8.8 (SD 7.7), maximum 39 cm2. FIO2 1.0
+gave more atelectasis than 0.3-0.5 (12.8 vs 8.1 cm2, P<0.001). P/F fell from
+57.6 awake to 44.5 kPa anaesthetised. Awake median PaO2 12.0 kPa, PaCO2 5.2.
+Full multiple regression r2=0.23.
+
+**WHERE THIS LEAVES THE OBESE INVESTIGATION.** Gander's BMI 47 patients have
+PaO2 243 mmHg on FIO2 1.0, an a-A gradient near 410. If atelectasis has
+plateaued by BMI 30, most of that gradient is **airway-closure-driven low
+V/Q**, not shunt — which is what Holley 1967 measured with xenon-133 and what
+this paper names in its first paragraph.
+
+**AND THIS MODEL NOW HAS NO SUCH MECHANISM.** The V/Q volume-allocation
+correction of 2026-09-22 removed the only low-V/Q behaviour it had. That
+removal was correct — a ratio of FLOWS cannot allocate a VOLUME — but the
+artefact had been standing in for a real effect and nothing replaced it.
+**That is the gap, and it is a missing mechanism rather than a mis-set
+parameter.**
+
+**THE LESSON, recorded because it is the third instance today.** A two-point
+extrapolation, already flagged invalid in this very file, was used to call a
+correct feature a defect. The 243-subject measurement was obtainable the whole
+time. Rothen was mined for compliance and shunt but the question "does
+atelectasis keep rising with BMI?" was answered by arithmetic rather than by
+looking.
+
+---
+
+### ~~A CONTRADICTION TO CHECK BEFORE ANY SHUNT PARAMETER MOVES~~ — RESOLVED, see above
+
+Search-resolved 2026-09-23, **NOT READ**, and it reverses a conclusion given
+with confidence earlier the same day:
+
+**Hedenstierna G, Tokics L, Reinius H, Rothen HU, Ostberg E, Ohrvik J.**
+*Higher age and obesity limit atelectasis formation during anaesthesia: an
+analysis of computed tomography data in 243 subjects.* **Br J Anaesth
+2020;124(3):336-344. PMID 31918847.** n=243, **BMI 18-52**, CT awake and
+during anaesthesia, preoxygenated FIO2 >0.8, no PEEP.
+
+Per the search summary: atelectasis "increased with BMI in normal and
+overweight patients but showed **no further increase in obese subjects (BMI
+>=30)**", and peaked around age 50 rather than rising monotonically.
+
+**IF THAT HOLDS, OUR SHUNT CEILING IS CORRECT AND THE EARLIER DIAGNOSIS WAS
+WRONG.** This file recorded on 2026-09-23 that our saturation — 7.2% at BMI
+26.4, 9.5% at 34.7, 9.8% at 39.6 — was a structural defect, on the strength
+of a TWO-POINT extrapolation from Rothen's BMI 24.9 and 27.7. That
+extrapolation was already flagged here as invalid because it gives NEGATIVE
+shunt below BMI 22. A 243-subject pooled CT analysis beats it comprehensively.
+
+**Then Gander's PaO2 of 243 at BMI 47 needs a different mechanism, and the two
+papers read today supply a candidate.** Hedenstierna measures ATELECTASIS,
+which is true shunt. Holley 1967 measured TIDAL AIRWAY CLOSURE and V/Q
+maldistribution, which tracks ERV and is a different thing. If shunt plateaus
+above BMI 30 while airway closure keeps worsening as ERV falls, morbidly obese
+hypoxaemia becomes increasingly **low-V/Q rather than shunt**.
+
+**Which is uncomfortable**, because the V/Q volume-allocation correction of
+2026-09-22 removed this model's only low-V/Q pseudo-shunt. That removal was
+right — a ratio of flows cannot allocate a volume — but the artefact may have
+been standing in for a real low-V/Q effect the model now has no mechanism for
+at all.
+
+**NOTHING MOVES UNTIL HEDENSTIERNA 2020 IS READ.** It is a search summary, it
+reverses a stated conclusion, and acting on it would repeat the exact failure
+recorded twice already in this file.
+
+**Reinius 2009 was obtained and read 2026-09-23 — see its own section below.**
+Still worth having: **Eichenberger A, et al.** *Morbid obesity and
+postoperative pulmonary atelectasis: an underestimated problem.* Anesth Analg
+2002;95(6):1788-92. PMID 12456460.
+
+---
+
+### `vq_log_sd` IS A DEAD PARAMETER — established 2026-09-23
+
+The V/Q comparison chart was regenerated and it now draws **two identical
+curves**. Not nearly identical: arterial oxygen, carbon dioxide, saturation and
+pH agree to five significant figures at every sampled time, and the two arms
+reach SaO2 40% within 0.1 s of each other.
+
+`vq_log_sd` — the width of the ventilation-to-perfusion distribution, how
+unevenly air and blood are matched from region to region — **has no effect on
+any output of this model, sealed or patent.** Swept 0.01 / 0.35 / 0.70 / 1.18,
+a hundredfold range, both airway states:
+
+| vq_log_sd | airway | PaO2 at 300 s | PaCO2 at 300 s | SaO2 at 300 s | time to SpO2<95% |
+|---|---|---|---|---|---|
+| 0.01 | sealed | 157.22 | 60.07 | 99.103 | 385.7 s |
+| 0.35 | sealed | 157.22 | 60.07 | 99.103 | 385.7 s |
+| 0.70 | sealed | 157.22 | 60.07 | 99.103 | 385.7 s |
+| 1.18 | sealed | 157.22 | 60.07 | 99.103 | 385.7 s |
+| 0.01 | patent | 169.84 | 58.18 | 99.308 | 444.5 s |
+| 0.35 | patent | 169.84 | 58.18 | 99.308 | 444.5 s |
+| 0.70 | patent | 169.84 | 58.18 | 99.308 | 444.5 s |
+| 1.18 | patent | 169.84 | 58.18 | 99.308 | 444.5 s |
+
+Inspection agrees with the sweep. In `apnoea_core.py` the name `vq_log_sd`
+appears exactly three times: its declaration, and **two docstrings** — in no
+executable statement at all. In `model.js`, `vqDist(n, sd)` never reads `sd`.
+Both implementations are dead in the **same** way, which is why
+`test_parity.py` could never have caught it: parity tests agreement, not
+liveness.
+
+**And one of those docstrings asserted the opposite.** It read: *"vq_log_sd IS
+STILL USED, for the V/Q ratio itself, which governs gas exchange whenever the
+airway is patent."* That was written on 2026-09-22 as part of the V/Q
+category-error fix and was never true after it. Corrected.
+
+**What this actually means, and it is not a bug.** The model has **no imposed
+V/Q dispersion**. Every one of its 80 compartments is identical at t=0, and
+they diverge only through mechanisms — per-compartment absorption collapse, and
+the unwashed fraction from incomplete denitrogenation. That is exactly what
+`vq_distribution()`'s own docstring argued for: *"deriving the volume
+distribution from those is the right way to improve on this, not a free
+dispersion parameter."* The state is now the aspiration. It is worth saying
+plainly rather than leaving it to be discovered again.
+
+**What changed as a result.** The parameter is kept, marked inert, with the
+reasoning at its declaration — removing it would alter the constructor that
+`test_parity.py` serialises and would read as though dispersion had been
+considered and rejected, which it has not. But **the "V/Q spread" slider has
+been removed from `airway_scenario.html`**: a control that does nothing is
+worse than no control, and this one is presented to an anaesthetist. And
+`vq_chart.py` now **asserts** the two arms agree, so that if anything ever
+reintroduces a dependence on this parameter, the chart fails loudly instead of
+quietly drawing a difference again.
+
+---
+
+### The tilt→cardiac-output term — ADDED 2026-09-24, and it makes a channel WORSE
+
+Ruled by A. Heard. Until now head-up tilt was a **pure benefit** in this model:
+`tilt_factor()` raised FRC and nothing anywhere paid for it.
+
+**The measurement.** Perilli 2003, phase 4 against phase 5 — identical but for
+position, both with subcostal retractors, both without PEEP, cardiac output by
+oesophageal echo-Doppler: **4.9 (0.9) → 4.0 (0.8) L/min, P < 0.05**. That is
+−18.4% at 30°, so `co_tilt_gain` = 0.184/30 = **0.00612 per degree**. Our
+ratio reproduces it exactly.
+
+#### IT DOES NOT EXPLAIN THE TILT OVERSHOOT, WHICH IS WHAT IT WAS ADDED FOR
+
+Recorded here because this file predicted otherwise. The entry written when
+Perilli was read said the term was *"very probably the missing piece in the
+FRC-to-apnoea-time conversion"*. Measured, with the term switched off and on:
+
+| configuration | without CO cost | with | change |
+|---|---|---|---|
+| lean, 20° | 28.6% | 27.7% | −0.93 |
+| BMI 35, 30° | 51.5% | **50.2%** | −1.31 |
+| BMI 44, 25° | 36.3% | 35.0% | −1.36 |
+
+The BMI 35 row needs to reach 45% to pass and ~30% to match the trials. The
+term moves it **1.3 points of the 6.5 needed** — it closes **20%** of the
+excess over the band, and about 6% of the gap to the measured value. **It is
+real, it is measured, and it is not the explanation.**
+
+#### AND IT FLIPS THE SIGN OF PERILLI'S OWN OXYGENATION RESULT
+
+This is the serious part. Perilli measures oxygenation **improving** with tilt
+— PaO2 146 → 179, **+33 mmHg** — *despite* the cardiac output falling. Our
+model, at his cohort and both candidate inspired fractions:
+
+| | PaO2 change at 30° | error against +33 |
+|---|---|---|
+| before the term | **+5.3** mmHg | 27.7 |
+| **with the term** | **−12.7** mmHg | **45.7** |
+| Perilli measured | **+33.0** | |
+
+**The sign is now wrong, and the disagreement is 65% larger than before.**
+Recorded, not compensated, per CLAUDE.md. The term is not withdrawn: it is a
+measured effect the model was wrong to omit, and removing a correct term to
+conceal an incorrect absence would be the worse error.
+
+#### THE DIAGNOSIS: THERE IS NO ROUTE FROM LUNG VOLUME TO STANDING SHUNT
+
+Perilli's own explanation of his result: *"it is reasonable that tilting-up the
+patient's head determined a decrease of abdominal push on the diaphragm and,
+therefore, an increase in FRC, and this, in turn, improved oxygenation."* He
+found the oxygenation gain correlated with the compliance gain, r = −0.65.
+
+**In this model tilt cannot do that.** `shunt_base_eff()` is a pure function of
+**BMI**. Tilt raises FRC 585 → 840 mL in that patient and the standing shunt
+does not move one hundredth of a percent — it sits at 10.90% in both positions.
+So tilt has no oxygenation benefit to offset its cardiac-output cost, and the
+net comes out negative.
+
+**AND THIS IS THE SAME DEFECT PELOSI EXPOSED.** Pelosi 1998 showed the
+BMI-keyed curve has a knee that does not exist. Perilli shows the BMI-keyed
+curve cannot respond to position. Both say the same thing: **BMI is a proxy,
+and the model is keyed on the proxy instead of the quantity.** The quantity is
+lung volume against closing capacity — which the model already computes, in
+`closed_target`, and already uses for the collapse that acts during apnoea.
+
+A `shunt_base_eff` driven by `(cc − v_lung)/v_lung` rather than by BMI would,
+without any new free parameter:
+
+- rise with BMI, because FRC falls and closing capacity rises — **smoothly,
+  with no imposed knee**, which is Pelosi's finding;
+- **fall with head-up tilt**, because FRC rises — which is Perilli's;
+- rise with age, because closing capacity rises with age;
+- reuse machinery already in the model rather than adding to it.
+
+**That is a redesign, not a parameter change.** It is the single change that
+both of today's contradictions point at.
+
+**DONE 2026-09-24 BY RULING — see the section below.**
+
+---
+
+### The shunt re-keyed off BMI — RULED AND DONE 2026-09-24
+
+`shunt_base_eff()` no longer takes BMI. It reads
+
+```
+x = (cc − frc_anaes) / frc_anaes          # closure_x(), one shared helper
+shunt = shunt_anat + (1 − shunt_anat) · x / (x + shunt_cc_k)
+```
+
+where `cc` is closing capacity and `frc_anaes` the lung volume left after
+induction — so `x` is how far the lung has fallen below the volume at which its
+airways start shutting, measured *relative to what it still holds*. 1600 mL
+below closing capacity is trivial in a 3 L lung and catastrophic in a 700 mL
+one, which is why it is normalised rather than left in millilitres.
+
+**Both ends of the law are physics, not fit.** At `x = 0` the lung is at or
+above its closing capacity, nothing is shut, and the shunt is `shunt_anat` —
+the bronchial and thebesian venous drainage that bypasses the alveoli in every
+healthy lung. As lung volume → 0 the whole perfused bed is closed and the shunt
+tends to 1. **The asymptote is therefore not a free parameter**, which matters
+because Pelosi's range does not identify one: fitted freely it runs to 87% with
+the fit still improving, and fixing it anywhere between 60% and 100% moves the
+worst residual by 0.10 percentage points. Only the ratio of `shunt_cc_k` to the
+asymptote is identified over BMI 20–55. **The saturation is asserted from the
+limit, not measured.**
+
+**Two fitted parameters where the quadratic had three**, fitted to the same
+Pelosi inversion, at his cohort's height 1.64 m and age 52. `shunt_floor` is
+gone with the quadratic — the law cannot return less than `shunt_anat`, so a 2%
+floor could never bind, and a dead parameter is not left lying about.
+
+#### What it fixes: Perilli's sign
+
+| Perilli 2003, supine → 30° head-up, FiO₂ 0.50 | PaO₂ change | error vs measured +33 |
+|---|---|---|
+| BMI-keyed (Pelosi quadratic) | **−11.8** mmHg | 44.8 |
+| re-keyed on closure | **+17.3** mmHg | **15.7** |
+| re-keyed, cardiac-output term removed | +36.2 mmHg | **3.2** |
+
+The shunt falls 12.53% → 9.18% as tilt lifts that patient's FRC from 585 to
+840 mL. **Perilli was never in the fit** — the law was fitted to Pelosi's
+supine curve alone, and no parameter was touched to obtain this.
+
+**What is still wrong is now the cardiac-output term.** The FRC and shunt
+routes together give +36.2 against a measured +33. Adding the measured CO loss
+takes it to +17.3. Three readings are open and this row cannot separate them:
+the CO term is too strong; tilt gets too many bites on the oxygen side (store,
+denitrogenation, and now shunt); or our absolute cardiac output, 18% above
+Perilli's measured 4.9 L/min, makes a proportional loss bite harder than it
+should. **Not compensated.**
+
+It also moves with **age**, which no function of BMI can: at BMI 30, supine,
+1.75 m, the shunt runs 4.43% at 20 years, 5.36% at 45, 6.27% at 70, because
+closing capacity rises with age while FRC does not.
+
+#### What it costs
+
+**It fits Pelosi worse.** Worst residual **0.49** percentage points against the
+quadratic's 0.27, rms 0.23 against 0.094. Recorded, not compensated.
+
+The anchors move, and **they move in both directions**, because the shunt is no
+longer a function of BMI alone — these cohorts differ in height and age, which
+the old curve could not see:
+
+| | BMI-keyed | re-keyed | measured |
+|---|---|---|---|
+| Reinius, PaO₂/FiO₂ | 251.7 | **261.6** | 252 (groups 225–266) |
+| Valenza, supine PaO₂ | 171.4 (−0.11 SD) | **182.3 (+0.11 SD)** | 177 ± 50 |
+| Gander, PaO₂ before apnoea | 312.9 (+0.51 SD) | **321.7 (+0.58 SD)** | 243 ± 136 |
+| Tokics, lean baseline shunt | 3.71% | **3.61%** | 5.0, **SE** 1.3 (SD 4.11) |
+
+Reinius loses a near-exact hit — 251.7 was within three tenths of a mmHg — and
+lands at the top of his groups' range but still inside it. Valenza improves and
+crosses to the other side of his mean by the same distance. Nothing here was
+fitted to any of them.
+
+**Benchmarks: the blocking set did not move.** Still four, same four names.
+Nine of thirty-four rows moved, none changed tag, the largest by 5.4 s (Heard
+control 302.2 → 307.6 s, band 244–314). `test_parity.py` passes, including the
+check that `model.js`'s literals match the Python defaults.
+
+#### What it exposed: the same closure is counted twice
+
+**This is a real defect and it is not fixed.** `closed_target` applies the same
+law to the same quantity at the *current* lung volume, and grows `collapsed`
+from **zero** toward it. So the closure already present at induction — which is
+exactly what this baseline shunt *is* — gets added a second time as the apnoea
+runs:
+
+| | x at FRC | baseline shunt | `closed_target` at t=0 |
+|---|---|---|---|
+| Pelosi BMI 22, 1.64 m, 52 y | 0.183 | 3.71% | 2.72% |
+| Pelosi BMI 45, 1.64 m, 52 y | 3.648 | 12.09% | 17.72% |
+| Perilli BMI 48.1, 1.61 m, 37 y | 3.846 | 12.53% | 17.99% |
+
+(`closed_target` is then multiplied by `perfusion_gain` 1.2 and reduced by
+hypoxic pulmonary vasoconstriction before it reaches the shunt.)
+
+**The duplication is older than today** — the two terms have always overlapped.
+What changed is that they are now *the same law of the same quantity*, so it is
+legible. Before today one was a function of BMI and the other a function of
+lung volume, and nobody could see they were the same mechanism.
+
+**Not fixed here.** The coherent form is one law, with `collapsed` initialised
+to its induction value so the runtime term adds only *further* closure. That
+changes the collapse kinetics and every benchmark, and it is a separate ruling.
+
+#### What became load-bearing
+
+`closing_capacity()` is a **placeholder regression** — the code says so. The
+shunt now rests on it **directly** rather than through a curve fitted in BMI, so
+`cc_at_20`, `cc_per_year` and `cc_per_bmi` became load-bearing today, and **none
+of them is sourced.** This is now the largest unsourced dependency the shunt
+has, and it is a better reason to find a closing-capacity source than any that
+existed yesterday.
+
+> **CLOSED 2026-09-26.** All three are gone. `closing_capacity()` is Buist &
+> Ross 1973 on a Quanjer 1993 TLC, both read at source, and it carries no
+> body-mass term. This paragraph is kept because the chase it started is the
+> reason the source was found.
+
+---
+
+### Pelosi 1998 — READ IN FULL 2026-09-24, and IT CONTRADICTS THE KNEE COMMITTED THE SAME DAY
+
+**Pelosi P, Croci M, Ravagnan I, Tredici S, Pedoto A, Lissoni A, Gattinoni L.**
+The effects of body mass on lung volumes, respiratory mechanics, and gas
+exchange during general anesthesia. *Anesth Analg* 1998;87(3):654-60. **Full
+text read from the page 2026-09-24.**
+
+n=24 in three groups of eight: **BMI 21.9 (0.5), 33.6 (2.8), 48.2 (8)**, age
+40-75, 1 man / 7 women per group, height ~1.64 m, no smoking, no
+cardiopulmonary disease. Propofol, suxamethonium, pancuronium. VT 10 mL/kg
+IBW, rate 14, **FiO2 0.40, ZEEP, supine**, 15 min stabilisation, **before
+surgical intervention**. FRC by closed-circuit helium dilution.
+
+**This is the only source in the repository that measures across the WHOLE BMI
+range continuously — 20 to 66 — rather than at one cohort mean.** It publishes
+regressions rather than group means:
+
+    FRC        = 11.97 * exp(-0.096 * BMI) + 0.46   L      r 0.86, P<0.01
+    PaO2/PAO2  = 1.23  * exp(-0.037 * BMI) + 0.196         r 0.81, P<0.01
+    D(A-a)O2   = -7.15 + 3.37 * BMI                 mmHg   r 0.84, P<0.01
+    PaCO2      NOT related to BMI (r 0.06), about 33 mmHg
+
+#### THE KNEE AT BMI 30 IS WRONG
+
+`shunt_base` was made BMI-dependent earlier the same day: flat 5% to BMI 24,
+straight to a **10.9% plateau at BMI 30, flat above**. The plateau was anchored
+on Reinius (BMI 45) and Valenza (BMI 42); **the knee and the flatness came from
+Hedenstierna 2020's finding that atelectasis does not increase above BMI 30.**
+The parameter block recorded, at the time, that this was the weak part: *"the
+knee at 30 comes from Hedenstierna's ATELECTATIC AREA, not from a shunt
+measurement. Shunt and atelectatic area are different quantities and are not
+obliged to have the same knee."* **That caveat has now been cashed in.**
+
+Inverting Pelosi's oxygenation regression through this model, at his FiO2 0.40
+and PaCO2 33:
+
+| BMI | our shunt | Pelosi implies | our D(A−a)O2 | Pelosi's |
+|---|---|---|---|---|
+| 22 | 5.00% | **3.47%** | 87.4 | 67.0 |
+| 26 | 6.97% | **4.75%** | 109.0 | 80.5 |
+| 30 | **10.90%** | **5.96%** | 139.0 | 94.0 |
+| 34 | 10.90% | **7.28%** | 137.7 | 107.4 |
+| 38 | 10.90% | **8.75%** | 136.6 | 120.9 |
+| 42 | 10.90% | **10.37%** | 135.7 | 134.4 |
+| 46 | 10.90% | **12.17%** | 135.0 | 147.9 |
+| 50 | 10.90% | **14.12%** | 134.3 | 161.3 |
+
+**There is no knee.** The successive rises are 1.28, 1.21, 1.32, 1.47, 1.62,
+1.79 and 1.95 points per four BMI units — **accelerating, not flattening**, all
+the way to BMI 50.
+
+**And the agreement at BMI 42-46 is why nobody caught it.** Pelosi implies
+10.4% at BMI 42 and 12.2% at BMI 46, against our flat 10.9%. Reinius sits at
+BMI 45 and Valenza at BMI 42 — **both anchors are in the one place where the
+wrong curve happens to be right.** The disagreement is entirely in BMI 24-40,
+the interval the parameter block named as unmeasured.
+
+#### WHY THIS DOES NOT OVERTURN HEDENSTIERNA
+
+Hedenstierna 2020 measured **atelectatic area by CT** and found it flat above
+BMI 30. Pelosi measures **oxygenation**, which is shunt *plus* low V/Q. The two
+are compatible if the atelectasis plateaus while the **poorly-aerated,
+low-V/Q compartment keeps growing** — which is precisely the distinction
+Reinius draws between nonaerated (11%) and poorly aerated (39%), and precisely
+what this branch was forked to build.
+
+`shunt_base` conflates them, because at t=0 the model's total shunt IS
+`shunt_base`. So Hedenstierna's knee was applied to a quantity it does not
+govern. Pelosi measures the quantity `shunt_base` actually represents, in the
+ventilated state where `unwashed_fraction()` cannot act, so his curve is the
+correct target for it.
+
+#### WHAT THE FRC REGRESSION SAYS, AND IT IS REASSURING
+
+| BMI | ours | Pelosi (helium) |
+|---|---|---|
+| 22 | 1886 mL | 1908 |
+| 30 | 1237 | 1132 |
+| 42 | 745 | 672 |
+| 50 | 578 | 559 |
+
+Close across the whole range, and ours sits **between** Pelosi's helium and
+Reinius's CT — which is what the helium/CT ruling predicts, since helium sees
+only communicating gas. Pelosi's exponent of 0.096 is **not** directly
+comparable with our `k_frc_bmi` of 0.0417: his form carries a 0.46 L offset and
+a different prefactor, and ours carries a residual-volume floor. The values
+agree even though the exponents do not, and it is the values that matter.
+
+#### ADOPTED THE SAME DAY — the broken line is gone
+
+Ruled by A. Heard. `shunt_base_eff()` now carries Pelosi's curve as a
+**quadratic in BMI fitted to the inverted points** over BMI 20–55: worst
+residual **0.27 percentage points**, rms 0.094. A straight line is three times
+worse and a pure exponential six times. Floored at 2% (bronchial and thebesian
+drainage, binds below BMI 13.5) and ceilinged at 40% as a guard (binds past
+BMI 92).
+
+**Fitted to a measured curve, not to a benchmark.** And it respects every
+earlier anchor without being asked to — none of them entered the fit:
+
+| | ours | measured |
+|---|---|---|
+| Reinius BMI 45, FiO₂ 0.50 | PaO₂/FiO₂ **251.7** | **252** (groups 225–266) |
+| Valenza BMI 42, FiO₂ 0.60 | PaO₂ **171.4** | 177 (50) → **−0.11 SD** |
+| Tokics, lean BMI 22.9 | **3.71%** | 5.0, **SE** 1.3 → SD 4.11 → **−0.31 SD** |
+| Pelosi BMI 22 / 45, FiO₂ 0.40 | 180.9 / 104.3 | his curve 180.8 / 104.6 |
+
+**And Gander improved again, on an apnoea protocol none of the anchors share:**
+
+| | flat 5% | broken line | Pelosi curve | measured |
+|---|---|---|---|---|
+| PaO₂ before apnoea | 446.9 | 345.5 | **312.9** | 243 (136) → **+0.51 SD** |
+| time to SpO₂ 90% | 147.9 s | 145.7 s | **145.0 s** | 127 (43) → **+0.42 SD** |
+| PaCO₂ at SpO₂ 92% | 55.1 | 54.9 | **54.8** | 53 (4) → **+0.46 SD** |
+
+**The blocking set did not move** — four before, four after, same names. The
+rows that did move all improved: Stock's PaO₂ at 5 min **157.2 → 171.1** mmHg
+against a measured 314 (87), Heard 292.2 → 302.2 s, Toner 444.5 → 446.8 s.
+
+**The lean rows moved for the first time on this branch**, because the lean
+shunt falls **5.00% → 3.71%**. Every previous change was exactly zero below
+BMI 24 by construction; this one is not, and that is why the Stock oxygen row
+finally moved toward its measurement.
+
+#### WHAT IT DOES NOT FIX
+
+**It is still keyed on BMI.** Perilli's result — oxygenation improving with
+head-up tilt — remains unreproducible, because tilt raises FRC 585 → 840 mL
+and this curve does not move. Replacing one function of BMI with a better
+function of BMI does not give the model a route from lung volume to shunt.
+That redesign, `(cc − v_lung)/v_lung` in place of BMI, is still the open item.
+
+---
+
+### Perilli 2003 — READ IN FULL 2026-09-24, and it supplies the missing mechanism
+
+**Perilli V, Sollazzi L, Modesti C, Annetta MG, Sacco T, Bocci MG, Tacchino RM,
+Proietti R.** Comparison of positive end-expiratory pressure with reverse
+Trendelenburg position in morbidly obese patients undergoing bariatric
+surgery: effects on hemodynamics and pulmonary gas exchange. *Obes Surg*
+2003;13(4):605-9. **Full text read from the page 2026-09-24.**
+
+n=20, **16 men / 4 women** (the reverse of Reinius's 7/23 and Valenza's 5/15),
+age 36.8 (10.1), weight 129.3 (26.5) kg, height 161 (12.2) cm, **BMI 48.1
+(8.2)**. Open laparotomic biliopancreatic diversion. Thiopental/fentanyl,
+**suxamethonium 1 mg/kg**, sevoflurane in O2-N2O at a stated **FiO2 0.50**,
+cis-atracurium, volume control 8-12 mL/kg IBW, plateau near 25 cmH2O, ZEEP.
+Cardiac output by **oesophageal echo-Doppler**.
+
+Five phases; the tilt comparison is **phase 4 against phase 5**, which differ
+only in position (both have subcostal retractors, both without PEEP):
+
+| | phase 4, supine | phase 5, **30° head-up** |
+|---|---|---|
+| PaO2 | 146 (38) | **179 (62)** |
+| P(A−a)O2 | 233 (25) | **184 (84)** |
+| total respiratory compliance | 32 (4) | **40 (9.3)** |
+| **cardiac output, L/min** | **4.9 (0.9)** | **4.0 (0.8)**, P<0.05 |
+
+#### THE FINDING: TILT COSTS CARDIAC OUTPUT, AND THE MODEL DOES NOT PAY IT
+
+`tilt_factor()` in `apnoea_core.py` touches **only FRC**. `co_anaes()` has no
+tilt term at all. In this model head-up tilt is a pure benefit: more lung
+volume, no price.
+
+**Perilli measures the price. 30° reverse Trendelenburg drops cardiac output
+by 18%, from 4.9 to 4.0 L/min, P<0.05.** Their own Discussion: *"This posture
+determined a significant decrease in CO, like PEEP, with consequent reduction
+of peripheral oxygen delivery."*
+
+**This is very probably the missing piece in the FRC-to-apnoea-time
+conversion identified from Valenza the same day.** The problem there was that
+the model takes too LITTLE extra volume from tilt (+46.6% against a measured
++84.8%) and yet produces too MUCH extra apnoea time (+51.1% against a measured
+~+30%). A cost the model does not pay is exactly the shape of thing that
+explains it. Nothing has been implemented; this is recorded for a ruling.
+
+#### A CAVEAT THIS PAPER PUTS ON OUR OWN SHUNT INVERSIONS
+
+Perilli cites **Dantzker DR, Lynch JP, Weg JG et al.** *Depression of cardiac
+output is a mechanism of shunt reduction in the therapy of acute respiratory
+failure.* Chest 1980;77:636-42 — and uses it to argue that part of the
+oxygenation gain from PEEP and from tilt is a **cardiac-output artefact**
+rather than recruitment.
+
+The obese shunt of 10-12% recorded above was obtained by inverting Reinius's
+and Valenza's arterial oxygen **through this model**, which supplies its own
+cardiac output. If their patients' cardiac output differed from what the model
+assumes, the inferred shunt moves. Neither paper reports cardiac output.
+Perilli does — 4.0 to 5.3 L/min across his phases — and that is the only
+figure we have for what an anaesthetised morbidly obese cardiac output
+actually is. **The 10-12% should be re-derived against a measured cardiac
+output before it is treated as settled.**
+
+#### AND ITS OXYGENATION TABLE DOES NOT RECONCILE WITH ITSELF
+
+Perilli states the alveolar gas equation he used: P(A−a)O2 = FiO2(PB − PH2O) −
+PaCO2/RQ − PaO2, with RQ 0.8. At phase 1 that gives, at the stated FiO2 0.50,
+an alveolar PO2 of 0.50 × 713 − 37/0.8 = **310 mmHg**, so P(A−a)O2 should be
+310 − 187 = **123**. **Table 2 reports 185 (111).** The same gap of about 60
+mmHg appears at every phase; the table is self-consistent only at an FiO2 near
+**0.59**.
+
+Recorded rather than resolved. **It means Perilli's absolute oxygenation
+cannot be inverted for shunt the way Reinius's and Valenza's were** — the
+inspired fraction the numbers imply is not the one stated. The phase 4 to
+phase 5 *difference* is unaffected, because both phases share whatever the
+error is, which is why the tilt result above is usable and the absolute one is
+not.
+
+#### One more thing it says about tilt
+
+Citing **Heneghan CPH, Bergman NA, Jones JG**, *Changes in lung volume and
+(PAO2−PaO2) during anaesthesia*, Br J Anaesth 1984;56:437-45: there was **no**
+improvement in oxygenation when lung volumes were raised by head-up tilt in
+**normal-weight** anaesthetised patients, whereas tilt does improve it in the
+morbidly obese. Our model gives a lean patient a 28.6% apnoea-time gain from
+tilt. That is a different quantity from an oxygenation index and the two are
+not in direct contradiction, but it is a reason to check the lean tilt row
+against something other than the positioning trials.
+
+---
+
+### Valenza 2007 — READ IN FULL 2026-09-24, and it REVERSES this morning's tilt conclusion
+
+**Valenza F, Vagginelli F, Tiby A, Francesconi S, Ronzoni G, Guglielmi M,
+Zappa M, Lattuada E, Gattinoni L.** Effects of the beach chair position,
+positive end-expiratory pressure, and pneumoperitoneum on respiratory function
+in morbidly obese patients during anesthesia and paralysis. *Anesthesiology*
+2007;107(5):725-32. **Full text read from the page 2026-09-24.** Obtained
+because Reinius 2009 cites it; it is the paper this file said was needed and
+did not know existed.
+
+n=20 (5 men, 15 women), aged 37 (10), **BMI 42 (5)**, laparoscopic gastric
+banding. Anaesthetised, **paralysed**, volume-control ventilation at
+**FiO2 0.60**, tidal volume 10.5 (1) mL/kg ideal body weight, rate 11 (1).
+**"Beach chair" is reverse Trendelenburg 30° head-up with the legs lifted to
+the abdomen.** End-expiratory lung volume by **closed-circuit helium
+dilution**. Measurements at ZEEP and at 10 cmH2O PEEP, with and without
+pneumoperitoneum; only the no-pneumoperitoneum, ZEEP rows are used here.
+
+#### THE MEASUREMENT THE TILT ROWS NEEDED
+
+| | supine ZEEP | beach chair ZEEP |
+|---|---|---|
+| end-expiratory lung volume | **0.46 (0.1) L** | **0.85 (0.3) L**, P < 0.001 |
+| PaO2 at FiO2 0.60 | 177 (50) | 203 (51) |
+| PaCO2 | 38.3 (5.2) | 38.9 (5.2) |
+| respiratory system elastance, cmH2O/L | 21.71 (5.26) | 18.05 (3.60) |
+| intra-abdominal pressure, cmH2O | 17.87 (5.45) | **23.92 (4.35)** |
+
+**Tilt gain in lung volume, measured: +84.8%.**
+
+#### AND OUR TILT GAIN IS TOO SMALL, NOT TOO LARGE
+
+This morning this file recorded that the tilt overshoot lives in
+`tilt_gain_lean` / `tilt_gain_bmi` and that what was needed was "a measurement
+of FRC against tilt angle". **That measurement now exists and it says the
+opposite of what was expected.**
+
+| | ours | measured |
+|---|---|---|
+| FRC supine, BMI 42 | 751 mL | 460 (100) |
+| FRC at 30° head-up | 1101 mL | 850 (300) |
+| **tilt gain** | **+46.6%** | **+84.8%** |
+
+Our tilt gain is **1.82x too small**. Correcting it upward — which is what the
+only direct measurement of this quantity demands — would make the apnoea-time
+tilt rows **worse**, because those already overshoot (BMI 35 at 30°: ours
+51.1% against a measured ~+30%).
+
+**So the defect is NOT in `tilt_gain_*`. It is in the conversion of FRC into
+apnoea time.** The model takes too little extra lung volume from tilt and
+turns it into too much extra apnoea time. That is a far more useful statement
+than the one it replaces, and it could not have been made without a
+measurement of the intermediate quantity.
+
+#### AND THE PARAMETER'S STATED MECHANISM IS CONTRADICTED
+
+`apnoea_core.py` says of tilt: *"Head-up lifts the abdominal contents off the
+diaphragm, so it raises FRC and the gain is larger the more abdomen there is
+to lift."* In Valenza's beach chair the legs are lifted to the abdomen and
+**intra-abdominal pressure RISES, 17.87 to 23.92 cmH2O**, while lung volume
+nearly doubles. Whatever raises FRC here, it is not a fall in abdominal
+pressure. The comment describes a mechanism the data does not support; the
+parameter itself is an empirical gain and is unaffected, but the explanation
+attached to it should not be quoted.
+
+#### THE ABSOLUTE VOLUMES DISAGREE BETWEEN THE TWO PAPERS, AND BY METHOD
+
+| | BMI | method | supine anaesthetised EELV |
+|---|---|---|---|
+| Valenza 2007 | 42 | closed-circuit helium | **460 (100) mL** |
+| Reinius 2009 | 45 | spiral CT | **697 (157) mL** |
+| ours | 42 / 45 | — | 751 / 668 mL |
+
+**The two measurements move the wrong way with BMI** — the heavier cohort has
+the larger lung — so at least one is method-bound. Helium dilution measures
+only gas that communicates with the airway; CT measures all of it, trapped
+included, and an obese anaesthetised lung has exactly the trapped,
+poorly-communicating regions that separate the two. Valenza checked this
+against a release technique in 10 patients (R² 0.793) and called trapping
+negligible, **but their own intercept is 0.098 L — 21% of a 460 mL mean.**
+
+We sit −0.18 SD from Reinius and **+2.91 SD from Valenza**. Our BMI slope
+between the two is in the right direction while theirs is not. **Neither paper
+can be used on its own to re-anchor FRC**, and this disagreement should be
+resolved before `frc_ref` or `k_frc_bmi` is touched.
+
+#### A THIRD INDEPENDENT MEASUREMENT OF THE OBESE SHUNT, AND IT AGREES
+
+Inverting Valenza's supine oxygenation — PaO2 177 at an alveolar PO2 of
+379.9 mmHg, FiO2 0.60 — needs a shunt of **10.0%**.
+
+| route | study | shunt |
+|---|---|---|
+| blood gas inverted, FiO2 0.50 | Reinius 2009, BMI 45 | **11.85%** |
+| nonaerated lung volume, CT | Reinius 2009, BMI 45 | **11 (6) %** |
+| blood gas inverted, FiO2 0.60 | Valenza 2007, BMI 42 | **10.0%** |
+| **shipped** | | **5.0%** |
+
+Two centres, two years, two inspired oxygen fractions, two BMIs, one
+anatomical route and two physiological ones. **10–12%.** Our oxygenation at
+Valenza's conditions is PaO2 251.8 against a measured 177 (50) — **+1.50 SD** —
+and PaO2/FiO2 420 against 295, the same direction and size as the Reinius
+disagreement.
+
+#### One caution on reading the shunt as atelectasis
+
+Valenza found **no recruitable lung**: alveolar recruitment 0.04 (0.1) L
+supine and 0.07 (0.2) L beach chair, and their Discussion attributes the low
+supine volume to *"a prevalent decrease of the size of the alveoli rather than
+atelectasis"*. Yet their blood gas needs a 10% shunt. The two are reconcilable
+— their P-V method measures what a recruitment manoeuvre can **open**, not
+what is closed, and they performed frequent recruitment manoeuvres before
+measuring — but it is a reason not to equate the inferred shunt with
+atelectasis. Reinius's separation of **poorly aerated (39%)** from
+**nonaerated (11%)** says the same thing from the other side.
+
+---
+
+### Reinius 2009 — READ IN FULL 2026-09-24, and it answers the branch's question
+
+**Reinius H, Jonsson L, Gustafsson S, Sundbom M, Duvernoy O, Pelosi P,
+Hedenstierna G, Freden F.** Prevention of atelectasis in morbidly obese
+patients during general anesthesia and paralysis: a computerized tomography
+study. *Anesthesiology* 2009;111(5):979-87. PMID 19809292. **Full text read
+from the page 2026-09-24.** Published data; nothing here is under the Toner
+authorisation.
+
+n=30 (**7 men, 23 women** by Table 1; the Results text says "33 women and
+7 men", which does not sum to 30 -- see below), BMI **45 (4)**, aged 25-54,
+scheduled for gastric bypass. Preoxygenation
+**5 min of 100% oxygen with a tight seal mask**. Propofol / fentanyl /
+rocuronium, then volume-cycled ventilation at **FiO2 0.5, ZEEP, supine**,
+10 mL/kg predicted body weight, rate set to keep end-tidal CO2 34-41 mmHg.
+Spiral CT at end-expiration in 23 of the 30.
+
+#### Everything it measures, and what we give
+
+| | measured | ours | |
+|---|---|---|---|
+| end-expiratory lung volume, anaesthetised | **697 (157) mL** | 668 | −0.18 SD |
+| end-expiratory lung volume, awake | **1387 (581) mL** | 891 | −0.85 SD |
+| normally aerated, awake / anaesthetised | 71 (11) / **50 (12) %** | — | |
+| poorly aerated, awake / anaesthetised | **28 (12)** / **39 (9) %** | 14.8% | see below |
+| nonaerated, awake / anaesthetised | 1 (0.5) / **11 (6) %** | 5.0% | see below |
+| PaO2/FiO2 awake, room air | 410–432 | — | |
+| PaO2/FiO2 anaesthetised, FiO2 0.5 | **252 pooled** (225–266) | **403** | |
+| PaCO2 anaesthetised | 33–36 | | |
+
+Density bands, stated in the paper: −1000 to −900 HU overaerated, −900 to −500
+normally aerated, **−500 to −100 poorly aerated**, −100 to +100 nonaerated.
+
+**The awake lung volume is an independent check and it passes.** The
+anaesthetised 697 mL is not — `k_rv_bmi` was anchored on it, so agreement
+there is circular. The **awake** 1387 (581) mL is not circular: it falls out of
+`frc_ref` and `k_frc_bmi`, neither of which has ever seen this paper, and we
+land at −0.85 SD.
+
+#### A CORRECTION TO A COMPARISON MADE EARLIER THE SAME DAY
+
+The first pass at this compared our 14.8% unwashed share against Reinius's
+**anaesthetised** poorly-aerated 39%, and concluded the model was 2.6x too
+small. **That is the wrong row.** The unwashed fraction is the share whose
+airway was shut *during preoxygenation*, and preoxygenation happens **awake**.
+The right comparator is the **awake** figure, **28 (12) %**, and against that
+we are at **−1.10 SD** — low, but not obviously wrong.
+
+And 28% is itself an upper bound, because airway closure in the awake obese is
+**tidal** (Milic-Emili's term): units open and shut within each breath, so they
+partly denitrogenate rather than not at all. A model value around half the
+awake poorly-aerated fraction is what tidal closure would predict. The
+unwashed fraction may be approximately right.
+
+#### THE REAL FINDING: THE MODEL IS TOO GOOD ON A VENTILATOR
+
+At FiO2 0.5, ventilated, our BMI 45 patient gives **PaO2/FiO2 403** against a
+measured **252**. Our alveolar-to-arterial oxygen gradient is 113 mmHg where
+theirs is 188.
+
+**403 is close to what Reinius measured in these patients while they were
+AWAKE** (410–432). So the model's anaesthetised morbidly obese patient
+oxygenates about as well as a real one does before induction.
+
+**And the denitrogenation mechanism cannot be the explanation.** These patients
+are on a ventilator: every unit gets fresh gas every breath, nothing stays
+un-denitrogenated, and `unwashed_fraction()` is irrelevant to this number.
+Whatever closes this gap is a **standing** gas-exchange defect, present on a
+ventilator, not something specific to apnoea.
+
+#### AND TWO INDEPENDENT ROUTES PIN ITS SIZE AT THE SAME PLACE
+
+Inverting the blood gas — what shunt reproduces PaO2/FiO2 252 at an alveolar
+PO2 of 314 mmHg?
+
+| shunt | PaO2 | PaO2/FiO2 |
+|---|---|---|
+| 5.0% (shipped) | 201.3 | 403 |
+| 8.0% | 162.9 | 326 |
+| **11.0%** | 132.2 | **264** |
+| 14.0% | 110.4 | 221 |
+| 20.0% | 84.4 | 169 |
+
+**PaO2/FiO2 252 needs a shunt of 11.9%.** Reinius **measured** the nonaerated
+lung volume at **11 (6) %**.
+
+**11.9% inferred from arterial blood, 11% measured by computed tomography, in
+the same patients.** Those are different quantities — a perfusion fraction and
+a volume fraction — and they are not obliged to agree, so the agreement to
+0.15 SD is worth more than either alone.
+
+We ship **5.0%**.
+
+#### WHY THIS IS NOT A CONTRADICTION OF HEDENSTIERNA 2020
+
+Hedenstierna 2020 (n=243) established that atelectasis shows **no further
+increase above BMI 30**, and on 2026-09-23 this file recorded that our shunt
+ceiling is therefore correct and a previous diagnosis of a structural defect
+was wrong. **That retraction stands.** Hedenstierna constrains the **shape** —
+flat above BMI 30 — and says nothing about the **height** of the flat part.
+Reinius constrains the height, at BMI 45, and says 11-12%.
+
+A flat ceiling at the wrong height is consistent with both papers. Nothing
+before today measured the height in an obese cohort.
+
+#### AND THE MODEL HAS NO BMI DEPENDENCE OF BASELINE SHUNT AT ALL
+
+`shunt_base` is a flat 0.05 for every patient. At t=0 on a patent airway the
+total shunt IS `shunt_base`, so **a lean patient and a BMI 45 patient are given
+the same 5%.** That is the defect this branch was forked to find, and it was
+invisible until a measured obese shunt existed to compare against.
+
+The 5% is not wrong where it came from: Tokics 1996 Table 3 measures inert-gas
+shunt under anaesthesia at **5.0%, SE 1.3 (SD 4.11 — see the Tokics section,
+read at source 2026-09-25; the 1.3 is a STANDARD ERROR and was read here as an
+SD)**. **And Tokics's patients were not morbidly obese** — his cohort BMI is
+25.2, highest 29.3, which is now computed from his Table 1 rather than assumed.
+Two anchors, two populations:
+
+| population | shunt | source |
+|---|---|---|
+| anaesthetised, normal weight (BMI 25.2) | 5.0%, SE 1.3 (SD 4.11) | Tokics 1996, inert gas |
+| anaesthetised, BMI 45 | **11 (6) % measured / 11.9% inferred** | Reinius 2009 |
+
+That is the raw material for a BMI-dependent `shunt_base` anchored on two
+measurements rather than fitted to a benchmark — the same footing as
+`k_rv_bmi`. **NOT DONE. It is a parameter change that will move Heard, the
+tilt rows, Gander and the buccal numbers, and it is recorded here for a ruling
+rather than made.**
+
+#### What this does NOT settle
+
+The three routes to the low-V/Q compartment's size no longer agree once the
+right comparator is used. Inverting **Gander's** apnoea data wanted an unwashed
+share of 36-44%; Reinius's **awake** poorly-aerated fraction is 28 (12) % and
+our 14.8% sits inside it. If the standing shunt is really 11-12% rather than
+5%, part of what the Gander inversion was asking the unwashed fraction to do
+belongs to the shunt instead. **The two cannot be settled separately, and
+raising one without the other would be fitting.**
+
+---
+
+#### The rest of the paper, read 2026-09-24 — two corrections and four citations
+
+**1. THE AUTHORS THEMSELVES FLAG THE AWAKE LUNG VOLUME AS UNRELIABLE, which
+weakens the independent check claimed above.** Limitation 12, verbatim: *"The
+changes in lung volumes were most likely caused by induction of anesthesia and
+paralysis, but another possible explanation is that during spontaneous
+breathing the patient did not comprehend the instructions given, thus failing
+to make an end-expiratory breath-hold. However we believe this to be unlikely;
+careful instructions were given, and each patient was observed to make a
+breath-hold during the CT scanning."*
+
+The awake 1387 (581) mL was used above as the **one non-circular check** on
+`frc_ref` and `k_frc_bmi`, and we land at −0.85 SD of it. That check is softer
+than it looked: its own authors name a mechanism by which the awake value
+could be too high, and its standard deviation is **42% of its mean** where the
+anaesthetised value's is 23%. Treat −0.85 SD as "not contradicted" rather than
+"confirmed", and do not quote the awake volume as a validation of the FRC
+regression.
+
+**2. The Results text miscounts the sexes.** It reads *"Thirty patients (33
+women and 7 men) were included"* — 33 + 7 = 40, against n = 30. Table 1 gives
+men/women as 0/10, 4/6 and 3/7 by group: **7 men and 23 women**. Table 1 is
+the authoritative row; "33" is a typo for 23. Recorded because this file has
+been caught before by a transposed figure taken from running text rather than
+from a table.
+
+**3. Limitation 10 states our mechanism's third prediction as established
+fact**, in the authors' own words: *"The anesthesia was induced with 100% O2,
+**which promotes formation of atelectasis**; however, this is a standard
+procedure in patients with high risk of difficult intubation and hypoxemia."*
+That is prediction (c) of the incomplete-denitrogenation mechanism — a closed
+unit full of oxygen absorbs, a closed unit full of nitrogen is splinted open —
+asserted by a group that measures atelectasis by CT for a living. Their
+reference 35 (Rothen 1995) is the supporting measurement: after a recruitment
+manoeuvre, atelectasis stays away for at least 20 min **if FiO2 is kept at
+0.4**, and recurs quickly at 100%.
+
+#### Four citations this paper hands us, from its own reference list
+
+These are resolved from a primary source rather than from a search, which is
+the standard §2a of this file asks for.
+
+- **Jones RL, Nzekwu MM.** The effects of body mass index on lung volumes.
+  *Chest* 2006;130(3):827-33. Reinius reference 24. **This is the paper this
+  file has been asking for**, and the citation is now confirmed from a
+  primary source rather than a search result.
+- **Valenza F, Vagginelli F, Tiby A, Francesconi S, Ronzoni G, Guglielmi M,
+  Zappa M, Lattuada E, Gattinoni L.** Effects of the beach chair position,
+  positive end-expiratory pressure, and pneumoperitoneum on respiratory
+  function in morbidly obese patients during anesthesia. *Anesthesiology*
+  2007;107(5):725-32. Reinius reference 36. **This is the shape of paper the
+  tilt question needs**: position against respiratory function in
+  anaesthetised obese patients, rather than position against apnoea time.
+- **Perilli V, Sollazzi L, Modesti C, Annetta MG, Sacco T, Bocci MG, Tacchino
+  RM, Proietti R.** Comparison of positive end-expiratory pressure with
+  reverse Trendelenburg position in morbidly obese patients undergoing
+  bariatric surgery: effects on hemodynamics and pulmonary gas exchange.
+  *Obes Surg* 2003;13(4):605-9. Reinius reference 34. Head-up tilt against
+  **gas exchange**, in the population that matters.
+- **Damia G, Mascheroni D, Croci M, Tarenzi L.** Perioperative changes in
+  functional residual capacity in morbidly obese patients. *Br J Anaesth*
+  1988;60(5):574-8. Reinius reference 25. An FRC measurement in the right
+  population.
+
+And two more worth having:
+
+- **Berthoud MC, Peacock JE, Reilly CS.** Effectiveness of preoxygenation in
+  morbidly obese patients. *Br J Anaesth* 1991;67(4):464-6. Reference 40.
+  Directly relevant to the end-tidal oxygen fraction assumed in the Gander
+  configuration, which is currently **ours, not Gander's**.
+- **Eichenberger A, Proietti S, Wicky S, Frascarolo P, Suter M, Spahn DR,
+  Magnusson L.** Morbid obesity and postoperative pulmonary atelectasis: an
+  underestimated problem. *Anesth Analg* 2002;95(6):1788-92. Reference 5.
+  Already on this file's wanted list; the citation is now confirmed.
+
+**What changes because of this.** The tilt question was recorded on 2026-09-24
+as needing "a measurement of FRC against tilt angle — possibly a new study".
+Two candidate papers now exist by name, from a primary source, and neither has
+been obtained. **Get Valenza 2007 and Perilli 2003 before concluding that
+anything about tilt needs a new trial.**
+
+---
+
+### Three rulings, 2026-09-24
+
+**1. The CO2 defect is ONE defect.** A. Heard. The model is worked from here
+on as one fault seen from two sides, and HANDOVER may say so.
+
+What it rests on: the production and store levers move both limbs by similar
+amounts (`v_tis_co2_fast` 15 moves sealed +39% and patent +35%); both limbs now
+err in the same direction, too shallow; and no lever now separates them.
+
+What it does not rest on, stated so the ruling can be overturned: the same
+three observations are equally consistent with **two** faults sharing the CO2
+chemistry, because the dissociation curve, the buffering and the tissue stores
+all act whatever the airway is doing. A shared lever family is expected either
+way. **This is a decision to stop hedging and work a single mechanism, not a
+demonstration that there is one.** Any lever that moves one limb and not the
+other voids it — and one may well exist, because the a-A CO2 gap behaves
+completely differently sealed and patent; it simply has not been looked for
+since the V/Q fix removed the old one.
+
+**And the ruling immediately constrains the answer.** If it is one fault, the
+single correction that takes the sealed limb from 1.91 to 3.4 must also take
+the patent limb from 1.78 to 2.16 — a factor of 1.78 on one and 1.21 on the
+other. So it cannot be a gain on CO2 production or storage, because those
+scale both limbs equally. That constraint came out of the ruling, not out of
+the data, which is the useful thing a ruling can do.
+
+**2. `vq_log_sd` stays, marked inert.** A. Heard. No change; the parameter
+keeps its declaration and its comment, the slider stays removed from
+`airway_scenario.html`, and `vq_chart.py` keeps asserting the two arms agree.
+
+**3. Head-up tilt — the question was whether it needs a human study.** It does
+not, and the check that settles it cost one model run rather than a trial.
+
+The model gives tilt two routes: a larger awake FRC, and a smaller unwashed
+fraction (a bigger awake lung closes fewer airways, so denitrogenation is more
+complete). The four positioning trials measure only the total. But the second
+route is **exactly zero** whenever awake FRC exceeds closing capacity, so it can
+simply be switched off:
+
+| configuration | both routes | FRC only | second route | band |
+|---|---|---|---|---|
+| lean, 20° | 28.6% | 28.6% | **0.0%** | 15–40 |
+| BMI 35, 30° | 51.1% | **45.4%** | 5.7% | 20–45 |
+| BMI 44, 25° | 35.9% | 33.4% | 2.5% | 15–40 |
+
+**The overshoot is not in the denitrogenation route.** With that route switched
+entirely off the BMI 35 row still fails, at 45.4% against a band top of 45. The
+second route contributes at most 5.7 percentage points and removing it would
+not recover the row. In the lean patient it contributes nothing at all, because
+the unwashed fraction is zero at both angles.
+
+So the defect is in **how much FRC rises with tilt** — `tilt_gain_lean` and
+`tilt_gain_bmi`. `apnoea_core.py` says these were "Calibrated against four
+randomised trials". They are a **fit with no independent source**, and the fit
+is stale: it was made when FRC, residual volume and the V/Q machinery all
+behaved differently.
+
+**That changes what to go looking for.** Re-fitting them to pass the tilt rows
+is tuning a parameter to a benchmark, refused four times already. What is
+wanted is a measurement of **FRC against tilt angle** — not of apnoea time,
+which is what the four trials give and which sits downstream of every other
+part of the model. A trial that measured functional residual capacity in the
+ramped position would settle it; several may exist, and none has been looked
+for, because until now the tilt rows looked like a question about apnoea.
+
+---
+
+#### And the same question asked of `tau_mix` and `n_vq` — a narrower answer
+
+`vq_log_sd` being dead raised an obvious follow-up. If the compartments are
+identical, then **cardiogenic mixing between them** (`tau_mix`, how fast the
+beating heart stirs adjacent lung units toward a common gas composition) and
+the **number of compartments** (`n_vq`) should have nothing to act on either.
+The partial `handover_numbers.py` output looked exactly like that: every
+`tau_mix` from 25 to 90 s returning a Stock slope of 1.95, where the recorded
+values ranged 6.09 down to 3.09.
+
+Measured on the **Stock reference patient** — lean, supine, sealed airway —
+all three are inert to six significant figures:
+
+| parameter | range swept | PaCO2 slope | PaO2 at 300 s | SaO2 at 300 s |
+|---|---|---|---|---|
+| `tau_mix` | 5 → 300 s (60-fold) | 1.9487 | 157.223 | 99.1025 |
+| `vq_log_sd` | 0.01 → 1.18 (118-fold) | 1.9487 | 157.223 | 99.1025 |
+| `n_vq` | 20 → 160 (8-fold) | 1.9487 | 157.223 | 99.1025 |
+
+**But that is a fact about the PATIENT, not about two of the three
+parameters.** The Stock patient is lean and supine: functional residual
+capacity exceeds closing capacity, nothing closes, the unwashed fraction is
+zero, and every compartment stays identical for the entire run. There is
+genuinely nothing to mix and nothing for extra compartments to resolve.
+
+Repeating it on the **Gander patient**, who starts with a 15.79% unwashed share
+and closes airways during apnoea, separates them:
+
+| parameter | range | PaO2 at t=0 | PaO2 at 150 s | time to SpO2 90% |
+|---|---|---|---|---|
+| `vq_log_sd` | 0.01 → 1.18 | 446.857 | 41.938 | 147.90 s |
+| | | *identical* | *identical* | *identical* |
+| `tau_mix` | 5 → 300 s | 446.857 | 41.943 → 41.885 | 147.85 → 149.10 s |
+| `n_vq` | 20 → 160 | 452.953 → 445.251 | 42.005 → 41.920 | 148.05 → 147.85 s |
+
+So, precisely:
+
+- **`vq_log_sd` is dead everywhere.** Identical to six figures even here.
+- **`tau_mix` is alive but weak** — a sixtyfold change moves desaturation by
+  1.25 s, about 0.85%. It was inert on the lean patient because there was
+  nothing to mix, not because the parameter does nothing.
+- **`n_vq` is alive, and behaves like proper discretisation.** 20 → 80
+  compartments moves initial PaO2 by 6.1 mmHg, 80 → 160 by a further 1.6. It
+  is converging, and the residual is the Gaussian quadrature, not the unwashed
+  fraction — that was written to split its boundary compartment precisely so
+  it would not step with `n_vq`.
+
+**What this does to the HANDOVER lever sweeps.** Several blocks in
+`handover_numbers.py` exist to rank which parameters move the Stock CO2 slope.
+Every one of them is run on the lean sealed patient, so every one now returns
+the same number for every value of every parameter it sweeps. They are not
+stale numbers to be refreshed — **they are measurements of nothing, and they
+will stay measurements of nothing until they are re-run on a patient whose
+compartments differ.** Renumbering them would produce a table of identical
+values presented as a sensitivity analysis, which is worse than leaving them
+red.
+
+---
+
+### Gander 2005 inverted: how big would the low-V/Q compartment have to be?
+
+The mechanism added on 2026-09-23 gives the Gander patient a 15.79% unwashed
+perfusion share and closes under half the arterial-oxygen gap. So: what share
+*would* close it? Swept with the apnoea collapse term **held fixed** — the
+first attempt forced `max_closed`, which the unwashed fraction and the runtime
+collapse term share, so every row moved for two reasons and the timing column
+was uninterpretable. Overriding `unwashed_fraction()` on a subclass isolates it.
+
+| unwashed | PaO2 at t=0 | time to SpO2 90% | PaCO2 at SpO2 92% |
+|---|---|---|---|
+| 0% | 563.8 | 164.4 s | 55.6 |
+| 10% | 488.6 | 153.9 s | 55.3 |
+| **15.79%** (shipped) | **446.9** | **147.9 s** | **55.1** |
+| 25% | 377.5 | 138.3 s | 54.7 |
+| 35% | 304.8 | 128.0 s | 54.3 |
+| 45% | 237.8 | 117.8 s | 53.9 |
+| **measured** | **243 (136)** | **127 (43)** | **53 (4)** |
+
+**Two independent channels converge on the same answer.** Arterial oxygen needs
+**44.2%**; time to desaturation needs **36.0%**. They agree with each other to
+within a factor of 1.23, and both say the shipped fraction is **2.3 to 2.8
+times too small**. Two separate measurements of the same patients, pointing at
+one quantity, is much stronger evidence than the oxygen row alone — it says the
+mechanism is the right one and the closure law sizes it wrongly, rather than
+the mechanism being wrong.
+
+**Nothing has been changed on the strength of this.** Raising the fraction
+means raising `max_closed`, which is shared with the collapse term and would
+move every obese benchmark. That is a mechanism question — is tidal closure
+during preoxygenation more extensive than the steady-state closure law implies?
+— and not a number to reach for.
+
+---
+
+### The "PaO2 at SpO2 92%" row was a comparison error, not a disagreement
+
+Recorded on 2026-09-23 as ours 44.2 against Gander's 68 (10) — apparently the
+model's worst oxygen disagreement anywhere. It is an artefact of **when** the
+comparison is taken.
+
+Gander drew arterial blood when the **oximeter** read 92%. Our `spo2` output
+carries a 25 s delay and an 8 s time constant, so at the moment it displays 92
+the true arterial saturation is already 75%, and PaO2 follows the true value:
+
+| compared at | time | our PaO2 | our PaCO2 | our SaO2 | our SpO2 |
+|---|---|---|---|---|---|
+| oximeter reads 92 | 144.8 s | **44.2** | 55.1 | 74.9 | 92.0 |
+| true saturation is 92 | 113.0 s | **71.7** | 56.9 | 92.0 | 99.3 |
+| **Gander measured** | | **68 (10)** | **53 (4)** | | |
+
+At true saturation 92% we give **71.7 against their 68 (10)** — inside one
+standard deviation. The two readings **bracket** the measured value.
+
+**But this does not simply excuse the row, it relocates the problem.** Gander's
+own numbers are internally constraining: a PaO2 of 68 at a pH near 7.3 implies
+a true saturation of about 92%, so **their oximeter was reading close to the
+truth at the moment they drew blood.** Ours diverges by 17 saturation points at
+the same instant. Either our oximeter lag is too long for their probe and
+protocol, or our desaturation through that region is too steep. `spo2_delay`
+25 s and `spo2_tau` 8 s have no source recorded anywhere in this repository.
+
+**This is an open item, and it has teeth**, because every desaturation-time
+benchmark in `test_validation.py` — Toner, Heard, the tilt trials, Gander — is
+scored against a threshold crossing on `spo2`, so all of them inherit whatever
+that lag model is doing.
+
+---
+
+### The low-V/Q mechanism — BUILT 2026-09-23, and what it costs
+
+Three papers on this branch say the same thing in three different ways, and
+none of them is this model's shunt:
+
+| source | what it separates from atelectasis |
+|---|---|
+| Hedenstierna 2020, n=243, CT | "V/Q mismatch caused mainly by airway closure", stated as a thing distinct from the collapse |
+| Reinius 2009, n=30, CT | quantifies **poorly aerated** lung separately from **nonaerated**. Poorly aerated lung still has gas in it |
+| Holley 1967, n=8, xenon-133 | measured the ventilation redistribution directly, in this population |
+
+And Hedenstierna 2020 closes the alternative: atelectasis shows **no further
+increase above BMI 30**, so this model's shunt ceiling is correct and cannot be
+where the missing hypoxaemia comes from. The V/Q correction of 2026-09-22
+removed the model's only low-V/Q behaviour — as an artefact, rightly, because
+it was allocating gas volume by a ratio of flows — and left nothing in its
+place.
+
+#### The mechanism: incomplete denitrogenation
+
+A lung unit whose airway is **already shut when preoxygenation begins** never
+sees the oxygen. It is not collapsed: it still holds gas, and it is still
+perfused. But the gas it holds is the alveolar **air** it had when the airway
+closed, so the blood leaving it is poorly oxygenated while the blood leaving
+every other unit is maximally oxygenated. The mixture has a low arterial
+oxygen tension at a nearly normal saturation, which is what low V/Q means.
+
+`unwashed_fraction()` in `apnoea_core.py` is that perfusion share. It uses the
+**same closure law, with the same two parameters**, as the collapse term that
+already runs during apnoea — `max_closed` and `cc_k`, the ceiling on closure
+and its half-saturation. The only difference is that it is evaluated at the
+**awake** lung volume, because preoxygenation happens before induction.
+**No new free parameter, and nothing in it was chosen by looking at a
+benchmark.**
+
+The gas in those units is the alveolar gas equation on room air,
+
+    PAO2 = 0.2093 x (PB - 47) - PaCO2 / RQ
+
+which is arithmetic from constants already in the model. Alveolar gas is never
+inspired gas, so inspired air would have been the wrong choice as well as the
+more flattering one.
+
+#### What it predicts, none of it fitted
+
+1. **Lower arterial oxygen at the start of apnoea** — which is exactly where
+   Gander's disagreement is, and where nothing else has ever moved.
+2. **Scaling with airway closure, not with atelectasis** — so it is exactly
+   **zero** in any patient whose awake FRC exceeds closing capacity, and grows
+   with BMI and with age.
+3. **More atelectasis on 100% oxygen than on 30–50%** — a closed unit full of
+   oxygen absorbs and collapses; a closed unit full of nitrogen is splinted
+   open. Hedenstierna 2020 measured **12.8 cm2 against 8.1 cm2**. The sign is
+   the one this mechanism requires.
+
+#### What it does, measured 2026-09-23
+
+Perfusion share in unwashed units:
+
+| patient | awake FRC | closing capacity | unwashed |
+|---|---|---|---|
+| Stock/Toner reference, 45 y, BMI 22.9 | 2412 | 2300 | **0.00%** |
+| the same patient at 80 years | 2412 | 3000 | 3.49% |
+| Heard cohort, BMI 34.7, 30° head-up | 2096 | 2655 | 3.78% |
+| Gander cohort, BMI 47, supine | 847 | 3027 | **15.79%** |
+
+Every row that moved in `test_validation.py`, and it is the whole list:
+
+| row | before | after | band | |
+|---|---|---|---|---|
+| Heard control, SpO2<95% | 319.8 s | **310.2 s** | 244–314 | **FAIL → PASS** |
+| tilt, BMI 44 at 25° | 33.4% | 35.9% | 15–40 | PASS |
+| tilt, BMI 35 at 30° | 45.4% | **51.1%** | 20–45 | FAIL, and worse |
+| Toner sham, SpO2<95% | 444.5 s | 444.5 s | 380–525 | unchanged |
+| tilt, non-obese 20° | 28.6% | 28.6% | 15–40 | unchanged |
+| every Stock row | | | | unchanged to 1 dp |
+
+**Everything obese or elderly moved; everything lean is bit-identical.** That
+is the signature the mechanism requires, and it was not arranged — it falls out
+of the fraction being zero whenever FRC exceeds closing capacity.
+
+Blocking rows go **5 → 4**. `test_parity.py` passes.
+
+#### The cost, recorded and not compensated
+
+**The head-up tilt benchmark got worse: 45.4% → 51.1% against a measured
+~+30%,** band 20–45. Head-up tilt raises awake FRC, which shrinks the unwashed
+fraction, so in this model tilt now gets **two bites** — once by enlarging the
+oxygen store and once by improving denitrogenation. Whether a real lung gives
+it both is an open question and a good one; the four positioning trials cannot
+separate the two routes.
+
+That row was already failing at 45.4 before this change. Nothing has been
+reached for to compensate it, per CLAUDE.md.
+
+#### And what it does NOT do
+
+**Gander's arterial oxygen is still wrong.** 563.8 → **446.9** mmHg against a
+measured 243 (136). The mechanism is the first thing that has ever moved this
+number at all — it did not shift by one decimal place across the whole
+residual-volume correction — but it closes under half the gap. The right
+reading is that this is the right KIND of mechanism and not yet the whole size
+of it. Candidates for the rest, none of them tested: the fraction may be
+larger than the collapse law says because tidal closure during preoxygenation
+is intermittent rather than absolute; the unwashed units may hold *less* oxygen
+than alveolar air if they have been closed for some time before induction; and
+Gander's own preoxygenation was five minutes by face mask **without CPAP** in
+patients who are hard to seal, so their starting end-tidal oxygen may have been
+well below the 0.90 we assume.
+
+---
+
+### Reinius 2009 — READ 2026-09-23, and it sets the residual-volume floor
+
+**Reinius H, Jonsson L, Gustafsson S, Sundbom M, Duvernoy O, Pelosi P,
+Hedenstierna G, Freden F.** Prevention of atelectasis in morbidly obese
+patients during general anesthesia and paralysis: a computerized tomography
+study. *Anesthesiology* 2009;111(5):979-87. PMID 19809292. Uploaded to the
+session and read; **not in the repository**, so the numbers below are what was
+read from that upload on the date given and nothing else.
+
+n=30, BMI 45 (SD 4), randomised to PEEP / recruitment+PEEP / neither, CT at
+end-expiration after induction and paralysis.
+
+Two things it gives that nothing else in the repository does:
+
+**1. An end-expiratory lung volume in morbid obesity, measured, after
+induction and paralysis: 697 (157) mL.** That is the whole lung volume at the
+end of a passive expiration, in an anaesthetised paralysed patient at BMI 45 —
+about a third of what a lean anaesthetised patient holds.
+
+**2. "Poorly aerated" lung is quantified SEPARATELY from "nonaerated" lung.**
+Nonaerated is collapsed lung with no gas in it — true shunt. Poorly aerated is
+lung that still contains gas but is ventilating badly — **low V/Q, not shunt**.
+This is the same separation Hedenstierna 2020 makes in prose ("V/Q mismatch
+caused mainly by airway closure") and that Holley 1967 measured with
+xenon-133. Three independent sources now say the same thing: obesity produces
+a low-V/Q compartment that is not atelectasis, and the model has no mechanism
+for it. That is the open item, recorded in HANDOVER.
+
+#### A CORRECTION TO THE COMMIT THAT MADE THIS CHANGE
+
+The commit message for the BMI-dependent residual volume says the benchmark
+suite is **"bit-identical either side of it"** and that the change **"adds none
+and fixes none"**. Both statements are false, and the way they came to be
+written is the failure mode this file exists to catch: three Stock rows were
+spot-checked against a clean checkout, the rest were reasoned about rather than
+run, and the reasoning was that the residual-volume floor could not bind in a
+patient whose FRC was above it. Running the whole suite on both sides, **four
+rows moved**:
+
+| row | before | after | |
+|---|---|---|---|
+| tilt, BMI 44 at 25° | **0.0%** | 33.4% | FAIL → **PASS** |
+| tilt, BMI 35 at 30° | 34.5% | **45.4%** | PASS → **FAIL** |
+| Stock obstructed, PaO2 at 5 min | 157.0 | 157.2 mmHg | PASS |
+| Moreault, pressure tracks gas removed | −13.3 | −11.8 cmH2O | PASS |
+
+The blocking count stayed at five **by coincidence** — one tilt row fixed, the
+other broken.
+
+**And the zero is the finding the spot-check missed.** At BMI 44 the flat
+residual-volume floor bound at *both* tilt angles, so head-up tilt bought that
+patient **exactly nothing** — a gain of 0.0% against four positioning trials
+measuring about +30%. That is independent support for making residual volume
+BMI-dependent, and it was invisible until the suite was run properly. All three
+tilt gains are now regenerated by `handover_numbers.py`.
+
+#### The ruling it settles: `rv` is now BMI-dependent
+
+`rv` is **residual volume** — the gas that cannot be squeezed out of the lungs
+at the end of the hardest possible expiration. It is a floor: functional
+residual capacity (`frc`, the volume left after a normal quiet breath out)
+cannot fall below it. Until 2026-09-23 the model held `rv` at a single value
+for everybody, which was wrong in an obvious direction — the chest wall and
+abdomen that push FRC down in obesity push residual volume down too.
+
+The anchor is Reinius's 697 mL. Holley 1967 measured expiratory reserve volume
+(`erv`, the extra gas you can still blow out below a quiet breath — that is,
+FRC minus RV) falling to essentially **zero** in morbid obesity. If ERV is zero
+at BMI 45, then FRC *is* RV there, so Reinius's measured 697 mL is an **upper
+bound on residual volume at BMI 45**, not a coincidence. Solving
+
+    1100 * exp(-k * (45 - 22)) = 697   ->   k = 0.0198
+
+gives `k_rv_bmi = 0.0198`, with `rv = 1100` mL now stated as the value **at BMI
+22**, anaesthetised and supine, rather than as a universal constant.
+
+**This is not tuning a parameter to pass a benchmark.** No benchmark in
+`test_validation.py` moves on it — it is a measured volume in a measured
+population, and the exponent is fixed by two measurements, not fitted to an
+outcome. What it changes is that FRC in the obese is now floored by something
+physical instead of by a constant that happened to be a lean patient's.
+
+Recomputed 2026-09-23 against `apnoea_core.py` (provenance printed), height
+1.75 m, age 42:
+
+| BMI | residual volume | FRC awake | FRC anaesthetised | ERV anaesthetised |
+|---|---|---|---|---|
+| 22.9 | 1081 | 2412 | 2012 | 931 |
+| 34.3 | 862 | 1498 | 1123 | 261 |
+| 44.4 | 706 | 982 | 737 | 31 |
+| 46.4 | 679 | 905 | 679 | 0 |
+
+At the Reinius BMI of 45.0 exactly, the model gives residual volume 698 mL and
+anaesthetised FRC 719 mL, against Reinius's measured 697 (157). ERV reaching
+zero at BMI 46 is Holley's finding falling out of the model rather than being
+put into it.
+
+**What this does NOT license.** Reinius's 697 is an end-expiratory volume in
+patients who were induced and paralysed, not a residual volume measured by
+washout. Reading it as RV depends entirely on Holley's ERV going to zero. If
+that link is wrong, the exponent is wrong with it. It is recorded here so that
+the dependency is visible rather than buried in a constant.
+
+---
+
+### Holley 1967 — the obesity mechanism, MEASURED, and a bug it exposed
+
+**Holley HS, Milic-Emili J, Becklake MR, Bates DV.** Regional distribution of
+pulmonary ventilation and perfusion in obesity. *J Clin Invest*
+1967;46(4):475-81. Held and read 2026-09-23. This is the paper both
+closing-capacity sources cite for obesity.
+
+n=8 (5 women, 3 men), **95-140 kg**, awake and seated at rest, regional
+ventilation and perfusion by **xenon-133**. Verbatim:
+
+> "In four subjects in whom the **expiratory reserve volume** averaged 49% of
+> predicted normal, the ventilation distribution as measured with 133xenon was
+> normal. In the remaining four subjects, in whom the **expiratory reserve
+> volume was reduced to less than 0.4 L** and averaged only 21% of predicted
+> values, the distribution of a normal tidal breath was predominantly to the
+> **upper zones**."
+
+> "In all subjects the perfusion distribution was predominantly to the lower
+> lung zones but was slightly more uniform than in normal nonobese subjects...
+> this abnormality bearing a **close relationship to the reduction in
+> expiratory reserve volume**."
+
+**THE MECHANISM IS MEASURED, NOT ASSERTED.** Obesity reduces ERV; ventilation
+redistributes away from the dependent zones where perfusion is greatest;
+V/Q mismatch follows. ERV = FRC - RV, so this is the FRC mechanism. Closing
+capacity does not appear. Perfusion distribution barely moved — it was
+VENTILATION that shifted.
+
+**AND IT IS A THRESHOLD, NOT A GRADIENT.** Four normal, four abnormal, split
+at roughly **ERV < 0.4 L**. That is a sharper prediction than a regression and
+it is directly checkable.
+
+**A BUG IT EXPOSED: FRC CAN FALL BELOW RESIDUAL VOLUME.** Checking our ERV
+against Holley's threshold showed that `frc_awake()` has no floor at all and
+`frc_anaes()` is floored at 400 mL, but NEITHER is floored at `rv`. At BMI
+34.7 with `k_frc_bmi` >= 0.10 the awake FRC goes UNDER RV, which cannot
+happen; the anaesthetised ERV goes negative from `k` ~ 0.070. **Any sweep of
+`k_frc_bmi` above ~0.064 for this patient is meaningless**, and one was run
+and reported before this was noticed.
+
+| k_frc_bmi | FRC awake | ERV awake | FRC anaes | ERV anaes |
+|---|---|---|---|---|
+| 0.0417 (shipped) | 2096 | 996 | 1696 | 596 |
+| 0.0490 | 1910 | 810 | 1510 | **410** |
+| 0.0639 | 1581 | 481 | 1186 | 86 |
+| 0.0700 | 1464 | 364 | 1098 | **-2** |
+| 0.1000 | 1001 | **-99** | 750 | -350 |
+
+**AND THE VALUE THAT REPRODUCES HEARD LANDS ON HOLLEY'S THRESHOLD.** At
+`k` ~ 0.049 — the value that puts Heard's control arm on its measured median
+of 296 s — the ANAESTHETISED ERV is **410 mL** against Holley's dividing line
+of **400 mL**. Two independent routes to the same volume.
+
+**Do not overread that.** Holley's subjects were AWAKE and SEATED; ours is
+anaesthetised and 30 degrees head-up, and its AWAKE ERV at that setting is
+810 mL, comfortably inside his normal group. The agreement is suggestive, not
+confirmatory. What it does establish is that the FRC needed to reproduce Heard
+puts the patient at the volume where V/Q distribution was measured to start
+failing, rather than at some arbitrary fitted value.
+
+**WHAT HOLLEY DOES NOT GIVE:** any shunt fraction, any anaesthetised subject,
+any supine measurement. n=8, 1967, awake and seated. It establishes the
+mechanism and a threshold; it cannot calibrate an anaesthetised shunt.
+
+---
+
+### The closing-capacity block is wrong in three ways — READ 2026-09-23
+
+Held and read on 2026-09-23, both in full:
+
+**Milic-Emili J, Torchio R, D'Angelo E.** Closing volume: a reappraisal
+(1967-2007). *Eur J Appl Physiol* 2007;99(6):567-83.
+
+**Hopton P, et al.** Airway closure in anaesthesia and intensive care.
+*BJA Education* 2022;22(4):126-130. doi 10.1016/j.bjae.2021.12.001.
+PMID 35531076.
+
+`apnoea_core.py` labels its closing-capacity block "PLACEHOLDER REGRESSION".
+It now has a real target, and it is wrong in three separate ways.
+
+**BUIST & ROSS OBTAINED AND READ AT SOURCE 2026-09-23.** Buist AS, Ross BB.
+*Predicted values for closing volumes using a modified single breath nitrogen
+test.* **Am Rev Respir Dis 1973;107(5):744-52.** It gives a BETTER equation
+than the review does, verbatim:
+
+> "No statistical differences between the regression coefficients for men and
+> women were found. The combined regression equations are: **CC/TLC in per
+> cent = 0.525 age (years) + 14.348 +- 4.34**; CV/VC in per cent = 0.318 age
+> (years) + 1.919 +- 4.61."
+
+Milic-Emili's review quotes the SEX-SEPARATED forms; the authors themselves
+recommend the COMBINED one, and it is steeper than either. **Use 0.525 and
+14.348.**
+
+**THEY MEASURED HEIGHT AND WEIGHT AND NEITHER APPEARS IN THE FORMULA.**
+Methods: "After the subject completed the questionnaire, his height and weight
+were measured." Table 1 reports both. The published predictor is age alone.
+That is stronger than the review's silence on BMI, though it still falls short
+of a positive test of weight as a predictor, which the paper does not report.
+
+**THE INVERSION, which kills the obvious defence.** If our regression were
+merely theirs expressed against a different lung size, some TLC would
+reconcile them. None does:
+
+| age | our CC | Buist CC/TLC | implied TLC |
+|---|---|---|---|
+| 20 | 1800 mL | 24.8% | 7244 mL |
+| 40 | 2200 | 35.3% | 6224 |
+| 60 | 2600 | 45.8% | 5671 |
+| 80 | 3000 | 56.3% | 5324 |
+
+Ours agrees with theirs **only if TLC falls from 7.2 L at age 20 to 5.3 L at
+80**. TLC is approximately age-stable — it is FRC and RV that move with age.
+So this is not a scaling choice: **the two regressions have genuinely
+different slopes, and ours is too shallow.**
+
+---
+
+**1. THE NORMATIVE REGRESSIONS ARE AGE AND SEX ONLY.** Milic-Emili 2007
+quotes Buist & Ross 1973 (n=284 healthy non-smokers, 16-85 yr, single-breath
+N2), equations (2) and (3):
+
+    Males   (n=132):  CC/TLC (%) = 14.9 + 0.50 x age(yr)   SE 4.1
+    Females (n=152):  CC/TLC (%) = 14.4 + 0.54 x age(yr)   SE 4.4
+
+and Teculescu 1996, equations (4) and (5), which agree closely:
+`13.8 + 0.46 x age` males, `12.5 + 0.51 x age` females. **No BMI term, no
+weight term.** CC is normalised to TLC, i.e. to body SIZE, not body MASS.
+
+**2. OUR AGE SLOPE IS TOO SHALLOW BY ABOUT A THIRD.** `cc_per_year` = 20
+mL/yr against Buist & Ross's 0.50% of TLC per year = **30-35 mL/yr** for TLC
+6.0-7.0 L. Our `cc_at_20` = 1800 mL against their implied ~1620 mL at TLC
+6.5 L. So our curve starts too high and rises too slowly, crossing theirs
+near age 45.
+
+**THE CROSSOVER TEST, which has no free parameters in it.** Both papers put
+CC = FRC at **~44 years supine** (Milic-Emili: "in the supine position, CC
+exceeds FRC much earlier (~44 years)"; BJA Ed: "recognised at ~44 yrs of age
+when supine and ~70 yrs [erect]"). **Ours crosses at 50.6 years.**
+
+**3. THE BMI TERM MODELS A MECHANISM BOTH PAPERS ATTRIBUTE TO FRC.**
+
+> Milic-Emili 2007: "Tidal airway closure is common in obesity (Holley et al.
+> 1967), anaesthesia (Hedenstierna 2003)... The tidal airway closure and
+> concurrent hypoxemia found in obesity and anaesthesia **have been attributed
+> mainly to reduction in FRC**."
+
+> BJA Ed 2022: "**Obesity and pregnancy have little effect on TLC and CC.**
+> Decreased FRC in the supine position is associated with a reduced ERV, but
+> an **unchanged CC**."
+
+The second is a positive statement, not an absence, which matters because
+reasoning from what a paper does not say has been wrong repeatedly here.
+
+Our model opens the CC-FRC gap from BOTH ends: `k_frc_bmi` drops FRC (correct,
+and the supported mechanism) AND `cc_per_bmi` = 45 mL per BMI unit raises CC
+(unsupported). At BMI 39.6 versus 23.1, FRC falls 1178 mL and CC climbs 654
+mL — so roughly **45% of our obese airway closure comes from a term the
+literature contradicts**. The same compensating-pair shape as the V/Q volume
+error.
+
+**AND CORRECTING IT MAKES THE OBESE BENCHMARK WORSE, WHICH IS THE POINT.**
+Removing the BMI term LOWERS obese CC, giving less closure, less shunt and
+SLOWER desaturation — and Heard's control already sits near the top of its band
+(**307.6 s, PASS**; this said "already too slow at 319.8 s" until 2026-09-25,
+quoting a *before* value from a superseded table as though it were current)
+against an IQR
+of 244-314. Re-anchoring the age terms only partly offsets it: at Heard's age
+42, a steeper slope adds ~264 mL, a corrected intercept removes ~180 mL, and
+dropping the BMI term removes ~437 mL at BMI 34.7. **Net, a properly anchored
+CC is about 350 mL LOWER for Heard's patient than ours is now.**
+
+**So the obese deficit cannot live in closing capacity.** It is in FRC against
+BMI, or in the conversion from closure to shunt. That makes **Jones & Nzekwu,
+Chest 2006;130(3):827-33** the decisive paper rather than a supporting one.
+
+> **READ 2026-09-25 — and the answer is "neither, quite".** Jones has no
+> supine and no anaesthetised measurement, so he cannot settle the level. What
+> he does settle is that our FRC-against-BMI term is inside the
+> Jones/Pelosi bracket up to BMI 37 and steeper than both above it, and that
+> above BMI ~37 our obese FRC is set by the residual-volume floor rather than
+> by the BMI term. **So the obese deficit's remaining home is `k_rv_bmi` and
+> the closure-to-shunt conversion, not `k_frc_bmi`.** See his section below.
+
+**A STRUCTURAL OBSTACLE TO IMPLEMENTING THIS.** Buist & Ross give CC as a
+PERCENTAGE OF TLC. **This model has no TLC.** Implementing their regression
+faithfully means adding a predicted TLC (Quanjer/ERS 1993, which Milic-Emili
+uses) rather than editing three constants. That is a piece of work, not a
+parameter change, and it should be costed before it is started.
+
+**Caveat held against ourselves:** Buist & Ross studied healthy non-smokers,
+almost certainly not obese. The ABSENCE of a BMI term in their regression is
+not by itself proof that CC is BMI-independent in obesity. The BJA Education
+sentence is what carries this, because it is a positive claim.
+
+**Two more papers surface from these:** Holley HS et al 1967 (the obesity
+airway-closure source both cite) and Hedenstierna 2003 (anaesthesia).
+
+---
+
+#### Chased again 2026-09-24 by ruling — and the first finding is a correction
+
+**The source was already found.** The re-key commit of 2026-09-24, its PR body
+and HANDOVER all said closing capacity was unsourced and called it "the largest
+unsourced dependency in the model". **That is wrong.** Buist & Ross 1973 was
+obtained and read at source the day before, and is quoted verbatim above.
+`cc_at_20`, `cc_per_year` and `cc_per_bmi` are unsourced **values** that
+disagree with a source we hold — a different and smaller problem than an
+unsourced quantity. Corrected in `apnoea_core.py`, HANDOVER and the PR body.
+
+**The crossover number in this document had rotted.** It recorded ours as
+crossing at 50.6 years. It does not reproduce at any reading: **55.0 years**
+against awake FRC, 35.0 against anaesthetised FRC. So our disagreement with the
+literature's ~44 years is **wider** than this document claimed. It is now
+regenerated by `handover_numbers.py` and cannot rot again — the exact failure
+mode CLAUDE.md warns about, caught in this document's own prose.
+
+**A second fault in the same test: our FRC is age-flat.** `height_factor()`
+quotes a regression carrying `0.009*age` and then does not implement the age
+term, so at BMI 22 `frc_awake` is `frc_ref` at *every* age. Giving the term
+back moves the crossover **55.0 → 59.9 years, i.e. further from 44**, because
+that regression has FRC *rising* with age. Recorded, not compensated: it is
+evidence the crossover error is not all in closing capacity.
+
+**Solving the crossover for TLC — the one thing possible without Quanjer.**
+The 44-year target is itself a published number, so it can be inverted:
+
+| | TLC needed for a 44.0 y crossover, at 1.75 m |
+|---|---|
+| with our age-flat FRC | **6676 mL** |
+| with the FRC age term restored | **6658 mL** |
+
+**The two agree to 0.3%**, so the implied TLC does not depend on the unresolved
+FRC age-term question. About 6.7 L at 1.75 m is a plausible TLC — **so Buist &
+Ross and the crossover test are consistent with each other, while our
+regression is consistent with neither.**
+
+**What it would cost.** At that TLC, Buist CC is lower than ours for every
+obese cohort, so the shunt falls — the direction this document already
+predicted:
+
+| cohort | our shunt | on a Buist CC |
+|---|---|---|
+| Pelosi BMI 45 | 12.09% | **11.16%** |
+| Reinius BMI 45 | 11.47% | **9.53%** |
+| Perilli BMI 48.1 | 12.53% | **10.31%** |
+| Heard BMI 34.7 | 6.89% | **6.38%** |
+
+**NOT APPLIED — and superseded 2026-09-26.** The 6.7 L was what the crossover
+*implied*, not a value read from anywhere, and it was never shipped as one.
+Quanjer's measured TLC (6902 mL at 1.75 m, read at source the following day)
+shipped instead, and it agrees with this inverted figure to 3.3%. The shunt
+column above is therefore **not** what the model now gives; see §4 below.
+
+##### READ AT SOURCE 2026-09-25 — and both halves came in
+
+**The PDF was uploaded to the session**, so what follows is read from the page,
+not from a search. See the section immediately below. The lead recorded here as
+UNVERIFIED — that the ECSC male FRC equation is our exact coefficients — **is
+confirmed**. The TLC that blocked Buist & Ross is in the same table.
+
+##### What this section said before it was read, kept as the record
+
+`Quanjer PH, Tammeling GJ, Cotes JE, Pedersen OF, Peslin R, Yernault JC.` *Lung
+volumes and forced ventilatory flows. Report Working Party Standardization of
+Lung Function Tests, European Community for Steel and Coal. Official Statement
+of the European Respiratory Society.* **Eur Respir J 1993;6 Suppl 16:5-40.**
+PMID 8499054. **NOT HELD, NOT READ.** Every primary host — `erj.ersjournals.com`,
+`pubmed.ncbi.nlm.nih.gov`, `doi.org`, `ncbi.nlm.nih.gov` — is refused by this
+environment's network policy.
+
+**AN UNVERIFIED LEAD, RECORDED AS UNVERIFIED.** A web search returns, as the
+ECSC/Quanjer 1993 male FRC reference equation:
+
+    FRC (L) = 2.34*(height/100) + 0.009*age - 1.09        [UNVERIFIED]
+
+which is, coefficient for coefficient, the regression `apnoea_core.py` carries
+and labels **"UNCITED, AND THIS IS THE LARGEST UNCITED LEVER IN THE MODEL"**.
+If it holds, it would source that lever and supply the TLC from the same
+document — two problems with one paper.
+
+**It is a search snippet, not a paper, and it is worth nothing until someone
+reads the paper.** CLAUDE.md: a paper not in the repository or uploaded to the
+session is unverified, and this repository's retractions all came from
+asserting a number from something short of the source. It is recorded here as a
+lead and is written into no parameter, no comment claiming provenance, and no
+benchmark.
+
+---
+
+### Gunnarsson 1991 — A CONDENSATION WAS UPLOADED, NOT THE PAPER
+
+**What was uploaded on 2026-09-25 is the *Survey of Anesthesiology* digest** —
+two pages of condensed abstract plus an editorial *Comment* by J. Briegel and
+Th. Bein. The paper itself is
+
+**Gunnarsson L, Tokics L, Gustavsson H, Hedenstierna G.** Influence of age on
+atelectasis formation and gas exchange impairment during general anaesthesia.
+*Br J Anaesth* 1991;66:423-432.
+
+and it is **not held**. Everything below is **second-hand**, and the scan
+carries **no text layer**, so the figures were read off an image with no machine
+cross-check. **Nothing from it has been written into any parameter.** It is the
+same group as the Tokics 1996 anchor — Tokics is second author, Hedenstierna
+senior — so it is methodologically continuous with it.
+
+#### What it claims, and why it looks like a challenge
+
+| | |
+|---|---|
+| shunt (V̇/Q̇ < 0.005) vs age | **no correlation** |
+| atelectasis vs age | **not associated** |
+| low V/Q (0.005–0.1) vs age | r = 0.35, P < 0.05 (anaesthetised) |
+| venous admixture vs age | r = 0.42, P < 0.05 |
+| log SD Q̇ vs age | r = 0.52, P < 0.01 |
+| P(A−a)O₂ vs age | r = 0.34, P < 0.05 |
+
+n = 45 (36 men, 9 women), 23–69 y, mean 46, elective abdominal surgery, mean
+FiO₂ 0.4, halothane or enflurane. 39 of 45 had atelectasis, and shunt
+correlated strongly with atelectatic area. The editorial comment calls it *"the
+surprising result … that neither atelectasis formation nor shunt depended on the
+patients age."*
+
+**Our re-keyed shunt rises 3.23 → 4.45% across his age range, +38%.**
+
+#### The nuance that may dissolve it entirely
+
+`shunt_base_eff` was fitted by inverting **Pelosi's PaO₂/PAO₂** through this
+model. That makes it an **effective venous admixture** — shunt *plus* low V/Q —
+not a true inert-gas shunt. **Gunnarsson's venous admixture does rise with age,
+r = 0.42.** So our age dependence may be correct, and the conflict may be a
+naming problem rather than a defect.
+
+This repository has been wrong before by reasoning from a quantity's label
+rather than its definition, so it is recorded as **open** and nothing is changed
+on it. **What would settle it** is his tables of shunt and low-V/Q against age,
+which a two-page condensation does not carry.
+
+*A caution on the comparison itself:* our shunt is a smooth monotone function of
+age, so its correlation with age is 1 by construction. His r values are across
+45 patients with real scatter. The comparable quantity is the **size** of the
+age effect, not its r.
+
+#### One thing it does confirm
+
+He reports anaesthesia dropping cardiac output to **70–85% of the awake value**.
+`co_drop_frac` puts us at **75%** — inside his range, and from a source that was
+not used to set it. Given that the Tokics reading has just shown our cardiac
+output to have the wrong *gradient* against body mass, an independent
+confirmation of the *induction drop* usefully separates the two questions.
+
+---
+
+### Tokics 1996 — READ AT SOURCE 2026-09-25, and the 1.3 is a standard error
+
+**Tokics L, Hedenstierna G, Svensson L, Brismar B, Cederlund T, Lundquist H,
+Strandberg A.** V̇/Q̇ distribution and correlation to atelectasis in
+anesthetized paralyzed humans. *J Appl Physiol* 1996;81(4):1822-1833.
+Uploaded to the session and read. **The full author list is now a repository
+record**; this file previously had only "Tokics L, et al.", and an author list
+supplied from memory earlier in this project was explicitly retracted.
+
+#### 1. The cohort BMI, which this file said was recorded nowhere
+
+**Table 1 gives every height and weight.** Computed from it:
+
+| | |
+|---|---|
+| mean BMI | **25.20** (SD 2.79) |
+| range | **20.7 – 29.3** |
+| mean height / weight / age | 1.756 m, 77.4 kg, 48.7 y |
+| sex | 3 women, 7 men |
+
+**Not one patient is obese.** The highest BMI in the study is 29.3. So this is a
+**normal-weight anchor** and cannot speak to the obese end at all — which is
+part of what it has been used for.
+
+#### 2. THE 1.3 IS A STANDARD ERROR, NOT A STANDARD DEVIATION
+
+Table 3's footnote, verbatim: *"Values are means ± SE; n = 10."*
+
+With n = 10 the standard deviation is SE × √10:
+
+| Table 3 value | as published | implied SD |
+|---|---|---|
+| shunt Q̇s | 5.0 ± **SE** 1.3 % | **4.11** |
+| low V/Q Q̇low | 7.1 ± SE 1.8 % | 5.69 |
+| log Q̇SD (perfusion) | 1.18 ± SE 0.12 | 0.38 |
+| log V̇SD (ventilation) | 0.62 ± SE 0.05 | 0.16 |
+| cardiac output | 5.7 ± SE 0.3 l/min | 0.95 |
+| PaO₂ | 159.1 ± SE 10.1 Torr | 31.94 |
+
+**Every "in SD of Tokics 5.0 (1.3)" this repository computed used a band 3.16×
+too narrow.** Our lean shunt is −0.34 SD from his mean, not −1.07. This is the
+same class of error as the ±SD/±SE confusions this project has caught before,
+and it was introduced by recording a bracketed number without its footnote.
+
+#### 3. The cardiac output finding, and it is the important one
+
+Tokics measures **5.7 l/min** anaesthetised in a 77 kg cohort. Perilli measures
+**4.9** in a 125 kg one. **Ours goes the other way:**
+
+| | ours | measured | error |
+|---|---|---|---|
+| Tokics lean, 77 kg | **4.04** | 5.7 | **−29%** |
+| Perilli obese, 125 kg | **5.78** | 4.9 | **+18%** |
+| change across the span | **+43%** | **−14%** | |
+
+**The sign of the gradient is wrong.** `co_anaes` scales on weight^0.75, so we
+rise 43% across that span while the two measurements fall 14%.
+
+This **reframes a standing caveat**. The repository has been recording "our
+cardiac output is ~18% high" as though it were an offset. It is not: at the lean
+end we are 29% *low*. And it matters beyond the row — via Dantzker 1980 cardiac
+output is itself a shunt-reduction mechanism, and **every shunt this repository
+inverted was inverted through this cardiac output.**
+
+*Caveats, because they are not nothing:* neither paper reports haemoglobin, so
+`hb 14` is ours in both; the cohorts differ by 12 years of age; and Perilli's
+4.9 is his phase-4 supine value.
+
+#### 4. What else the paper supplies
+
+Our shunt at his own cohort mean is **4.08%** against his 5.0 (SD 4.11) —
+**−0.22 SD**. His atelectatic area was 2.2 (SE 0.7) % at the diaphragm and 1.8
+(SE 0.7) % 5 cm cranial, correlating with shunt at **r = 0.91, P < 0.001**. Nine
+of ten patients developed atelectasis; **none had any while awake**, and shunt
+did not exceed 1% in any patient awake.
+
+The study was **FiO₂ 0.40–0.43, halothane, ZEEP, supine, paralysed** — so it is
+directly comparable with Pelosi's FiO₂ 0.40 and with our ventilated anchors.
+
+---
+
+### Quanjer 1993 — READ AT SOURCE 2026-09-25, and it settles two things at once
+
+**Quanjer PH, Tammeling GJ, Cotes JE, Pedersen OF, Peslin R, Yernault J-C.**
+Lung volumes and forced ventilatory flows. Report Working Party Standardization
+of Lung Function Tests, European Community for Steel and Coal. Official
+Statement of the European Respiratory Society. *Eur Respir J* 1993;6 Suppl
+16:5-40. **PMID 8499054.** Uploaded to the session and read.
+
+**Table 6, p.26, verbatim.** H is **standing height in metres**, A is age in
+years, volumes in litres. RSD is the residual standard deviation:
+
+| | Men | RSD | Women | RSD |
+|---|---|---|---|---|
+| **FRC** | **2.34H + 0.009A − 1.09** | 0.6 | 2.24H + 0.001A − 1.00 | 0.50 |
+| **TLC** | **7.99H − 7.08** | 0.70 | 6.60H − 5.79 | 0.60 |
+| RV | 1.31H + 0.022A − 1.23 | 0.41 | 1.81H + 0.016A − 2.00 | 0.35 |
+| FRC/TLC (%) | 0.21A + 43.8 | 6.74 | 0.16A + 45.1 | 5.93 |
+| RV/TLC (%) | 0.39A + 13.96 | 5.46 | 0.34A + 18.96 | 5.83 |
+
+#### 1. The largest uncited lever in the model is Quanjer's men's FRC equation
+
+`apnoea_core.py` carried `FRC(L) = 2.34*height(m) + 0.009*age − 1.09` and the
+2026-09-21 source audit flagged it: *no author, no journal and no year anywhere
+in this repository*. It is **Quanjer Table 6, Men, coefficient for
+coefficient.** Now cited in the code.
+
+**Three things follow, and they are not all comfortable:**
+
+- **It is the MEN'S equation — and as of 2026-09-25 that is a RULING, not an
+  accident.** *This is a male model.* Quanjer's men's equations are used for
+  every patient, deliberately, and a woman is modelled as a man of the same
+  height and age. **The cost is recorded rather than waved at:** over
+  1.55–1.75 m at age 45 his own women's equations give FRC at **0.856–0.870**
+  of the male value (about 14% less) and TLC at **0.834–0.837** (about 16%
+  less), and the age term differs ninefold — 0.001 against 0.009 — so a woman's
+  FRC is very nearly age-flat where a man's is not.
+  **Who this misses:** Tokics' cohort was 3 women of 10; **Pelosi's was seven
+  women to one man per group** — and Pelosi is the curve `shunt_base_eff` is
+  fitted to. A male model is being fitted through female-majority data. Ruled,
+  recorded, and not small.
+- **Quanjer measures SEATED.** His §6.1: *"Measurements are made with the
+  subject seated upright; other postures should be noted, as they affect lung
+  volumes."* `frc_ref` 2500 mL is **supine**. At 1.75 m and age 45 Quanjer
+  predicts **3410 mL** seated against our 2500 supine, a ratio of **0.733** —
+  the right sort of size for the supine fall, but not itself sourced. So the
+  model takes Quanjer's *shape* and sets its own *level*.
+- **The age term is still not implemented.** `height_factor()` is height-only.
+  Restoring it moves the CC=FRC crossover **55.0 → 59.9 years**, further from
+  the literature's ~44, because this regression has FRC *rising* with age.
+
+**And it settles the contradiction the audit could not close.**
+`airway_scenario.html` tells the recipient the FRC–BMI relation is
+*"parameterised, not fitted to source data"*; `apnoea_core.py` said *"anchored
+to the standing predicted-FRC regression"*. **The code was right and the page was
+wrong** — the height term is Quanjer's, read from the page.
+
+**FIXED 2026-09-25 by ruling.** The page footer now separates the three claims
+that sentence conflated: the FRC relation's height and age basis is Quanjer,
+read at source; its BMI term is parameterised and agrees with but was not fitted
+to Pelosi's measured helium regression; and closing capacity's values are
+placeholders that disagree with their own source. It also now tells the
+recipient, in the page itself, that the model is male. **That closes the open
+release item.**
+
+#### 2. The TLC that blocked Buist & Ross, and it has no age term
+
+`TLC = 7.99H − 7.08` for men. **No age term** — which confirms *from a primary
+source* what this document had previously only reasoned to ("TLC is
+approximately age-stable — it is FRC and RV that move with age").
+
+#### 3. The crossover test predicted it before the paper was read
+
+| | TLC at 1.75 m |
+|---|---|
+| inverted from the published 44-year supine crossover | **6676 mL** |
+| Quanjer, men, measured | **6902 mL** |
+| | **agree to 3.3%** |
+
+A quantity the model did not contain, inverted out of an independent published
+figure, landing within 3.3% of a paper nobody here had read. **That is the
+strongest independent check the closing-capacity block has ever had**, and it
+was made before the answer was available.
+
+#### 4. What a Buist CC on Quanjer's own TLC would do — **APPLIED 2026-09-26**
+
+> **Ruled and shipped.** The table below is kept as written, because it is the
+> evidence the ruling was taken on. Two corrections to it, both measured
+> 2026-09-26: the "our shunt" and "Buist + Quanjer" columns were computed on
+> the **exponential FRC form retired on 2026-09-25**, so the shipped model
+> gives Pelosi **10.49%**, Reinius **9.55%**, Perilli **9.11%**, Heard
+> **7.24%**; and Jones & Nzekwu's TLC-vs-BMI correction was **ruled off**, so
+> closing capacity carries no body-mass term at all. Both sets of numbers are
+> pinned in `handover_numbers.py`, the old ones to `frc_legacy_exp`.
+
+| cohort | our shunt | Buist + Quanjer | CC ours → theirs |
+|---|---|---|---|
+| Pelosi BMI 45, 1.64 m, 52 y | 12.09% | **10.22%** | 3054 → 2509 mL |
+| Reinius BMI 45, 1.70 m, 42 y | 11.47% | **9.31%** | 3018 → 2367 mL |
+| Perilli BMI 48.1, 1.61 m, 37 y | 12.53% | **9.11%** | 2833 → 1953 mL |
+| Heard BMI 34.7, 1.74 m, 42 y | 6.89% | **6.50%** | 2656 → 2483 mL |
+
+Every obese shunt falls. This was a **redesign, not a parameter edit**, and it
+was taken: `cc_at_20`, `cc_per_year` and `cc_per_bmi` are gone, replaced by a
+predicted TLC times Buist's percentage, and `cc_per_bmi` — the term both
+Milic-Emili and BJA Education contradict — disappeared on its own.
+
+**What it actually moved, measured across two full suite runs of 38 checks:**
+*nothing that blocks.* Both columns — retired curve and adopted — come out **34
+pass, 2 fail, 2 worse, the same four at the same values.** Only 13 of 38 rows
+move at all. Regenerate with `variant_cost.py cc_legacy`, `test_validation.py`,
+then `variant_cost.py --diff`.
+
+**And the test with no free parameter in it improves**: age at which closing
+capacity overtakes awake FRC goes **55.0 → 41.7 y** against a published ~44 y.
+Nothing was fitted to it.
+
+**Two things not to call clean.** `tilt, BMI 35 at 30°` was already failing and
+this makes it 0.2 *worse*, 50.8 → 51.0 against a range ending at 45 — recorded,
+not compensated. And `Stock obstructed, PaO2 at 5 min` now sits 2.1 mmHg above
+its floor, having fallen 17; the next correction in the same direction breaks
+it.
+
+#### 5. The range we leave
+
+Table 6 applies to **ages 18–70** (*"between 18 and 25 yr substitute 25 yr"*)
+and was derived from heights **1.55–1.95 m in men, 1.45–1.80 m in women**. Our
+crossover sweeps run outside it at both ends, and the model puts no guard on
+either.
+
+---
+
+### Jones & Nzekwu 2006 — OBTAINED AND READ AT SOURCE 2026-09-25
+
+**Jones RL, Nzekwu MMU.** The effects of body mass index on lung volumes.
+*Chest* 2006;130(3):827–833. DOI 10.1378/chest.130.3.827. Uploaded to the
+session as page images.
+
+This file has called it *"the decisive paper rather than a supporting one"*
+since the obese deficit was traced **out** of closing capacity and into either
+FRC-against-BMI or the closure-to-shunt conversion. It is now read.
+
+**What it is.** 373 patients, BMI 20 to ~57, retrospective from two accredited
+outpatient laboratories, **seated and awake**, by **body plethysmography**
+(SensorMedics Vmax 22 / 6200 Autobox). All had a normal FEV₁/FVC ratio, a DLCO
+above the lower limit of normal, and no cardiopulmonary disease; all were
+white. TLC was computed as FRC + inspiratory capacity, and **RV as TLC − VC**
+— so his RV is derived from his plethysmographic FRC, not measured
+independently.
+
+**Figure 4, read off the page image** (percentages are **of predicted**;
+r² = 0.49 and p < 0.0001 for both):
+
+```
+FRC (%pred) = 231.9 · exp(−0.070 · BMI) + 55.2
+ERV (%pred) = 587.8 · exp(−0.083 · BMI) +  6.5
+```
+
+**The figure was read off an image, so it is checked before anything is built
+on it.** Six values from the paper's own prose (FRC 112 → 84 %pred over BMI
+20 → 30; ERV 118 → 55; the ratios 75% and 47%) and four Table 1 group means
+all reproduce from these two equations, the worst gap being 0.74 %pred. They
+are read correctly.
+
+**A limit on what can be taken from it.** His percentages are of predicted
+values from **Gutierrez 2004** (Canadian Caucasians), *not* Quanjer, whose
+equations this model uses. That reference set is **not held here**, so Jones's
+percentages **cannot be converted to millilitres in this repository**, and
+nothing below tries to. Everything used from him is a *ratio* or a *slope*.
+
+#### 1. The BMI exponent now has a bracket, and above BMI ~37 we fall out of it
+
+This file already records, correctly, that Pelosi's raw exponent of 0.096 is
+*"not directly comparable with our `k_frc_bmi` of 0.0417"* because his form
+carries an offset and ours carries a residual-volume floor. The comparable
+quantity is the **local slope** d(ln FRC)/d(BMI), which handles the offsets.
+Jones is **seated awake**, Pelosi is **supine anaesthetised**, and Jones states
+in his own discussion that Pelosi's absolute BMI effect was the **larger**. So
+the two should **bracket** a supine awake lung — which is exactly what
+`frc_awake()` (the resting lung volume of an awake patient lying flat) is.
+
+Per cent of FRC lost per BMI unit:
+
+| BMI | Jones, seated awake | **ours** | Pelosi, supine anaesthetised |
+|---|---|---|---|
+| 22 | 3.32 | **4.17** | 7.29 |
+| 30 | 2.38 | **4.17** | 5.70 |
+| 40 | 1.42 | **4.17** | 3.44 |
+| 45 | 1.07 | **4.17** | 2.47 |
+
+Inside BMI 22–37 ours sits **between** the two, which is where a supine awake
+lung belongs. **Above BMI 36.70 ours is steeper than both** — steeper than the
+supine anaesthetised curve, which ought to be the steeper of the pair.
+
+**The mechanism is the same in both papers and absent in ours.** Jones carries
+a **+55.2 %pred** offset and Pelosi a **+460 mL** offset, so both decay to a
+non-zero floor: squeezing a chest with body mass cannot drive the lung to
+nothing. Ours decays toward zero and is caught by the hard `rv_eff()` clamp
+(residual volume — the gas that cannot be breathed out) instead. **Two
+independent regressions of the same quantity both have the offset; we have
+none.**
+
+**What this is NOT.** It is not a claim that our obese FRC *values* are wrong.
+The table above in this file puts ours against Pelosi's helium across BMI
+22–50 and they agree to 11%. The finding is that **above BMI ~37 that
+agreement is carried by the residual-volume floor, not by the BMI term** —
+which makes `k_rv_bmi`, not `k_frc_bmi`, the parameter that actually sets
+obese FRC. That matters because of finding 2.
+
+#### 2. A second measurement arrives on `k_rv_bmi`, which had only one
+
+`apnoea_core.py` says of `k_rv_bmi` in its own words that it is *"ANCHORED ON
+ONE MEASUREMENT and no more than that"* — Reinius's CT, 697 mL at BMI 45,
+converted to a residual volume by assuming expiratory reserve ≈ 0 there. Jones
+measures RV across 373 patients and it **barely moves with BMI**:
+
+| | per cent of RV lost per BMI unit | fall over BMI 22.5 → 37.5 |
+|---|---|---|
+| Jones Table 1 | 0.63 | 7.9% |
+| **ours** | **1.98** | **26.4%** |
+
+Ours is **3.14× steeper**.
+
+**This is measurement against measurement, not guess against measurement**,
+and it is *not resolved here*. Three reasons to be careful before calling
+`k_rv_bmi` wrong:
+
+- **Technique.** Jones is body plethysmography, which counts gas behind closed
+  airways; Reinius is CT, which counts aerated lung. In an obese chest full of
+  trapped gas plethysmography reads **higher** — and that is the direction of
+  the disagreement. This repository already has a helium/CT ruling on this
+  same axis.
+- **Posture and state.** Jones is seated awake; Reinius is supine,
+  anaesthetised and paralysed.
+- **His RV is derived, not measured.** RV = TLC − VC on a plethysmographic
+  FRC, so it inherits whatever his FRC does.
+
+**Recorded as a live conflict. Nothing is changed on it.**
+
+> #### CORRECTED THE SAME DAY — the conflict was overstated, and by me
+>
+> Ruled "6 y" on 2026-09-25, the costing run turned up an arithmetic fact
+> that the paragraph above missed. **Jones's slope cannot simply be adopted,
+> and the reason is not a preference between two measurements.**
+>
+> FRC can never be less than RV. Pelosi *measures* anaesthetised FRC. Jones's
+> slope would put RV **above it** in the obese — at Pelosi's geometry, from
+> **BMI 33.6** upward:
+>
+> | BMI | Pelosi's measured FRC | RV on Jones's slope | implied ERV |
+> |---|---|---|---|
+> | 30 | 1132 mL | 956 mL | +176 |
+> | 35 | 876 | 927 | **−51** |
+> | 45 | 619 | 870 | **−251** |
+> | 50 | 559 | 843 | **−285** |
+>
+> A negative expiratory reserve is not a disagreement, it is an
+> **impossibility**: the lung would hold less gas at rest than after a
+> maximal exhalation.
+>
+> **The resolution is in the code's own comment**, and this repository has
+> been caught before by reading a quantity's *label* rather than its
+> *definition*. `apnoea_core.py` says of `rv`, verbatim:
+> `rv: float = 1100.0    # mL, ANAESTHETISED SUPINE, AT BMI 22`.
+> **Jones measured seated and awake.** It is not the same quantity, so his
+> 0.63%/BMI is not a competing value for this parameter — it is a
+> measurement of a different state.
+>
+> **What survives, because this is not a clean acquittal.** Reinius's single
+> CT point is still the only anchor for the *anaesthetised supine* slope; the
+> threefold gap has not been explained, only attributed; and Jones now
+> implies that the seated-awake-to-anaesthetised fall in RV must itself be
+> large in the obese — **a step this model does not represent at all**.
+
+**And the cost of "correcting" it is large**, which is why it needs a ruling
+and not an edit. A lower `k_rv_bmi` raises obese RV, which raises the floor
+`frc_anaes()` is clamped to. At Pelosi's geometry (1.64 m, age 52, supine):
+
+| BMI | change in anaesthetised FRC on Jones's `k_rv_bmi` |
+|---|---|
+| 35 | 0.0% |
+| 40 | +10.9% |
+| 45 | **+32.4%** |
+| 50 | **+45.9%** |
+
+A BMI 45 patient's anaesthetised FRC would rise by a **third**: more starting
+oxygen and less airway closure, so **slower** desaturation — and Heard's obese
+control already sits near the top of its band — **307.6 s, PASS**, not the
+"319.8 s" this said until 2026-09-25, which was a *before* value from a
+superseded table — against an IQR of 244–314. Per
+CLAUDE.md that is recorded as information and **not** compensated elsewhere.
+
+#### 3. The ERV agreement we had was a compensating pair
+
+Our expiratory reserve volume (the gas a patient could still blow out from a
+resting breath) is **derived** — `frc_awake() − rv_eff()` — and was never
+fitted to anything, so Jones's measured ERV regression is a free test of it.
+It looked like a pass. It is not one.
+
+| mean absolute error against Jones's ERV, BMI 25–45 | |
+|---|---|
+| as shipped | 3.62 percentage points |
+| with RV alone corrected to Jones | **7.21 percentage points** |
+
+Correcting RV **alone** makes the agreement **twice as bad**, and at BMI 45
+drives our ERV to 0.4% of its lean value — FRC collapsing onto RV. So the
+agreement as shipped comes from an FRC that falls too fast and an RV that
+falls too fast, **subtracting**. That is the same compensating-pair shape this
+repository has caught twice before, and it means **the two cannot be fixed one
+at a time**. Both would be fixed by the same missing mechanism: the non-zero
+asymptote that Jones and Pelosi each measure and we do not have.
+
+#### 4. It bears directly on the open Buist & Ross ruling
+
+That ruling would compute closing capacity as a **percentage of TLC**, with
+the TLC coming from Quanjer — and **Quanjer's TLC has no weight term**. Jones
+measures TLC falling **0.50 %pred per BMI unit** (his Fig 3), so a Quanjer TLC
+overestimates the obese lung, and closing capacity with it, in exactly the
+patients this branch is about:
+
+| BMI | Quanjer TLC over Jones's measured TLC |
+|---|---|
+| 30 | +5.3% |
+| 40 | +11.2% |
+| 45 | +14.4% |
+
+This does **not** sink the Buist route — it quantifies a known and correctable
+bias in it, which is better than the route had before. But it means the
+earlier costing (Perilli 12.53 → 9.11%) used an **uncorrected** Quanjer TLC
+and therefore **overstates** how far the obese shunt would fall.
+
+#### 5. And it softens the cost recorded against the male ruling
+
+The 2026-09-25 ruling made this a male model and recorded against it that
+Pelosi's cohort was seven women to one man per group. Jones, n = 373 with both
+sexes, reports in his Results that there were **no significant differences
+between men and women in the best-fit regression lines** for the effect of BMI
+on TLC, VC, RV, FRC, ERV or DLCO — which is why he pooled them.
+
+So **the BMI term does not need a sex; only the base lung volume does.** The
+female-majority worry falls on Quanjer's **level**, not on `k_frc_bmi`'s
+**slope**. The ruling stands and its recorded cost is narrower than it was.
+
+#### What it does not give us
+
+It has **no anaesthetised and no supine measurement at all**, so it cannot
+settle the posture step directly; it is a bound and a shape, not a level. And
+its patients are all white, which it states as a limitation itself.
+
+#### The benchmark cost, measured — 2026-09-25
+
+Ruled "6 y". Four full `test_validation.py` runs, regenerable with
+`variant_cost.py <variant>`. Bands in brackets.
+
+| | shipped | **B** asymptote at RV | **C** Pelosi shape | **D** Jones RV |
+|---|---|---|---|---|
+| **blocking failures** | **4** | **5** | **4** | **5** |
+| Heard control, SpO₂<95% [244–314 s] | 307.6 PASS | **369.9 FAIL** | **272.0 PASS** | 307.6 PASS |
+| Toner sham, SpO₂<95% [380–525 s] | 446.9 PASS | 454.5 PASS | 439.3 PASS | 446.9 PASS |
+| tilt, non-obese 20° [15–40%] | 28.2 PASS | 27.6 PASS | 28.0 PASS | 28.1 PASS |
+| tilt, BMI 44 at 25° [15–40%] | 35.9 PASS | 28.5 PASS | 38.4 PASS | **9.9 FAIL** |
+| tilt, BMI 35 at 30° [20–45%] | 50.5 FAIL | 45.9 FAIL | 50.6 FAIL | 50.4 FAIL |
+| *mean \|error\| vs Pelosi's measured FRC* | *7.79%* | *38.28%* | ***1.86%*** | *23.50%* |
+
+The `tilt, BMI 35 at 30°` row is one of this branch's four **ruled-open** rows
+and fails in every column, so it separates nothing.
+
+**C costs nothing and buys a great deal.** Same four blocking rows as shipped,
+by the same four names. Agreement with Pelosi's measured FRC improves
+**fourfold**. And Heard's obese control moves from the **top** of its band
+(307.6 of 244–314) to the **middle** (272.0) — a 35-second move on a headline
+clinical benchmark, in the right direction, from a change that introduces no
+parameter and was not fitted to it.
+
+**B breaks Heard, which is the measurement that motivated it.** Bolting an
+asymptote under an exponent calibrated without one inflates the obese lung, the
+obese patient lasts 369.9 s, and the row leaves its band. Recorded, **not**
+compensated.
+
+**D destroys the obese tilt response**, and the mechanism is worth stating:
+with Jones's RV slope the obese lung is **pinned at its floor**, and head-up
+tilt works by *raising* FRC — so there is almost nothing left to lift. The
+benefit collapses from 35.9% to **9.9%**, out of band, against four randomised
+trials that measure roughly +30%. That is a **second, independent** argument
+against transplanting Jones's seated-awake RV into this model, on top of the
+negative-expiratory-reserve impossibility above.
+
+**What this is not.** C being better on benchmarks is *corroboration*, not the
+argument. The argument is that C carries a **measured shape** — Pelosi's own
+FRC(BMI)/FRC(22) — where the shipped form carries an exponent fitted without
+the offset that every measurement of this quantity has. Per CLAUDE.md a change
+needs a mechanism, not a fit; C has one, and the benchmark table is the check
+that the mechanism does not cost something elsewhere. **It has not been
+adopted**, and adopting it means changing `model.js` in the same commit.
+
+---
+
+### Roy 1963 — OBTAINED AND READ AT SOURCE 2026-09-25
+
+**Roy SB, Bhatia ML, Mathur VS, Virmani S.** Hemodynamic effects of chronic
+severe anemia. *Circulation* 1963;**28**(3):346-356. Department of Cardiology
+and the Cardiovascular Laboratories, All India Institute of Medical Sciences,
+New Delhi.
+
+**This was the last genuinely incomplete citation in this file.** Its author
+was recorded nowhere, and whether it was a paper or a meeting abstract was
+unknown — which mattered, because `test_validation.py` labels it CLINICAL.
+**It is a full paper**, with methods, seven tables and 26 references. The label
+is honest.
+
+51 patients, anaemia of at least four months, Hb ≤ 6.5 g/100 mL (range
+1.5–6.5, mean 3.7). Right-heart catheterisation, cardiac output by **both**
+Fick and dye dilution. Group A: Hb < 4.0, n = 26, mean 3.0. Group B: Hb
+4.0–6.5, n = 25, mean 4.5.
+
+#### What this repository claimed, checked line by line
+
+| claim | verdict |
+|---|---|
+| "Hb 4.0–6.5 (mean 4.5)" | **CONFIRMED**, Summary verbatim |
+| "gave a cardiac index of 6.3 L/min/m²" | **CONFIRMED**, Summary verbatim — *"higher cardiac index (8.0 versus 6.3 liters per minute per square meter)"*, 8.0 being group A and 6.3 group B |
+| "against a normal ~3.2" | **NOT IN THIS PAPER** |
+
+**The paper gives its own normal, and states it three times.** Measured on 65
+healthy volunteers in the same laboratory: Figure 1's caption — *"The area
+between the broken lines (2.5–5.0 L./min./M²) is the range of our normal
+cardiac index"*; p.351 — *"the upper limit of our normal value of 5.0"*;
+p.355 — *"only 10 subjects had normal cardiac output (2.5 to 5.0 liters per
+minute per square meter)"*.
+
+So the ratio depends entirely on which normal is used:
+
+| | |
+|---|---|
+| 6.3 / **3.2** (this repository's, source unknown) | **1.97×** |
+| 6.3 / 3.75 (the paper's midpoint) | **1.68×** |
+| 6.3 / 5.0 (the paper's upper limit) | 1.26× |
+| 6.3 / 2.5 (the paper's lower limit) | 2.52× |
+
+`test_validation.py` bands this at **1.7–2.3×** and our model returns 1.97×.
+**The paper's own midpoint gives 1.68×, below that band.** §2a already
+suspected the band grades the fit against the number the fit was made from;
+that is now confirmed, and worse than suspected — the number is not the
+paper's.
+
+#### But Table 5 is a paired dataset, which is far stronger than two group means
+
+25 patients with Hb **and** cardiac index before and after treatment of the
+anaemia, each his own control. Our law says the factor is `(7/hb)^k` below Hb 7
+and 1 above, and every post-treatment Hb is 10.0–12.5, so the paired ratio
+isolates `k`:
+
+| estimate of `k` | at Hb 4.5 | |
+|---|---|---|
+| 0.471 | 1.23× | vs each patient's own post-treatment cardiac index |
+| 0.826 | 1.44× | vs the paper's normal midpoint, 3.75 |
+| 1.305 | 1.78× | vs the paper's normal lower limit, 2.5 |
+| **1.535** | **1.97×** | **ours** |
+
+**The paired estimate understates, and the paper says why.** Mean cardiac index
+after treatment is **5.36**, near the *top* of the paper's own normal range —
+p.355: *"patients who once become hyperkinetic may take a much longer time for
+the cardiovascular adjustment, even after the correction of the anemia."* So
+the denominator is still elevated and the paired ratio is a floor, not an
+estimate.
+
+**Read together: the primary data bracket our exponent from below rather than
+refuting it.** `hb_co_exp` = 1.535 sits at or just above the top of what this
+paper supports. What is *not* defensible is the "~3.2 normal" and the band
+built on it.
+
+**And the fit is weak by the paper's own account.** R² of the paired fit is
+0.243 with a residual SD of 0.32 in log space — but the paper states the same
+thing directly: *"for any individual subject the heart rate, cardiac output, or
+stroke volume cannot be predicted from the hemoglobin level."* A low R² here is
+the finding, not a defect of the fit.
+
+#### The population caveat, and it is a large one
+
+*"Anemia was due to ankylostomiasis in 45 patients"* of 51 — **chronic hookworm
+anaemia of at least four months**, in India, ages 13–60. Our `hb_co_factor` is
+applied to **any** patient with a low haemoglobin, including acute blood loss,
+where the circulation has had no months in which to adapt. **Nothing in this
+paper licenses that extension**, and the model makes it silently.
+
+#### One thing that cannot be recovered
+
+Tables 2, 3 and 4 — the individual haemodynamics for all 51 patients — are
+**not in the paper**. They were deposited with the ADI Auxiliary Publications
+Project, Library of Congress, Document 7331. Only group means and the 25
+paired rows of Table 5 are available.
+
+---
+
+### Gutierrez 2004 — OBTAINED AND READ AT SOURCE 2026-09-25
+
+**Gutierrez C, Ghezzo RH, Abboud RT, Cosio MG, Dill JR, Martin RR, McCarthy DS,
+Morse JLC, Zamel N.** Reference values of pulmonary function tests for Canadian
+Caucasians. *Can Respir J* 2004;11(6):414-424.
+
+n = 327 women and 300 men, six Canadian centres, ages 20–80, all Caucasian
+**lifetime nonsmokers**, body plethysmography. This is the reference set every
+per cent in Jones & Nzekwu is a per cent *of*, and it was wanted for exactly
+one thing: to turn Jones from a shape into a level.
+
+**Table 3, adult males** — height in **centimetres**, volumes in litres:
+
+```
+TLC = −8.618 + 0.090·H                 r² 0.37   SEE 0.817
+VC  = −5.897 + 0.069·H − 0.023·A       r² 0.54
+FRC = −4.633 + 0.046·H                 r² 0.17   SEE 0.715   ← NO AGE TERM
+RV  = −2.443 + 0.020·H + 0.021·A       r² 0.33
+```
+
+**Read off a page image, so checked before use:** at 175 cm and 45 years the
+three independently-read equations for VC, RV and TLC close on each other to
+**0.2%** (VC + RV = 7.145 L against TLC 7.132 L).
+
+#### 1. It corroborates the level Quanjer sets, to 0.2%
+
+| male, 1.75 m, 45 y | predicted FRC |
+|---|---|
+| Quanjer 1993 (European) | 3410 mL |
+| **Gutierrez 2004 (Canadian)** | **3417 mL** |
+
+Two reference sets built two decades and an ocean apart agree to **0.2%** on
+the quantity this model's height term *is*. That is the strongest check the FRC
+level has had.
+
+#### 2. And they flatly disagree about age — which bears on an open ruling
+
+Quanjer's men's FRC carries **+0.009·age**. **Gutierrez's has no age term at
+all** — the cell is blank.
+
+| age | Gutierrez over Quanjer |
+|---|---|
+| 20 | **+7.3%** |
+| 45 | +0.2% |
+| 70 | **−6.0%** |
+
+Quanjer's male FRC **rises 14.1%** across 20–70; Gutierrez's is flat.
+
+**The model is currently age-flat**, because Quanjer's age term was never
+implemented, and that has been recorded as a defect awaiting a ruling. **A
+second reference set now says age-flat is right for men.** Taken with the fact
+that implementing the term moves the CC = FRC crossover 55.0 → 59.9 years,
+*further* from the published ~44, there is now a **positive case** for leaving
+it out rather than merely an unfixed omission.
+
+**Still a ruling, not taken here.** And the honest caveat: Gutierrez's FRC
+model is weak, r² = 0.17, and a term can be absent from a regression because it
+is small *or* because the data cannot see it.
+
+#### 3. The supine fall, confirmed by a second source — and one new number
+
+`apnoea_core.py` says of the ratio against Quanjer that 0.733 is *"the right
+size for the supine fall, not itself sourced"*. Against Gutierrez it is
+**0.732**. Still not a measurement *of* the supine fall, but it no longer rests
+on one reference set's level.
+
+**New:** our `rv` is documented ANAESTHETISED SUPINE and sits at **55%** of
+Gutierrez's seated-awake prediction (1100 against 2002 mL). So the model
+**already embodies a 45% seated-to-anaesthetised fall in residual volume** at
+the lean end — baked into a constant rather than represented. That is the same
+step the `k_rv_bmi` retraction called one the model *"does not represent at
+all"*. **It does represent it; it just cannot vary it.**
+
+#### 4. Jones in millilitres — what the paper was wanted for
+
+| BMI | Jones %pred | **Jones, mL** | ours, mL | implied supine/seated |
+|---|---|---|---|---|
+| 22 | 104.9 | 3585 | 2500 | **0.697** |
+| 30 | 83.6 | 2857 | 1791 | 0.627 |
+| 40 | 69.3 | 2368 | 1180 | 0.498 |
+| 50 | 62.2 | 2125 | 778 | **0.366** |
+
+**The model's posture claim is a number for the first time:** it says lying
+flat costs a lean patient **30%** of FRC and a BMI 50 patient **63%**.
+
+The *direction* is right — abdominal mass loads the diaphragm harder supine —
+but the **size at the obese end is a strong claim that nothing in this
+repository tests**. **Watson & Pride 2005** is exactly that measurement, and it
+is on the wanted list. This is the number it would check.
+
+**Jones reports no cohort height or age**, so the ratio above is computed at
+*our* reference geometry. Its **level** moves with height (0.77 to 0.66 at
+BMI 22 across 1.60–1.85 m). Its **fall does not**: ×0.525 at every height,
+because the height terms cancel in a ratio of ratios. So the claim that the
+posture cost nearly doubles across BMI 22–50 **does not depend on the geometry
+chosen**.
+
+#### Two things it does not settle
+
+Its TLC at 1.75 m is **7132 mL** against Quanjer's 6902 — **+3.3%**, and the
+crossover-implied 6676 is now below *both* (Quanjer +3.4%, Gutierrez +6.8%), so
+the TLC gap the crossover test opened **widens slightly** rather than closing.
+
+And its own population is **not obese** — median BMI 25.2 in men, 23.6 in
+women. The paper states that *"BMI was not predictive in any of the tested
+models"*, but over that range that is a statement about the normal-weight
+spread, not about obesity.
+
+---
+
+### Pelosi re-inverted through a corrected cardiac output — 2026-09-25
+
+Ruled "7 y". `shunt_base_eff()` was fitted by inverting Pelosi's measured
+PaO₂/PAO₂ **through this model**, so it inherited this model's cardiac output
+— which the Tokics reading showed has the wrong **gradient**, not merely the
+wrong level.
+
+**The correction.** Two measured anaesthetised cardiac outputs anchor it:
+Tokics 5.70 L/min at 77.4 kg, Perilli 4.90 at 125 kg. A power law through both
+gives an exponent of **−0.3155** — cardiac output *falling* with body mass.
+
+**Three caveats, stated before the result.** That is what two points say; it is
+**not a law anyone published**; it rests on two cohorts from different studies
+differing by ~12 years of age, neither reporting haemoglobin; and at Pelosi's
+lean end (BMI 22 is 59 kg) it **extrapolates below both anchors**. So a **flat**
+cardiac output at 5.30 L/min was inverted alongside it: if two corrections that
+assume different things move the answer the same way, the answer is not an
+artefact of the exponent. **This is a sensitivity probe, not a proposed
+parameter, and nothing from it is written into the model.**
+
+#### The result, and it is large
+
+The shunt Pelosi implies, across BMI 22 → 50:
+
+| inverted through | at BMI 22 | at BMI 50 | factor |
+|---|---|---|---|
+| our shipped cardiac output | 3.47% | 14.12% | **×4.07** |
+| a power-law cardiac output | 6.31% | 11.40% | **×1.81** |
+| a flat cardiac output | 5.44% | 12.46% | **×2.29** |
+| *our shunt law, for comparison* | *3.71%* | *14.24%* | *×3.83* |
+
+**Roughly half of `shunt_base_eff`'s BMI dependence is a cardiac-output
+artefact rather than a property of the lung** — and both corrections agree on
+that despite assuming different things.
+
+Our shipped law's worst residual against each inversion:
+
+| | worst residual |
+|---|---|
+| vs the shipped-CO inversion | **0.25 pp** |
+| vs the power-law-CO inversion | **2.84 pp** |
+| vs the flat-CO inversion | **1.77 pp** |
+
+0.25 pp against the first **because it was fitted to it**. Against a corrected
+cardiac output it is out by up to **2.84 pp** — larger than the 0.49 pp worst
+residual the re-key was judged on, and larger than the 0.27 pp of the quadratic
+it replaced.
+
+#### What follows
+
+**The cardiac-output gradient is upstream of the shunt law.** Fitting the shunt
+law again while the cardiac output is wrong would be fitting *around* an error
+rather than removing it, and every shunt this repository has inverted — Pelosi,
+Reinius, Valenza, Gander, Perilli — went through the same cardiac output.
+
+**Nothing was changed.** The inversion is regenerated by
+`handover_numbers.py`, computed rather than recorded, so it cannot rot.
+
+#### Re-derived after Pelosi's shape was adopted — two findings
+
+**The inversion itself did not move at all.** 3.47/14.12, 6.31/11.40 and
+5.44/12.46, to the last digit. It is a shunt equation evaluated over two
+seconds at a fixed alveolar PO₂, so it barely depends on FRC. **The
+cardiac-output finding survives the adoption unchanged**, which is worth
+knowing because almost nothing else downstream of `frc_anaes` did.
+
+**But the adoption moved the shunt law, and this is a cost the cost table
+could not see.** `shunt_base_eff()` reads closure against `frc_anaes()`, so a
+lower anaesthetised FRC means more closure and more shunt:
+
+| BMI | legacy | adopted | |
+|---|---|---|---|
+| 22 | 3.71% | 3.71% | unchanged — the two forms agree exactly here |
+| 30 | 5.75% | **6.28%** | +0.53 pp |
+| 34 | 7.09% | **7.98%** | +0.89 pp |
+| 42 | 10.49% | **11.38%** | +0.89 pp |
+| 50 | 14.24% | 14.24% | unchanged — both already floored at RV |
+
+`shunt_anat` and `shunt_cc_k` **were fitted against the old `frc_anaes`**, so
+the adoption has moved the shunt law away from the curve it was fitted to. Its
+worst residual against the shipped-CO inversion goes **0.25 → 1.01 pp**, a
+fourfold worsening. **The cost table measured `test_validation` rows and could
+not see this, because no benchmark row reads that residual.**
+
+**Not refitted.** Refitting `shunt_cc_k` here would be tuning a parameter to a
+curve, which CLAUDE.md refuses — and it would be doing so **through a cardiac
+output already known to have the wrong gradient**. Recorded as a consequence of
+the adoption, awaiting the cardiac output being fixed first.
+
+---
+---
 ### Hardman 2000 and McNamara 2005 — READ 2026-09-22, and they overturn a conclusion
 
 **Hardman JG, Wills JS, Aitkenhead AR.** Factors Determining the Onset and
@@ -626,10 +3200,10 @@ measured.
 
 | value | where | note |
 |---|---|---|
-| `FRC(L) = 2.34·height + 0.009·age − 1.09` | `apnoea_core.py`, `model.js`, `airway_scenario.html` | **The largest uncited lever in the model.** No author, journal or year anywhere. A ±12% error in `frc_ref` takes a headline clinical benchmark out of band; ±30% in `k_frc_bmi` takes the obese one out in both directions. The quoted age term is **not implemented**. Measured and recorded in the code comment, and regenerated by `handover_numbers.py` |
+| ~~`FRC(L) = 2.34·height + 0.009·age − 1.09`~~ **SOURCED 2026-09-25** | `apnoea_core.py`, `model.js`, `airway_scenario.html` | **CLOSED as uncited — this row was itself stale and is corrected here.** It is **Quanjer 1993 Table 6, Men**, coefficient for coefficient, read at source. What remains open is not the citation but three known departures from it, each recorded in the code: the age term is **still not implemented**; Quanjer measures **seated** and `frc_ref` is supine, so the model takes his shape and sets its own level; and his stated range (ages 18–70, heights 1.55–1.95 m) is **not guarded**. The sensitivity stands — ±12% in `frc_ref` takes a headline benchmark out of band, ±30% in `k_frc_bmi` takes the obese one out in both directions — and `k_frc_bmi` itself is now bracketed by Jones and Pelosi, which it leaves above BMI 36.70. Regenerated by `handover_numbers.py` |
 | ~~`crs` = 85.0 mL/cmH2O~~ **RULED 2026-09-22, now 75.0** | `apnoea_core.py`, `build_page.py`, `airway_scenario.html` | **CLOSED.** It was uncited and sat above the 60-75 range the same file cites Rothen for. Now set to Rothen 1993 Table II group 1, n=10, 75 (19) mL/cmH2O — the better-powered of the paper's two groups. The sweep is the reason it is 75 and not 60: measured slope 3.4, band 2.4-4.4, **crs 60 gives 4.371 which PASSES, crs 75 gives 4.601 which FAILS, crs 85 gave 4.716**. 75 is the value that buys nothing, so the §"do not tune" objection does not attach to it; 60 could not have been taken without that objection following it forever. Note also that `crs` moves the CO2 slope 7% and PaO2 0.6% across its whole range — it is a CO2-only lever and cannot bear on the oxygen disagreement |
 | `tau_collapse_o2` 60 s, `tau_collapse_air` 900 s, `perfusion_gain` 1.2 | `apnoea_core.py` | No comment, no citation |
-| `vo2_ref` 250, `vo2_drop_per_kg` 0.27 | `apnoea_core.py` | No citation. Farmery & Roe (held) quote Nunn's anaesthetised **0.20 L/min** against our 232 mL/min — an external handle that exists and is unused |
+| `vo2_ref` 250, `vo2_drop_per_kg` 0.27 | `apnoea_core.py` | ~~No citation. Farmery & Roe (held) quote Nunn's anaesthetised **0.20 L/min** against our 232 mL/min~~ **CORRECTED 2026-09-26, the paper having been read at source.** Farmery & Roe's standard adult uses **V̇O₂ = 0.25 litre min⁻¹**, which is `vo2_ref` exactly; 0.20 is not their value. Their Table 1 also gives a **127 kg obese** adult **0.378 L/min** where this model gives 268 — **41% low, and the deficit GROWS with weight** because they scale on TOTAL body weight (Table 1 fits weight^0.69; 250·(127/70)^0.69 = 378) while `vo2_anaes()` scales on ADJUSTED weight and then subtracts `0.27 × total weight`. `vo2_drop_per_kg` remains uncited |
 | negative-pressure pulmonary oedema; rat upper-airway models; cuirass ventilation | `protocol/evidence.md` | Three whole literatures cited with numbers and **no citations at all**, as the stated reasons for excluding four candidate evidence bodies. Ships in the package |
 
 ---
@@ -646,6 +3220,53 @@ measured.
 ---
 
 ## 5. Errors this audit found in documents, not in papers
+
+**Caught 2026-09-25, and it is the worst-shaped error in this file's history
+because of where it sits.** The header of the wanted list was "corrected"
+earlier the same day to say that four citations could not be ordered — Flin
+2013, Byun 2026 and Kaiser 2024 for want of a title, Varat 1972 for want of an
+author. **All four claims were false, and I made them by reading this one list
+and concluding that what it did not contain was not recorded anywhere.**
+
+| claimed missing | where it was all along |
+|---|---|
+| Flin 2013's title | `editorial.md` reference 6, in full |
+| Byun 2026's author and title | **§2a of this file**, twelve hundred lines above the claim |
+| Kaiser 2024's author | `HANDOVER.md` — and the paper had been **read three days earlier** |
+| Varat's author | **§2a of this file**: Varat MA, Adolph RJ, Fowler NO |
+
+**Reasoning from what a document does not say is the move CLAUDE.md forbids by
+name, and it was committed inside the file that records the rule.** A grep
+would have settled every one of them in seconds.
+
+**And the cost was not just embarrassment — it concealed a real gap.** The one
+citation in that section that genuinely has no author is
+***Circulation* 1963;28:346**, "Hemodynamic Effects of Chronic Severe Anemia",
+and the wanted list had merged it into Varat's entry. So a load-bearing source
+— `hb_co_exp` = 1.535 is derived from it — was hidden behind a false alarm
+about three citations that were fine. **A wrong list of problems is worse than
+no list**, because it is read as having been checked.
+
+**A second, quieter instance in the same pass.** `README.md` told a sponsor
+that Kaiser 2024 was not held, "identified by PMCID alone", three days after it
+was read and its numbers written into `HANDOVER.md`. That is the same error
+class as the Valenza/Pelosi mis-marking corrected earlier on 2026-09-25: **the
+wanted list and README go stale about what has been read, in both directions.**
+Neither is regenerated by any script, which is why.
+
+**Caught 2026-09-25 while reading Jones — a row in THIS FILE had gone stale
+within a day.** §3 "Values with no source at all" still listed
+`FRC(L) = 2.34·height + 0.009·age − 1.09` as *"the largest uncited lever in the
+model — no author, journal or year anywhere"*. Quanjer was read at source on
+**2026-09-25**, the day before, and `apnoea_core.py` was updated; this table
+was not. Corrected in place, with the three real remaining departures (age term
+unimplemented, seated-vs-supine level, range unguarded) kept and separated from
+the citation question they had been conflated with.
+
+**The lesson is the one CLAUDE.md already states.** The stale row is prose in a
+markdown table, exactly the class of number that file warns rots. The Quanjer
+findings that *were* written into `handover_numbers.py` could not have drifted
+this way, and did not.
 
 **Caught by actually reading O'Loughlin, 2026-09-21 — the first error a
 newly-obtained paper has exposed.** `editorial.md` said their "own tabulation
@@ -723,9 +3344,12 @@ Documentary, needing no library:
 - [x] the FRC regression's missing provenance recorded in the code
 - [ ] stamp `CITATION.cff` `version` and `date-released` at release, or delete
       both fields and point to `PROVENANCE.txt`
-- [ ] reconcile `airway_scenario.html`'s "parameterised, not fitted to source
+- [x] reconcile `airway_scenario.html`'s "parameterised, not fitted to source
       data" against `apnoea_core.py`'s "anchored to the standing predicted-FRC
-      regression" — one of them is wrong
+      regression" — one of them is wrong. **CLOSED 2026-09-25.** Quanjer 1993
+      read at source settled it: the code was right, the page was wrong. The
+      footer is rewritten to separate the three claims it conflated, and now
+      also tells the recipient the model is male
 - [ ] complete or strike the `"Chest"` citation — §2a names a candidate
       (Kiely 1996, PMID 8625670) which must be **confirmed by reading**, not
       pasted in
@@ -737,23 +3361,76 @@ Documentary, needing no library:
 - [ ] `test_validation.py` names the function `test_toner_2018` while its own
       docstring cites the 2019 paper
 
-Needing the library, cheapest first. **All citations below are now complete
-enough to order** — §2a resolved the four that were not. Nothing here can be
+Needing the library, cheapest first.
+
+> **CORRECTED 2026-09-25 (second pass) — and the correction it replaces was
+> mine and was wrong on every count.** Earlier the same day this header was
+> changed to read that "four still are not [orderable]: Flin 2013, Byun 2026
+> and Kaiser 2024 have no TITLE recorded, and Varat 1972 has no established
+> author". **I asserted that from this list alone without grepping the
+> repository.** Every one of the four is recorded elsewhere:
+>
+> | claimed missing | where it actually is |
+> |---|---|
+> | Flin 2013's title | `editorial.md` ref 6, in full |
+> | Byun 2026's author and title | **§2a of this file**, its own resolution table |
+> | Kaiser 2024's author | `HANDOVER.md` — and the paper was **read on 2026-09-22** |
+> | Varat's author | **§2a of this file**: Varat MA, Adolph RJ, Fowler NO |
+>
+> That is precisely the move CLAUDE.md forbids — *reasoning from what a
+> document does not say* — committed inside the very file that records the
+> rule. **And it hid the one citation that really is incomplete**, by merging
+> it into Varat's entry: see *Circulation* 1963 below.
+
+**Most citations below are complete enough to order.** Nothing here can be
 obtained from this environment: every publisher domain is egress-blocked, so
 these need a machine with library access, or the Google Drive connector
 connected and the PDFs placed there.
 
-- [ ] **Byun S-H**, *J Clin Med* 2026;15(13):5078 (the OLV review) — open access,
-      PMC13363232. Record the author and title in `protocol/evidence.md`, which
-      currently cites it by DOI alone
-- [ ] **Kaiser HA, et al.**, *Sci Rep* 2024;14:3617 — open access, PMC10864331.
-      **Check the year and the n against what we record** (see §2a)
+- [ ] **Byun S-H.** Optimizing Lung Collapse During One-Lung Ventilation:
+      Physiological Mechanisms and Clinical Strategies: A Narrative Review.
+      *J Clin Med* 2026;15(13):5078. PMID 42452539, PMC13363232, open access.
+      **The title was already resolved in §2a** — what remains is to copy it
+      into `protocol/evidence.md`, which still cites it by DOI alone. The
+      substantive problem with it is untouched by that: `evidence.md` draws an
+      **absence** claim from it, which CLAUDE.md forbids outright
+- [x] **Kaiser HA, et al.**, *Sci Rep* 2024;14:3617 — open access, PMC10864331.
+      **OBTAINED AND READ 2026-09-22**, and it should not have been on this
+      list at all. `HANDOVER.md` records what was taken from it: n = 91,
+      preoxygenated to EtO₂ >90%, 15 min of apnoeic oxygenation with arterial
+      samples every 2 min, PaCO₂ median 43 (IQR 10) rising to 73 (IQR 14),
+      mean change 2.1 mmHg/min. **The TITLE is still not recorded anywhere**,
+      which is the only thing left outstanding on it. Same error class as the
+      Valenza/Pelosi mis-marking corrected on 2026-09-25: the wanted list goes
+      stale about what has been read, in both directions
 - [ ] Siggaard-Andersen 1977 — doi 10.3109/00365517709098927
 - [ ] Toner 2019, Heard 2017, O'Loughlin 2020 — **record-keeping, not access.**
       The detail already in the repository reads as though someone once had
       these full texts
-- [ ] Varat 1972; *Circulation* 1963;28:346 (establish author, and whether it is
-      a paper or an abstract); Flin 2013
+- [x] **Roy SB, Bhatia ML, Mathur VS, Virmani S.** Hemodynamic effects of
+      chronic severe anemia. *Circulation* 1963;28(3):346-356.
+      **OBTAINED AND READ AT SOURCE 2026-09-25** — the last genuinely
+      incomplete citation in this file, now complete. It is a **full paper**,
+      which settles the open question about the "CLINICAL" label. See its own
+      section above for what it confirmed and what it did not.
+      ~~THE AUTHOR IS RECORDED NOWHERE~~, and whether it is a paper
+      or a meeting abstract is unknown — which changes whether the "CLINICAL"
+      label `test_validation.py` gives it is honest. **This is the one
+      genuinely incomplete citation in this section**, and until 2026-09-25 it
+      was hidden inside Varat's entry. It is load-bearing: `hb_co_exp` = 1.535
+      (how steeply cardiac output rises as haemoglobin falls) is derived from
+      it, and a band in `test_validation.py` then grades the fit against the
+      number the fit was made from
+- [x] ~~Varat 1972 — establish author~~ **ALREADY ESTABLISHED.** §2a of this
+      file and `apnoea_core.py` both carry **Varat MA, Adolph RJ, Fowler NO**,
+      *Am Heart J* 1972;83:415-26. Author, journal, year, volume and pages are
+      all recorded, so it is orderable; only the TITLE is not. Still unread,
+      and a verbatim quotation from it ships in three files
+- [x] ~~Flin 2013 — no title recorded~~ **THE TITLE IS IN THIS REPOSITORY.**
+      `editorial.md` reference 6: Flin R, Fioratou E, Frerk C, Trotter C,
+      Cook TM. *Human factors in the development of complications of airway
+      management: preliminary evaluation of an interview tool.* **Anaesthesia**
+      2013;68:817-25. Orderable as it stands; still unread
 - [ ] the four positioning trials — Lane 2005, Ramkumar 2011, Altermatt 2005
       and Dixon 2005 are **resolved to full citations in §2a** and can now be
       ordered. The author who fitted the gains should still confirm these are
@@ -761,6 +3438,147 @@ connected and the PDFs placed there.
       rather than the right one
 - [ ] Laviola 2026 main text; Hardman 2000;90:614-8; Hardman & Wills's online
       Appendix 1 — all via the author route recorded in `HANDOVER.md`
+
+**Added 2026-09-24, resolved from Reinius 2009's own reference list — a
+primary source, not a search.** The first two are the ones that matter most:
+
+- [x] **Valenza F, et al.** **OBTAINED AND READ 2026-09-24** — see its own
+      section above. Effects of the beach chair position, positive
+      end-expiratory pressure, and pneumoperitoneum on respiratory function in
+      morbidly obese patients during anesthesia. *Anesthesiology*
+      2007;107(5):725-32. **Position against RESPIRATORY FUNCTION in
+      anaesthetised obese patients** — the shape of paper the tilt rows need,
+      and the reason not to conclude that tilt requires a new trial
+- [x] **Perilli V, et al.** *Obes Surg* 2003;13(4):605-9. **OBTAINED AND READ
+      2026-09-24** — see its own section above. It supplies the tilt cost the
+      model does not pay: cardiac output falls 18% at 30° head-up
+- [x] **OBTAINED AND READ 2026-09-26.** It does NOT carry the lung volumes it
+      was wanted for -- the authors write "a limitation of our study might be
+      the lack of the direct measure of FRC". It DOES carry Ctot 32 (5)
+      mL/cmH2O at BMI 46.7 and +28% at 30 deg head-up.
+- [x] **Perilli V, Sollazzi L, Bozza P, Modesti C, Chierichini A, Tacchino RM,
+      Ranieri R.** The effects of the reverse Trendelenburg position on
+      respiratory mechanics and blood gases in morbidly obese patients during
+      bariatric surgery. *Anesth Analg* 2000;91(6):1520-5. The EARLIER Perilli,
+      cited by both Valenza and Perilli 2003 — respiratory mechanics AND blood
+      gases, so it may carry the lung volumes the 2003 paper does not
+- [ ] **Heneghan CPH, Bergman NA, Jones JG.** Changes in lung volume and
+      (PAO2−PaO2) during anaesthesia. *Br J Anaesth* 1984;56:437-45. Perilli's
+      reference 18: head-up tilt raises lung volume in NORMAL-WEIGHT patients
+      WITHOUT improving oxygenation. Bears on the lean tilt row
+- [ ] **Dantzker DR, Lynch JP, Weg JG.** Depression of cardiac output is a
+      mechanism of shunt reduction in the therapy of acute respiratory
+      failure. *Chest* 1980;77:636-42. Perilli's reference 16, and a caveat on
+      our own 10–12% shunt inversions: those were done through this model's
+      cardiac output, and neither Reinius nor Valenza reports theirs
+- [x] **Pelosi P, Croci M, Ravagnan I, Tredici S, Pedoto A, Lissoni A,
+      Gattinoni L.** **OBTAINED AND READ 2026-09-24** — see its own section
+      above; its curve is what shunt_base_eff was fitted to.
+      The effects of body mass on lung volumes, respiratory
+      mechanics, and gas exchange during general anesthesia. *Anesth Analg*
+      1998;87(3):654-60. Valenza's reference 22, and the source his Discussion
+      leans on for FRC falling exponentially with BMI — bears directly on
+      `k_frc_bmi` and on the helium/CT tie
+- [x] **Quanjer PH, Tammeling GJ, Cotes JE, Pedersen OF, Peslin R, Yernault
+      JC.** Lung volumes and forced ventilatory flows. ECSC / official
+      statement of the ERS. *Eur Respir J* 1993;6 Suppl 16:5-40. PMID 8499054.
+      **OBTAINED AND READ 2026-09-25** — see its own section above. It did
+      both things hoped for: Table 6 supplies the predicted TLC that Buist &
+      Ross needs, and its men's FRC equation is our exact coefficients, so the
+      largest uncited lever in the model is now cited.
+- [x] **Jones RL, Nzekwu MMU.** The effects of body mass index on lung volumes.
+      *Chest* 2006;130(3):827-33. **OBTAINED AND READ 2026-09-25** -- see its
+      own section above. It did NOT do the thing it was wanted for (it has no
+      supine and no anaesthetised measurement, so it cannot set our level),
+      but it did three others: it BRACKETS `k_frc_bmi` with Pelosi and shows
+      us falling out of that bracket above BMI 37; it puts a SECOND
+      measurement on `k_rv_bmi`, which had one; and it quantifies the obese
+      TLC bias in the open Buist & Ross ruling
+- [x] **OBTAINED AND READ IN FULL 2026-09-26** -- the paper, not the Survey of
+      Anesthesiology condensation refused on 2026-09-25. n=45 by MIGET: shunt
+      4.8 (4.1)%, log SD Q 0.67 awake to 1.04 anaesthetised, CO 6.3 -> 5.3.
+- [x] **Gunnarsson L, Tokics L, Gustavsson H, Hedenstierna G.** Influence of
+      age on atelectasis formation and gas exchange impairment during general
+      anaesthesia. *Br J Anaesth* 1991;66:423-432. **A CONDENSATION IS HELD,
+      NOT THE PAPER** (Survey of Anesthesiology digest, uploaded 2026-09-25).
+      Wanted for its tables of shunt and low-V/Q against age, which would
+      settle whether our shunt's age dependence is a defect or a naming
+      problem — see its section above.
+- [x] **Gutierrez C, Ghezzo RH, Abboud RT, Cosio MG, Dill JR, Martin RR,
+      McCarthy DS, Morse JLC, Zamel N.** Reference values of pulmonary
+      function tests for Canadian Caucasians. *Can Respir J*
+      **2004;11(6):414-424**. **OBTAINED AND READ AT SOURCE 2026-09-25** —
+      see its own section above. It did what it was wanted for: Jones &
+      Nzekwu is now a level and not only a shape.
+      **AND IT RETRACTS A "CORRECTION" I MADE THE SAME DAY.** This entry
+      originally carried the issue number `11(6)`. I struck it that morning on
+      the grounds that Jones's reference list gives no issue. **The paper's own
+      self-citation block reads `Can Respir J 2004;11(6):414-424` and every
+      page footer reads `Vol 11 No 6`.** The `(6)` was right and I removed it
+      because one source did not repeat it — *reasoning from what a document
+      does not say*, for the second time in one day, in the act of correcting
+      the first. Jones's reference list prints no issue number for **any** of
+      its 35 references; absence there was never evidence.
+      The nine-author list above is the paper's own, replacing Jones's
+      `et al.`
+- [x] **OBTAINED AND READ 2026-09-26**, having been ruled unavailable on
+      2026-09-25. It REVERSES the posture claim: FRC falls 740 mL supine in
+      the lean (P<0.0001) and only 70 mL in the obese (P = ns). AWAKE
+      subjects -- see tilt_gain_lean for why that matters.
+- [x] **Watson RA, Pride NB.** Postural changes in lung volumes and
+      respiratory resistance in subjects with obesity. *J Appl Physiol*
+      2005;98:512-517. Jones's reference 10.
+      **RULED UNAVAILABLE 2026-09-25 — it cannot be obtained.** It stays on
+      this list because the question it would answer stays open, and the
+      question is now SHARPER than when it was added, not vaguer: Gutierrez
+      let Jones be converted to millilitres, and the model is thereby found to
+      claim that lying flat costs a lean patient **30%** of FRC and a BMI 50
+      patient **63%**. ~~That number is now untestable with what is held.~~
+      **STRUCK 2026-09-26: DAMIA 1988 TESTED IT.** Per patient, against
+      each subject's own sex, height and age, Damia's 18 give supine FRC /
+      Quanjer seated predicted = **0.700** where the model gave those same
+      patients **0.13-0.42**. Ruled, and `k_frc_bmi` re-anchored 0.0417 ->
+      0.0012. WHAT THIS PAPER WOULD STILL DO IS NARROWER AND SHARPER: break
+      the Jones/Damia tie. Jones has an obese person's SEATED FRC at 62% of
+      predicted at BMI 50; Damia has their SUPINE at 70%. Supine cannot
+      exceed seated. Watson & Pride measures POSTURAL CHANGE WITHIN THE SAME
+      SUBJECTS, which is the one quantity neither of them gives, so it does
+      not merely corroborate one -- it is the only paper held or wanted that
+      can adjudicate between them.
+      It is recorded in `handover_numbers.py` so it cannot drift, and it
+      should be treated as the model's largest unverified structural claim
+      about position. **ADDED 2026-09-25 AND IT GOES STRAIGHT AT AN ADMITTED
+      HOLE.** The k_rv_bmi retraction of the same day
+      turns on Jones being SEATED AWAKE where our `rv` is ANAESTHETISED
+      SUPINE, and it ends by conceding that the seated-to-supine step "is a
+      step this model does not represent at all". This paper measures exactly
+      that step, in exactly that population
+- [ ] **Naimark A, Cherniack RM.** Compliance of the respiratory system in
+      health and obesity. *J Appl Physiol* 1960;15:377-382. Jones's reference
+      21. Bears on `crs` (respiratory compliance, how stiff the lungs and
+      chest are), which is currently Rothen's value with NO obesity term at
+      all
+- [x] **OBTAINED AND READ 2026-09-26.** n=30, FRC falls 51% on induction and
+      to 0.84 L BELOW the awake RV. Re-anchored k_frc_bmi.
+- [x] **Damia G, et al.** Perioperative changes in functional residual capacity
+      in morbidly obese patients. *Br J Anaesth* 1988;60(5):574-8
+- [x] **OBTAINED AND READ 2026-09-26.** It is the best obesity test held:
+      matched controls, one protocol, clock from the suxamethonium. Model
+      204 s against 196 (80) obese and 547 s against 595 (142) lean, both
+      inside 1 SD, penalty ratio 0.373 against a measured 0.329.
+- [x] **Berthoud MC, Peacock JE, Reilly CS.** Effectiveness of preoxygenation
+      in morbidly obese patients. *Br J Anaesth* 1991;67(4):464-6. Bears
+      directly on the end-tidal oxygen fraction in the Gander configuration,
+      which is currently OURS and not Gander's
+- [ ] **Eichenberger A, et al.** Morbid obesity and postoperative pulmonary
+      atelectasis. *Anesth Analg* 2002;95(6):1788-92 — citation confirmed
+- [x] **Tokics L, Hedenstierna G, Svensson L, Brismar B, Cederlund T,
+      Lundquist H, Strandberg A.** V̇/Q̇ distribution and correlation to
+      atelectasis in anesthetized paralyzed humans. *J Appl Physiol*
+      1996;81(4):1822-1833. **OBTAINED AND READ 2026-09-25** — see its own
+      section above. It was right that this had to be read at source: the
+      1.3 is a STANDARD ERROR, the cohort BMI is 25.2 with nobody obese, and
+      its cardiac output exposes a wrong gradient in ours
 
 ---
 

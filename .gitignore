@@ -10,3 +10,9 @@ dist/
 
 # vq_chart.py writes this
 vq_comparison.html
+
+# Throwaway copies made by the dispatch-guard self-test in
+# test_validation.py. They are full duplicates of the suite and one was
+# committed by accident on 2026-09-26 (632b669) because `git add -A` ran
+# while the test still held the file open.
+_g[0-9].py

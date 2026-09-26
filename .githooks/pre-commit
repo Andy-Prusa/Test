@@ -9,6 +9,7 @@
 #
 # Runs, in order, cheapest first:
 #   build_page.py --check   airway_scenario.html still matches model.js
+#   check_sources.py --check README.md's read-status table matches the registry
 #   test_parity.py          apnoea_core.py vs model.js on identical inputs, 1%
 #   test_validation.py      every clinical and model benchmark
 #
@@ -102,6 +103,18 @@ run_suite() {
 if [ -f build_page.py ]; then
     echo "pre-commit: page freshness (build_page.py --check) ..."
     python3 build_page.py --check || status=1
+fi
+
+# Same class of check, same reason, added 2026-09-25. README.md's table of
+# WHICH PAPERS HAVE BEEN READ is generated from sources_registry.py. It is
+# here rather than left to a human because on 2026-09-25 that table was found
+# wrong on four of its eight rows, telling a sponsor that six of eight sources
+# were unread when six of eight HAD been read. It is an invariant BETWEEN
+# DOCUMENTS, which is what this hook is for -- unlike handover_numbers.py,
+# which checks claims about the world and is deliberately kept out.
+if [ -f check_sources.py ]; then
+    echo "pre-commit: source-status table (check_sources.py --check) ..."
+    python3 check_sources.py --check || status=1
 fi
 
 if [ "$status" -eq 0 ]; then

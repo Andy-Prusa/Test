@@ -65,8 +65,30 @@ REGRESSIONS = []
 # regression. Set from what the number does under ordinary parameter work, not
 # from what would be convenient.
 KNOWN_OPEN = {
+    # CORRECTED 2026-09-26 on a ruling, from 4.60 to 1.94. THE OLD VALUE WAS
+    # MEASURED ON THE WRONG COMMIT. Proven, not inferred: a full suite run at
+    # c12b22f -- the PARENT of 4579c4e, the V/Q category-error fix whose own
+    # ruling recorded this baseline -- gives exactly 4.6, and every commit from
+    # 4579c4e forward gives 1.9-2.0. Nine suite runs in nine worktrees, and
+    # test_validation.py is byte-identical across the whole window, so the
+    # checks cannot be what moved.
+    #
+    # So the 2026-09-22 ruling took the NAMES from after the fix and the VALUES
+    # from before it. The tell is "ICSM jet, PaO2 at cricothyroidotomy", which
+    # PASSES at c12b22f and fails after: the names were right. This row has
+    # therefore been reporting [WORSE] since the day it was written, and the
+    # hook has blocked every commit on that basis for four days.
+    #
+    # A NOTE ON THE TOLERANCE, left at 0.40 deliberately. It is now 21% of the
+    # value rather than 9%, which is looser than it looks -- but retightening it
+    # in the same edit that moves the value would be two changes at once, and
+    # the honest number to set it from is what this output does under ordinary
+    # parameter work. That is currently NOTHING: see the lever sweep in
+    # handover_numbers.py, where tau_mix, vq_log_sd, crs and rv all leave this
+    # slope at 1.94. Until that inertness is diagnosed there is no defensible
+    # basis for a tighter figure, and inventing one would be tuning.
     "Stock obstructed, 1-5 min slope":
-        (4.60, 0.40, "the a-A CO2 gap under obstruction; located, not fixed. "
+        (1.94, 0.40, "the a-A CO2 gap under obstruction; located, not fixed. "
                      "See HANDOVER 'Where the Stock residual actually lives'"),
     # REMOVED 2026-09-22, BECAUSE THEY NOW PASS. Rule 3 at the head of this
     # table says a row that starts passing must come out rather than be left
@@ -78,8 +100,10 @@ KNOWN_OPEN = {
     # The PaO2 row passes at the BOTTOM EDGE of its band, 157 against a
     # central 314, and about 139 mmHg of alveolar-to-arterial gradient is
     # still unexplained at zero shunt. Passing is not the same as solved.
+    # CORRECTED 2026-09-26 on the same ruling and for the same reason, 71.7 ->
+    # 53.8. c12b22f gives 71.7 to the digit; everything after it gives 53.8-54.1.
     "ICSM jet, PaCO2 at cricothyroidotomy":
-        (71.7, 3.0, "rides the same CO2 limb as the Stock slope. MODEL "
+        (53.8, 3.0, "rides the same CO2 limb as the Stock slope. MODEL "
                     "comparator, and Laviola's simulator has no V/Q "
                     "distribution, so it cannot arbitrate either way"),
 }
@@ -200,6 +224,45 @@ def test_heard_2017():
     alveolar oxygen is a weak constraint on the oxygen limb, which is the
     same conclusion the V/Q work reached from the other direction.
     """
+    # CONFIGURATION VERIFIED LINE BY LINE AGAINST THE PAPER 2026-09-26, after
+    # Altermatt 2005 was found to tilt the patient only while AWAKE. Heard is
+    # NOT the same case, and the difference is stated in both papers rather
+    # than inferred from either's silence:
+    #   Heard Methods: "Preoxygenation was conducted with patients
+    #     spontaneously ventilating ... in the 30 degree reverse Trendelenburg
+    #     position", and NO repositioning is described anywhere afterwards.
+    #   Altermatt Methods: "Group 1 patients were then RETURNED to the initial
+    #     supine position", before induction.
+    # One paper states a return and the other does not.
+    #
+    # AND IT IS NOW CONFIRMED BY THE AUTHOR, NOT INFERRED. A. Heard, the
+    # trial's registered Principal Investigator (ACTRN12613000697785),
+    # confirmed on 2026-09-26: "It was my study, they remained at 30 degrees
+    # throughout the study." So tilt_deg=30 is correct for the WHOLE run, not
+    # merely for pre-oxygenation.
+    #
+    # THIS IS A PROTOCOL CLARIFICATION AND CARRIES NO UNPUBLISHED DATA. It
+    # adds no number, no result and no cohort value -- the paper already
+    # states the 30 degree reverse Trendelenburg position, and this says only
+    # that it was not rescinded. Recorded here rather than left in a
+    # conversation because the same question must be asked of Lane, Ramkumar
+    # and Dixon, whose papers are not held, and because Altermatt shows the
+    # answer is NOT obvious from the position alone.
+    # THE CLOCK: COUNT THE FULL 296 s. RULED 2026-09-26 by the author. The
+    # published time runs from TIVA, not from apnoea, and A. Heard first put
+    # apnoea onset at about 45 s -- which would make the target 251 s. He then
+    # corrected it twice, and both corrections point the same way:
+    #   (a) hypopnoea or complete obstruction can occur WHILE APPARENT
+    #       RESPIRATORY EFFORT IS STILL PRESENT, so gas exchange had already
+    #       stopped; those seconds belong INSIDE the apnoea, not before it.
+    #   (b) the patients received REMIFENTANIL at 4.0 ng/mL effect-site with
+    #       propofol 7.0, so they stopped breathing quickly in any case.
+    # The band therefore stays at the published IQR and nothing is subtracted.
+    # Model +19% against 296 s, where subtracting 45 s would have made it +41%.
+    #
+    # Table, standard care arm, n=20: weight 105 (13) kg, height 174 (9) cm,
+    # BMI 34.5 (2.8), age 42 (14), apnoea time 296 s (IQR 244-314). Every
+    # axis below matches, and the band IS that published IQR.
     p = Patient(weight=105, height=1.74, age=42, hb=14, tilt_deg=30)
     t = time_to(patent(p, 0.21, feo2=0.80), 'spo2', 95)
     check("Heard control, time to SpO2<95%", t, 244, 314, " s",
@@ -207,6 +270,54 @@ def test_heard_2017():
     tb = time_to(patent(p, 1.00, feo2=0.80), 'spo2', 95)
     check("Heard buccal, held to 750 s", 9999 if tb is None else tb,
           750, 1e9, " s", "clinical; IQR 389-750")
+
+
+def test_berthoud_1991():
+    """Berthoud MC, Peacock JE, Reilly CS. Br J Anaesth 1991;67:464-6. CLINICAL.
+
+    READ AT SOURCE 2026-09-26. THE BEST OBESITY TEST THIS SUITE HAS, and the
+    only paper held that measures lean and obese UNDER ONE PROTOCOL WITH
+    MATCHED CONTROLS -- matched for sex, age and height, six in each arm.
+
+    Why it beats the other obesity rows. The clock runs "from the injection of
+    the suxamethonium" to SpO2 90%, so the measured interval and the model's
+    interval mean the SAME THING. Heard's clock starts at TIVA with the
+    patient still breathing, and his author confirmed on 2026-09-26 that
+    apnoea began about 45 s later -- an offset worth most of that row's
+    disagreement. There is no such offset here.
+
+    Protocol: 3 min preoxygenation, 100% O2 at 8 L/min through an AIR-TIGHT
+    seal on a Mapleson A; propofol, alfentanil, suxamethonium; trachea
+    intubated and THE TUBE DISCONNECTED from the gas supply, so apnoea runs
+    with an OPEN airway on room air. Supine.
+
+    The authors' own conclusion is the one this model makes: "All our patients
+    achieved an SpO2 of 100% within 30 s of the start of preoxygenation,
+    indicating that the likely limitation is one of size of STORED VOLUME OF
+    OXYGEN IN THE BODY, rather than ability to reach that store, or to
+    saturate the blood."
+
+    ONE ODDITY, FLAGGED NOT SMOOTHED: the obese arm reads mean 196 (SD 80) s
+    with range 55-208 s. An SD of 80 sits awkwardly in a range 153 wide whose
+    top is 12 s above the mean. The paper names the likely cause -- one BMI
+    58.4 patient "desaturated to 90% only 55 s after administration of
+    suxamethonium, and before complete onset of relaxation" -- so the mean is
+    dragged by a single outlier in six. Treat the obese arm accordingly.
+
+    Bands are +-1 SE OF THE MEAN, as for the Valenza row and for the same
+    reason: the model predicts a typical patient, so it must reproduce the
+    group mean, and against +-1 SD with n=6 almost nothing could fail.
+    """
+    import math
+    for nm, wt, bmi, mean, sd in (("obese", 123.5, 49.0, 196.0, 80.0),
+                                  ("control", 63.0, 23.1, 595.0, 142.0)):
+        h = math.sqrt(wt / bmi)
+        q = Patient(weight=wt, height=h, age=45, hb=14, tilt_deg=0.0)
+        t = time_to(patent(q, 0.21, feo2=0.90), 'spo2', 90)
+        se = sd / math.sqrt(6)
+        check(f"Berthoud {nm} BMI {bmi:.0f}, SpO2 90%", t, mean - se, mean + se,
+              " s", f"clinical; {mean:.0f} ({sd:.0f}) s, n=6, matched controls, "
+                    f"clock from suxamethonium")
 
 
 def test_oloughlin_2020():
@@ -310,9 +421,22 @@ def test_anaemia_cardiac_response():
     Effects of Chronic Severe Anemia, Circulation 1963;28:346. CLINICAL.
 
     Varat: chronic anaemia "usually increases the cardiac output when the
-    haemoglobin level is 7 g/dL or less". Circulation 1963: Hb 4.0-6.5
-    (mean 4.5) gave a cardiac index of 6.3 L/min/m2 against a normal ~3.2,
-    so very nearly double.
+    haemoglobin level is 7 g/dL or less". Roy 1963: Hb 4.0-6.5 (mean 4.5)
+    gave a cardiac index of 6.3 L/min/m2.
+
+    RE-ANCHORED 2026-09-25, AND THE BAND WIDENED, after Roy was read at
+    source. This row used to compare 6.3 against "a normal ~3.2" and band
+    the result 1.7-2.3x. THE 3.2 IS IN NO PART OF THAT PAPER. Roy gives his
+    own normal, measured on 65 healthy volunteers in the same laboratory and
+    stated three times: 2.5 to 5.0 L/min/m2. So what he actually supports is
+
+        6.3 / 5.0 = 1.26x   ...   6.3 / 2.5 = 2.52x
+
+    and the band is now his range, not a number of ours. THE OLD BAND GRADED
+    THE FIT AGAINST THE NUMBER THE FIT WAS MADE FROM -- SOURCES.md suspected
+    it and the reading confirmed it. The new band is wider and therefore
+    weaker, and that is the honest state of this evidence: it can no longer
+    discriminate much, because the source cannot.
 
     The RATIO is what is tested, not the absolute cardiac index. Both
     sources measured awake patients; ours is anaesthetised and carries
@@ -333,7 +457,16 @@ def test_anaemia_cardiac_response():
               "Varat: the rise begins at 7 g/dL or less")
     q45 = Patient(weight=70, height=1.75, age=45, hb=4.5)
     check("cardiac output at Hb 4.5", q45.co_anaes() / ref.co_anaes(),
-          1.7, 2.3, " x normal", "clinical; CI 6.3 vs ~3.2 normal = 1.97x")
+          1.26, 2.52, " x normal",
+          "clinical; Roy 1963 CI 6.3 against HIS OWN normal range 2.5-5.0")
+    # RULED 2026-09-25: Roy studied CHRONIC anaemia -- hookworm, four months
+    # or more -- so the response must not fire on acute blood loss. This
+    # check is what stops that extension creeping back in silently.
+    q45a = Patient(weight=70, height=1.75, age=45, hb=4.5,
+                   anaemia_chronic=False)
+    check("ACUTE anaemia at Hb 4.5 gets no cardiac response",
+          q45a.co_anaes() / ref.co_anaes(), 0.99, 1.01, " x normal",
+          "ruled; Roy 1963 measured chronic anaemia only")
     # Mean arterial pressure must NOT double along with the output. Anaemic
     # patients run a normal or slightly low MAP on a markedly reduced
     # resistance; that reduction is why the output rises in the first place.
@@ -422,8 +555,41 @@ def test_positioning_trials():
         return (out[1] / out[0] - 1) * 100
     check("tilt, non-obese 20 deg", gain(70, 1.75, 15, 20, 95), 15, 40, " %",
           "clinical; Lane +36%, Ramkumar +24%")
-    check("tilt, BMI 35 at 30 deg", gain(95, 1.65, 14, 30, 90), 20, 45, " %",
-          "clinical; Altermatt +32%")
+    # RETIRED 2026-09-26, RULED: "we only need up to the highest tilt studied
+    # and only if anaesthetised". This row tested 90 degrees against Altermatt
+    # 2005. IT IS NOT AN ANAESTHETISED TILT AT ALL, which the paper says in
+    # its own Methods and which nobody here had noticed:
+    #
+    #   "patients were instructed and trained to take eight deep breaths"
+    #   "Group 1 patients ... sat as close as possible to 90 deg head up"
+    #   "Group 1 patients were then RETURNED to the initial supine position"
+    #   "Immediately after, with all patients in supine position ... induction
+    #    of anaesthesia was achieved with fentanyl ... thiopentone"
+    #
+    # The patient was AWAKE and BREATHING at 90 degrees, and supine and
+    # paralysed for the apnoea. tilt_factor acts on the anaesthetised lung, so
+    # Altermatt constrains it NOWHERE. The row is gone rather than re-banded.
+    #
+    # THE HIGHEST ANAESTHETISED TILT IN ANY PAPER THIS PROJECT HOLDS IS 30
+    # DEGREES -- Valenza 2007's beach chair and Perilli 2000/2003's reverse
+    # Trendelenburg, both anaesthetised and paralysed. The model is therefore
+    # validated to 30 degrees and NO FURTHER, and what it does at 90 is
+    # outside the evidence rather than wrong against it.
+    #
+    # REPLACED BY THE DIRECT MEASUREMENT. Valenza measured end-expiratory lung
+    # volume by closed-circuit helium dilution, supine against 30 degrees, in
+    # 20 anaesthetised paralysed patients at BMI 42: 0.46 (0.1) -> 0.85 (0.3)
+    # litres, P < 0.001. That is tilt_factor itself, in the right state, at an
+    # angle the model is meant to cover -- a far better test than any
+    # apnoea-time proxy, and it needs no simulation at all.
+    _vz = dict(weight=42 * 1.70 ** 2, height=1.70, age=37, hb=14.0)
+    check("Valenza tilt_factor at 30 deg, BMI 42 [ANAESTHETISED]",
+          Patient(**_vz, tilt_deg=30.0).tilt_factor(), 1.70, 2.00, " x",
+          "clinical; 0.46 (0.1) -> 0.85 (0.3) L, helium dilution, n=20, "
+          "= 1.848. Band is +-1 SE OF THE MEAN (0.17), not +-1 SD across "
+          "patients (0.77): the model predicts a typical patient, so it must "
+          "reproduce the group mean, and against the population SD almost "
+          "nothing could fail")
     check("tilt, BMI 44 at 25 deg", gain(120, 1.65, 14, 25, 92), 15, 40, " %",
           "clinical; Dixon +32%")
 
@@ -623,13 +789,52 @@ def test_zz_all_benchmarks_passed():
     assert not REGRESSIONS, "; ".join(REGRESSIONS)
 
 
+def _check_every_test_is_dispatched():
+    """Every test_* in this module must actually be called by __main__.
+
+    ADDED 2026-09-26, THE DAY IT WAS NEEDED. test_berthoud_1991 was written,
+    reviewed, committed and pushed -- and never ran, because the dispatch
+    block below is a hand-maintained list and it was not added to it. The
+    suite reported 38 checks and a 4-row blocking set exactly as before, so
+    nothing looked wrong. A benchmark that does not run is worse than no
+    benchmark: it reads as coverage.
+
+    This reads the dispatch block out of this file's own source and compares
+    it against the module's test_* functions, so the two cannot drift.
+    """
+    import inspect
+    import re
+    src = inspect.getsource(inspect.getmodule(_check_every_test_is_dispatched))
+    main_block = src.split('if __name__ == "__main__":', 1)[1]
+    called = set(re.findall(r"\b(test_\w+)\s*\(", main_block))
+    defined = {n for n in globals() if n.startswith("test_")
+               and callable(globals()[n])}
+    # ONE LEGITIMATE EXCEPTION, and it must be named rather than guessed at.
+    # test_zz_all_benchmarks_passed is a PYTEST SENTINEL: check() records
+    # rather than raises, so without it pytest would collect every test_*,
+    # watch them print FAIL, and still report the run green. __main__ does its
+    # own summary and sys.exit, so the sentinel is deliberately not called
+    # here. The guard found it on its first run, which is the right behaviour
+    # -- an exemption that is written down is not the same as one that is
+    # assumed.
+    PYTEST_ONLY = {"test_zz_all_benchmarks_passed"}
+    missing = sorted(defined - called - PYTEST_ONLY)
+    if missing:
+        raise SystemExit(
+            "TEST DEFINED BUT NEVER DISPATCHED: " + ", ".join(missing) +
+            "\nAdd it to the block at the foot of test_validation.py. A "
+            "benchmark that does not run is worse than no benchmark.")
+
+
 if __name__ == "__main__":
     import apnoea_core as _ac
+    _check_every_test_is_dispatched()
     print(_ac.provenance())
     print("=" * 74)
     print("CLINICAL TARGETS — measurements in patients. These are the arbiters.")
     print("=" * 74)
-    test_toner_2019(); test_heard_2017(); test_oloughlin_2020()
+    test_toner_2019(); test_heard_2017(); test_berthoud_1991()
+    test_oloughlin_2020()
     test_positioning_trials(); test_cardiac_output()
     test_anaemia_cardiac_response()
     test_stock_1989(); test_moreault_2021()

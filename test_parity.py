@@ -155,12 +155,19 @@ def js_params(pt, feo2):
         "tiltGainLean": pt.tilt_gain_lean, "tiltGainBmi": pt.tilt_gain_bmi,
         "ccAt20": pt.cc_at_20, "ccPerYear": pt.cc_per_year,
         "ccPerBmi": pt.cc_per_bmi, "ccK": pt.cc_k, "maxClosed": pt.max_closed,
+        "kFrcBmi": pt.k_frc_bmi,
+        "ccBuistSlope": pt.cc_buist_slope,
+        "ccBuistIntercept": pt.cc_buist_intercept,
+        "ccTlcBmi": pt.cc_tlc_bmi,
         "crs": pt.crs, "rv": pt.rv, "pCollapse": pt.p_collapse,
         # V/Q and collapse
         "nVq": pt.n_vq, "vqLogSd": pt.vq_log_sd, "tauMix": pt.tau_mix,
         "inflowMechFrac": pt.inflow_mech_frac, "cvFrac": pt.cv_frac,
         "recruitFrac": pt.recruit_frac, "tauRecruit": pt.tau_recruit,
-        "shuntBase": pt.shunt_base,
+        "coTiltGain": pt.co_tilt_gain,
+        "shuntAnat": pt.shunt_anat,
+        "shuntCcK": pt.shunt_cc_k,
+        "shuntCeiling": pt.shunt_ceiling,
         # HPV
         "hpvEnabled": pt.hpv_enabled, "hpvPvrMax": pt.hpv_pvr_max,
         # metabolic and circulatory
@@ -502,7 +509,14 @@ def test_hardcoded_constants():
     """
     pt = Patient()
     expected = [
-        ("k_frc_bmi", pt.k_frc_bmi, 0.0417, "model.js:65 exp(-0.0417*(bmi-22))"),
+        # No longer hardcoded in model.js: it reads P.kFrcBmi and is carried
+        # in the parity payload, so this row now declares the JS DEFAULT.
+        # Updated 2026-09-26 with the Damia re-anchor, 0.0417 -> 0.0012.
+        # THIS CHECK EARNED ITS KEEP: it caught the two files parting
+        # company on that ruling before a human did, which is exactly
+        # what a run-and-compare cannot see because every scenario uses
+        # the defaults.
+        ("k_frc_bmi", pt.k_frc_bmi, 0.01074, "model.js:105 P.kFrcBmi, default 0.01074"),
         ("vo2_drop_per_kg", pt.vo2_drop_per_kg, 0.27, "model.js:68 -0.27*weight"),
         ("co_drop_frac", pt.co_drop_frac, 0.25, "model.js:69 *0.75"),
         ("rq", pt.rq, 0.8, "model.js:78 vco2m=vo2*0.8"),
