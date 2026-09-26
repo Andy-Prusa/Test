@@ -67,6 +67,12 @@ BENCHMARK_SOURCES = [
      "limitation of our study might be the lack of the direct measure of "
      "FRC\". What it does carry is Ctot MEASURED in a BMI 46.7 cohort, "
      "which `crs` currently models as BMI-independent"),
+    ("Gunnarsson 1991, *Br J Anaesth* 66:423-32 (n=45)",
+     "anaesthetised shunt and V/Q dispersion, by MIGET",
+     "2026-09-26",
+     "**THE FULL PAPER, at last.** A Survey of Anesthesiology CONDENSATION "
+     "was uploaded 2026-09-25 and correctly refused. n=45 is the "
+     "best-powered shunt anchor this repository holds, against Tokics' n=10"),
     ("Damia 1988, *Br J Anaesth* 60:574-8 (n=30)",
      "anaesthetised FRC in morbid obesity, and the posture claim",
      "2026-09-26",
