@@ -190,8 +190,14 @@ configuration (BMI 34.9) sits mid-range.
    obviously so, since the question at issue is whether oxygen reaches the
    trachea past the blade.
 
-**Heard 2017 itself is still not held**, and the file supplied under that name
-— three times now — is this commentary.
+~~**Heard 2017 itself is still not held**, and the file supplied under that
+name — three times now — is this commentary.~~ **SUPERSEDED THE NEXT DAY, and
+struck 2026-09-27.** Heard 2017 was obtained and read 2026-09-22 — see the
+§2 row, already struck, and the full write-up below under "Heard 2017 —
+OBTAINED AND READ 2026-09-22". True of the 2026-09-21 batch this section
+describes; left standing in the present tense for six days, where a reader
+arriving here first would conclude the project's clinical arbiter was not
+held.
 
 **`Douglas_AR.docx`** is a reference list, not a source — a page of citations
 including Hardman 1998 BJA 81:327-32, Dale & Rahn 1952 and Crotti 2001. Useful

@@ -105,6 +105,20 @@ BENCHMARK_SOURCES = [
      "**THE FULL PAPER, at last.** A Survey of Anesthesiology CONDENSATION "
      "was uploaded 2026-09-25 and correctly refused. n=45 is the "
      "best-powered shunt anchor this repository holds, against Tokics' n=10"),
+    # ADDED 2026-09-27, and its absence was the exact failure this file
+    # exists to prevent. SOURCES.md section 1b has marked Mohanty "Read."
+    # since 2026-09-21; this registry -- the SINGLE SOURCE OF TRUTH for what
+    # has been read -- did not list him, and no script mentions him either.
+    # A paper can be read, written up, and still invisible to anyone who
+    # asks the question the supported way.
+    ("Mohanty 2021, *Anesth Essays Res* 15(4):408-412 (n=50)",
+     "nothing yet -- the buccal head-to-head that CONTESTS Heard's figure",
+     "2026-09-21",
+     "obese ASA I-II, BMI >= 30, buccal RAE 375.3 (116.6) s against nasal "
+     "cannula 316.1 (94.1), P = 0.054. It is the only independent "
+     "measurement of a buccal arm this project holds, and NOTHING IN THE "
+     "MODEL IS GRADED AGAINST IT -- see the buccal row in test_validation.py, "
+     "which is a one-sided floor the model cannot fail"),
     ("Damia 1988, *Br J Anaesth* 60:574-8 (n=30)",
      "anaesthetised FRC in morbid obesity, and the posture claim",
      "2026-09-26",
