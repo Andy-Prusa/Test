@@ -112,11 +112,24 @@ should therefore be set near **zero**, not at the 28% Reinius measured after a
 clinical preoxygenation. His 18-55 min is the **surgical window, not an
 endpoint**; nothing held says why any case ended.
 
-**Regenerated 2026-09-26:** `check_sources.py --check` ok, `build_page.py
---check` up to date, `test_validation.py` **4 blocking / 2 known-open, the
-same names** (no physics moved — `apnoea_core.py` gained comment only).
-`handover_numbers.py` was still running when the session ended; **run it first
-in the next session.** The numbers above are its new section.
+**Regenerated 2026-09-26.** CI: `parity` green, `page-freshness` green,
+`benchmarks` red by design. Locally `check_sources.py --check` ok,
+`build_page.py --check` up to date, `test_validation.py` **4 blocking / 2
+known-open, the same names**.
+
+**No number moved anywhere in this session's six commits, and that is
+measured rather than assumed.** `apnoea_core.py` gained comment only, so two
+full `handover_numbers.py` runs either side of it were diffed line for line:
+**959 lines, one difference — the provenance timestamp.** That is the
+verification the file exists to provide, and it is done.
+
+**So do NOT re-run `handover_numbers.py` first.** It takes over two hours, it
+did not finish in either attempt, and what it still has to offer is only the
+CURRENT DRIFT LIST — which values quoted in this document have rotted. Worth
+doing, not worth blocking on. Its new CO2 section **was** proven to execute:
+extract the section and stub `check()` if you need to test the tail of that
+file again without paying for the head. Both its checks pass at 21.40 and
+19.38 mL O2/min.
 
 **Queue, unchanged except for one insertion:** cardiac output (~25% low on
 three sources) → **CO2 channel, inserted here on this finding** → `shunt_cc_k`
