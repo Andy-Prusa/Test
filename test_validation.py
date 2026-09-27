@@ -776,6 +776,46 @@ def test_timestep_stability():
           "if this fails the integrator is unstable, not the physiology")
 
 
+def test_co2_mass_balance():
+    """Internal check, needs no data -- the CO2 counterpart of the oxygen
+    balance in test_physical_consistency, and the ONLY benchmark that reaches
+    past 15 minutes.
+
+    Carbon dioxide enters the body only by metabolism (vco2_metab) and leaves
+    by nothing: the aventilatory inflow gas carries no CO2, and under net
+    absorption no gas is vented. So over any window the CO2 produced must be
+    accounted for by the rise in the alveolar store (lung_co2) plus the rise
+    in the blood+tissue+slow store (co2_stores). This does NOT test the rate
+    against anyone's data -- no held paper reaches past 15 min (Stock 1-5,
+    Kaiser 15) -- it tests that BEYOND that ceiling, where the CO2 rate decays
+    and nothing else in the suite constrains the model, its own book-keeping
+    still closes.
+
+    Measured 2026-09-27 at dt=0.2 (this project's long-run step): the balance
+    closes to -0.53% (lean) / -0.61% / -0.67% (obese) at 15 min and -0.26% at
+    60 min. The residual is negative -- a hair more CO2 is accounted for than
+    was produced -- and SHRINKS at finer dt (lean 15 min: -0.39% at dt 0.1,
+    -0.32% at dt 0.05), so it is a discretisation artefact of the coarse step,
+    not a leak. The +/-1% band is the level the accounting holds to at this
+    dt; it is NOT fitted to any measurement, and a regression that leaked or
+    created CO2 at the percent level would break it.
+    """
+    for label, p in (
+            ("lean",  Patient(weight=70,  height=1.78, age=40, hb=14, tilt_deg=30)),
+            ("obese", Patient(weight=145, height=1.78, age=50, hb=14, tilt_deg=30))):
+        r = simulate(p, [AirwayEpoch(3600, resistance=2, fgo2=1.00)],
+                     dt=0.2, feo2_start=0.87, stop_sao2=0.0)
+        vco2 = p.vo2_anaes() * p.rq
+        for t_end in (900.0, 3600.0):
+            produced = vco2 * (t_end / 60.0)
+            d_lung = np.interp(t_end, r['t'], r['lung_co2']) - r['lung_co2'][0]
+            d_store = np.interp(t_end, r['t'], r['co2_stores']) - r['co2_stores'][0]
+            resid = 100.0 * (produced - d_lung - d_store) / produced
+            check(f"CO2 balance closes, {label}, {t_end/60:.0f} min",
+                  resid, -1.0, 1.0, " %",
+                  "produced == alveolar rise + blood/tissue rise; needs no paper")
+
+
 def test_zz_all_benchmarks_passed():
     """Sentinel: carries the verdict of every check() above into pytest.
 
@@ -848,6 +888,7 @@ if __name__ == "__main__":
     print("INTERNAL CONSISTENCY")
     print("=" * 74)
     test_physical_consistency(); test_timestep_stability()
+    test_co2_mass_balance()
     print()
     print("=" * 74)
     _open = [k for k in KNOWN_OPEN if k not in FAILURES]

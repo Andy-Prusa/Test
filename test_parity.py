@@ -128,7 +128,12 @@ CHANNELS = [
 # the gap is a recorded fact rather than something a reader has to rediscover;
 # test_output_coverage() fails if this drifts.
 PY_ONLY = {"t", "pao2_alv", "paco2_alv", "sao2", "svo2", "inflow",
-           "cum_o2_in", "collapsed", "pvco2"}
+           "cum_o2_in", "collapsed", "pvco2",
+           # CO2 mass-balance diagnostics (test_validation.test_co2_mass_balance).
+           # Python-only, like cum_o2_in for the oxygen balance: model.js does
+           # not expose the CO2 store, and nothing in the parity comparison
+           # needs it, so it is declared unmatched rather than mirrored.
+           "lung_co2", "co2_stores"}
 JS_ONLY = {"t", "fao2"}
 
 

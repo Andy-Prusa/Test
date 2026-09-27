@@ -1732,7 +1732,16 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
     keys = ('t', 'va', 'palv_cmh2o', 'pao2_alv', 'paco2_alv', 'pao2', 'paco2',
             'sao2', 'spo2', 'pvo2', 'svo2', 'ph', 'inflow', 'cum_o2_in',
             'lung_o2', 'shunt', 'collapsed', 'hpv', 'pan2', 'co', 'hr',
-            'map', 'pap', 'sv', 'atelectasis', 'pvco2')
+            'map', 'pap', 'sv', 'atelectasis', 'pvco2',
+            # CO2 book-keeping, for the mass-balance invariant. Diagnostics
+            # only: pure reads of state the loop already holds, no dynamics
+            # depend on them. lung_co2 is the alveolar store (mL STPD); co2_stores
+            # is the blood+tissue+slow store total (mL STPD). Metabolic CO2
+            # enters only via vco2_metab and nothing leaves (inflow gas carries
+            # no CO2, net absorption vents none), so the two must together
+            # account for vco2_metab*dur. Declared PY_ONLY in test_parity.py,
+            # as cum_o2_in already is for the oxygen balance.
+            'lung_co2', 'co2_stores')
     rec = {k: np.zeros(nsteps + 1) for k in keys}
 
     sao2_hist, spo2, cum_o2_in = [], 0.99, 0.0
@@ -2086,6 +2095,11 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
         rec['inflow'][i] = inflow
         rec['cum_o2_in'][i] = cum_o2_in
         rec['lung_o2'][i] = n[:, 0].sum()
+        rec['lung_co2'][i] = n[:, 1].sum()
+        rec['co2_stores'][i] = (
+            (art_co2.sum() * v_art_sub + ven_co2.sum() * v_ven_sub
+             + tis_co2 * pt.v_tis_co2_fast + slow_co2 * pt.v_tis_co2_slow)
+            * 10.0)
         rec['shunt'][i] = shunt
         rec['collapsed'][i] = collapsed
         rec['atelectasis'][i] = absorbed

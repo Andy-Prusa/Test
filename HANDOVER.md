@@ -96,9 +96,21 @@ parameter, `vco2_metab = vo2 * rq`, rq 0.8, so 184.7 mL/min here):
 | 15 min | 2,770 mL | 156 mL | 2,614 mL | 5.6% |
 | 240 min | 44,320 mL | 869 mL | 43,451 mL | **2.0%** |
 
-**There is an oxygen mass-balance check in `test_validation.py` and no CO2
-one.** That is the gap a long-window CO2 row would fill without needing any
-paper at all.
+**There is an oxygen mass-balance check in `test_validation.py`, and now a CO2
+one** — `test_co2_mass_balance`, added 2026-09-27 on the ruling to fill this
+gap by internal consistency rather than a long-apnoea paper (O'Loughlin was
+weighed and set aside: its long-window number is venous, a single mean, and
+banded too wide to test the arterial decay). It adds two diagnostics to
+`simulate()` — `lung_co2` (alveolar store) and `co2_stores` (blood+tissue+slow),
+both declared PY_ONLY in `test_parity.py` as `cum_o2_in` already is — and
+asserts that CO2 produced (`vco2_metab * dur`) equals the alveolar-store rise
+plus the blood/tissue-store rise. It is the ONLY benchmark that reaches past 15
+minutes; it closes to under 1% out to an hour, the residual being negative and
+shrinking at finer dt, so a discretisation artefact of the coarse long-run
+step, not a leak. It does NOT test the rate against data — nothing held reaches
+that far — it tests that beyond the 15-minute ceiling the model's own
+book-keeping still closes. Exact residuals are in the test's own output, not
+quoted here, so they cannot rot.
 
 **His rate on this model's own stores** is the clearest form of it:
 
