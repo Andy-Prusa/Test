@@ -180,9 +180,17 @@ extract the section and stub `check()` if you need to test the tail of that
 file again without paying for the head. Both its checks pass at 21.40 and
 19.38 mL O2/min.
 
-**Queue, unchanged except for one insertion:** cardiac output (~25% low on
-three sources) → **CO2 channel, inserted here on this finding** → `shunt_cc_k`
-→ V̇O2.
+**Queue, revised 2026-09-27 (ruling): the CO2 channel is dropped.** It was
+inserted on the "too slow" finding, and that finding is withdrawn — on a
+matched window the model sits inside the patent CO2 measurements (Kaiser 15
+min, banded 1.8-3.0, passes), so there is no demonstrated CO2 defect in the
+regime apnoeic oxygenation happens in. The ONLY remaining CO2 disagreement is
+the OBSTRUCTED Stock slope, and it stays exactly where it was — KNOWN_OPEN
+since 2026-09-22, not a queue item and not to be chased with a compensating
+term (which would break Stock further). The internal-consistency CO2
+mass-balance check added the same day (`test_co2_mass_balance`) is what now
+guards the channel's book-keeping. So the queue is: cardiac output (~25% low on
+three sources) → `shunt_cc_k` → V̇O2.
 
 ## Current state — 2026-09-26 (tenth entry): closing capacity stops depending on BMI
 
