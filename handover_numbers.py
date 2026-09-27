@@ -3983,14 +3983,41 @@ print(f"    mL of LUNG GAS per minute, and 1800 / {_FAO2_HEARD:.4f} = "
 print("    of LUNG for an hour. His 33.9 and his 2,034 reproduce to the last")
 print("    digit. BOTH ARE VOLUMES OF ALVEOLAR GAS, not of oxygen: 2,034 mL")
 print("    is the FRC required, and the oxygen inside it is 1,800 mL.")
-print("    SO THE LIKE-FOR-LIKE COMPARISON IS AGAINST 30.0 mL O2/min, and an")
-print("    earlier version of this section wrongly used 33.9:")
-print(f"      model, minutes 2-10   {_co2rates[0]:>5.1f} mL O2/min   "
-      f"{_HEARD_O2/_co2rates[0]:.1f}x too slow")
-print(f"      model, 60-min mean     13.4 mL O2/min   "
-      f"{_HEARD_O2/13.4:.1f}x too slow")
-print(f"      model, 4-hour mean      6.0 mL O2/min   "
-      f"{_HEARD_O2/6.0:.1f}x too slow")
+# RETRACTED 2026-09-27, AND IT WAS THE HEADLINE. This section said the model
+# ran the CO2 channel "2.5x", then "5x", too slow, by setting its 60-minute
+# and 4-HOUR mean rates against Heard's 30 mL/min. Every measurement in this
+# repository is a SHORT-WINDOW rate -- Stock 1-5 min, Kaiser 15 min -- and a
+# four-hour mean of a decaying quantity is not the same thing. Comparing them
+# is the SAME CLASS OF ERROR as the 33.9-against-30 basis mix-up corrected the
+# day before: two numbers that are not the same measurement.
+#
+# IN AN APNOEIC LUNG NOTHING LEAVES, so alveolar CO2 output and the rise in
+# PaCO2 are ONE quantity seen two ways, and everything becomes comparable:
+_pb = Patient(weight=22.0*1.74**2, height=1.74, age=42, hb=14, tilt_deg=30.0)
+# NB `ac.PDRY`, not a bare PDRY: this file imports PB and PH2O bare but
+# reaches PDRY through the module alias, and a bare name here raises
+# NameError only when the run finally reaches this line, 90 minutes in.
+_valv = (_pb.frc_anaes() - _pb.vd_anat) * ac.PDRY / 760.0 * 273.0 / 310.0
+_k = _valv / ac.PDRY                   # mL of CO2 per mmHg of PACO2
+print(f"    ONE QUANTITY, TWO VIEWS: {_k:.3f} mL of CO2 per mmHg of PACO2 in")
+print(f"    this {_valv:.0f} mL alveolus. So every rate here is comparable:")
+print(f"      {'source':<44}{'mmHg/min':>9}{'mL/min':>9}")
+for _nm, _rt in (("Kaiser 2024 n=91, READ IN FULL, on 100% O2", 2.10),
+                 ("Frumin via O'Loughlin, patent, secondhand", 0.4*7.50062),
+                 ("Stock 1989, READ AT SOURCE, obstructed", 3.40),
+                 ("THIS MODEL at 15 min, matched window", 2.62)):
+    print(f"      {_nm:<44}{_rt:>9.2f}{_rt*_k:>9.1f}")
+print(f"      {'Heard 30 mL/min REQUIRES':<44}{30/_k:>9.2f}{30.0:>9.1f}")
+print("    THE MODEL SITS INSIDE THE MEASUREMENTS ON A MATCHED WINDOW, and")
+print("    the suite already grades it there: test_validation.py bands the")
+print("    Kaiser rate 1.8-3.0 and the model PASSES. There is no demonstrated")
+print("    CO2 defect in the measured regime. The 2.5x and 5x are withdrawn.")
+print(f"    AND HEARD'S 30 mL/min IS ITSELF {30/_k/2.1:.1f}x THE MODERN MEASURED")
+print(f"    RATE. Sustained for an hour it puts {30*60:.0f} mL of CO2 into a")
+print(f"    {_valv:.0f} mL alveolus, i.e. PACO2 {30*60/_k+40:.0f} mmHg. Nothing held is")
+print("    near that. His MECHANISM is right and is in the code; the RATE he")
+print("    put on it is high by about three-fold, and this is the arithmetic")
+print("    that shows it using only numbers already in this repository.")
 print("    HIS RATE ON THIS MODEL'S OWN STORES, which is the clearest form:")
 for _b, _o in ((22.0, 2440), (34.5, 1279), (45.0, 975)):
     print(f"      BMI {_b:>4.1f}  lung O2 {_o:>4d} mL  ->  {_o/_HEARD_O2:>5.1f} min")
@@ -4006,12 +4033,11 @@ for _h, _o, _f, _pc, _sp, _lr in ((0, 2439, 0.870,  40.0, 99.0,  None),
                                    (4,  988, 0.352, 261.0, 98.6,  2.3)):
     _s = f"{_lr:>5.1f} mL/min" if _lr else "     --"
     print(f"       {_h:>4}   {_o:>7d}   {_f:.3f}  {_pc:>6.1f}  {_sp:>5.1f}%   {_s}")
-print("    SO THE SHORTFALL GROWS WITH TIME: 1.4x over ten minutes, 2.2x")
-print("    over an hour, 5.0x over four. It is not a constant scale factor,")
-print("    which is the single most important thing for whoever fixes this:")
-print("    a multiplier tuned on the early window would fit ten minutes and")
-print("    miss the hour. The fault is in how the alveolar-venous CO2")
-print("    gradient closes, not in the size of the initial output.")
+print("    THE RATE DECAYS, AND NOTHING HELD TESTS IT. Every CO2 benchmark in")
+print("    the suite ends by 15 minutes -- Stock 1-5, Kaiser 15 -- and 15 min")
+print("    is where this model still matches. Beyond it the model is")
+print("    UNCONSTRAINED, which is a hole in the benchmark set and not a")
+print("    demonstrated defect. Do not call it one without a source.")
 print("    Cross-check on the same defect from the CO2 side: PaCO2 reaches")
 print("    261 mmHg at 240 min, a MEAN OF 0.92 mmHg/min. Three sources, in")
 print("    descending order of how well this repository holds them:")
@@ -4019,8 +4045,14 @@ print(f"      Stock 1989, obstructed, READ AT SOURCE       3.4  mmHg/min")
 print(f"      Frumin 1959 via O'Loughlin, patent, n=8    "
       f"{0.4*7.50062:>5.2f}  mmHg/min")
 print(f"      this model, 4-hour mean                      0.92 mmHg/min")
-print(f"    So the model is {3.4/0.92:.1f}x slow against Stock and "
-      f"{0.4*7.50062/0.92:.1f}x against Frumin.")
+print("    THOSE THREE ARE NOT COMPARABLE, and saying so was the whole error:")
+print("    0.92 is a FOUR-HOUR MEAN, Stock's window is 1-5 min and Kaiser's is")
+print("    15. On its own 15-minute window this model gives 2.62 mmHg/min.")
+print("    WHAT IS ACTUALLY OPEN is that the rate DECAYS -- 4.24 mmHg/min over")
+print("    0-5 min, 2.62 over 0-15, 1.61 over 0-60, 1.00 over 0-240 -- and")
+print("    NOTHING HELD MEASURES PAST 15 MINUTES. The decay is UNTESTED, not")
+print("    shown wrong. That is a hole in the benchmark set, and it is the")
+print("    real reason Frumin's 53-minute apnoea was worth chasing.")
 print("    A CORRECTION, SAME SESSION. An earlier version of these lines said")
 print("    'Frumin is not in this repository and that figure is from memory'.")
 print("    WRONG ON BOTH COUNTS, and asserted rather than checked -- the very")

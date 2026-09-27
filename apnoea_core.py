@@ -1958,10 +1958,14 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
         # than tuned. Measured in `handover_numbers.py`: the loss opens at
         # 19.4-21.4 mL/min over minutes 2-10 and DECAYS to a 60-minute mean of
         # 10.6-13.4 across BMI 22-45, against Heard's 30.0 mL O2/min. It
-        # decays because rising PaCO2 closes the alveolar-venous CO2 gradient,
-        # and it keeps decaying: the 4-hour mean is 6.0. So the shortfall is
-        # about 1.4x at the start, 2.2x over an hour and 5.0x over four --
-        # it is not a constant offset. The CO2 channel
+        # decays as rising PaCO2 closes the alveolar-venous CO2 gradient.
+        # BUT THE "TOO SLOW" READING IS WITHDRAWN (2026-09-27): those were
+        # 60-minute and 4-hour MEANS set against short-window measurements.
+        # On a MATCHED 15-minute window this model gives 2.62 mmHg/min where
+        # Kaiser 2024 (n=91, read in full) measured 2.1, and the suite bands
+        # it 1.8-3.0 and PASSES. Heard's 30 mL/min would itself require 7.6
+        # mmHg/min, about 3.6x the modern measured rate. What remains open is
+        # that the decay beyond 15 minutes is tested by NOTHING held. The CO2 channel
         # being slow is ALREADY a tracked failure -- Stock 1989 obstructed
         # slope, 3.4 mmHg/min measured, this model 2.0 -- and these are the
         # same defect seen from two ends. It is why the oxygenated case

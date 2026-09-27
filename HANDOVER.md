@@ -61,13 +61,44 @@ gradient:
 | 3 | 1127 mL | 0.402 | 230.0 | 99.2% | 3.6 mL/min |
 | 4 | 988 mL | 0.352 | 261.0 | 98.6% | 2.3 mL/min |
 
-Against his 30.0 mL of O2 per minute, sustained:
+**AND THE "2.5x" AND "5x" ARE WITHDRAWN.** They set the model's 60-minute
+and FOUR-HOUR mean rates against 30 mL/min. Every measurement held here is a
+SHORT-WINDOW rate — Stock 1-5 min, Kaiser 15 min — and a four-hour mean of a
+decaying quantity is not the same measurement. It is the same class of error
+as the 33.9-against-30 basis mix-up corrected the day before.
 
-| window | model | too slow by |
-|---|---|---|
-| minutes 2–10 | 21.4 mL O2/min | 1.4x |
-| 60-minute mean | 13.4 mL O2/min | 2.2x |
-| 4-hour mean | 6.0 mL O2/min | **5.0x** |
+**His 30 mL/min is itself about 3.6x the modern measured rate.** Sustained
+for an hour it puts 1,800 mL of CO2 into a 2,804 mL alveolus — PACO2 498
+mmHg. Nothing held is near that. The MECHANISM is right and is in the code;
+the RATE is high by roughly three-fold, and the arithmetic showing it uses
+only numbers already in this repository.
+
+**WHAT IS ACTUALLY OPEN is that the rate decays and nothing tests it:**
+
+| window | model PaCO2 rise |
+|---|---|
+| 0–5 min | 4.24 mmHg/min |
+| 0–15 min | 2.62 — **the last window any held paper reaches** |
+| 0–60 min | 1.61 |
+| 0–240 min | 1.00 |
+
+**Every CO2 benchmark in the suite ends by 15 minutes.** The decay is
+UNTESTED, not shown wrong — a hole in the benchmark set rather than a
+demonstrated defect, and the real reason Frumin's 53-minute apnoea was worth
+chasing. **Frumin cannot be obtained** (author, 2026-09-27), so that hole
+needs either another long-apnoea source or an internal-consistency check.
+
+**Where the CO2 goes, measured, needing no paper** (production is a model
+parameter, `vco2_metab = vo2 * rq`, rq 0.8, so 184.7 mL/min here):
+
+| window | produced | into lung | into stores | % to lung |
+|---|---|---|---|---|
+| 15 min | 2,770 mL | 156 mL | 2,614 mL | 5.6% |
+| 240 min | 44,320 mL | 869 mL | 43,451 mL | **2.0%** |
+
+**There is an oxygen mass-balance check in `test_validation.py` and no CO2
+one.** That is the gap a long-window CO2 row would fill without needing any
+paper at all.
 
 **His rate on this model's own stores** is the clearest form of it:
 
@@ -80,18 +111,24 @@ Against his 30.0 mL of O2 per minute, sustained:
 An hour of apnoeic oxygenation is comfortable at BMI 22 and is **already
 over** at BMI 45.
 
-**This is ONE defect with the Stock failure, not two**, and two independent
-published rates now say so:
+**RETRACTED 2026-09-27 — THE CO2 DEFECT IS OBSTRUCTED-ONLY, and the entry
+above originally said otherwise.** In an apnoeic lung nothing leaves, so
+alveolar CO2 output and the rise in PaCO2 are ONE quantity: 3.933 mL of CO2
+per mmHg in a 2804 mL alveolus. On a MATCHED WINDOW everything is comparable:
 
-| source | regime | arterial CO2 rise |
-|---|---|---|
-| Stock 1989, **read at source** | obstructed | 3.4 mmHg/min |
-| Frumin 1959 via O'Loughlin 2020, n=8 | **patent, on oxygen** | 3.00 mmHg/min |
-| **this model, 4-hour mean** | patent, on oxygen | **0.92 mmHg/min** |
+| source | regime | mmHg/min | mL/min |
+|---|---|---|---|
+| Kaiser 2024, n=91, **read in full** | patent, 100% O2, 15 min | 2.10 | 8.3 |
+| Frumin via O'Loughlin, n=8 | patent, secondhand | 3.00 | 11.8 |
+| **this model at 15 min** | patent, 100% O2 | **2.62** | **10.3** |
+| Stock 1989, **read at source** | **obstructed**, 1-5 min | 3.40 | 13.4 |
+| **this model, obstructed 1-5 min** | **obstructed** | **2.00** | **7.9** |
 
-3.7x slow against Stock, **3.3x against Frumin** — and Frumin is the one in
-the same regime as the oxygenated case above. The suite already has us at 2.0
-on Stock, KNOWN_OPEN since 2026-09-22. Same channel, two symptoms. **Fixing the CO2 channel is what makes the oxygenated case
+**The model matches the PATENT measurements and fails only the OBSTRUCTED
+one.** `test_validation.py` already bands the Kaiser rate 1.8-3.0 and the
+model passes. So the CO2 channel has no demonstrated defect in the regime
+apnoeic oxygenation actually happens in, and the Stock row remains what it
+always was: an obstructed-airway failure, KNOWN_OPEN since 2026-09-22. **Fixing the CO2 channel is what makes the oxygenated case
 terminate; a compensating term would break Stock further while appearing to
 help here.**
 
