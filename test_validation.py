@@ -106,6 +106,24 @@ KNOWN_OPEN = {
         (53.8, 3.0, "rides the same CO2 limb as the Stock slope. MODEL "
                     "comparator, and Laviola's simulator has no V/Q "
                     "distribution, so it cannot arbitrate either way"),
+    # ADDED 2026-09-28 ON A RULING, deliberately, as the measurement of a
+    # defect that is about to be fixed. Madronio 2025 (read at source) shows
+    # cardiac index is FLAT across body size -- 3.103 vs 3.139 L/min/m2, 1.16%
+    # apart -- so cardiac output is PROPORTIONAL TO BODY SURFACE AREA. This
+    # model scales it on weight**0.75, which is too steep, and its implied
+    # cardiac index therefore climbs 16% over the same span.
+    #
+    # THE TOLERANCE IS TIGHT (1.0) BECAUSE THIS ROW IS NEARLY INERT. Its value
+    # is 100*((125/70)**0.75 * 1.84/2.45 - 1) and depends ONLY on the weight
+    # exponent: co_ref cancels in the ratio, and neither haemoglobin nor tilt
+    # enters at these settings. Anything that moves it by more than a point is
+    # a change to the body-size law itself, which is exactly what should be
+    # reported.
+    "cardiac index is body-size independent":
+        (16.01, 1.0, "the model's cardiac output rises too steeply with body "
+                     "size: weight**0.75 where the measurement is "
+                     "proportional to BSA. Lands green when the body-size law "
+                     "is re-keyed; see HANDOVER, cardiac output"),
 }
 
 
@@ -137,8 +155,12 @@ def check(name, value, lo, hi, units="", source=""):
     if source:
         print(f"         {source}")
     if tag == "OPEN":
-        print(f"         KNOWN OPEN, was {KNOWN_OPEN[name][0]:.2f} at the "
-              f"2026-09-22 ruling: {KNOWN_OPEN[name][2]}")
+        # The date used to be hardcoded as 2026-09-22, which stopped being
+        # true when a row ruled 2026-09-28 was added. Each row carries its own
+        # ruling date in its comment above KNOWN_OPEN; this line states the
+        # value, not the date, rather than assert a date that can rot.
+        print(f"         KNOWN OPEN, was {KNOWN_OPEN[name][0]:.2f} at its "
+              f"ruling: {KNOWN_OPEN[name][2]}")
     return ok
 
 
@@ -610,6 +632,50 @@ def test_cardiac_output():
           "clinical; Chest: HR, SV, CO and MAP all rose")
 
 
+def test_cardiac_output_body_size():
+    """Madronio 2025, *Heart Lung Circ* 34:1109-18. CLINICAL, cardiac MRI.
+
+    n=57, AWAKE, 79% female, mean age 41. Healthy n=20: BSA 1.84 (0.17),
+    cardiac output 5.71 (1.08) L/min. BMI>=30 n=37: BSA 2.45 (0.26), 7.69
+    (1.36). Read at source 2026-09-28.
+
+    THE LOAD-BEARING RESULT IS THE SHAPE, NOT THE LEVEL. Cardiac index is
+    FLAT across body size -- 3.103 vs 3.139 L/min/m2, 1.16% apart -- so
+    cardiac output is PROPORTIONAL TO BODY SURFACE AREA. This model scales it
+    on weight**0.75, too steep: 12% low at the lean end, catching up only by
+    rising too fast, and its implied cardiac index climbs 16% instead of 1%.
+
+    IT ALSO WITHDRAWS THE "WRONG GRADIENT" CLAIM. Cardiac output RISES with
+    body size; the Tokics 5.70 -> Perilli 4.90 fall was a confound between two
+    studies, not a reversal. The defect is the EXPONENT.
+
+    These are AWAKE values, so this grades `co_ref` and the body-size law and
+    says NOTHING about `co_drop_frac`, which is Gunnarsson's 70-85% and is
+    tested nowhere here. Madronio is 79% female against an explicitly male
+    model, which the authors themselves flag; the bands are 1 SD, so that
+    caveat is inside them rather than argued away.
+    """
+    lean = Patient(weight=70, height=1.68, age=38, hb=14, tilt_deg=0)
+    obese = Patient(weight=125, height=1.67, age=42, hb=14, tilt_deg=0)
+
+    def awake(p):
+        """Cardiac output BEFORE the anaesthetic drop, which is what Madronio
+        measured. co_anaes() applies (1 - co_drop_frac) on top of this."""
+        return p.co_ref * p.scale() * p.anaemia_co_factor() * p.tilt_co_factor()
+
+    check("Madronio lean, awake cardiac output", awake(lean), 4.63, 6.79,
+          " L/min", "clinical; 5.71 (1.08) L/min, n=20, cardiac MRI, 1 SD")
+    check("Madronio obese, awake cardiac output", awake(obese), 6.33, 9.05,
+          " L/min", "clinical; 7.69 (1.36) L/min, n=37, cardiac MRI, 1 SD")
+    # The shape. Divided by the cohorts' own MEASURED body surface areas,
+    # because this model has no BSA of its own to divide by -- which is
+    # itself the thing the fix has to add.
+    ci_lean, ci_obese = awake(lean) / 1.84, awake(obese) / 2.45
+    check("cardiac index is body-size independent",
+          100.0 * (ci_obese / ci_lean - 1.0), -5.0, 5.0, " %",
+          "clinical; measured 3.103 vs 3.139 L/min/m2, i.e. 1.16% apart")
+
+
 def test_icsm_jet_2026():
     """Laviola M, Dinsmore J, Lacquiere D, Niklas C, Heard A, Hardman JG.
     Anesth Analg 2026, DOI 10.1213/ANE.0000000000008194, Supplementary S5.
@@ -876,6 +942,7 @@ if __name__ == "__main__":
     test_toner_2019(); test_heard_2017(); test_berthoud_1991()
     test_oloughlin_2020()
     test_positioning_trials(); test_cardiac_output()
+    test_cardiac_output_body_size()
     test_anaemia_cardiac_response()
     test_stock_1989(); test_moreault_2021()
     print()
