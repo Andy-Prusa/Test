@@ -176,7 +176,7 @@ def js_params(pt, feo2):
         # HPV
         "hpvEnabled": pt.hpv_enabled, "hpvPvrMax": pt.hpv_pvr_max,
         # metabolic and circulatory
-        "vo2Ref": pt.vo2_ref, "coRef": pt.co_ref,
+        "vo2Ref": pt.vo2_ref, "ciRef": pt.ci_ref,
         "hrBase": pt.hr_base, "hrBradyN": pt.hr_brady_n,
         "hrBradySao250": pt.hr_brady_sao2_50,
         "hrTermSao2": pt.hr_term_sao2, "hrTermDelay": pt.hr_term_delay,

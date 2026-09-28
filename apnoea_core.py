@@ -786,7 +786,37 @@ class Patient:
     # counted. A separate series found cardiac output still elevated at pH 6.9
     # after 40 min of apnoeic oxygenation (J Anesth 2013), so depression does
     # not dominate anywhere in the range this model is used.
-    co_ref: float = 5.0
+    # CARDIAC OUTPUT IS KEYED ON BODY SURFACE AREA, NOT ON WEIGHT. Re-keyed
+    # 2026-09-28 on a ruling; it was `co_ref * (weight/70)**0.75` with
+    # co_ref = 5.0 L/min.
+    #
+    # Madronio 2025 (*Heart Lung Circ* 34:1109-18, cardiac MRI, n=57, READ AT
+    # SOURCE) measures CARDIAC INDEX FLAT ACROSS BODY SIZE: 3.103 L/min/m2 in
+    # the healthy (BSA 1.84, CO 5.71) against 3.139 in BMI>=30 (BSA 2.45, CO
+    # 7.69) -- 1.16% apart. Cardiac output is therefore PROPORTIONAL TO BSA.
+    # The three-quarter power on total weight was too steep: 12% low at the
+    # lean end, catching up only by rising too fast, and the implied cardiac
+    # index climbed 16% across that span where the measurement moves 1%.
+    #
+    # IT ALSO WITHDREW THE "WRONG GRADIENT" READING. Cardiac output RISES with
+    # body size. The Tokics 5.70 -> Perilli 4.90 fall that this repository
+    # read as a reversal was a confound between two studies -- different
+    # cohorts, 12 years apart, Perilli's a reduced phase-4 supine value.
+    #
+    # ci_ref IS AWAKE, and the anaesthetic drop below is applied on top of it.
+    # Madronio is awake, 79% female against an explicitly male model, and
+    # reports no haemoglobin; those caveats are carried in sources_registry.py.
+    #
+    # WHAT THIS DOES NOT FIX, stated so nobody reads it as settled: the
+    # ANAESTHETISED level is still low. Kaiser's 91 anaesthetised apnoeic
+    # patients have a baseline median of 5.0 L/min and Tokics 5.70; this gives
+    # about 4.47 at 77 kg. The remaining lever is co_drop_frac, whose 0.25
+    # sits mid-range in Gunnarsson's 70-85%. It is deliberately NOT touched in
+    # the same edit as the body-size law -- that would be two changes at once.
+    # Note also that the Kaiser comment above quotes an ANAESTHETISED median
+    # of 5.0 directly above what was an AWAKE co_ref of 5.0; whether the two
+    # were once conflated is not recorded anywhere, so it is not asserted.
+    ci_ref: float = 3.12         # L/min/m2, AWAKE resting cardiac index
     co_drop_frac: float = 0.25
     # HEAD-UP TILT COSTS CARDIAC OUTPUT. Added 2026-09-24 by ruling.
     #
@@ -996,8 +1026,20 @@ class Patient:
     def bmi(self):
         return self.weight / self.height ** 2
 
-    def scale(self):
-        return (self.weight / 70.0) ** 0.75
+    def bsa(self):
+        """Body surface area, m2, by the Mosteller form.
+
+        Cardiac output is proportional to this (Madronio 2025), which is what
+        replaced the old `scale()` -- a three-quarter power of total weight,
+        used in exactly one place and now retired rather than left dead.
+
+        MOSTELLER RATHER THAN DU BOIS, and the reason is measured rather than
+        conventional: against Madronio's own reported BSA, Mosteller gives
+        -1.8% (lean) and -1.7% (obese), while Du Bois gives -2.5% and -6.7%.
+        Du Bois systematically under-reads the obese body, which is the end of
+        the range this model exists to get right.
+        """
+        return float(np.sqrt(self.weight * (self.height * 100.0) / 3600.0))
 
     def ibw(self):
         """Devine ideal body weight, kg (male form)."""
@@ -1339,7 +1381,7 @@ class Patient:
         # is the clinically important bit: the anaemic patient who was
         # holding their delivery together awake gives some of it back on
         # induction, exactly when the reserve is wanted.
-        return (self.co_ref * self.scale() * self.anaemia_co_factor()
+        return (self.ci_ref * self.bsa() * self.anaemia_co_factor()
                 * (1.0 - self.co_drop_frac) * self.tilt_co_factor())
 
     def n2_capacities(self):

@@ -5,6 +5,123 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-28 (twelfth entry): cardiac output is keyed on body surface area, and the "wrong gradient" is retracted
+
+**Three rulings were taken and all three are done.** They are listed in the
+order they were ruled, not the order they matter.
+
+**1. The CO2 decay gap is closed by internal consistency, not by a paper.**
+The eleventh entry said there was an oxygen mass-balance check and no CO2 one,
+and that the CO2 rate's decay past 15 minutes was constrained by nothing held.
+`test_co2_mass_balance` now asserts that CO2 produced (`vco2_metab * dur`)
+equals the rise in the alveolar store plus the rise in the blood/tissue/slow
+store, at 15 and 60 minutes, for a lean and an obese patient. It is the ONLY
+benchmark that reaches past 15 minutes. **O'Loughlin was weighed for this job
+and set aside**: its long-window number is venous, a single mean over the whole
+apnoea, and banded 50-350 Pa/min — too wide to test an arterial decay.
+
+**It does not close to machine precision, and that is recorded rather than
+hidden.** The residual is -0.5% (lean) and -0.7% (obese) at 15 min, -0.3% and
+-0.4% at 60 min, and it SHRINKS at finer dt (-0.39% at dt 0.1, -0.32% at
+0.05). So it is a discretisation artefact of the coarse long-run step, not a
+leak. The band is ±1%, which is the level the accounting actually holds to.
+
+**2. The CO2 channel is dropped from the queue.** See the revised queue in the
+eleventh entry. The obstructed Stock slope stays KNOWN_OPEN and is not to be
+chased with a compensating term.
+
+**3. CARDIAC OUTPUT IS NOW PROPORTIONAL TO BODY SURFACE AREA, and the claim
+that its gradient had the wrong sign is RETRACTED.**
+
+Madronio 2025 (*Heart Lung Circ* 34:1109-18, cardiac MRI, n=57, **read at
+source**) measures cardiac index FLAT across body size: 3.103 L/min/m² in the
+healthy (BSA 1.84, CO 5.71) against 3.139 in BMI≥30 (BSA 2.45, CO 7.69) —
+**1.16% apart**. Cardiac output rises with body size, in the direction this
+model already had. The Tokics 5.70 → Perilli 4.90 "fall" was a comparison
+between two studies twelve years apart with a reduced phase-4 supine value at
+one end. **The defect was the EXPONENT, not the direction.**
+
+Measured, the exponent is weight^0.51 ≈ BSA^1.04. The model used weight^0.75:
+12% low at the lean end, catching up only by rising too fast, with an implied
+cardiac index climbing **16%** across the span where the measurement moves 1%.
+
+**Measured first, then fixed, on a ruling.** The row was added to KNOWN_OPEN at
+16.01% for exactly one commit — long enough for the arbiter to hold the defect
+— then closed by re-keying `co_anaes()` onto a new `bsa()`:
+
+| | before | after | measured |
+|---|---|---|---|
+| lean, awake CO | 5.00 | **5.64** | 5.71 (1.08) |
+| obese, awake CO | 7.72 | **7.51** | 7.69 (1.36) |
+| cardiac-index spread | 16.01% | **0.1%** | 1.16% |
+
+`bsa()` is **Mosteller, not Du Bois**, and that was decided by measurement:
+against Madronio's own reported BSA, Mosteller reads -1.8%/-1.7%, Du Bois
+-2.5%/-6.7%. Du Bois under-reads the obese body, which is the end of the range
+this model exists to get right.
+
+**WHAT IT COST, stated rather than compensated. One new blocking failure.**
+
+| row | before | after | band |
+|---|---|---|---|
+| ICSM rescue, post-rescue PaO2 | 49.5 PASS | **51.5 FAIL** | 33.5-51.1 kPa |
+
+It overshoots the ceiling by 0.4 kPa, **0.8%**, and it is a MODEL comparator —
+Laviola's simulator, not a patient. Nothing was tuned to bring it back.
+**Blocking is 4 → 5, known-open 3 → 2.** Every other moved row stayed in band
+and moved coherently: lean desaturation got slower (Toner sham 507.8 → 510.2 s,
+Berthoud control 547.1 → 549.5) because a lean patient now has more cardiac
+output and so more venous oxygen buffer, and the obese got marginally faster
+(Berthoud obese 204.3 → 203.9). **Heard control went 353.7 → 354.2 s, i.e.
+0.5 s FURTHER from its band.** That is the predicted direction and it is not a
+reason to undo the change.
+
+`test_parity.py` is green — `model.js` carries the same `bsa()` and the page is
+rebuilt.
+
+**WHAT IS STILL OPEN ON CARDIAC OUTPUT: the ANAESTHETISED LEVEL.** Awake is now
+right. Anaesthetised is not: 4.47 at 75 kg and 4.53 at 77 kg against Kaiser's
+baseline median of 5.0 (n=91, anaesthetised, apnoeic) and Tokics' 5.70. The
+single remaining lever is `co_drop_frac` at 0.25, against Gunnarsson's 70-85%,
+and it was deliberately not moved in the same edit as the body-size law.
+**Note also that the Kaiser comment in `apnoea_core.py` quotes an ANAESTHETISED
+median of 5.0 directly above what was an AWAKE `co_ref` of 5.0.** Whether those
+were once conflated is recorded nowhere, so it is not asserted — but it would
+explain the shortfall exactly.
+
+**AND THE SHUNT FIT IS NOW STALE.** `shunt_base_eff` was fitted by inverting
+Pelosi's blood gases THROUGH the old cardiac output, and that cardiac output
+has moved (+15% lean, -3% obese). The fitted law was not re-derived here —
+that is the subject of this PR and deserves its own ruling.
+
+**Five papers read at source and registered** in `sources_registry.py`, which
+is now 22 sources: Fraioli 1973, Benumof 1997, the Baraka/Benumof 1999
+correspondence, Madronio 2025, and Babinski 1986 (abstract only, `read=None`,
+a dog study set aside). **Fraioli was previously listed as UNREAD** — it was
+one of ICSM/Laviola's own validation references.
+
+**Fraioli 1973 independently corroborates this model's mechanism.** Human
+apnoeic oxygenation, n=31: PaO2 falls because PaCO2 rises and, more
+importantly, **alveolar nitrogen rises**, and the heavier/smaller-FRC group
+accumulates more nitrogen relative to its lung volume (277.5 vs 169.5 mL) and
+so desaturates faster. That is the aventilatory mass-flow law and the unwashed
+low-V/Q term. It agrees with Heller 1963 on its own numbers (air -295 torr/5
+min against Heller's -300; on oxygen 415 torr at 5 min against 419), and its
+FRC/weight threshold of ~50 mL/kg is the same obesity penalty Berthoud and
+Gander measure. Its PaCO2 rate of 3.25 torr/min looks high against Kaiser's
+2.1 until you notice it starts from a HYPERVENTILATED 24.5 torr and lands on
+73.2 at 15 min — Kaiser goes 43 → 73 over the same window. **Same endpoint,
+different starting point.**
+
+**The oxygen prediction was checked against Benumof 1997 and is sound.** At the
+model's own FAO2 of 0.87, sealed airway: SaO2 80% at 7.2 min (healthy 70 kg)
+and 2.8 min (obese 127 kg) against Benumof's 8.7 and 3.1, with asystole at 9.9
+and 5.2 min. Benumof's own model OVERpredicts the measured times in 7 of 11 of
+his Table 1 comparisons, so sitting slightly faster than him sits closer to the
+patients. **The model is not generally too slow to desaturate** — the Heard
+failure is specific to that row's regime (deliberate partial obstruction, buccal
+oxygen, clock from drug injection), not a general oxygen defect.
+
 ## Current state — 2026-09-26 (eleventh entry): apnoeic oxygenation is CO2-limited, and this model runs that channel ~5x too slow
 
 **A. Heard's argument, and it overturned what this session had told him.**
@@ -191,6 +308,20 @@ term (which would break Stock further). The internal-consistency CO2
 mass-balance check added the same day (`test_co2_mass_balance`) is what now
 guards the channel's book-keeping. So the queue is: cardiac output (~25% low on
 three sources) → `shunt_cc_k` → V̇O2.
+
+**Queue again, 2026-09-28: the cardiac-output item is HALF done.** Its
+*body-size law* is fixed — `co_anaes()` is re-keyed onto `bsa()`, cardiac
+output proportional to body surface area, on Madronio 2025 read at source —
+and the "~25% low on three sources" phrasing above is superseded: the level
+error is not uniform and the gradient was never reversed (see the retraction
+further down this file). **What is still open is the ANAESTHETISED LEVEL.**
+Awake is now right (5.64 against Madronio's 5.71); anaesthetised is still low
+against the two measurements that bear on it — Kaiser's 91 patients at a
+baseline median of 5.0 and Tokics at 5.70, against this model's 4.47 at 75 kg
+and 4.53 at 77 kg. The single remaining lever is `co_drop_frac`, at 0.25
+against Gunnarsson's 70-85%, and it was deliberately NOT moved in the same
+edit as the body-size law. So the queue is: **cardiac output — anaesthetised
+level only** → `shunt_cc_k` → V̇O2.
 
 ## Current state — 2026-09-26 (tenth entry): closing capacity stops depending on BMI
 
@@ -821,13 +952,32 @@ shunt is −0.34 SD from his mean, not −1.07. Corrected in SOURCES.md and
 | Perilli obese, 125 kg | **5.78** | 4.9 | **+18%** |
 | change across the span | **+43%** | **−14%** | |
 
-**The sign of the gradient is wrong.** `co_anaes` scales on weight^0.75, so we
+**~~The sign of the gradient is wrong.~~** `co_anaes` scales on weight^0.75, so we
 rise 43% where the measurements fall 14%. This reframes a standing caveat: "our
 cardiac output is ~18% high" is **not an offset** — at the lean end we are 29%
 *low*. It matters beyond the row, because via Dantzker 1980 cardiac output is
 itself a shunt-reduction mechanism and **every shunt this repository inverted
 was inverted through this cardiac output.** Neither paper reports haemoglobin,
 so `hb 14` is ours in both; the cohorts differ by 12 years.
+
+> **RETRACTED 2026-09-28 — THE GRADIENT'S SIGN WAS NEVER WRONG, AND THIS ROW
+> IS WHY TWO CONFOUNDED POINTS SHOULD NOT HAVE BEEN DRAWN THROUGH.** Madronio
+> 2025 (*Heart Lung Circ* 34:1109-18, cardiac MRI, n=57, read at source)
+> measures cardiac output **rising** with body size, and rising in the way the
+> model already had it: 5.71 L/min at BSA 1.84 against 7.69 at BSA 2.45.
+> Tokics → Perilli was a comparison **between two studies** twelve years and
+> two cohorts apart, with Perilli's 4.9 a reduced phase-4 supine reading — the
+> "fall" was the confound, not a reversal. The −29% at the lean end stands;
+> the **+43% vs −14% span reversal does not**, and neither does anything built
+> on it.
+>
+> **What was actually wrong is the EXPONENT.** Madronio's cardiac *index* is
+> flat across body size — 3.103 vs 3.139 L/min/m², 1.16% apart — so cardiac
+> output is **proportional to body surface area**. weight^0.75 is too steep;
+> the model's implied cardiac index climbed 16% across the same span. Fixed
+> 2026-09-28 by re-keying `co_anaes()` onto a new `bsa()` (Mosteller, chosen
+> because Du Bois under-reads the obese body by 6.7% against Madronio's own
+> figures). See the entry at the head of this file.
 
 22 new checks, all passing. No model code changed.
 

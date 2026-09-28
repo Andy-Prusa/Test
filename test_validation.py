@@ -106,24 +106,13 @@ KNOWN_OPEN = {
         (53.8, 3.0, "rides the same CO2 limb as the Stock slope. MODEL "
                     "comparator, and Laviola's simulator has no V/Q "
                     "distribution, so it cannot arbitrate either way"),
-    # ADDED 2026-09-28 ON A RULING, deliberately, as the measurement of a
-    # defect that is about to be fixed. Madronio 2025 (read at source) shows
-    # cardiac index is FLAT across body size -- 3.103 vs 3.139 L/min/m2, 1.16%
-    # apart -- so cardiac output is PROPORTIONAL TO BODY SURFACE AREA. This
-    # model scales it on weight**0.75, which is too steep, and its implied
-    # cardiac index therefore climbs 16% over the same span.
-    #
-    # THE TOLERANCE IS TIGHT (1.0) BECAUSE THIS ROW IS NEARLY INERT. Its value
-    # is 100*((125/70)**0.75 * 1.84/2.45 - 1) and depends ONLY on the weight
-    # exponent: co_ref cancels in the ratio, and neither haemoglobin nor tilt
-    # enters at these settings. Anything that moves it by more than a point is
-    # a change to the body-size law itself, which is exactly what should be
-    # reported.
-    "cardiac index is body-size independent":
-        (16.01, 1.0, "the model's cardiac output rises too steeply with body "
-                     "size: weight**0.75 where the measurement is "
-                     "proportional to BSA. Lands green when the body-size law "
-                     "is re-keyed; see HANDOVER, cardiac output"),
+    # REMOVED 2026-09-28, BECAUSE IT NOW PASSES, one commit after it was
+    # added. "cardiac index is body-size independent" was ruled open at 16.01%
+    # to measure the defect before fixing it, and closed by re-keying
+    # co_anaes() onto bsa() -- cardiac output proportional to body surface
+    # area, per Madronio 2025. Rule 3 at the head of this table says a row that
+    # starts passing comes out rather than being left to rot, so it is out and
+    # is a live check in test_cardiac_output_body_size() again.
 }
 
 
@@ -641,9 +630,15 @@ def test_cardiac_output_body_size():
 
     THE LOAD-BEARING RESULT IS THE SHAPE, NOT THE LEVEL. Cardiac index is
     FLAT across body size -- 3.103 vs 3.139 L/min/m2, 1.16% apart -- so
-    cardiac output is PROPORTIONAL TO BODY SURFACE AREA. This model scales it
-    on weight**0.75, too steep: 12% low at the lean end, catching up only by
-    rising too fast, and its implied cardiac index climbs 16% instead of 1%.
+    cardiac output is PROPORTIONAL TO BODY SURFACE AREA.
+
+    THE MODEL NOW DOES THAT. Until 2026-09-28 it scaled cardiac output on
+    weight**0.75, too steep: 12% low at the lean end, catching up only by
+    rising too fast, with an implied cardiac index climbing 16% across the
+    span where the measurement moves 1%. That row was carried in KNOWN_OPEN at
+    16.01% for exactly one commit -- ruled open to measure the defect, then
+    closed by re-keying `co_anaes()` onto `bsa()`. It is a live check again,
+    not a baseline.
 
     IT ALSO WITHDRAWS THE "WRONG GRADIENT" CLAIM. Cardiac output RISES with
     body size; the Tokics 5.70 -> Perilli 4.90 fall was a confound between two
@@ -661,7 +656,7 @@ def test_cardiac_output_body_size():
     def awake(p):
         """Cardiac output BEFORE the anaesthetic drop, which is what Madronio
         measured. co_anaes() applies (1 - co_drop_frac) on top of this."""
-        return p.co_ref * p.scale() * p.anaemia_co_factor() * p.tilt_co_factor()
+        return p.ci_ref * p.bsa() * p.anaemia_co_factor() * p.tilt_co_factor()
 
     check("Madronio lean, awake cardiac output", awake(lean), 4.63, 6.79,
           " L/min", "clinical; 5.71 (1.08) L/min, n=20, cardiac MRI, 1 SD")

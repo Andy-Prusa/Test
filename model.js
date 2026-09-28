@@ -165,7 +165,14 @@ function derive(P){
   // degrees. Mirrors apnoea_core.py tilt_co_factor() -- see the parameter
   // block there for what is weak about it.
   const coTiltF=Math.max(0.40,1-(P.coTiltGain===undefined?0.00612:P.coTiltGain)*P.tiltDeg);
-  const co=P.coRef*Math.pow(P.weight/70,0.75)*anaemiaCo*0.75*coTiltF;  // at induction
+  // Cardiac output is keyed on BODY SURFACE AREA, not a three-quarter power
+  // of total weight. Madronio 2025 measures cardiac index FLAT across body
+  // size (3.103 vs 3.139 L/min/m2), so CO is proportional to BSA. Mosteller
+  // rather than Du Bois because Du Bois under-reads the obese body by 6.7%
+  // against Madronio's own figures. Mirrors apnoea_core.py bsa()/co_anaes():
+  // ciRef is AWAKE and the 0.75 is (1 - co_drop_frac), the anaesthetic drop.
+  const bsa=Math.sqrt(P.weight*(P.height*100)/3600);
+  const co=(P.ciRef===undefined?3.12:P.ciRef)*bsa*anaemiaCo*0.75*coTiltF;  // at induction
   const fatKg=Math.max(5,P.weight*(0.10+0.011*Math.max(0,bmi-20)));
   const leanKg=P.weight-fatKg, lam=1.895e-5;
   const n2cap=[(5+0.10*leanKg)*1000*lam,(0.50*leanKg)*1000*lam,(fatKg/0.92)*1000*lam*5];
