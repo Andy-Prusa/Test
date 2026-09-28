@@ -127,6 +127,41 @@ BENCHMARK_SOURCES = [
      "awake SUPINE FRC at BMI 53.2 as 2250 mL against Jones's SEATED 2125 "
      "mL at BMI 50. It also disagrees with Pelosi 1998 on anaesthetised FRC "
      "by a factor of two at the same BMI, same method, same conditions"),
+    ("Fraioli 1973, *Anesthesiology* 39(6):588-96 (n=31)",
+     "apnoeic-oxygenation PaO2 and the FRC/weight desaturation split",
+     "2026-09-28",
+     "read in full from upload 2026-09-28; NOT previously held -- it was "
+     "listed as an UNREAD ICSM/Laviola validation ref in SOURCES.md. Human "
+     "100% O2 apnoeic oxygenation: start PaO2 445-485 torr; Group I "
+     "(FRC/weight 53.7 mL/kg) holds ~70% of control at 15 min, Group II "
+     "(36.7 mL/kg, heavier 82.5 vs 71.3 kg, final FRC 839 vs 1907 mL) falls "
+     "to 91 torr at 15 min; PaCO2 24.5->73.2 torr over 15 min, "
+     "GROUP-INDEPENDENT; N2 accumulation 169.5 vs 277.5 mL; VO2 ~350 awake, "
+     "285 mL/min apnoeic. Mechanism: PaO2 fall = rising PaCO2 + (mainly) "
+     "rising alveolar N2. Agrees with Heller 1963. NO cardiac output, no Hb"),
+    ("Benumof, Dagg & Benumof 1997, *Anesthesiology* 87:979-82",
+     "time-to-desaturation COMPARATOR (a MODEL, not a measurement)",
+     "2026-09-28",
+     "read from upload 2026-09-28. MODEL output of Farmery & Roe 1996, "
+     "sealed airway (VE=0, no apnoeic oxygenation), initial FAO2 = 0.87 "
+     "(= the model's feo2_start default). Fig 1: SaO2 80% reached at 8.7 "
+     "(healthy 70kg) / 5.5 (ill) / 3.7 (10kg child) / 3.1 (obese 127kg) min. "
+     "Table 1 gives SECONDHAND measured times (primaries Xue/Patel/Teller/"
+     "Gambee/Drummond/Bhatia/Jense NOT held -- their numbers may not be "
+     "used as bands); its own model OVERpredicts the measured times in 7/11"),
+    ("Baraka/Salem/Joseph & Benumof 1999, *Anesthesiology* 90:332-3",
+     "nothing -- correspondence, qualitative",
+     "2026-09-28",
+     "read in full 2026-09-28. Letter + reply, no data of its own; argues "
+     "apnoeic diffusion oxygenation delays desaturation. Cites Benumof 1997 "
+     "and Teller 1988 (69:980-2), NEITHER HELD"),
+    ("Babinski, Smith & Bunegin 1986, *Anesthesiology* 65:399-404",
+     "nothing -- dog continuous-flow apnoeic ventilation study",
+     None,
+     "abstract and methods reviewed from upload 2026-09-28; FULL TEXT NOT "
+     "READ (an abstract does not count as read -- see the file header). 12 "
+     "dogs, CFAV open vs closed chest; no human cardiac output or "
+     "desaturation data, set aside as a non-benchmark source"),
 ]
 
 
