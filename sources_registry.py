@@ -155,6 +155,21 @@ BENCHMARK_SOURCES = [
      "read in full 2026-09-28. Letter + reply, no data of its own; argues "
      "apnoeic diffusion oxygenation delays desaturation. Cites Benumof 1997 "
      "and Teller 1988 (69:980-2), NEITHER HELD"),
+    ("Madronio 2025, *Heart Lung Circ* 34:1109-1118 (n=57)",
+     "cardiac output against body size -- the BSA scaling law",
+     "2026-09-28",
+     "read at source from upload. Cardiac MRI, AWAKE. 57 participants "
+     "(79% FEMALE, mean age 41): healthy n=20, BSA 1.84 (0.17), CO 5.71 "
+     "(1.08) L/min; BMI>=30 n=37, BSA 2.45 (0.26), CO 7.69 (1.36). "
+     "CARDIAC INDEX IS FLAT -- 3.103 vs 3.139 L/min/m2, 1.1% apart -- so CO "
+     "is PROPORTIONAL TO BSA (exponent 1.04), i.e. weight^0.51, NOT the "
+     "weight^0.75 this model uses. BSA explains ~50% of CO variance; stroke "
+     "volume is the driver, heart rate negligible. IT WITHDRAWS THE 'WRONG "
+     "GRADIENT' CLAIM: cardiac output RISES with body size, so the "
+     "Tokics->Perilli fall was the confound, not a real reversal. Caveats: "
+     "AWAKE, so it pins the SHAPE and the awake level, not co_drop_frac; "
+     "79% female against an explicitly male model (the authors flag "
+     "generalisability); no haemoglobin reported"),
     ("Babinski, Smith & Bunegin 1986, *Anesthesiology* 65:399-404",
      "nothing -- dog continuous-flow apnoeic ventilation study",
      None,
