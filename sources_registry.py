@@ -155,6 +155,23 @@ BENCHMARK_SOURCES = [
      "read in full 2026-09-28. Letter + reply, no data of its own; argues "
      "apnoeic diffusion oxygenation delays desaturation. Cites Benumof 1997 "
      "and Teller 1988 (69:980-2), NEITHER HELD"),
+    ("Stelfox 2006, *Crit Care Med* 34(4):1243-1246 (n=700)",
+     "cardiac output against BMI -- the INDEPENDENT test of the BSA law",
+     "2026-09-29",
+     "read at source from upload. 700 consecutive adults with disease-free "
+     "coronary arteries, cardiac output by THERMODILUTION OR FICK during "
+     "coronary angiography, BMI mean 28 and range 10.6-91.6 -- far larger and "
+     "far wider than Madronio, and invasive rather than imaged. Each 1 kg/m2 "
+     "of BMI adds 0.08 L/min (95% CI 0.06-0.10) of cardiac output and 1.35 mL "
+     "of stroke volume; CARDIAC INDEX HAS NO ASSOCIATION WITH BMI (0.003 "
+     "L/min/m2, 95% CI -0.008 to 0.014, p = .571), and the cardiac-index "
+     "difference between below-normal and obese class 3 is 0.3 L/min/m2. "
+     "NOTHING IN THE MODEL WAS SET FROM IT: the re-keyed law gives 0.089 "
+     "L/min per kg/m2 across Stelfox's own six category means, inside his "
+     "confidence interval, and a cardiac-index spread of 0.25 against his "
+     "0.3. CAVEAT, and it corrects an expectation recorded before reading: "
+     "this is an AWAKE catheterisation cohort, NOT anaesthetised, so it does "
+     "NOT bear on co_drop_frac. No haemoglobin reported"),
     ("Madronio 2025, *Heart Lung Circ* 34:1109-1118 (n=57)",
      "cardiac output against body size -- the BSA scaling law",
      "2026-09-28",

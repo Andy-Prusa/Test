@@ -60,6 +60,32 @@ against Madronio's own reported BSA, Mosteller reads -1.8%/-1.7%, Du Bois
 -2.5%/-6.7%. Du Bois under-reads the obese body, which is the end of the range
 this model exists to get right.
 
+**AND THEN STELFOX 2006 CONFIRMED IT OUT OF SAMPLE.** Read at source after the
+re-key was already committed, so nothing in the model was set from it: *Crit
+Care Med* 34:1243-6, **n=700**, cardiac output by **thermodilution or Fick**
+during coronary angiography, **BMI 10.6-91.6** — an order of magnitude more
+patients than Madronio, over four times the BMI range, and measured invasively
+rather than imaged.
+
+| | model | Stelfox |
+|---|---|---|
+| cardiac output per unit BMI | **0.089** L/min per kg/m² | 0.08 (95% CI **0.06-0.10**) |
+| cardiac-index spread, BMI 16 → 46 | **+0.25** L/min/m² | 0.3, **not significant** (p = .571) |
+
+He finds no association at all between BMI and cardiac index (0.003 L/min/m²,
+95% CI -0.008 to 0.014). That is the same law from a different instrument in a
+different population, and the model lands inside his confidence interval
+without having seen him. It is now a benchmark row, `Stelfox, cardiac output
+per unit BMI`, banded on his own interval.
+
+**One expectation of mine was wrong and is corrected here rather than quietly
+dropped:** Stelfox was chased as the ANAESTHETISED cross-check that would
+settle `co_drop_frac`. It is not one. His patients are awake in a
+catheterisation laboratory, so like Madronio he grades the awake body-size law
+and says nothing about the anaesthetic drop. He also reports no haemoglobin.
+**The anaesthetised level is still open and still has only Kaiser and Tokics
+behind it.**
+
 **WHAT IT COST, stated rather than compensated. One new blocking failure.**
 
 | row | before | after | band |

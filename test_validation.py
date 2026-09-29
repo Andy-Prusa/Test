@@ -140,6 +140,19 @@ KNOWN_OPEN = {
 }
 
 
+def _num(x):
+    """Format a check value or band edge without losing small magnitudes.
+
+    Until 2026-09-29 these were printed "%8.1f" and "%.0f", which was fine
+    while every band was of order ten or more. The Stelfox row is 0.06-0.10
+    L/min per kg/m2, and it printed as "0.1   expect 0-0" -- a benchmark whose
+    band the reader cannot read is not much of a benchmark. Three significant
+    figures below ten, one decimal above, so the wide bands look as they
+    always did and the narrow ones are legible.
+    """
+    return f"{x:.3g}" if abs(x) < 10 else f"{x:.1f}"
+
+
 def check(name, value, lo, hi, units="", source=""):
     ok = lo <= value <= hi
     if ok:
@@ -163,8 +176,8 @@ def check(name, value, lo, hi, units="", source=""):
     else:
         tag = "FAIL"
         FAILURES.append(name)
-    print(f"  [{tag}] {name:44s} {value:8.1f}{units:>8}   "
-          f"expect {lo:.0f}-{hi:.0f}")
+    print(f"  [{tag}] {name:44s} {_num(value):>8s}{units:>8}   "
+          f"expect {_num(lo)}-{_num(hi)}")
     if source:
         print(f"         {source}")
     if tag == "OPEN":
@@ -693,6 +706,25 @@ def test_cardiac_output_body_size():
     check("cardiac index is body-size independent",
           100.0 * (ci_obese / ci_lean - 1.0), -5.0, 5.0, " %",
           "clinical; measured 3.103 vs 3.139 L/min/m2, i.e. 1.16% apart")
+
+    # STELFOX 2006, and this row is an INDEPENDENT test rather than a
+    # restatement: n=700 against Madronio's 57, BMI 10.6-91.6 against 25-45,
+    # and cardiac output measured invasively (thermodilution or Fick) rather
+    # than imaged. NOTHING in this model was set from it -- ci_ref came from
+    # Madronio's cardiac index and the BSA form is Mosteller -- so it is a
+    # prediction, not a fit. The band IS the paper's own confidence interval.
+    #
+    # The patients are Stelfox's six BMI-category means, read from his Table 1
+    # (weight, height, BMI). His heights are printed to one decimal, so these
+    # are his rounding, not ours.
+    _stel = [(44, 1.7, 16), (64, 1.7, 23), (79, 1.7, 27),
+             (93, 1.7, 32), (102, 1.7, 37), (118, 1.6, 46)]
+    _co = [awake(Patient(weight=w, height=h, age=60, hb=14, tilt_deg=0))
+           for w, h, _ in _stel]
+    _slope = float(np.polyfit([b for _, _, b in _stel], _co, 1)[0])
+    check("Stelfox, cardiac output per unit BMI", _slope, 0.06, 0.10,
+          " L/min per kg/m2",
+          "clinical; 0.08 (95% CI 0.06-0.10), n=700, thermodilution or Fick")
 
 
 def test_icsm_jet_2026():
