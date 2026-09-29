@@ -190,7 +190,21 @@ BENCHMARK_SOURCES = [
      "53 min against 250, and pH 7.09 at 40 min against Table 2's 6.87 in "
      "subject 6, whose control pH of 7.36 matches the model's 7.40. Table 2 "
      "is a pH time-series at 10-minute intervals and is a second, "
-     "independent long-window test"),
+     "independent long-window test. "
+     "HOW THE GASES WERE MEASURED, which changes how this benchmark must "
+     "be read (p.790): plasma CO2 CONTENT by Kopp-Natelson microgasometer "
+     "and pH potentiometrically by glass electrode, and then 'the "
+     "arterial carbon dioxide tension and the buffer base were ESTIMATED "
+     "from the nomogram of Singer and Hastings, or from the "
+     "Henderson-Hasselbalch equation for the higher carbon dioxide "
+     "tension values.' SO NO PaCO2 IN THIS PAPER WAS MEASURED. Every "
+     "comparison against it until 2026-09-29 compared a modern electrode "
+     "reading to a 1959 derived quantity. Against what he DID measure the "
+     "model agrees: plasma CO2 content to 0-7%, mean 1.00x, while its "
+     "PaCO2 is 1.75x low. See the thirteenth HANDOVER entry -- the CO2 "
+     "store is vindicated and the open question is the pH/PCO2 relation "
+     "above PaCO2 ~100, where his estimate is an extrapolation off the "
+     "end of a 1959 nomogram and the model has never been tested"),
     ("Stelfox 2006, *Crit Care Med* 34(4):1243-1246 (n=700)",
      "cardiac output against BMI -- the INDEPENDENT test of the BSA law",
      "2026-09-29",

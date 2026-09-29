@@ -4141,6 +4141,95 @@ print("    Kaiser 2.0-2.1, Toner 2.25, Gustafsson 1.8. Historical: Frumin")
 print("    2.7-4.9, Stock 3.4 obstructed, Eger & Severinghaus 3.0. No single")
 print("    store size satisfies both, and this sweep measures the gap.")
 
+# ---------------------------------------------------------------------------
+# Thirteenth entry: the long-window CO2 gap is the pH relation, not the store.
+# ---------------------------------------------------------------------------
+print()
+print("  FRUMIN PER SUBJECT. Table 1 gives duration, highest PaCO2 and average")
+print("  rate, so each subject's STARTING PaCO2 is inferable as")
+print("  peak - rate*duration. Frumin never measured PaCO2: he measured plasma")
+print("  CO2 CONTENT (Kopp-Natelson) and pH (glass electrode) and ESTIMATED the")
+print("  tension from Singer-Hastings or Henderson-Hasselbalch (p.790).")
+
+import bloodgas as _bg  # noqa: E402
+
+# subject, duration (min), highest PaCO2, lowest pH, average rate -- Table 1
+_FRU = [(4, 45, 160, 6.88, 3.0), (5, 18, 130, 6.97, 4.9),
+        (6, 45, 160, 6.87, 3.0), (7, 53, 250, 6.72, 3.5),
+        (8, 38, 130, 6.96, 2.7)]
+
+
+def _plasma_co2(pco2, ph, temp=37.0):
+    """Plasma CO2 content, mmol/L -- the quantity Frumin's gasometer read."""
+    return (_bg._co2_solubility(temp) * pco2
+            * (1.0 + 10.0 ** (ph - _bg._pk_prime(ph, temp))))
+
+
+def _frumin_subject(dur_min, peak, rate):
+    _start = peak - rate * dur_min
+    _q = Patient(weight=70, height=1.75, age=40, hb=14, tilt_deg=0)
+    _r = simulate(_q, [AirwayEpoch(dur_min * 60, resistance=2, fgo2=1.0)],
+                  dt=0.1, feo2_start=0.87, paco2_start=_start, stop_sao2=0.0)
+    _end = dur_min * 60
+    return (_start, (at(_r, 'paco2', _end) - at(_r, 'paco2', 0)) / dur_min,
+            at(_r, 'paco2', _end), at(_r, 'ph', _end))
+
+
+_want = {4: (25.0, 1.18, 78.3, 7.19, 32.1), 5: (41.8, 2.23, 82.1, 7.18, 32.6),
+         6: (25.0, 1.18, 78.3, 7.19, 32.1), 7: (64.5, 2.07, 174.6, 6.94, 41.2),
+         8: (27.4, 1.33, 78.0, 7.19, 32.1)}
+_gaps = []
+for _n, _dur, _peak, _fph, _rate in _FRU:
+    _st, _mrate, _mpco2, _mph = _frumin_subject(_dur, _peak, _rate)
+    _w = _want[_n]
+    check(f"Frumin subj {_n}: inferred starting PaCO2", _st, _w[0], 0.1, " mmHg")
+    check(f"Frumin subj {_n}: model rate", _mrate, _w[1], 0.06, " mmHg/min")
+    check(f"Frumin subj {_n}: model PaCO2 at end", _mpco2, _w[2], 1.0, " mmHg")
+    check(f"Frumin subj {_n}: model pH at end", _mph, _w[3], 0.02)
+    check(f"Frumin subj {_n}: model plasma CO2 content",
+          _plasma_co2(_mpco2, _mph), _w[4], 0.4, " mmol/L")
+    _gaps.append((_peak / _mpco2, _plasma_co2(_peak, _fph) / _plasma_co2(_mpco2, _mph)))
+
+check("Frumin: mean overstatement on PaCO2",
+      float(np.mean([g[0] for g in _gaps])), 1.75, 0.03, "x")
+check("Frumin: mean overstatement on plasma CO2 content",
+      float(np.mean([g[1] for g in _gaps])), 1.00, 0.03, "x")
+print("    THE MODEL'S CO2 CONTENT IS RIGHT (1.00x) WHILE ITS PaCO2 IS 1.75x")
+print("    LOW. The whole discrepancy is a pH discrepancy of 0.21-0.31 units,")
+print("    so the CO2 STORE WAS NEVER THE DEFECT.")
+
+# The same conclusion from the other side: impose Frumin's MEASURED pH on the
+# model's OWN content and his reported tension falls out.
+_cpl = 32.1
+for _ph, _wpco2, _rep in ((6.88, 152.8, 160), (6.87, 155.9, 160),
+                          (6.97, 126.7, 130), (6.72, 210.0, 250)):
+    check(f"model content 32.0 at Frumin's measured pH {_ph} (he reported {_rep})",
+          _cpl / (_bg._co2_solubility(37.0)
+                  * (1.0 + 10.0 ** (_ph - _bg._pk_prime(_ph, 37.0)))),
+          _wpco2, 1.0, " mmHg")
+
+print()
+print("  BASE EXCESS: right magnitude, WRONG MECHANISM. Frumin's (pH, PaCO2)")
+print("  pairs imply a base deficit of -8 to -11, and -8.5 is what would put")
+print("  the model at his pH and his PaCO2 at once. The prediction still fails,")
+print("  because lowering BE makes blood hold LESS CO2 -- the model trades")
+print("  content against pH, and Frumin had both high content and low pH.")
+for _be, _wr, _wp, _wc in ((0.0, 1.18, 78.3, 32.1), (-5.0, 1.35, 85.9, 28.8),
+                           (-9.0, 1.49, 92.3, 26.3), (-12.0, 1.61, 97.4, 24.4)):
+    _q = Patient(weight=70, height=1.75, age=40, hb=14, tilt_deg=0, be=_be)
+    _r = simulate(_q, [AirwayEpoch(2700, resistance=2, fgo2=1.0)],
+                  dt=0.1, feo2_start=0.87, paco2_start=25.0, stop_sao2=0.0)
+    check(f"be {_be:g}: Frumin 45-min rate",
+          (at(_r, 'paco2', 2700) - at(_r, 'paco2', 0)) / 45.0, _wr, 0.06,
+          " mmHg/min")
+    check(f"be {_be:g}: PaCO2 at 45 min", at(_r, 'paco2', 2700), _wp, 1.0,
+          " mmHg")
+    check(f"be {_be:g}: plasma CO2 content at 45 min",
+          _plasma_co2(at(_r, 'paco2', 2700), at(_r, 'ph', 2700)), _wc, 0.5,
+          " mmol/L")
+print("    Content falls 32.1 -> 26.3 as the deficit is applied. THAT is why")
+print("    no base excess reproduces Frumin: he had 32.9 AND pH 6.87.")
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")

@@ -5,7 +5,126 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
-## Current state — 2026-09-28 (twelfth entry): cardiac output is keyed on body surface area, and the "wrong gradient" is retracted
+## Current state — 2026-09-29 (thirteenth entry): the long-window CO2 gap is NOT the store. Frumin's PaCO2 is a DERIVED number, and the disagreement is in the pH/PCO2 relation
+
+The twelfth entry's sweep ended by calling the Frumin/Kaiser conflict "two eras
+of measurement" and proposing three candidates: (a) the model is modern and
+Frumin stays KNOWN_OPEN, (b) the model is historical and three gas-exchange
+defects reopen, (c) find a mechanism distinguishing them. **Candidate (c) was
+pursued and a mechanism was found, but it is not in the CO2 stores, and the
+first three things it was tried on all failed. Nothing was tuned and no
+parameter was moved.**
+
+**Frumin never measured PaCO2.** This is read from the paper (p.790), not
+recalled: plasma CO2 CONTENT by Kopp-Natelson microgasometer, pH
+potentiometrically by glass electrode, and then "the arterial carbon dioxide
+tension and the buffer base were **estimated** from the nomogram of Singer and
+Hastings, or from the Henderson-Hasselbalch equation for the higher carbon
+dioxide tension values." Kaiser 2024 reads PaCO2 off an electrode. **The two
+eras do not report the same measured quantity**, and every comparison made
+against Frumin's PaCO2 until now compared a measurement to an estimate.
+
+**The starting-condition hypothesis is REFUTED.** Table 1 gives duration,
+highest PaCO2 and average rate per subject, so each subject's starting PaCO2 is
+inferable as peak - rate x duration. The inference is checkable against his
+prose and passes: subjects 4/6/8 come out at 25-27 mmHg (the methods
+hyperventilate before apnoea) and subject 7 at 64.5 (the paper describes him as
+beginning with "a moderate respiratory acidosis"). Run from each subject's own
+start and duration, the model reproduces the DIRECTION but not the level:
+
+| subj | min | start | rate measured | rate model | peak measured | peak model |
+|---|---|---|---|---|---|---|
+| 4 | 45 | 25.0 | 3.0 | 1.18 | 160 | 78 |
+| 5 | 18 | 41.8 | 4.9 | 2.23 | 130 | 82 |
+| 6 | 45 | 25.0 | 3.0 | 1.18 | 160 | 78 |
+| 7 | 53 | 64.5 | 3.5 | 2.07 | 250 | 175 |
+| 8 | 38 | 27.4 | 2.7 | 1.33 | 130 | 78 |
+
+The spread of starting points does not explain the spread of rates. Note also
+that subject 5 began at 41.8 — **Kaiser's own starting point** — and reached
+130 in 18 minutes, where Kaiser's cohort starting at 43 reached ~73 in 15. Like
+for like, the two eras differ by about 2.4x, and no starting condition
+reconciles them.
+
+**BUT THE MODEL'S CO2 CONTENT IS RIGHT.** Inverting Frumin's own
+Henderson-Hasselbalch step recovers the plasma CO2 content his gasometer
+measured, and the model — whose content comes from its own mass balance, so the
+comparison is not circular — agrees:
+
+| subj | Frumin pH | Frumin PaCO2 (est) | Frumin content | model pH | model PaCO2 | model content | gap PaCO2 | gap content |
+|---|---|---|---|---|---|---|---|---|
+| 4 | 6.88 | 160 | 33.6 | 7.19 | 78.3 | 32.1 | 2.04x | 1.05x |
+| 5 | 6.97 | 130 | 32.9 | 7.18 | 82.1 | 32.6 | 1.58x | 1.01x |
+| 6 | 6.87 | 160 | 32.9 | 7.19 | 78.3 | 32.1 | 2.04x | 1.03x |
+| 7 | 6.72 | 250 | 38.2 | 6.94 | 174.6 | 41.2 | 1.43x | 0.93x |
+| 8 | 6.96 | 130 | 32.3 | 7.19 | 78.0 | 32.1 | 1.67x | 1.00x |
+
+Mean overstatement on PaCO2 **1.75x**; on plasma CO2 content **1.00x**.
+**The model puts the right amount of CO2 in the blood.** The entire PaCO2
+discrepancy is a pH discrepancy of 0.21-0.31 units. Confirming this from the
+other side: hold the model's own content at 32.1 mmol/L and impose Frumin's
+MEASURED pH, and his reported PaCO2 falls out — 6.88 gives 153 against his 160,
+6.87 gives 156 against 160, 6.97 gives 127 against 130.
+
+**So the CO2 store was never the defect**, which is why the twelfth entry's
+nine-case sweep could not find a store size that satisfied all three
+benchmarks, and why halving the fast store — the lever `apnoea_core.py` already
+records as having buried three real bugs — appeared to work. It was moving the
+right output for the wrong reason.
+
+**Three candidate mechanisms for the pH gap were tested. All three fail.**
+
+1. *The estimator itself.* Ruled out: the classic 1959 constants (pK' 6.10,
+   s 0.0301) and the model's Kelman pK'(pH,T) agree to under 1% at these
+   extremes, and pushing the model's own state through Frumin's estimator
+   returns the model's PaCO2 (79.9), not his (160).
+2. *The buffer line.* The model titrates CO2 at fixed Siggaard-Andersen ACTUAL
+   base excess using the patient's real haemoglobin — the IN VITRO whole-blood
+   line. The whole-body in vivo line is weaker, conventionally represented by
+   putting cHb ~5 g/dL into the base-excess residual. Direction correct, size
+   far too small: cHb 14 -> 9 moves the 45-minute rate 1.18 -> 1.37 against a
+   measured 3.0, about a tenth of the gap, and below cHb 9 the acid-base
+   inversion collapses numerically (PaCO2 3.0, pH 8.2 — an artefact, not a
+   result).
+3. *Base excess.* Frumin's (pH, PaCO2) pairs imply a base deficit of -8 to -11
+   mmol/L, and an independent calculation — what deficit puts the model at his
+   pH and his PaCO2 at once — gives -8.5. The agreement is real. **The
+   prediction still fails**: `be` is a Patient property, not a model parameter,
+   and setting it to -9 gives PaCO2 92 at 45 minutes, not 160 (rate 1.49
+   against 3.0), recovering about a quarter of the gap.
+
+**Why (3) fails is the structural finding.** Lowering base excess makes blood
+hold LESS CO2 at any PCO2, so the model's plasma content falls from 32.1 to
+26.3 mmol/L as the deficit is applied. **The model trades content against pH.
+Frumin's subjects had a high content AND a low pH at the same time, and no
+value of base excess reproduces both.** The disagreement is therefore in the
+content/pH/PCO2 relation itself at extreme hypercapnia — a region where the
+model has never been tested and where Frumin's PaCO2 is an extrapolation off
+the end of a 1959 nomogram. Either could be wrong; this work does not settle
+which, and says so.
+
+**One caveat that cannot be argued away.** The implied base deficit was backed
+out of Table 2's serial pH (subject 6: 7.36 control, then 7.13/7.06/6.95/6.87
+at 10/20/30/40 min) by assuming a LINEAR PaCO2 ramp. It comes out roughly
+constant at -8 to -11 rather than accumulating, which refutes "metabolic acid
+builds up over the apnoea". But the true PaCO2 curve is front-loaded, and
+assuming linearity is assuming the very trajectory in dispute. **Standing
+versus accumulating cannot be separated from this data. The level can.**
+Table 3 also rules out circulatory collapse as the source: mean arterial
+pressure ROSE 26% during apnoea and fell only afterwards.
+
+**What this changes for the ruling.** The choice is no longer (a)/(b)/(c) over
+two eras of CO2 measurement. The CO2 bookkeeping is vindicated — content is
+right to 0-7% against the only held measurement past fifteen minutes — and the
+open question is narrower and better posed: **is the model's acid-base relation
+correct above PaCO2 ~100, and is Frumin's estimated PaCO2 trustworthy there?**
+The Frumin rows stay KNOWN_OPEN and no parameter moved.
+
+**What this does NOT explain.** Stock's obstructed 1-5 minute slope (model
+1.92, measured 3.4) is a SHORT window, where the pH excursion is small and none
+of this applies. It remains separately open and must not be folded into this.
+
+## 2026-09-28 (twelfth entry): cardiac output is keyed on body surface area, and the "wrong gradient" is retracted
 
 **Three rulings were taken and all three are done.** They are listed in the
 order they were ruled, not the order they matter.
