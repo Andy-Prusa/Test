@@ -4088,6 +4088,59 @@ print("    in test_validation.py KNOWN_OPEN. The two are one defect seen from")
 print("    two ends, and fixing the CO2 channel is what makes the oxygenated")
 print("    case terminate. DO NOT reach for a compensating parameter.")
 
+print("\nTHE LONG-WINDOW CO2 DECAY SWEEP -- twelfth entry")
+print("  Frumin 1959 was read IN FULL 2026-09-29 and is the FIRST held")
+print("  measurement past fifteen minutes. Three constraints at once, because")
+print("  fixing one alone is not a fix. Targets: Frumin 45-min 2.7-4.9,")
+print("  Kaiser 15-min band 1.8-3.0, Stock 1-5 min obstructed 3.4.")
+
+
+def _co2_three(**over):
+    """(Frumin 45-min, Kaiser 15-min, Stock 1-5 min) for one parameter set."""
+    def _p(**extra):
+        q = Patient(weight=70, height=1.75, age=40, hb=14, tilt_deg=0)
+        for _k, _v in list(over.items()) + list(extra.items()):
+            setattr(q, _k, _v)
+        return q
+    _r = simulate(_p(), [AirwayEpoch(2700, resistance=2, fgo2=1.0)],
+                  dt=0.1, feo2_start=0.87, stop_sao2=0.0)
+    _f = (at(_r, 'paco2', 2700) - at(_r, 'paco2', 0)) / 45.0
+    _r2 = simulate(_p(), [AirwayEpoch(900, resistance=2, fgo2=1.0)],
+                   dt=0.1, feo2_start=0.87, stop_sao2=0.0)
+    _kk = (at(_r2, 'paco2', 900) - at(_r2, 'paco2', 0)) / 15.0
+    _r3 = simulate(_p(hb=15), [AirwayEpoch(360, resistance=np.inf, fgo2=0.21)],
+                   dt=0.05, feo2_start=0.87, paco2_start=39.0, stop_sao2=0.0)
+    _s = (at(_r3, 'paco2', 300) - at(_r3, 'paco2', 60)) / 4.0
+    return _f, _kk, _s
+
+
+for _lab, _over, _want in (
+        ("baseline", {}, (1.64, 2.27, 1.92)),
+        ("v_tis_co2_fast 22->11", {"v_tis_co2_fast": 11.0}, (2.15, 3.31, 3.38)),
+        ("v_tis_co2_fast 22->33", {"v_tis_co2_fast": 33.0}, (1.31, 1.81, 1.34)),
+        ("v_tis_co2_slow 140->70", {"v_tis_co2_slow": 70.0}, (1.73, 2.28, 1.92)),
+        ("v_tis_co2_slow 140->280", {"v_tis_co2_slow": 280.0}, (1.60, 2.27, 1.92)),
+        ("v_tis_co2_slow 140->35", {"v_tis_co2_slow": 35.0}, (1.88, 2.30, 1.92)),
+        ("k_co2_slow 0.8->0.2", {"k_co2_slow": 0.2}, (2.65, 2.59, 2.02)),
+        ("k_co2_slow 0.8->2.0", {"k_co2_slow": 2.0}, (1.01, 1.86, 1.74)),
+        ("fast 11 and slow 35",
+         {"v_tis_co2_fast": 11.0, "v_tis_co2_slow": 35.0}, (2.71, 3.40, 3.39)),
+):
+    _got = _co2_three(**_over)
+    for _name, _g, _w in zip(("Frumin45", "Kaiser15", "Stock1-5"), _got, _want):
+        check(f"{_lab}: {_name}", _g, _w, 0.06, " mmHg/min")
+print("    THE SLOW STORE IS NEARLY INERT on this question -- quartering or")
+print("    doubling it moves the 45-minute rate only between 1.60 and 1.88.")
+print("    The hypothesis that the slow compartment drives the decay is")
+print("    REFUTED. The fast store is the lever, and halving it fixes BOTH")
+print("    Frumin and Stock -- which is the eleventh entry's 'one defect seen")
+print("    from two ends', confirmed. BUT apnoea_core.py's own parameter block")
+print("    already ruled that lever WRONG: it buried three gas-exchange bugs.")
+print("    What is really in conflict is two ERAS of measurement. Modern:")
+print("    Kaiser 2.0-2.1, Toner 2.25, Gustafsson 1.8. Historical: Frumin")
+print("    2.7-4.9, Stock 3.4 obstructed, Eger & Severinghaus 3.0. No single")
+print("    store size satisfies both, and this sweep measures the gap.")
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")
