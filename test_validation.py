@@ -106,6 +106,30 @@ KNOWN_OPEN = {
         (53.8, 3.0, "rides the same CO2 limb as the Stock slope. MODEL "
                     "comparator, and Laviola's simulator has no V/Q "
                     "distribution, so it cannot arbitrate either way"),
+    # ADDED 2026-09-29 ON A RULING. It went 49.5 -> 51.5 kPa when cardiac
+    # output was re-keyed onto body surface area, overshooting the 51.1
+    # ceiling by 0.4 kPa -- 0.8%. Ruled open rather than chased, for three
+    # reasons that are worth having written down:
+    #
+    #   * IT IS A MODEL COMPARATOR, not a patient. The band is Laviola's
+    #     simulator at 42.3 (4.4) with 2 SD allowed, so it grades this model
+    #     against another model's spread, not against a measurement.
+    #   * THE CHANGE THAT MOVED IT IS BETTER EVIDENCED THAN THE ROW. Cardiac
+    #     output proportional to BSA rests on Madronio 2025 read at source,
+    #     n=57, cardiac index flat to 1.16%. Nothing about this row argues
+    #     against that.
+    #   * BRINGING IT BACK UNDER THE CEILING WOULD MEAN TUNING, which
+    #     CLAUDE.md forbids and which has been refused four times before.
+    #
+    # THE TOLERANCE IS 2.0 (3.9%), not tighter, and the reason is measured
+    # rather than guessed: this row moved 2.0 kPa on a single well-founded
+    # parameter change, so a tolerance below that would report WORSE for
+    # ordinary work on the circulation. It is still tight enough that the
+    # rescue path going properly wrong would show.
+    "ICSM rescue, post-rescue PaO2":
+        (51.5, 2.0, "overshoots a MODEL comparator's ceiling by 0.8% since "
+                    "cardiac output was keyed on BSA. Not tuned back; see "
+                    "HANDOVER, twelfth entry, 'what it cost'"),
     # REMOVED 2026-09-28, BECAUSE IT NOW PASSES, one commit after it was
     # added. "cardiac index is body-size independent" was ruled open at 16.01%
     # to measure the defect before fixing it, and closed by re-keying
@@ -890,8 +914,47 @@ def test_zz_all_benchmarks_passed():
     assert not REGRESSIONS, "; ".join(REGRESSIONS)
 
 
+# THE DISPATCH PLAN: (section heading, [test function names]), in run order.
+#
+# This used to be bare calls at the foot of __main__, read back out of this
+# file's own source with a regular expression. It is a list now for two
+# reasons: the guard below can compare it to the module directly instead of
+# parsing source, and -j can hand the names to a process pool. The order here
+# IS the printed order in both modes.
+PLAN = [
+    ("CLINICAL TARGETS — measurements in patients. These are the arbiters.",
+     ["test_toner_2019", "test_heard_2017", "test_berthoud_1991",
+      "test_oloughlin_2020", "test_positioning_trials", "test_cardiac_output",
+      "test_cardiac_output_body_size", "test_anaemia_cardiac_response",
+      "test_stock_1989", "test_moreault_2021"]),
+    ("MODEL COMPARATORS — other people's simulations, not measurements.",
+     ["test_icsm_airway_rescue", "test_icsm_jet_2026"]),
+    ("INTERNAL CONSISTENCY",
+     ["test_physical_consistency", "test_timestep_stability",
+      "test_co2_mass_balance"]),
+]
+
+
+def _run_one(name):
+    """Run one test and hand back its output and verdicts. Used by -j.
+
+    Each worker is a separate process with its OWN FAILURES/REGRESSIONS, so
+    they are cleared first and returned rather than shared. The parent merges
+    them in PLAN order, which is what makes a parallel run byte-identical to a
+    sequential one rather than merely equivalent.
+    """
+    import contextlib
+    import io
+    del FAILURES[:]
+    del REGRESSIONS[:]
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        globals()[name]()
+    return name, buf.getvalue(), list(FAILURES), list(REGRESSIONS)
+
+
 def _check_every_test_is_dispatched():
-    """Every test_* in this module must actually be called by __main__.
+    """Every test_* in this module must actually appear in PLAN.
 
     ADDED 2026-09-26, THE DAY IT WAS NEEDED. test_berthoud_1991 was written,
     reviewed, committed and pushed -- and never ran, because the dispatch
@@ -900,14 +963,12 @@ def _check_every_test_is_dispatched():
     nothing looked wrong. A benchmark that does not run is worse than no
     benchmark: it reads as coverage.
 
-    This reads the dispatch block out of this file's own source and compares
-    it against the module's test_* functions, so the two cannot drift.
+    It compared PLAN against the module by REGEX over this file's own source
+    until 2026-09-29, when PLAN became a real list; it now compares the list
+    itself, which cannot be fooled by a name appearing in a comment or a
+    docstring and cannot miss one written in an unusual way.
     """
-    import inspect
-    import re
-    src = inspect.getsource(inspect.getmodule(_check_every_test_is_dispatched))
-    main_block = src.split('if __name__ == "__main__":', 1)[1]
-    called = set(re.findall(r"\b(test_\w+)\s*\(", main_block))
+    called = {n for _, names in PLAN for n in names}
     defined = {n for n in globals() if n.startswith("test_")
                and callable(globals()[n])}
     # ONE LEGITIMATE EXCEPTION, and it must be named rather than guessed at.
@@ -930,28 +991,47 @@ def _check_every_test_is_dispatched():
 if __name__ == "__main__":
     import apnoea_core as _ac
     _check_every_test_is_dispatched()
+
+    # -j N runs the tests in N processes. The suite is fourteen independent
+    # functions -- each builds its own Patient and its own simulations, and
+    # nothing is shared but KNOWN_OPEN, which is read-only -- so this is a
+    # scheduling change and not a numerical one. No single test is more than
+    # about a sixth of the work, so it scales.
+    #
+    # THE CONTRACT IS BYTE-IDENTICAL OUTPUT, not merely the same verdicts:
+    # worker output is captured and replayed in PLAN order, and FAILURES and
+    # REGRESSIONS are merged in that same order so the summary lists them as
+    # a sequential run would. Anything less and the hook would be grading a
+    # different artefact from the one a human reads.
+    _jobs = 1
+    for _i, _a in enumerate(sys.argv):
+        if _a == "-j" and _i + 1 < len(sys.argv):
+            _jobs = int(sys.argv[_i + 1])
+        elif _a.startswith("-j") and _a[2:].isdigit():
+            _jobs = int(_a[2:])
+
+    _captured = {}
+    if _jobs > 1:
+        import multiprocessing
+        _names = [n for _, _ns in PLAN for n in _ns]
+        with multiprocessing.Pool(_jobs) as _pool:
+            for _n, _out, _f, _r in _pool.imap_unordered(_run_one, _names):
+                _captured[_n] = (_out, _f, _r)
+
     print(_ac.provenance())
-    print("=" * 74)
-    print("CLINICAL TARGETS — measurements in patients. These are the arbiters.")
-    print("=" * 74)
-    test_toner_2019(); test_heard_2017(); test_berthoud_1991()
-    test_oloughlin_2020()
-    test_positioning_trials(); test_cardiac_output()
-    test_cardiac_output_body_size()
-    test_anaemia_cardiac_response()
-    test_stock_1989(); test_moreault_2021()
-    print()
-    print("=" * 74)
-    print("MODEL COMPARATORS — other people's simulations, not measurements.")
-    print("=" * 74)
-    test_icsm_airway_rescue(); test_icsm_jet_2026()
-    print()
-    print("=" * 74)
-    print("INTERNAL CONSISTENCY")
-    print("=" * 74)
-    test_physical_consistency(); test_timestep_stability()
-    test_co2_mass_balance()
-    print()
+    for _header, _names in PLAN:
+        print("=" * 74)
+        print(_header)
+        print("=" * 74)
+        for _n in _names:
+            if _jobs > 1:
+                _out, _f, _r = _captured[_n]
+                sys.stdout.write(_out)
+                FAILURES.extend(_f)
+                REGRESSIONS.extend(_r)
+            else:
+                globals()[_n]()
+        print()
     print("=" * 74)
     _open = [k for k in KNOWN_OPEN if k not in FAILURES]
     if FAILURES:
