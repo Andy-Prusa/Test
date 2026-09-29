@@ -335,7 +335,29 @@ mass-balance check added the same day (`test_co2_mass_balance`) is what now
 guards the channel's book-keeping. So the queue is: cardiac output (~25% low on
 three sources) → `shunt_cc_k` → V̇O2.
 
-**Queue again, 2026-09-28: the cardiac-output item is HALF done.** Its
+**QUEUE AGAIN, 2026-09-29: THE CO2 CHANNEL IS BACK, AND IT IS THE HEAD OF THE
+QUEUE.** The 2026-09-27 ruling that dropped it rested on two grounds. The
+first — that on a matched 15-minute window the model sits inside the patent
+measurements — still holds. **The second does not.** That ruling said the decay
+beyond 15 minutes "is tested by NOTHING held". Frumin 1959 was read IN FULL on
+2026-09-29 and tests exactly it: apnoeas of 18-55 minutes, airway patent on an
+oxygen reservoir, PaCO2 rising at approximately **3 mmHg/min, range 2.7-4.9**.
+
+**The model gives 1.64 over 45 minutes — roughly half — and its rate DECAYS
+where Frumin's is sustained** (2.27 at 15 min, 1.64 by 45). PaCO2 reaches 114
+mmHg at 45 min against his 130-160 in five of eight subjects and an estimated
+250 in the one taken to 53 minutes. Arterial pH at 40 minutes is 7.09 against
+Table 2's 6.87 in subject 6, whose control pH of 7.36 sits fairly against this
+model's 7.40. Two benchmark rows now hold that, both ruled open.
+
+So the decay is a **demonstrated defect in a patent airway**, not an untested
+hole, and it is no longer only the obstructed Stock slope. **The warning from
+the eleventh entry stands and is now load-bearing: a compensating term must
+not be reached for, because it would break Stock further while appearing to
+help here.** Queue: **CO2 channel (the long-window decay)** → cardiac output's
+anaesthetised level → `shunt_cc_k` → V̇O2.
+
+**Queue, 2026-09-28: the cardiac-output item is HALF done.** Its
 *body-size law* is fixed — `co_anaes()` is re-keyed onto `bsa()`, cardiac
 output proportional to body surface area, on Madronio 2025 read at source —
 and the "~25% low on three sources" phrasing above is superseded: the level

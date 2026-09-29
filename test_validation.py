@@ -126,6 +126,30 @@ KNOWN_OPEN = {
     # parameter change, so a tolerance below that would report WORSE for
     # ordinary work on the circulation. It is still tight enough that the
     # rescue path going properly wrong would show.
+    # ADDED 2026-09-29 ON THE RULING THAT PUT THE CO2 CHANNEL BACK IN THE
+    # QUEUE. Frumin 1959, read in full that day, is the first held measurement
+    # past fifteen minutes -- exactly the hole the eleventh entry named. His
+    # rate is sustained near 3 mmHg/min over apnoeas of 18-55 min; this model
+    # DECAYS, 2.27 at 15 min and 1.64 by 45, so it is roughly half. The pH row
+    # is the same defect from the acid-base side: too little CO2 accumulated,
+    # so too alkaline.
+    #
+    # These rows are the MEASUREMENT of a defect now scheduled for work. They
+    # are not tuned toward, and nothing compensating may be added to pass them
+    # -- a compensating term would break Stock's obstructed slope further, as
+    # the eleventh entry warned.
+    #
+    # Tolerances 0.30 (18% of 1.64) and 0.05 pH: loose enough to survive
+    # ordinary parameter work on the circulation, tight enough that real
+    # movement on the CO2 limb reports.
+    "Frumin, PaCO2 rise over 45 min":
+        (1.64, 0.30, "the long-window CO2 defect: the rate decays where "
+                     "Frumin's is sustained. THE reason the CO2 channel went "
+                     "back in the queue; see HANDOVER, twelfth entry"),
+    "Frumin, arterial pH at 40 min":
+        (7.09, 0.05, "the same defect from the acid-base side -- too "
+                     "alkaline at 40 min because too little CO2 has "
+                     "accumulated. Rides the PaCO2 row above"),
     "ICSM rescue, post-rescue PaO2":
         (51.5, 2.0, "overshoots a MODEL comparator's ceiling by 0.8% since "
                     "cardiac output was keyed on BSA. Not tuned back; see "
@@ -462,6 +486,52 @@ def test_stock_1989():
           140.0, 488.0, " mmHg", "clinical; 314 (87) measured, we allow 2 SD")
     check("Stock obstructed, SaO2 at 5 min", sao2(300),
           92.0, 100.0, " %", "clinical; every one of 14 above 92% throughout")
+
+
+def test_frumin_1959():
+    """Frumin, Epstein & Cohen, *Anesthesiology* 1959;20(6):789-798. CLINICAL.
+
+    Eight essentially healthy patients, apnoea of 18-55 minutes with the airway
+    PATENT on an oxygen reservoir, denitrogenated on 100% oxygen for at least
+    30 minutes beforehand. READ IN FULL 2026-09-29: pages 790-798 had been
+    sought since 2026-09-21, and until then this paper was cited secondhand
+    through O'Loughlin and its headline numbers were forbidden.
+
+    THIS IS THE ONLY HELD MEASUREMENT PAST FIFTEEN MINUTES, and that is what
+    it is for. Every other CO2 source stops at or before 15 min -- Stock 1-5,
+    Kaiser 15 -- and Kaiser's ceiling is a PROTOCOL termination rule, not a
+    physiological one, so that study could not have tested the decay even in
+    principle. The eleventh HANDOVER entry named this hole and said Frumin's
+    53-minute apnoea was the reason to chase him. It was right.
+
+    Table 1: rate of rise of PaCO2 approximately 3 mmHg/min, RANGE 2.7-4.9
+    (per subject 3.0, 4.9, 3.0, 3.5, 2.7). Table 2: a pH series at ten-minute
+    intervals in subject 6, whose control pH of 7.36 sits fairly against this
+    model's 7.40, reaching 6.87 at 40 minutes.
+
+    BOTH ROWS FAIL AND ARE RULED OPEN, 2026-09-29, on the ruling that put the
+    CO2 channel back in the queue. The model's rate DECAYS -- 2.27 mmHg/min at
+    15 min, 1.64 by 45 -- where Frumin's is sustained near 3 for the whole
+    apnoea. They measure the defect that work is meant to close. Nothing is
+    tuned toward them.
+
+    Weight and height are NOT stated by the paper, so this uses the project's
+    lean configuration and says so rather than inventing a body.
+    """
+    p = Patient(weight=70, height=1.75, age=40, hb=14, tilt_deg=0)
+    # dt=0.1 rather than DT=0.05: a 45-minute run, and the CO2 rate is not the
+    # stiff quantity that sets the timestep -- the inflow-compliance loop is,
+    # and this project's own long runs use 0.2.
+    r = simulate(p, [AirwayEpoch(2700, resistance=2, fgo2=1.0)],
+                 dt=0.1, feo2_start=0.87, stop_sao2=0.0)
+    paco2_0 = float(np.interp(0, r['t'], r['paco2']))
+    rate = (float(np.interp(2700, r['t'], r['paco2'])) - paco2_0) / 45.0
+    check("Frumin, PaCO2 rise over 45 min", rate, 2.7, 4.9, " mmHg/min",
+          "clinical; paper states ~3, range 2.7-4.9, apnoeas of 18-55 min")
+    check("Frumin, arterial pH at 40 min",
+          float(np.interp(2400, r['t'], r['ph'])), 6.72, 6.97, " pH",
+          "clinical; subject 6 Table 2 reaches 6.87; 6.72-6.97 is the "
+          "paper's own spread of lowest pH across subjects")
 
 
 def test_anaemia_cardiac_response():
@@ -956,7 +1026,8 @@ def test_zz_all_benchmarks_passed():
 PLAN = [
     ("CLINICAL TARGETS — measurements in patients. These are the arbiters.",
      ["test_toner_2019", "test_heard_2017", "test_berthoud_1991",
-      "test_oloughlin_2020", "test_positioning_trials", "test_cardiac_output",
+      "test_oloughlin_2020", "test_frumin_1959",
+      "test_positioning_trials", "test_cardiac_output",
       "test_cardiac_output_body_size", "test_anaemia_cardiac_response",
       "test_stock_1989", "test_moreault_2021"]),
     ("MODEL COMPARATORS — other people's simulations, not measurements.",
