@@ -1003,6 +1003,14 @@ if __name__ == "__main__":
     # REGRESSIONS are merged in that same order so the summary lists them as
     # a sequential run would. Anything less and the hook would be grading a
     # different artefact from the one a human reads.
+    #
+    # CERTIFIED 2026-09-29, by running the whole suite both ways and diffing
+    # rather than by arguing that it should hold: `-j4` 616s against a
+    # sequential 2064s on four cores, 3.35x, `diff` clean. `.githooks/
+    # pre-commit` uses -j$(nproc) on the strength of that. If this file gains
+    # a test that is NOT independent -- one that writes a file another reads,
+    # or depends on module state a sibling sets -- that proof lapses and must
+    # be re-run, because the pool will happily run them in any order.
     _jobs = 1
     for _i, _a in enumerate(sys.argv):
         if _a == "-j" and _i + 1 < len(sys.argv):

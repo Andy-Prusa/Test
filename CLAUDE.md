@@ -88,9 +88,14 @@ in the reply, where it is just volume.
 ## Commits
 
 `.githooks/pre-commit` runs `build_page.py --check`, `check_sources.py
---check`, `test_parity.py` and `test_validation.py`, and blocks on failure. It takes 5-15 minutes; run commits in the background and
-wait. `./setup-hooks.sh` once per clone. `git commit --no-verify` exists but
-say in the message which benchmark is broken and why.
+--check`, `test_parity.py` and `test_validation.py`, and blocks on failure.
+**Budget 15-25 minutes, not the 5-15 this file claimed until 2026-09-29** —
+that figure was never measured here and the validation suite alone took 2064 s
+sequentially. It now runs `test_validation.py -j$(nproc)`, which is 616 s on
+four cores, so most of the remaining time is `test_parity.py`. Still long
+enough to run commits in the background and wait. `./setup-hooks.sh` once per
+clone. `git commit --no-verify` exists but say in the message which benchmark
+is broken and why.
 
 `protocol/predictions.py`, `handover_numbers.py` and `buccal_numbers.py` are
 deliberately NOT in the hook. They check claims about the world, not invariants of the code, and are
