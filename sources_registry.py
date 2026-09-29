@@ -155,6 +155,28 @@ BENCHMARK_SOURCES = [
      "read in full 2026-09-28. Letter + reply, no data of its own; argues "
      "apnoeic diffusion oxygenation delays desaturation. Cites Benumof 1997 "
      "and Teller 1988 (69:980-2), NEITHER HELD"),
+    ("Frumin, Epstein & Cohen 1959, *Anesthesiology* 20(6):789-798 (n=8)",
+     "the LONG-WINDOW CO2 rate, and the acid-base trajectory past 15 min",
+     "2026-09-29",
+     "READ IN FULL from upload. Pages 790-798 had been sought since "
+     "2026-09-21 and were unheld; the project cited this paper secondhand "
+     "through O'Loughlin and forbade its three headline numbers. ALL THREE "
+     "ARE NOW VERIFIED FROM TABLE 1: pH 6.72, PaCO2 250 mmHg and 53 minutes "
+     "are subject 7, and lowest arterial saturation is 98-100% in all eight. "
+     "Two caveats the secondhand citation never carried: that 250 is "
+     "ESTIMATED, not measured, and that subject 7 BEGAN with a moderate "
+     "respiratory acidosis. "
+     "WHAT IT ACTUALLY SETTLES IS THE DECAY. Apnoeas of 18-55 min with the "
+     "airway patent on an oxygen reservoir; the paper's own statement is an "
+     "average rate of rise of PaCO2 of approximately 3 mmHg/min, RANGE "
+     "2.7-4.9 (per-subject 3.0, 4.9, 3.0, 3.5, 2.7). O'Loughlin's secondhand "
+     "0.4 kPa/min is vindicated. This is the FIRST held measurement past 15 "
+     "minutes, which the eleventh HANDOVER entry named as the hole, and THE "
+     "MODEL FAILS IT: 1.55 mmHg/min over 0-53 min against ~3, PaCO2 122 at "
+     "53 min against 250, and pH 7.09 at 40 min against Table 2's 6.87 in "
+     "subject 6, whose control pH of 7.36 matches the model's 7.40. Table 2 "
+     "is a pH time-series at 10-minute intervals and is a second, "
+     "independent long-window test"),
     ("Stelfox 2006, *Crit Care Med* 34(4):1243-1246 (n=700)",
      "cardiac output against BMI -- the INDEPENDENT test of the BSA law",
      "2026-09-29",
