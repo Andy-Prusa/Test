@@ -339,9 +339,35 @@ def test_heard_2017():
     t = time_to(patent(p, 0.21, feo2=0.80), 'spo2', 95)
     check("Heard control, time to SpO2<95%", t, 244, 314, " s",
           "clinical; IQR 244-314")
+    # THE 750 s IS AN ADMINISTRATIVE CENSORING CAP, NOT A DESATURATION TIME.
+    # A. Heard, the trial's registered Principal Investigator, confirmed on
+    # 2026-09-30: the cut-off was set by the ethics committee because blood gas
+    # sampling was not available as an option, and "otherwise we would have
+    # continued". So the upper end of the published IQR is where the protocol
+    # stopped, not where the patients desaturated.
+    #
+    # THIS IS A PROTOCOL CLARIFICATION AND CARRIES NO UNPUBLISHED DATA, in the
+    # same category as the 30 degree confirmation above: it adds no number, no
+    # result and no cohort value, and says only what the published 750 means.
+    #
+    # WHY THE BAND IS ONE-SIDED, AND WHY THAT IS NOT FIXABLE. Because the data
+    # are right-censored at 750, a model predicting 800 s and a model
+    # predicting infinity are indistinguishable against them. The band is
+    # 750-1e9 for that reason and NOT because the ceiling was never considered.
+    # The model currently holds SpO2 at 99.88% at 750 s and 99.04% at one hour,
+    # i.e. it never desaturates at all; that is CONSISTENT with "we would have
+    # continued" and must not be read as a pass that hides an overshoot. It is
+    # a genuine limit of what this trial can test, and closing it needs
+    # per-patient times with censoring flags, not a different band.
+    #
+    # The lower quartile of 389 s IS real data -- a quarter of the buccal arm
+    # reached 95% early -- and the model has no representation of buccal
+    # delivery FAILING in an individual. That is a heterogeneity the model does
+    # not claim to cover (it predicts a typical patient with working delivery),
+    # so it is recorded here rather than treated as a defect.
     tb = time_to(patent(p, 1.00, feo2=0.80), 'spo2', 95)
     check("Heard buccal, held to 750 s", 9999 if tb is None else tb,
-          750, 1e9, " s", "clinical; IQR 389-750")
+          750, 1e9, " s", "clinical; IQR 389-750, 750 = ethics cap")
 
 
 def test_berthoud_1991():

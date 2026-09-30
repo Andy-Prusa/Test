@@ -88,6 +88,37 @@ One incidental confirmation: at `b02404c` the Valenza band PRINTS as "expect
 2-2" and today as "expect 1.70-2.00". The band did not change -- that is the
 `_num()` formatter added later in the session for exactly this illegibility.
 
+**THE HEARD BUCCAL 750 s IS AN ETHICS CAP, AND ONE OF MY OWN CONCERNS IS
+WITHDRAWN.** A. Heard confirmed on 2026-09-30 that the 750 s cut-off was set by
+the ethics committee because blood gas sampling was not available, and
+"otherwise we would have continued". I had raised the buccal row as a one-sided
+band hiding a possible overshoot -- the model holds SpO2 at 99.88% at 750 s and
+99.04% at one hour, i.e. never desaturates. **With the cap explained that
+reading is wrong**: exceeding 750 s is what "we would have continued" predicts,
+and the row passing is legitimate. The band cannot separate a model predicting
+800 s from one predicting infinity, but no band could, because the data are
+right-censored. Closing that needs per-patient times with censoring flags, not
+a different band. Recorded in `test_validation.py` at the row itself.
+
+**What does NOT go away is the Heard CONTROL arm**, which the cap does not
+touch:
+
+| | measured | model |
+|---|---|---|
+| time to SpO2<95% | IQR 244-314 s | **354 s** |
+| SpO2 at 296 s, the published median | 95 % | **98.73 %** |
+
+At the moment the average patient reached 95% the model still has them at
+98.7%. **That is the same 30 degree reverse-Trendelenburg obese configuration
+as the two failing tilt rows**, failing in the same direction -- too much
+apnoea time for the lung volume. Three of the four blocking rows are now on one
+pathway and one of them shares the other's exact geometry.
+
+**Ruling taken 2026-09-30: the CO2 channel is parked.** Its bookkeeping is
+sound (content right to 1.00x, mass balance under 1%) and what is open is the
+pH relation at extreme hypercapnia, which does not feed the oxygen side. Work
+moves to the oxygen side, where all four blocking rows are.
+
 ## Current state — 2026-09-29 (thirteenth entry): the long-window CO2 gap is NOT the store. Frumin's PaCO2 is a DERIVED number, and the disagreement is in the pH/PCO2 relation
 
 The twelfth entry's sweep ended by calling the Frumin/Kaiser conflict "two eras
