@@ -38,24 +38,28 @@ npx wrangler pages deploy site --project-name apnoea
 `site/` is committed, so Cloudflare has nothing to build. Every push to the
 production branch redeploys.
 
-### WHICH BRANCH — checked 2026-09-30, and it is not obvious
+### WHICH BRANCH — `main`, and it took repair to make that true
 
-**`main` DOES NOT CARRY `site/`.** Nor `build_site.py`. Pointing Pages at
-`main` with output directory `site` **fails the build outright**, and the loose
-`airway_scenario.html` that is on `main` is 206 commits behind: no outcome
-graph, no named saves, no recolour, no head fix. The deployable folder lives on
-`claude/obese-shunt`, which is 206 commits ahead of `main` (and `main` is 1
-ahead of it, so they have diverged and a merge commit will be needed).
+Use **`main`**. It carries `site/`, and Cloudflare needs no build step.
 
-So either:
+That was not always so, and the history explains a shape you will notice in the
+log. Until 2026-09-30 `main` held a SINGLE ORPHAN COMMIT — the September
+handover, kept as a clean baseline to diff against — while every branch of real
+work descended from a DIFFERENT root. `git merge-base` reported no common
+ancestor at all, so the stacked pull requests against `main` could never have
+completed, and pointing Pages at `main` with output directory `site` would have
+failed the build outright.
 
-1. **Merge the branch to `main` first, then deploy from `main`.** A stable
-   public URL that changes only when something is deliberately merged. This is
-   the right choice if the link is going to other people.
-2. **Set the production branch to `claude/obese-shunt`.** Works immediately with
-   everything current — but **every commit goes live on the public URL within a
-   minute, unreviewed.** Reasonable for a preview you are watching; wrong for a
-   link already handed to colleagues.
+It was repaired by merging `claude/obese-shunt` into `main` with
+`--allow-unrelated-histories`, taking the branch's tree wholesale. `main`'s
+content became byte-identical to the branch, and the handover commit survives as
+the merge's second parent, so the baseline is not lost. **That is why `main` has
+two roots.**
+
+If you would rather a link that updates as work happens, set the production
+branch to a working branch instead — but understand that **every commit then
+goes live on the public URL within a minute, unreviewed.** Reasonable for a
+preview you are watching; wrong for a link already handed to colleagues.
 
 ### What makes the automatic deploy safe
 
