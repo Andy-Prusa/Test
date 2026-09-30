@@ -282,6 +282,11 @@ airway there, the device arm keeps it. Times are seconds from induction.</p>
 <div class="sbrow"><button type="button" id="sbadd">Add segment</button>
 <button type="button" id="sbapply">Apply</button>
 <span class="sberr" id="sberr"></span></div>
+<div class="sbrow"><label for="sbname">Save as</label>
+<input type="text" id="sbname" maxlength="60" placeholder="e.g. BMI 50, rescue at 6 min">
+<button type="button" id="sbsave">Save</button>
+<button type="button" id="sbdel">Delete saved</button>
+<span class="sberr" id="sbsaveerr"></span></div>
 </details>
 <p class="foot">Modelled, not measured. Saturation carries a pulse oximeter delay. There is no
 end-tidal CO&#8322; because there is no ventilation; the CO&#8322; and pH shown are arterial model
@@ -510,10 +515,93 @@ function sbApply(){
  renderSteps(); D={}; labels(); run();
 }
 const sbPre=document.getElementById('sbpre');
-Object.keys(PRESETS).forEach(k=>{const o=document.createElement('option');
- o.value=k;o.textContent=PRESETS[k].name;sbPre.appendChild(o);});
-sbPre.onchange=()=>{SCENARIO=JSON.parse(JSON.stringify(PRESETS[sbPre.value]));
- sbRender(); sbApply();};
+
+// ---- saved simulations ---------------------------------------------
+// A saved simulation is the PATIENT and the TIMELINE together: either
+// alone is half of what was set up. Stored in this browser's
+// localStorage, so saves do NOT travel with the file or to anyone the
+// page is shared with -- the caption under the buttons says so rather
+// than letting someone discover it after a morning's work.
+//
+// EVERY ACCESS IS GUARDED. localStorage throws outright in a private
+// window and with site data blocked, and it is commonly unavailable from
+// a file:// page, which is exactly how this page is meant to be openable
+// from a USB stick. When it is missing the buttons disable themselves and
+// say why; nothing else on the page changes.
+const SAVEKEY='apnoea.sim.v1';
+function storeOK(){try{const k='__t';localStorage.setItem(k,'1');
+ localStorage.removeItem(k);return true;}catch(e){return false;}}
+const CANSAVE=storeOK();
+function loadSaved(){if(!CANSAVE)return{};
+ try{return JSON.parse(localStorage.getItem(SAVEKEY)||'{}')||{};}
+ catch(e){return{};}}
+function putSaved(o){if(!CANSAVE)return false;
+ try{localStorage.setItem(SAVEKEY,JSON.stringify(o));return true;}
+ catch(e){return false;}}
+
+function refreshPresets(sel){
+ sbPre.innerHTML='';
+ Object.keys(PRESETS).forEach(k=>{const o=document.createElement('option');
+  o.value=k;o.textContent=PRESETS[k].name;sbPre.appendChild(o);});
+ const sv=loadSaved(), names=Object.keys(sv).sort();
+ if(names.length){const g=document.createElement('optgroup');
+  g.label='Saved in this browser';
+  names.forEach(n=>{const o=document.createElement('option');
+   o.value='saved:'+n;o.textContent=n;g.appendChild(o);});
+  sbPre.appendChild(g);}
+ if(sel) sbPre.value=sel;
+}
+refreshPresets();
+
+sbPre.onchange=()=>{
+ const v=sbPre.value;
+ if(v.indexOf('saved:')===0){
+  const rec=loadSaved()[v.slice(6)];
+  if(!rec) return;
+  // restore the patient first, then the timeline, then run once
+  if(rec.dials) DIALS.forEach(d=>{
+   if(rec.dials[d[0]]!==undefined){P[d[0]]=rec.dials[d[0]];
+    const el=document.getElementById('d_'+d[0]); if(el) el.value=rec.dials[d[0]];}});
+  if(rec.lmaOpens!==undefined){P.lmaOpens=!!rec.lmaOpens;
+   lmaBtn.textContent=P.lmaOpens?'LMA briefly opens airway':'LMA does not open airway';}
+  SCENARIO=JSON.parse(JSON.stringify(rec.scenario));
+ } else {
+  SCENARIO=JSON.parse(JSON.stringify(PRESETS[v]));
+ }
+ sbRender(); sbApply();
+};
+
+const sbName=document.getElementById('sbname');
+const sbSaveErr=document.getElementById('sbsaveerr');
+const sbSave=document.getElementById('sbsave');
+const sbDel=document.getElementById('sbdel');
+if(!CANSAVE){sbSave.disabled=true;sbDel.disabled=true;
+ sbSaveErr.textContent='This browser will not let the page store anything'
+  +' (private window, blocked site data, or opened as a local file).';}
+sbSave.onclick=()=>{
+ const n=(sbName.value||'').trim();
+ if(!n){sbSaveErr.textContent='Give it a name first.';return;}
+ const sv=loadSaved();
+ if(sv[n]&&!confirm('Replace the saved simulation "'+n+'"?')) return;
+ const dials={}; DIALS.forEach(d=>dials[d[0]]=P[d[0]]);
+ sv[n]={scenario:JSON.parse(JSON.stringify(SCENARIO)),dials:dials,
+        lmaOpens:!!P.lmaOpens,saved:new Date().toISOString()};
+ if(!putSaved(sv)){sbSaveErr.textContent='Could not save -- storage is full'
+   +' or blocked.';return;}
+ refreshPresets('saved:'+n); sbName.value='';
+ sbSaveErr.textContent='Saved "'+n+'" in this browser.';
+};
+sbDel.onclick=()=>{
+ const v=sbPre.value;
+ if(v.indexOf('saved:')!==0){
+  sbSaveErr.textContent='Pick a saved simulation in Preset first.';return;}
+ const n=v.slice(6);
+ if(!confirm('Delete the saved simulation "'+n+'"?')) return;
+ const sv=loadSaved(); delete sv[n]; putSaved(sv);
+ refreshPresets(); sbSaveErr.textContent='Deleted "'+n+'".';
+ SCENARIO=JSON.parse(JSON.stringify(PRESETS[sbPre.value]));
+ sbRender(); sbApply();
+};
 document.getElementById('sbadd').onclick=()=>{
  const last=SCENARIO.segs[SCENARIO.segs.length-1];
  sbT.appendChild(sbRow({t:Math.min(SCENARIO.end-10,(last?last.t:0)+60),
