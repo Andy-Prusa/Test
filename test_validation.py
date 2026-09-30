@@ -749,9 +749,32 @@ def test_cardiac_output():
     check("arterial PaCO2 rate", (r['paco2'][-1] - 40) / 15, 1.8, 3.0,
           " mmHg/min", "clinical; 2.1 measured, arterial studies 1.8-3.4")
     sv = r['co'] * 1000 / np.maximum(r['hr'], 1e-6)
+    # THE SOURCE, NAMED AT LAST, AND THE LIMIT OF IT. This row cited only
+    # "Chest: HR, SV, CO and MAP all rose" -- no author, no year, no n -- from
+    # the day it was written (7d30668, 2026-09-04) until 2026-09-30. It is
+    # KIELY DG, CARGILL RI & LIPWORTH BJ, Chest 1996;109(5):1215-21: eight
+    # healthy male volunteers, AWAKE, Doppler echo, end-tidal CO2 raised to
+    # 7 kPa (52.5 mmHg, +12.5 over 40) for 30 min.
+    #
+    # THE DIRECTION IS SOURCED. THE BAND IS NOT. The abstract states only that
+    # HR, stroke volume, cardiac output and MAP "were increased"; the
+    # magnitudes are in full-text tables that could not be obtained, and the
+    # search for them is CLOSED, not pending. Where +5 to +30% came from is
+    # unknown and is now unknowable from anything this project holds. The row
+    # is kept because the SIGN is right and checked; its limits are inherited
+    # and must not be quoted as measured.
+    #
+    # WHY THE SIGN IS WORTH DEFENDING even though Stengl 2013 measured stroke
+    # volume FALLING (x0.73): Stengl's load was +76.8 mmHg, SIX TIMES Kiely's,
+    # in anaesthetised paralysed pigs. This model runs at +10 to +30, which is
+    # Kiely's range. The response is plausibly biphasic -- sympathetic drive
+    # raising stroke volume at modest hypercapnia, myocardial depression
+    # lowering it at severe -- and a sign flip was probed on 2026-09-30 and
+    # REJECTED for exactly that reason. See the nineteenth HANDOVER entry.
     check("stroke volume rises with hypercapnia",
           (sv[-1] / sv[0] - 1) * 100, 5, 30, " %",
-          "clinical; Chest: HR, SV, CO and MAP all rose")
+          "clinical; Kiely, Chest 1996;109(5):1215-21, n=8 awake at PETCO2 "
+          "7 kPa: HR, SV, CO and MAP all rose. DIRECTION sourced, BAND NOT")
 
 
 def test_cardiac_output_body_size():

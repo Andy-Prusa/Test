@@ -5,6 +5,42 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-30 (twenty-first entry): the Kiely full text cannot be got, so the search is CLOSED and the benchmark says what it does and does not rest on
+
+The full text of Kiely 1996 could not be obtained — the author tried and this
+is as far as it goes. **The `stroke volume rises with hypercapnia` band of
++5 to +30% is therefore unsourced and permanently so.** That is now recorded as
+a closed question rather than an outstanding fetch, so nobody spends another
+afternoon on it.
+
+**WHAT CHANGED IS THE HONESTY OF THE ROW, NOT THE ROW.** The check and its band
+are untouched. Its citation was the bare string `"clinical; Chest: HR, SV, CO
+and MAP all rose"` from the day it was written (7d30668, 2026-09-04) until
+today. It now names **Kiely DG, Cargill RI & Lipworth BJ, Chest
+1996;109(5):1215-21**, n=8 awake at PETCO2 7 kPa, and states in the check's own
+description that the **DIRECTION is sourced and the BAND is not**. A reader of
+the suite output can now see which half is evidence.
+
+**A DERIVATION WAS TRIED AND REJECTED, and it is recorded so it is not tried
+again.** The abstract gives MPAP (9 → 14) and PVR (129 → 171), so cardiac
+output is algebraically recoverable from `PVR = 80(MPAP − PCWP)/CO`. It does
+not work: Kiely used Doppler echo and did not measure wedge pressure, and the
+implied cardiac-output ratio swings from **x1.17 to x2.01** across plausible
+PCWP. That is reasoning from what a paper does not say, which CLAUDE.md records
+as having been wrong every time it was tried. **The magnitude stays unsourced
+rather than being manufactured.**
+
+**WHY THE ROW IS KEPT AT ALL.** Its sign is sourced, it is checked every run,
+and the sign is the part that was actually in dispute: Stengl 2013 measured
+stroke volume FALLING (x0.73) and a flip was probed and rejected on 2026-09-30
+because Stengl's load was six times Kiely's and outside the range this model
+works in. The reasoning now sits in `test_validation.py` beside the check, not
+only in this file.
+
+**THE STANDING GAP IS UNCHANGED AND IS NOT THIS ONE.** PVR still has no CO2 and
+no pH term, against Kiely x1.33 in awake humans at +12.5 mmHg and Stengl x2.21
+in pigs at CONSTANT PaCO2. That is the item with numbers behind it.
+
 ## Current state — 2026-09-30 (twentieth entry): Kiely 1996 verified — it IS the source, the flip stays retracted, and the PVR gap now has a HUMAN number
 
 The citation record and abstract were supplied, confirming **Kiely DG, Cargill
