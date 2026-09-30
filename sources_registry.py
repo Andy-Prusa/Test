@@ -169,6 +169,27 @@ BENCHMARK_SOURCES = [
      "read in full 2026-09-28. Letter + reply, no data of its own; argues "
      "apnoeic diffusion oxygenation delays desaturation. Cites Benumof 1997 "
      "and Teller 1988 (69:980-2), NEITHER HELD"),
+    ("Kiely DG, Cargill RI & Lipworth BJ 1996, *Chest*, PMID 8625670 (n=8)",
+     "the source of the `stroke volume rises with hypercapnia` benchmark -- "
+     "IDENTIFIED BUT NOT HELD",
+     None,
+     "NOT READ. IDENTIFIED BY SEARCH ONLY, 2026-09-30, and recorded so the "
+     "benchmark stops citing a paper nobody can name. 'Effects of hypercapnia "
+     "on hemodynamic, inotropic, lusitropic, and electrophysiologic indices "
+     "in humans': 8 healthy male volunteers, AWAKE, Doppler echo, end-tidal "
+     "CO2 raised to 7 kPa for 30 min. Reported HR, stroke volume, cardiac "
+     "output and MAP all increased, which matches the benchmark's note "
+     "verbatim, and mean PA pressure and PVR increased too. "
+     "ITS CO2 LOAD IS THE POINT: 7 kPa is 52.5 mmHg, i.e. +12.5 over 40, "
+     "against Stengl's +76.8 -- SIX TIMES SMALLER. So Kiely and Stengl need "
+     "not conflict: the response is plausibly biphasic, sympathetic drive "
+     "raising stroke volume at modest hypercapnia and myocardial depression "
+     "lowering it at severe. THE MODEL WORKS AT +10 TO +30, WHICH IS KIELY'S "
+     "RANGE, so the existing positive sv_co2_gain is probably right where it "
+     "operates and the Stengl-derived sign flip is probably WRONG there. "
+     "UNTIL THE PDF IS READ THIS IS ALL SECONDHAND and must not be used to "
+     "set or defend a parameter. Getting it is the highest-value fetch on the "
+     "list: it decides the eighteenth entry's open ruling"),
     ("O'Croinin et al. 2024, *Physiol Rep* 12:e16054 (HUMAN, n=26)",
      "whether the heart-rate response to APNOEA is driven by CO2 or by "
      "hypoxia -- the human counterpart to Stengl",

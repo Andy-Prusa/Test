@@ -5,6 +5,66 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-30 (nineteenth entry): the Chest paper is IDENTIFIED, it does not conflict with Stengl, and my proposed sign flip was WRONG
+
+**The eighteenth entry leaned towards flipping `sv_co2_gain`, on the grounds
+that the benchmark blocking it cited a paper nobody held. The paper has now
+been identified and that lean is RETRACTED.**
+
+**Kiely DG, Cargill RI & Lipworth BJ, *Chest* 1996, PMID 8625670** — "Effects
+of hypercapnia on hemodynamic, inotropic, lusitropic, and electrophysiologic
+indices in humans". Eight healthy male volunteers, AWAKE, Doppler echo,
+end-tidal CO2 raised to 7 kPa for 30 minutes. It reports heart rate, stroke
+volume, cardiac output and MAP all increased — matching the benchmark's note
+`"clinical; Chest: HR, SV, CO and MAP all rose"` word for word. **Identified by
+search; the PDF is NOT held and it is registered as sought-not-read.**
+
+**IT DOES NOT CONFLICT WITH STENGL. THE CO2 LOADS ARE SIX-FOLD APART.**
+
+| | CO2 load | preparation | stroke volume |
+|---|---|---|---|
+| Kiely 1996 | PETCO2 52.5 mmHg (**+12.5**) | awake humans | **up** |
+| Stengl 2013 | PaCO2 116.8 mmHg (**+76.8**) | anaesthetised, paralysed pigs | **down, x0.73** |
+
+The plausible truth is **biphasic in CO2 magnitude**: sympathetic drive raises
+stroke volume at modest hypercapnia, direct myocardial depression lowers it at
+severe. Both measurements can be right, and the disagreement I reported was an
+artefact of comparing them as though they were at the same load.
+
+**AND THE MODEL WORKS IN KIELY'S RANGE.** The page's scenarios run PaCO2 50-70,
+i.e. `co2_arg` 10-30:
+
+| | current (+0.0045) | probe (-0.00352) |
+|---|---|---|
+| at Kiely's load (arg 12.5) | x1.056 | x0.956 |
+| at Kaiser's load (arg 31) | x1.139 | x0.891 |
+| at Stengl's load (arg 76.8) | x1.346 | x0.730 |
+
+So **the existing positive `sv_co2_gain` is probably RIGHT where the model
+operates**, and the Stengl-derived flip would make stroke volume fall 4-11%
+exactly where a human study measured it rising. I was about to recommend
+flipping a correct parameter on evidence taken at six times the CO2 load, in a
+different species and a different state. The benchmark I described as resting
+on weak evidence rests on a human study whose conditions are CLOSER to the
+model's operating range than Stengl's are.
+
+**WHAT SURVIVES FROM STENGL, AND IS NOW DOUBLY SUPPORTED: THE PVR GAP.** Both
+papers found pulmonary artery pressure and pulmonary vascular resistance
+rising, and Stengl showed metabolic acidosis doing it at CONSTANT PaCO2
+(x2.21), which cannot be a CO2 effect. This model's PVR moves only with hypoxic
+vasoconstriction and has no acidosis term at all. That remains the one
+unambiguous gap, and it now has two papers behind it rather than one.
+
+**Also unresolved, and NOT to be settled on Stengl alone:** whether the HR gain
+is too small. It is 0.0045 against a Stengl-derived 0.01328, but that too was
+measured at +76.8 and Kiely's awake +12.5 cannot discriminate it, any more than
+O'Croinin's +5 torr could.
+
+**NOTHING WAS CHANGED, and the lesson is the one this project keeps relearning:**
+the eighteenth entry's argument was about the QUALITY of a citation when it
+should have been about the CONDITIONS of the measurement. An unnamed source is
+a reason to go and find it, not a reason to assume it is weak.
+
 ## Current state — 2026-09-30 (eighteenth entry): the stroke-volume sign flip costs ONE benchmark, and that benchmark rests on a citation this project does not hold
 
 **The probe was run, not argued.** Both gains were derived from Stengl's
