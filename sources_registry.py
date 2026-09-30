@@ -169,6 +169,26 @@ BENCHMARK_SOURCES = [
      "read in full 2026-09-28. Letter + reply, no data of its own; argues "
      "apnoeic diffusion oxygenation delays desaturation. Cites Benumof 1997 "
      "and Teller 1988 (69:980-2), NEITHER HELD"),
+    ("Valenza et al. 2007 (n=20, ANAESTHETISED and PARALYSED, BMI 42)",
+     "the ONLY held anaesthetised FRC-against-tilt measurement -- the sole "
+     "anchor under tilt_factor()",
+     "2026-09-30",
+     "REGISTERED 2026-09-30, late: it was load-bearing for months without "
+     "appearing here at all, which is exactly what this file exists to "
+     "prevent. Its numbers are quoted in detail in apnoea_core.py and in "
+     "test_validation.py and have been used throughout. End-expiratory lung "
+     "volume by CLOSED-CIRCUIT HELIUM DILUTION, supine against 30 degrees, in "
+     "20 anaesthetised paralysed patients at BMI 42: 0.46 (0.1) -> 0.85 (0.3) "
+     "litres, P < 0.001, i.e. tilt_factor 1.848. "
+     "WHY IT CANNOT BE ADOPTED ALONE, per the parameter block: it is ONE "
+     "POINT and tilt_factor has TWO parameters. Solving tilt_gain_lean on it "
+     "while holding tilt_gain_bmi gives 0.0257, double the shipped 0.0130, "
+     "which puts the lean 20-degree row near +54% against a measured +24-36%. "
+     "So tilt_gain_lean and tilt_gain_bmi stand UNCHANGED AND UNSOURCED, and "
+     "must not be described as fitted to anything. "
+     "THE MODEL FAILS IT: tilt_factor 1.466 against a band of 1.70-2.00. That "
+     "is one of the four blocking rows, and the pure-algebra one -- no "
+     "simulation, no cardiac output, so nothing downstream can explain it"),
     ("Kiely DG, Cargill RI & Lipworth BJ, *Chest* 1996;109(5):1215-21 (n=8)",
      "the source of the `stroke volume rises with hypercapnia` benchmark, and "
      "a HUMAN number for the PVR response the model has no term for",
