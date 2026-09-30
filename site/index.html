@@ -162,7 +162,17 @@ font-variant-numeric:tabular-nums}
 .stoplab{font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--alarm);
 margin-top:-4px}
 .legend{display:flex;gap:15px;font-size:12px;color:var(--dim);margin-top:14px;flex-wrap:wrap}
-.trend{margin-top:14px;background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:8px 10px}
+.trend{margin-top:14px;background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:8px 10px;flex:0 0 auto}
+.trend[hidden]{display:none}
+/* Open, the graph must not squeeze the patients off screen either: it
+   takes a share of the viewport and the canvas shrinks with it. */
+body.graphon .trend{max-height:26vh;overflow:hidden;margin-top:8px;padding:6px 10px}
+body.graphon #trendc{height:clamp(104px,17vh,170px)}
+/* Give the arms their height back too, so the HEAD stays on screen with
+   the graph open. The stage is the point of the page; the graph is the
+   addition, so the graph yields. */
+body.graphon .main .stage{grid-template-columns:calc(clamp(110px,21vh,300px)*252/404) minmax(0,1fr)}
+body.graphon .main .stage canvas:not(.ecg){height:clamp(110px,21vh,300px)}
 .trendbar{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--dim);margin-bottom:4px;flex-wrap:wrap}
 .trendbar select{font-family:'Barlow Condensed',sans-serif;font-size:15px;background:var(--screen);color:var(--ink);border:1px solid var(--rule2);border-radius:3px;padding:3px 6px}
 .tkey{display:flex;align-items:center;gap:5px}
@@ -273,6 +283,7 @@ height has about 14% less FRC and 16% less total lung capacity.</p>
 <button id="sidebtn" aria-controls="side" aria-expanded="true">Hide sliders</button>
 <button id="runbtn">Run simulation</button>
 <button id="play">Play</button><button id="rew">Restart</button>
+<button id="graphbtn" aria-expanded="false" aria-controls="trend">Graph</button>
 <button id="fs">Expand</button>
 <button id="snd">Sound off</button><button id="spd">4&times;</button>
 <span class="clock" id="clock">0:00</span>
@@ -302,7 +313,7 @@ height has about 14% less FRC and 16% less total lung capacity.</p>
 <div class="stage"><canvas id="bB" width="252" height="404"></canvas><div class="rows" id="mB"></div></div></div>
 </div>
 
-<div class="trend">
+<div class="trend" id="trend" hidden>
 <div class="trendbar"><label for="trendsel">Graph</label>
 <select id="trendsel"></select>
 <span class="tkey"><i class="sw" style="background:#ff9f43"></i>no buccal oxygen</span>
@@ -1549,6 +1560,9 @@ window.addEventListener('resize',drawTrend);
 
 function drawTrend(){
  const cv=document.getElementById('trendc'); if(!cv) return;
+ // Nothing to draw while the panel is closed, and clientWidth would be 0.
+ const wrapEl=document.getElementById('trend');
+ if(wrapEl && wrapEl.hasAttribute('hidden')) return;
  const cssW=cv.clientWidth||1160, dpr=window.devicePixelRatio||1;
  if(cv.width!==Math.round(cssW*dpr)){
    cv.width=Math.round(cssW*dpr); cv.height=Math.round(220*dpr);}
@@ -1645,7 +1659,23 @@ function loop(ts){if(!playing)return;if(!last)last=ts;
  if(T>=900){playing=false;document.getElementById('play').textContent='Play';return;}
  requestAnimationFrame(loop);}
 runBtn.onclick=run;
-setPlayState(); drawTrend();
+setPlayState();
+// THE GRAPH DEFAULTS TO CLOSED. It was added below .arms, and because the
+// page is a fixed-height grid whose .arm panels scroll internally, that
+// pushed the patient drawing -- the head -- below the fold. The head is
+// the point of the page, so the graph is opt-in and the default view is
+// exactly what it was before the graph existed.
+const graphBtn=document.getElementById('graphbtn');
+const trendEl=document.getElementById('trend');
+graphBtn.onclick=()=>{
+ const open=trendEl.hasAttribute('hidden');
+ if(open){trendEl.removeAttribute('hidden');} else {trendEl.setAttribute('hidden','');}
+ document.body.classList.toggle('graphon',open);
+ graphBtn.setAttribute('aria-expanded',open?'true':'false');
+ graphBtn.textContent=open?'Hide graph':'Graph';
+ // clientWidth is 0 while hidden, so size and draw only once shown.
+ if(open) drawTrend();
+};
 document.getElementById('play').onclick=e=>{
  if(stale||!D.A){run();return;}
  playing=!playing;
