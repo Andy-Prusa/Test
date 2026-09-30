@@ -68,6 +68,26 @@ as established until it is.
 **Nothing was tuned and no parameter was moved.** The 1.50x above is a probe,
 not a change.
 
+**THE BEFORE-STATE IS NOW VERIFIED, and none of the four is from this work.**
+`test_validation.py` run at `b02404c` -- the commit before this session's only
+physics change, provenance printed -- gives the SAME four blocking rows:
+
+| row | at b02404c | today |
+|---|---|---|
+| Heard control, time to SpO2<95% | 353.7 s | 354.2 s |
+| Valenza tilt_factor at 30 deg, BMI 42 | 1.5 x | 1.466 x |
+| tilt, BMI 44 at 25 deg | **42.3 %** | **42.3 %** |
+| ICSM jet, PaO2 at cricothyroidotomy | 25.2 mmHg | 25.0 mmHg |
+
+No row newly fails. The tilt row is unchanged to the digit, which is what the
+structural argument predicted: `tilt_factor()` has no cardiac output in it. The
+other three moved by fractions. **The suite was already red before this session
+and the missing hook is why nobody saw it.**
+
+One incidental confirmation: at `b02404c` the Valenza band PRINTS as "expect
+2-2" and today as "expect 1.70-2.00". The band did not change -- that is the
+`_num()` formatter added later in the session for exactly this illegibility.
+
 ## Current state — 2026-09-29 (thirteenth entry): the long-window CO2 gap is NOT the store. Frumin's PaCO2 is a DERIVED number, and the disagreement is in the pH/PCO2 relation
 
 The twelfth entry's sweep ended by calling the Frumin/Kaiser conflict "two eras
@@ -276,7 +296,7 @@ behind it.**
 
 It overshoots the ceiling by 0.4 kPa, **0.8%**, and it is a MODEL comparator —
 Laviola's simulator, not a patient. Nothing was tuned to bring it back.
-**Blocking is 4 → 5, known-open 3 → 2.** Every other moved row stayed in band
+**CORRECTED 2026-09-30 against a verified before-state.** This entry originally said "Blocking is 4 → 5, known-open 3 → 2". Both halves were wrong, and neither was ever computed. A suite run at `b02404c`, the commit before this change, reports **4 BLOCKING and 3 KNOWN OPEN**; the suite today reports **4 BLOCKING and 5 KNOWN OPEN**. So blocking did not move at all, and known-open went 3 → 5: the `cardiac index is body-size independent` row was REMOVED because this change made it pass, and the ICSM rescue row and two Frumin rows were added after it. Every other moved row stayed in band
 and moved coherently: lean desaturation got slower (Toner sham 507.8 → 510.2 s,
 Berthoud control 547.1 → 549.5) because a lean patient now has more cardiac
 output and so more venous oxygen buffer, and the obese got marginally faster
