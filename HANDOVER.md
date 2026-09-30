@@ -5,6 +5,41 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-30 (sixteenth entry): the control arm is recoloured and there is a deployable folder
+
+**The control arm on the graph was `--dim` (#6b8494) and barely separable from
+the grid on a dark panel.** It is now **#ff9f43**, orange against the device
+arm's cyan — the colour-blind-safe pairing, and deliberately NOT the alarm red,
+which on this page means a saturation alarm rather than which arm you are
+looking at.
+
+**`site/` is the deployable folder, built by `build_site.py`.** Two files:
+`index.html` (the page, 91 KB) and `_headers`. There is no build step and
+nothing to install. `DEPLOY.md` has the three ways to put it on Cloudflare
+Pages.
+
+**`site/index.html` is a COPY, and a copy rots.** The pre-commit hook now runs
+`build_site.py --check` alongside `build_page.py --check`, so a stale deploy
+folder fails a commit rather than quietly serving an old model. That is the
+whole reason it is a script and not a hand-made folder.
+
+**The self-contained claim is now CHECKED rather than asserted.** The page is
+served over HTTP with the real `_headers` rules applied and driven in headless
+Chromium: it runs to completion under a `default-src 'none'` Content-Security-
+Policy, the graph paints, and it issues **ZERO external requests**. The CSP is
+only tight enough to be worth setting because of that property, and `DEPLOY.md`
+says plainly that adding any external script, font or stylesheet will break the
+deployed page while leaving the local file working.
+
+**An inline `data:` favicon was added** — not a file, so the page still fetches
+nothing. It removes the browser's automatic `/favicon.ico` request, which was
+the single 404 in the deployed folder's console.
+
+**Two things were flagged for a decision rather than decided here**, both in
+`DEPLOY.md`: a public URL is publication in the ordinary sense whatever the
+footer says "unpublished", and Cloudflare Pages projects are public by default,
+so limiting access needs Cloudflare Access rather than an unguessable URL.
+
 ## Current state — 2026-09-30 (fifteenth entry): every slider was swept, two are INERT and are now hidden, and the page gained a run-gate and an outcome graph
 
 **THE PAGE WAS BEING SHARED, SO EVERY CONTROL ON IT WAS SWEPT.** Each of the

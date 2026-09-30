@@ -9,6 +9,7 @@
 #
 # Runs, in order, cheapest first:
 #   build_page.py --check   airway_scenario.html still matches model.js
+#   build_site.py --check   site/ still matches airway_scenario.html
 #   check_sources.py --check README.md's read-status table matches the registry
 #   test_parity.py          apnoea_core.py vs model.js on identical inputs, 1%
 #   test_validation.py      every clinical and model benchmark
@@ -112,6 +113,11 @@ jobs=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
 if [ -f build_page.py ]; then
     echo "pre-commit: page freshness (build_page.py --check) ..."
     python3 build_page.py --check || status=1
+    # site/ is the DEPLOYED copy of the page. A copy rots the moment the
+    # page is rebuilt and the copy is not, and the rot is invisible: the
+    # tests pass against a page nobody is serving. Cheap file compare.
+    echo "pre-commit: deploy folder (build_site.py --check) ..."
+    python3 build_site.py --check || status=1
 fi
 
 # Same class of check, same reason, added 2026-09-25. README.md's table of

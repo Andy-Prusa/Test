@@ -19,6 +19,7 @@ HTML = """<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Airway obstruction: where the oxygen goes</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230d151b'/%3E%3Cpath d='M3 21 L10 21 L13 9 L17 26 L21 17 L29 17' fill='none' stroke='%234fd8e8' stroke-width='3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
 <!-- NO EXTERNAL REFERENCES. The Google Fonts links that used to sit here were
      removed 2026-09-22 so the built page is a single self-contained file: it
      opens from a USB stick, an email attachment or an air-gapped machine, and
@@ -321,7 +322,7 @@ height has about 14% less FRC and 16% less total lung capacity.</p>
 <div class="trend">
 <div class="trendbar"><label for="trendsel">Graph</label>
 <select id="trendsel"></select>
-<span class="tkey"><i class="sw" style="background:#6b8494"></i>no buccal oxygen</span>
+<span class="tkey"><i class="sw" style="background:#ff9f43"></i>no buccal oxygen</span>
 <span class="tkey"><i class="sw" style="background:#4fd8e8"></i>buccal oxygen</span>
 <span class="trendnow" id="trendnow"></span></div>
 <canvas id="trendc" width="1160" height="220"></canvas>
@@ -1029,7 +1030,11 @@ function drawTrend(){
   g.font='13px Barlow,sans-serif';g.textAlign='left';g.textBaseline='middle';
   g.fillText('Run the simulation to draw this graph',L,H/2);
   now.textContent='';return;}
- const ser=[[D.A,'#6b8494','no buccal'],[D.B,'#4fd8e8','buccal']];
+ // Orange/cyan, not grey/cyan: the control arm was barely separable
+ // from the grid on a dark panel, and orange-against-blue is the
+ // colour-blind-safe pairing. It is NOT the alarm red, which on this
+ // page means a saturation alarm rather than which arm you are on.
+ const ser=[[D.A,'#ff9f43','no buccal'],[D.B,'#4fd8e8','buccal']];
  const xmax=SCENARIO.end;
  let lo=Infinity,hi=-Infinity;
  ser.forEach(function(e){const a=e[0][key]; if(!a) return;
