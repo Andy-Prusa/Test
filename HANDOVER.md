@@ -5,16 +5,4433 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-30 (twenty-fourth entry): the tilt excess is INCOMPLETE DENITROGENATION, and one number in it does not reconcile
+
+Chasing the unexplained step from the twenty-third entry: lung oxygen at t=0
+rising more than FRC does, BMI-dependently.
+
+**1. IT IS ALL CONCENTRATION, NOT VOLUME.** Gas volume rises EXACTLY with FRC —
+`va` at t=0 equals `frc_anaes()` to the digit in all three patients. The entire
+excess is oxygen per unit gas volume: **+8.0% Dixon, +4.5% Heard, +1.6% lean.**
+Monotone in BMI, which is why the obese rows fail and the lean one passes.
+
+**2. THE SUPINE OBESE LUNG STARTS WITH RESIDUAL NITROGEN.**
+
+| | supine PAN2 | tilted PAN2 | supine PAO2 | tilted PAO2 |
+|---|---|---|---|---|
+| Dixon BMI 44 | **61.9** | 52.7 | 611.1 | 620.3 |
+| Heard BMI 34.5 | 52.9 | 52.7 | 620.1 | 620.3 |
+| lean BMI 22.9 | 52.7 | 52.7 | 620.3 | 620.3 |
+
+Nitrogen displaces oxygen one for one: Dixon's 9.2 mmHg of extra N2 is 9.2 mmHg
+of lost PAO2.
+
+**3. THE MECHANISM IS `unwashed_fraction`, AND THE CODE ALREADY NAMES IT.** The
+`vq_distribution` docstring states the model has **NO IMPOSED V/Q DISPERSION AT
+ALL** — `vq_log_sd` is inert, swept over a hundredfold range with every output
+identical to five figures — and that its heterogeneity is entirely derived from
+"per-compartment absorption collapse, and the unwashed fraction from incomplete
+denitrogenation". The arithmetic confirms it: 1.77% of the Dixon supine lung
+holding air at PN2 ~563 plus 98.23% at 52.7 gives **61.7 mmHg against a
+measured 61.9**. Tilt takes that 1.77% to 0.00%.
+
+**THAT IS A THIRD INERT PARAMETER**, after `tau_mix` and `inflow_mech_frac`
+found on the page. `vq_log_sd` is at least documented as inert in its own
+docstring; the other two were not.
+
+**4. AND HERE IS WHAT DOES NOT RECONCILE, RECORDED RATHER THAN RESOLVED.** The
+same oxygen consequence measures three different ways:
+
+- mean alveolar PO2, 611.1 → 620.3: **+1.5%**
+- predicted from the unwashed fraction, 1/(1−0.0177): **+1.8%**
+- lung O2 per unit gas volume, 0.5902 → 0.6372: **+8.0%**
+
+**A factor of five between the first two and the third.** The nitrogen story is
+confirmed to the decimal on partial pressures; its oxygen consequence is not
+pinned down. The likely explanation — NOT verified, and not to be acted on
+until it is — is that `pao2_alv` is perfusion-weighted, being what the blood
+sees, while `lung_o2` is the true volume-weighted sum, and in a heterogeneous
+lung those differ. **Which of the three is the right measure of the STORE
+decides whether the tilt excess is 1.5 points or 8, and therefore whether this
+is the explanation of the Dixon failure or a footnote to it.**
+
+**NO NUMBER FROM THIS ENTRY SHOULD BE CARRIED FORWARD UNTIL THAT IS SETTLED.**
+Two entries in a row have had to be retracted for exactly this — building on a
+figure whose basis was flagged and then forgotten. The flag is here, at the
+top, and the next step is to resolve the weighting before anything else.
+
+## Current state — 2026-09-30 (twenty-third entry): THE "1.64x AMPLIFIER" OF THE LAST ENTRY IS WRONG AND IS RETRACTED
+
+**The twenty-second entry claimed the model gets "+42.3% more time from +25.8%
+more oxygen — 1.64x more than the oxygen justifies". That is wrong.** It rested
+on a blood-plus-tissue store of ~640 mL that I computed from the pool
+parameters as an order-of-magnitude check — the entry flagged it as approximate
+and said it must be re-derived from the model's own oxygen balance before being
+quoted. Re-derived, it does not survive.
+
+**THE MODEL'S OWN ACCOUNTING**, using the identity `test_physical_consistency`
+already checks (consumed = lung drawdown + inflow + blood/tissue), obstructed so
+inflow is zero and the split is exact:
+
+| Dixon BMI 44, to threshold | supine | 25 deg | gain |
+|---|---|---|---|
+| FRC | 903 | 1325 mL | +46.7% |
+| lung O2 at t=0 | 533 | 844 mL | **+58.4%** |
+| time to threshold | 170 | 242 s | +42.3% |
+| O2 consumed | 728 | 1035 mL | +42.3% |
+| ...from lung | 526 | 835 mL | +58.8% |
+| ...from **blood+tissue** | **202** | **201 mL** | **−0.6%** |
+
+**Blood and tissue supply only ~200 mL by the threshold, not 640, and tilt does
+not change it** (−0.6% Dixon, −6.9% Heard, −16.0% lean). So the extra time comes
+almost entirely from extra lung oxygen, and the bookkeeping is internally
+consistent: weighting the +58.4% lung gain against an unchanged ~200 mL blood
+term gives +42.4%, against a measured-in-model time gain of +42.3%. **There is
+no spurious amplifier. The oxygen accounting is sound.**
+
+**MY SECOND HYPOTHESIS IS ALSO DEAD.** I proposed that the supine case was being
+cut short before spending its blood store. It is not — the blood contribution is
+flat. And I then proposed `unwashed_fraction` (perfusion whose airway was shut
+throughout preoxygenation) as the cause of the lung gain exceeding the FRC gain.
+It is 1.77% supine and 0.00% tilted in Dixon, 0.05% in Heard, 0.00% in the lean:
+it accounts for about 3 points of a 12-point gap and cannot carry it.
+
+**WHAT IS ACTUALLY LEFT, AND IT IS NARROW.** Lung oxygen at t=0 rises MORE than
+FRC does — +58.4% against +46.7% in Dixon, +57.3% against +50.5% in Heard, but
+only +32.3% against +30.2% in the lean. **The tilted lung starts with a higher
+mean alveolar oxygen FRACTION, and the effect is BMI-dependent.** That is the
+remaining unexplained step, and it is a far narrower target than "the coupling
+is 2x too strong". The V/Q distribution across compartments at the end of
+preoxygenation is where to look next; `unwashed_fraction` is not it.
+
+**THE BENCHMARK TENSION IS UNCHANGED BY ANY OF THIS.** The model still gives
+Dixon +42.3% against a measured +32%, and Valenza still demands a LARGER FRC
+gain which would push it further out. That conflict is real, it is not
+bookkeeping, and it is not yet explained.
+
+**THE LESSON, and it is the same one as the eighteenth entry.** I flagged the
+640 mL as approximate and then built a headline number on it anyway. A figure
+labelled "order-of-magnitude check" must not become "1.64x more than the oxygen
+justifies" one commit later. The flag was correct; carrying on past it was not.
+
+## Current state — 2026-09-30 (twenty-second entry): NO single change fixes the tilt rows, the shunt is EXONERATED, and the tilt benefit exceeds what the oxygen allows
+
+The fourteenth entry said the lung-volume-to-apnoea-time coupling was about 2x
+too strong and named `shunt_base_eff` the prime suspect, on the grounds that it
+is the main thing converting lung volume into arterial oxygenation and is stale
+by construction. **The sweep refutes that.**
+
+**1. `shunt_cc_k` IS NEARLY INERT.** Swept over a twelve-fold range at both the
+current tilt gains and the x1.50 Valenza demands:
+
+| gains | cc_k 10 | 20 | 36.16 (default) | 60 | 120 |
+|---|---|---|---|---|---|
+| x1.00 Dixon | 43.9 | 42.8 | 42.3 | 42.1 | 41.9 |
+| x1.00 lean | 27.7 | 27.6 | 27.5 | 27.5 | 27.4 |
+| x1.00 Heard (s) | 351 | 353 | 354 | 355 | 355 |
+| x1.50 Dixon | 65.3 | 63.7 | 63.0 | 62.7 | 62.4 |
+| x1.50 Heard (s) | 405 | 406 | 407 | 407 | 407 |
+
+Two points on Dixon and four seconds on Heard, across twelve-fold. **The shunt
+law is not the coupling, and the prime suspect I named is wrong.**
+
+**2. NO ROW COMBINATION LANDS.** At x1.00 only the lean row is in band; at x1.50
+Valenza comes in and all three others go out. No value of `shunt_cc_k` rescues
+any of it.
+
+**3. RAISING THE TILT GAINS MAKES HEARD CONTROL WORSE TOO**, 354 -> 407 s
+against a band of 244-314. So the three rows really are one pathway — Heard
+control sits downstream of `tilt_factor` at the same 30 degrees and obesity as
+Valenza — but it is not a pathway the shunt controls.
+
+**4. THE REAL DIAGNOSTIC: THE TILT BENEFIT EXCEEDS WHAT THE OXYGEN ALLOWS.**
+Tilt raises FRC, but the blood and tissue oxygen store does not scale with FRC
+at all, so it DILUTES the gain: the apnoea-time gain must be SUB-proportional
+to the FRC gain. The model is super-proportional against the store.
+
+| patient | FRC gain | total O2 store gain | model time gain | measured |
+|---|---|---|---|---|
+| Dixon BMI 44 @25 | +46.7% | **+25.8%** | **+42.3%** | +32% |
+| Heard BMI 34.5 @30 | +50.5% | +32.0% | — | — |
+| lean BMI 22.9 @20 | +30.2% | +23.0% | +27.5% | +24-36% |
+
+Dixon gets **+42.3% more time from +25.8% more oxygen — 1.64x more than the
+oxygen justifies**. The lean patient gets 1.20x. **The amplifier is
+BMI-dependent**, which is why the obese rows fail and the lean one passes. And
+Dixon's MEASURED +32% sits far closer to the store prediction (+25.8%) than to
+the model (+42.3%), which is independent support for the store argument being
+the right frame.
+
+**CAVEAT ON THE STORE FIGURES.** The blood-plus-tissue term (~640 mL) was
+computed from the pool parameters (`v_art`, `v_ven`, `v_tis_o2`, Hb) as an
+order-of-magnitude check, NOT from the model's internal accounting. The
+conclusion survives that looseness because the term is large and entirely
+FRC-independent, but the exact percentages should be re-derived from the
+simulation's own oxygen balance before any of them is quoted as a result.
+
+**WHERE TO LOOK NEXT, and it is no longer the baseline shunt.** Something makes
+the SUPINE, low-FRC case desaturate faster than its store alone implies, and
+does it more in the obese. The candidate is now the DYNAMIC collapse during
+apnoea rather than the starting shunt — `max_closed` and the `f_eff` term —
+because at low FRC more units fall below closing capacity and shut AS the
+apnoea proceeds, penalising the supine case twice. `shunt_cc_k` only sets the
+shunt at the START, which is why swamping it changed nothing.
+
+**NOTHING WAS CHANGED.**
+
+## Current state — 2026-09-30 (twenty-first entry): the Kiely full text cannot be got, so the search is CLOSED and the benchmark says what it does and does not rest on
+
+The full text of Kiely 1996 could not be obtained — the author tried and this
+is as far as it goes. **The `stroke volume rises with hypercapnia` band of
++5 to +30% is therefore unsourced and permanently so.** That is now recorded as
+a closed question rather than an outstanding fetch, so nobody spends another
+afternoon on it.
+
+**WHAT CHANGED IS THE HONESTY OF THE ROW, NOT THE ROW.** The check and its band
+are untouched. Its citation was the bare string `"clinical; Chest: HR, SV, CO
+and MAP all rose"` from the day it was written (7d30668, 2026-09-04) until
+today. It now names **Kiely DG, Cargill RI & Lipworth BJ, Chest
+1996;109(5):1215-21**, n=8 awake at PETCO2 7 kPa, and states in the check's own
+description that the **DIRECTION is sourced and the BAND is not**. A reader of
+the suite output can now see which half is evidence.
+
+**A DERIVATION WAS TRIED AND REJECTED, and it is recorded so it is not tried
+again.** The abstract gives MPAP (9 → 14) and PVR (129 → 171), so cardiac
+output is algebraically recoverable from `PVR = 80(MPAP − PCWP)/CO`. It does
+not work: Kiely used Doppler echo and did not measure wedge pressure, and the
+implied cardiac-output ratio swings from **x1.17 to x2.01** across plausible
+PCWP. That is reasoning from what a paper does not say, which CLAUDE.md records
+as having been wrong every time it was tried. **The magnitude stays unsourced
+rather than being manufactured.**
+
+**WHY THE ROW IS KEPT AT ALL.** Its sign is sourced, it is checked every run,
+and the sign is the part that was actually in dispute: Stengl 2013 measured
+stroke volume FALLING (x0.73) and a flip was probed and rejected on 2026-09-30
+because Stengl's load was six times Kiely's and outside the range this model
+works in. The reasoning now sits in `test_validation.py` beside the check, not
+only in this file.
+
+**THE STANDING GAP IS UNCHANGED AND IS NOT THIS ONE.** PVR still has no CO2 and
+no pH term, against Kiely x1.33 in awake humans at +12.5 mmHg and Stengl x2.21
+in pigs at CONSTANT PaCO2. That is the item with numbers behind it.
+
+## Current state — 2026-09-30 (twentieth entry): Kiely 1996 verified — it IS the source, the flip stays retracted, and the PVR gap now has a HUMAN number
+
+The citation record and abstract were supplied, confirming **Kiely DG, Cargill
+RI & Lipworth BJ, *Chest* 1996;109(5):1215-21**, Ninewells Hospital, Dundee.
+Eight healthy male volunteers, AWAKE, Doppler echo, end-tidal CO2 raised to
+7 kPa (52.5 mmHg, **+12.5** over 40) for 30 min. **Registered as
+ABSTRACT-VERIFIED, NOT read** — the full text is still not held, and that
+distinction carries weight below.
+
+**IT IS THE BENCHMARK'S SOURCE.** "Heart rate, stroke volume, cardiac output,
+and mean arterial BP were increased by hypercapnia" is the note verbatim. The
+nineteenth entry's retraction stands: the load is six times smaller than
+Stengl's +76.8, the model works at +10 to +30 which is Kiely's range, and the
+existing **positive `sv_co2_gain` is probably right where it is used**.
+
+**BUT THE BAND IS STILL UNSOURCED.** The abstract gives NO MAGNITUDES for HR,
+SV, CO or MAP — only that they rose. **The benchmark's +5 to +30% band lives in
+the full-text tables and remains unverified.** The row's DIRECTION is now
+defended; its NUMBERS are still inherited. That is a smaller problem than the
+eighteenth entry described, and a real one.
+
+**THE PULMONARY NUMBERS ARE THE USEFUL PART, AND THEY ARE HUMAN, AT THE MODEL'S
+OWN CO2 RANGE:**
+
+| | CO2 load | MPAP | PVR |
+|---|---|---|---|
+| Kiely (awake human) | **+12.5** | 9 → 14 mmHg (x1.56) | 129 → 171 (**x1.33**) |
+| Stengl (pig, HCA) | +76.8 | 24.4 → 40.3 (x1.65) | 259 → 356 (x1.37) |
+| Stengl (pig, MAC, **constant PaCO2**) | 0 | 23.1 → 42.9 | 268 → 591 (**x2.21**) |
+
+**THE RESPONSE SATURATES.** Kiely's implied gain is 0.0260 per mmHg against
+Stengl's 0.0049 — **5.4x steeper** at a sixth of the load. So a linear CO2 gain
+would be the wrong form for PVR, which is worth knowing before anyone writes
+one. And Stengl's MAC arm raised PVR x2.21 at CONSTANT PaCO2, so a CO2 term
+alone cannot carry it either: **the pulmonary response needs pH, and it needs
+to saturate.**
+
+The model has `pvr_base` 1.40 mmHg per L/min and `hpv_pvr_max` 3.15, **both
+driven by hypoxia alone**. No CO2 term, no pH term. This is now the one
+unambiguous gap with numbers from two papers and one of them human.
+
+**TWO THINGS THE ABSTRACT SETTLES IN THE MODEL'S FAVOUR.** Systolic function
+was UNAFFECTED — peak aortic velocity and aortic mean and peak acceleration all
+unchanged — so stroke volume rose by LOADING, not contractility. That is
+consistent with Stengl finding depression only on acute acidic perfusion in
+vitro, and it supports the `co2_response_cap` comment's claim that depression
+belongs to severe acidosis rather than this range. And no effect on renin,
+angiotensin II or aldosterone rules out a RAAS mechanism over 30 minutes.
+
+**A CONTRADICTION RECORDED RATHER THAN RECONCILED: QT.** Kiely found QTc
+LENGTHENED, 411±3 → 428±8 ms, with QT dispersion 33±4 → 48±2, and flags
+dispersion as an arrhythmic substrate though he saw no arrhythmia. Stengl found
+QT and QTc **SHORTENED** in both acidoses, also with no arrhythmia. Frumin 1959
+saw ventricular ectopics that ended two apnoeas. Three papers, three different
+electrophysiological pictures. The model has no QT and needs none; this is
+recorded so nobody later builds one on a single source.
+
+## Current state — 2026-09-30 (nineteenth entry): the Chest paper is IDENTIFIED, it does not conflict with Stengl, and my proposed sign flip was WRONG
+
+**The eighteenth entry leaned towards flipping `sv_co2_gain`, on the grounds
+that the benchmark blocking it cited a paper nobody held. The paper has now
+been identified and that lean is RETRACTED.**
+
+**Kiely DG, Cargill RI & Lipworth BJ, *Chest* 1996, PMID 8625670** — "Effects
+of hypercapnia on hemodynamic, inotropic, lusitropic, and electrophysiologic
+indices in humans". Eight healthy male volunteers, AWAKE, Doppler echo,
+end-tidal CO2 raised to 7 kPa for 30 minutes. It reports heart rate, stroke
+volume, cardiac output and MAP all increased — matching the benchmark's note
+`"clinical; Chest: HR, SV, CO and MAP all rose"` word for word. **Identified by
+search; the PDF is NOT held and it is registered as sought-not-read.**
+
+**IT DOES NOT CONFLICT WITH STENGL. THE CO2 LOADS ARE SIX-FOLD APART.**
+
+| | CO2 load | preparation | stroke volume |
+|---|---|---|---|
+| Kiely 1996 | PETCO2 52.5 mmHg (**+12.5**) | awake humans | **up** |
+| Stengl 2013 | PaCO2 116.8 mmHg (**+76.8**) | anaesthetised, paralysed pigs | **down, x0.73** |
+
+The plausible truth is **biphasic in CO2 magnitude**: sympathetic drive raises
+stroke volume at modest hypercapnia, direct myocardial depression lowers it at
+severe. Both measurements can be right, and the disagreement I reported was an
+artefact of comparing them as though they were at the same load.
+
+**AND THE MODEL WORKS IN KIELY'S RANGE.** The page's scenarios run PaCO2 50-70,
+i.e. `co2_arg` 10-30:
+
+| | current (+0.0045) | probe (-0.00352) |
+|---|---|---|
+| at Kiely's load (arg 12.5) | x1.056 | x0.956 |
+| at Kaiser's load (arg 31) | x1.139 | x0.891 |
+| at Stengl's load (arg 76.8) | x1.346 | x0.730 |
+
+So **the existing positive `sv_co2_gain` is probably RIGHT where the model
+operates**, and the Stengl-derived flip would make stroke volume fall 4-11%
+exactly where a human study measured it rising. I was about to recommend
+flipping a correct parameter on evidence taken at six times the CO2 load, in a
+different species and a different state. The benchmark I described as resting
+on weak evidence rests on a human study whose conditions are CLOSER to the
+model's operating range than Stengl's are.
+
+**WHAT SURVIVES FROM STENGL, AND IS NOW DOUBLY SUPPORTED: THE PVR GAP.** Both
+papers found pulmonary artery pressure and pulmonary vascular resistance
+rising, and Stengl showed metabolic acidosis doing it at CONSTANT PaCO2
+(x2.21), which cannot be a CO2 effect. This model's PVR moves only with hypoxic
+vasoconstriction and has no acidosis term at all. That remains the one
+unambiguous gap, and it now has two papers behind it rather than one.
+
+**Also unresolved, and NOT to be settled on Stengl alone:** whether the HR gain
+is too small. It is 0.0045 against a Stengl-derived 0.01328, but that too was
+measured at +76.8 and Kiely's awake +12.5 cannot discriminate it, any more than
+O'Croinin's +5 torr could.
+
+**NOTHING WAS CHANGED, and the lesson is the one this project keeps relearning:**
+the eighteenth entry's argument was about the QUALITY of a citation when it
+should have been about the CONDITIONS of the measurement. An unnamed source is
+a reason to go and find it, not a reason to assume it is weak.
+
+## Current state — 2026-09-30 (eighteenth entry): the stroke-volume sign flip costs ONE benchmark, and that benchmark rests on a citation this project does not hold
+
+**The probe was run, not argued.** Both gains were derived from Stengl's
+measurements rather than fitted: `co_co2_gain` 0.0045 → **0.01328** (his HR
+x2.02) and `sv_co2_gain` +0.0045 → **-0.00352** (his SV x0.73). `co_max_factor`
+was left at 2.0 — and note that the existing ceiling turns out to be almost
+exactly Stengl's measured maximum HR multiplier, which is independent
+corroboration of a parameter that was already there. Run in a worktree with
+`provenance()` printed.
+
+**IT COSTS NOTHING ACROSS THE OXYGENATION SUITE.** Every other row is
+unchanged:
+
+| row | current | probe |
+|---|---|---|
+| Heard control, time to SpO2<95% | 354.2 s | 354.6 s |
+| Valenza tilt_factor | 1.47 x | 1.47 x |
+| tilt, BMI 44 at 25 deg | 42.3 % | 42.4 % |
+| ICSM jet, PaO2 | 25.0 | 25.0 |
+
+That is not luck. **Cardiac output barely moves at the PaCO2 the model
+actually works over**, because the two changes cancel: at PaCO2 60 it goes x1.19
+→ x1.18, at 70 x1.29 → x1.25. They diverge only above ~90 mmHg, which the
+model's scenarios never reach.
+
+**IT BREAKS EXACTLY ONE ROW**, and it is the one that encodes the very claim
+Stengl refutes: `stroke volume rises with hypercapnia`, band +5 to +30%, probe
+**-12.1%**. The probe's value is quantitatively what Stengl predicts — at
+Kaiser's CO2 load (+31 mmHg) his gradient gives -10.9%.
+
+**THE ASYMMETRY OF EVIDENCE IS THE POINT.** That benchmark's whole
+justification is the string `"clinical; Chest: HR, SV, CO and MAP all rose"` —
+no author, no year, no n, and **NO Chest paper is among the 26 registered
+sources**. It is a secondhand citation of a paper this project does not hold:
+the identical failure mode as citing Frumin through O'Loughlin, which this
+session already had to correct. Stengl, against it, was read in full with a
+complete haemodynamic table in a preparation matching this model's population.
+**Species is the one thing on the benchmark's side, and it is not nothing.**
+
+**O'CROININ 2024 DOES NOT SETTLE IT, AND MUST NOT BE CITED AS IF IT DID.**
+Human, n=26, and its headline is real: under apnoea the cardiac response is
+driven by HYPOXIA, not CO2 (hypercapnic -14 +- 14 vs normocapnic -11 +- 15 bpm,
+p=0.134). That **supports the model's bradycardia being keyed on SaO2**, which
+it is. But its CO2 challenge was **+5 torr**, where the current law predicts
++1.6 bpm and the probe +4.6, both inside a +-14 bpm SD — the study cannot tell
+them apart. And it is **AWAKE**: the diving response needs an intact reflex,
+where this model's population is anaesthetised and paralysed. That is the same
+trap already recorded at the Altermatt tilt row, where an awake measurement was
+found to constrain an anaesthetised parameter nowhere.
+
+**NOTHING WAS CHANGED.** What is needed is a ruling on which way the
+stroke-volume row should point, and that is a judgement about evidence — a
+pig study read in full against a human citation nobody here holds — not a
+number to compute.
+
+## Current state — 2026-09-30 (seventeenth entry): acidosis and the circulation — the CO2 keying is VINDICATED, `sv_co2_gain` has the WRONG SIGN, and PVR needs a pH term
+
+Asked whether acidosis should have cardiovascular effects, and handed **Stengl
+et al. 2013, *Crit Care* 17:R303** — anaesthetised, ventilated, paralysed pigs
+in which hypercapnic acidosis (PaCO2 38 → 117 mmHg) and metabolic acidosis
+(HCl, PaCO2 held constant) were **both titrated to pH 7.10**. That is the one
+design that separates pH from CO2, which is exactly the assumption the model's
+cardiovascular block rests on. **Species is the caveat; the preparation is not
+— it matches this model's population.**
+
+| | HCA measured | MAC measured | model (CO2-keyed) |
+|---|---|---|---|
+| HR | x2.02 | x1.73 | x1.35 |
+| **SV** | **x0.73** | **x0.66** | **x1.35** |
+| CO | x1.62 | x1.10 | x1.81 |
+| SVR | x0.76 | x1.16 (ns) | x0.65 |
+| **PVR** | **x1.37** | **x2.21** | **x1.00** |
+
+**1. KEYING THE SYSTEMIC TERMS ON CO2 RATHER THAN pH IS VINDICATED.** SVR fell
+with hypercapnia and did NOT change with metabolic acidosis at the same pH. The
+systemic vasodilatation is a CO2 effect, not an acidosis effect, so
+`svr_co2_gain` is right in kind. Magnitude is somewhat strong, x0.65 against a
+measured x0.76.
+
+**2. `sv_co2_gain` HAS THE WRONG SIGN.** It is +0.0045 per mmHg, raising stroke
+volume x1.35 at this PaCO2. Measured, stroke volume **FELL** — x0.73
+hypercapnic, x0.66 metabolic, in both groups. Cardiac output was held up by
+tachycardia instead (HR x2.02).
+
+**3. NET CARDIAC OUTPUT IS ABOUT RIGHT BY TWO ERRORS CANCELLING**: model x1.81
+against a measured x1.62, reached by raising HR far too little (x1.35 against
+x2.02) and moving SV the wrong way. The same right-answer-wrong-mechanism
+pattern as the tilt coupling in the fourteenth entry.
+
+**4. PVR IS WHERE A GENUINE pH TERM IS NEEDED, AND THERE IS NONE.** Metabolic
+acidosis raised PVR **x2.21 at CONSTANT PaCO2** — that cannot be a CO2 effect —
+and it exceeded the hypercapnic response (x1.37). This model's PVR moves only
+with hypoxic pulmonary vasoconstriction (`hpv_pvr_max`). This is the one place
+where "acidosis should have cardiovascular effects" is unambiguously right and
+the model is silent.
+
+**5. IT REFINES THE `co2_response_cap` COMMENT.** That comment says beyond
+PaCO2 150 "acidotic myocardial depression takes over and all of these reverse."
+At pH 7.10 in vivo it did not: **no arrhythmia in either group**, and
+trabeculae taken from the acidotic animals had **normal contraction force** —
+only acute acidic perfusion in vitro depressed force. The depressant limb is
+real in the dish and was compensated in the animal at this pH. The cap is still
+the right call; the reasoning under it is now better evidenced.
+
+**NOTHING WAS CHANGED.** `sv_co2_gain` is a sign flip on a fitted parameter in
+a validated block and would move benchmarks, so it waits on a ruling. Note also
+that pH 7.10 and PaCO2 117 are far beyond anything the page's own scenarios
+reach — peak PaCO2 there is 60-70 mmHg — so none of this affects what is
+currently shared.
+
+**One earlier prediction of mine was wrong and is corrected here.** I said a
+metabolic acidosis would move nothing cardiovascular in the model, because the
+terms key on PaCO2. It does, indirectly: lowering base excess reduces CO2
+carriage, so PaCO2 runs higher for the same production. Measured in the model,
+base excess 0 → -20 raises peak PaCO2 59.7 → 69.5 mmHg and peak cardiac output
+5.15 → 5.53 L/min.
+
+## Current state — 2026-09-30 (sixteenth entry): the control arm is recoloured and there is a deployable folder
+
+**The control arm on the graph was `--dim` (#6b8494) and barely separable from
+the grid on a dark panel.** It is now **#ff9f43**, orange against the device
+arm's cyan — the colour-blind-safe pairing, and deliberately NOT the alarm red,
+which on this page means a saturation alarm rather than which arm you are
+looking at.
+
+**`site/` is the deployable folder, built by `build_site.py`.** Two files:
+`index.html` (the page, 91 KB) and `_headers`. There is no build step and
+nothing to install. `DEPLOY.md` has the three ways to put it on Cloudflare
+Pages.
+
+**`site/index.html` is a COPY, and a copy rots.** The pre-commit hook now runs
+`build_site.py --check` alongside `build_page.py --check`, so a stale deploy
+folder fails a commit rather than quietly serving an old model. That is the
+whole reason it is a script and not a hand-made folder.
+
+**The self-contained claim is now CHECKED rather than asserted.** The page is
+served over HTTP with the real `_headers` rules applied and driven in headless
+Chromium: it runs to completion under a `default-src 'none'` Content-Security-
+Policy, the graph paints, and it issues **ZERO external requests**. The CSP is
+only tight enough to be worth setting because of that property, and `DEPLOY.md`
+says plainly that adding any external script, font or stylesheet will break the
+deployed page while leaving the local file working.
+
+**An inline `data:` favicon was added** — not a file, so the page still fetches
+nothing. It removes the browser's automatic `/favicon.ico` request, which was
+the single 404 in the deployed folder's console.
+
+**Two things were flagged for a decision rather than decided here**, both in
+`DEPLOY.md`: a public URL is publication in the ordinary sense whatever the
+footer says "unpublished", and Cloudflare Pages projects are public by default,
+so limiting access needs Cloudflare Access rather than an unguessable URL.
+
+## Current state — 2026-09-30 (fifteenth entry): every slider was swept, two are INERT and are now hidden, and the page gained a run-gate and an outcome graph
+
+**THE PAGE WAS BEING SHARED, SO EVERY CONTROL ON IT WAS SWEPT.** Each of the
+twelve sliders was driven to its minimum, default and maximum through
+`model.js` itself -- the same code the shared page runs, not the Python -- in
+the page's own CICO preset, and the control arm's time to SpO2<95% recorded
+(default 362 s).
+
+| slider | range | low -> default -> high | verdict |
+|---|---|---|---|
+| Body weight | 45-180 kg | 720 -> 362 -> 225 s | correct, large |
+| Height | 1.45-2.05 m | 249 -> 362 -> 556 s | correct |
+| FRC | 0.55-1.5 x | 213 -> 362 -> 518 s | correct |
+| Metabolic rate | 0.6-1.7 x | 624 -> 362 -> 205 s | correct |
+| Haemoglobin | 4-18 g/dL | 354 -> 362 -> 367 s | direction right, only 13 s; the anaemia signal is in END SpO2, 20.3 -> 32.9% |
+| Closing capacity | 0.6-1.6 x | 367 -> 362 -> 345 s | correct, small |
+| Lung collapsibility | 0.1-0.65 | 365 -> 362 -> 352 s | correct, small |
+| **Cardiogenic mixing** | 10-300 s | 362 -> 362 -> 362 s | **INERT** |
+| Pharyngeal O2 | 0.21-1.0 | device arm 362 s -> never desaturates | correct; control arm correctly untouched |
+| **Absorption atelectasis** | 0-0.55 | 362 -> 362 -> 362 s | **INERT** |
+| Bed tilt | -20-45 deg | 185 -> 362 -> 436 s | correct, large |
+| Buccal switched on | 0-4 | never -> 362 s as it starts later | correct |
+
+**`tauMix` AND `inflowMechFrac` ARE INERT IN BOTH IMPLEMENTATIONS.** Across
+their full ranges, in obstructed, patent-air and patent-oxygen runs, time to
+SpO2<95%, atelectasis and shunt are identical to the decimal -- in `model.js`
+AND in `apnoea_core.py`. So this is NOT a port bug, which is exactly why
+`test_parity.py` passes: the two agree, and they agree on doing nothing. The
+eleventh entry's lever sweep already noted `tau_mix` leaving the Stock slope at
+1.94 and called the inertness undiagnosed; this confirms it and adds
+`inflow_mech_frac`. **Hiding them does not fix it and is not meant to.**
+
+**Both are now hidden from the page** (ruled 2026-09-30) and held in `BASE` at
+their former dial defaults, 45 and 0.18, so the model is handed exactly what it
+was handed before: the page's numbers are unchanged by the edit. A control that
+does nothing when dragged costs more credibility than it earns.
+
+**A MISTAKE OF MINE, RECORDED BECAUSE IT NEARLY BECAME A BUG REPORT.** The
+first sweep showed the device arm doing nothing whatever, and the page was
+within one sentence of being called broken. The fault was in the harness: the
+page defines `STARTS` as time/label PAIRS, so `STARTS[i][0]` is the time, and
+the harness defined it as flat numbers while copying the page's `[0]` indexing.
+`startAt` came out `undefined`, `0 >= undefined` is false, and every device run
+silently fell back to air. **The page was correct throughout.** Fixed, the
+device arm holds SpO2 at 99.9% where the control arm falls to 31.8%.
+
+**TWO PAGE FEATURES, both requested and both VIEW-ONLY -- `model.js` is
+untouched, so parity and the benchmarks are unaffected.**
+
+1. **Play is gated on a completed run.** It used to stay live and silently
+   start the run when pressed while stale, so for the ~5 s a run takes it read
+   as a dead button. It is now disabled whenever the parameters have changed or
+   a run is in flight, with the title "Run the simulation first".
+2. **An outcome graph with a dropdown**: twelve outcomes (SpO2, PaO2, PaCO2,
+   pH, mixed venous PO2, alveolar O2 fraction, lung gas volume, shunt,
+   collapsed lung, heart rate, MAP, cardiac output), both arms overlaid against
+   time, with the playback cursor marked. The page previously had waveforms and
+   instantaneous numbers but no way to see the SHAPE of an outcome over a run.
+   While stale the curves are dimmed to 0.28 and the readout says "previous run
+   -- re-run to update", so last run's curves cannot be mistaken for the
+   current settings.
+
+**Verified in a real browser**, not by inspection: headless Chromium drives the
+built page and asserts Play is disabled during the initial compute and enabled
+at 4.9 s when it finishes, disabled the instant a slider moves, stale-marked on
+the graph, and re-enabled after re-running; that the dropdown has 12 options and
+switching it redraws; that the canvas paints 12521 pixels; that both hidden
+sliders are gone and 10 remain; and that the page raises NO JavaScript errors.
+
+## Current state — 2026-09-30 (fourteenth entry): the two tilt failures are ONE defect, and it is not the tilt gains
+
+**First, a process failure that has to be recorded.** `./setup-hooks.sh` had
+never been run in this clone. `core.hooksPath` was unset and
+`.git/hooks/pre-commit` did not exist, so **the pre-commit hook did not fire for
+a single commit in the session that produced the twelfth and thirteenth
+entries.** Every one of those commits went in ungated. The hook is now
+installed. `test_parity.py` passes; `test_validation.py` exits 1 on four
+blocking rows, which is what the hook would have been blocking on.
+
+**The four blocking rows, and where they came from.**
+
+| row | model | band |
+|---|---|---|
+| Heard control, time to SpO2<95% | 354.2 s | 244-314 |
+| Valenza tilt_factor at 30 deg, BMI 42 | 1.466 x | 1.70-2.00 |
+| tilt, BMI 44 at 25 deg | 42.3 % | 15-40 |
+| ICSM jet, PaO2 at cricothyroidotomy | 25.0 mmHg | 25.3-31.3 |
+
+None is new. Heard control is recorded in the twelfth entry as already failing
+at 353.7 s and moving to 354.2 s on the cardiac-output change. The ICSM jet row
+is documented in `test_validation.py`'s own KNOWN_OPEN comment as having failed
+"since the day it was written", four days earlier. **The Valenza row cannot
+have been touched by any of this work at all**: `tilt_factor()` is pure algebra
+over tilt angle and BMI, with no cardiac output and no simulation in it.
+
+**THE TWO TILT ROWS ARE ONE DEFECT, AND THE TILT GAINS ARE NOT IT.** Both are
+driven by the same two parameters — `tilt_gain_lean` 0.013 and `tilt_gain_bmi`
+0.00015, how much end-expiratory lung volume a head-up tilt recovers per degree,
+lean and per BMI point above 25. Valenza is a DIRECT measurement of
+`tilt_factor` itself (closed-circuit helium dilution, 20 anaesthetised
+paralysed patients at BMI 42, 0.46 -> 0.85 L); Dixon is an apnoea-time PROXY
+(+32%). Valenza needs those gains **1.50x larger**. Measured, that is what the
+1.50x does:
+
+| row | at current gains | at 1.50x | band | measured |
+|---|---|---|---|---|
+| Dixon, BMI 44 at 25 deg | 42.3 % | **63.0 %** | 15-40 | +32 % |
+| lean 70 kg at 20 deg | 27.5 % (passes) | **41.2 %** (would newly fail) | 15-40 | Lane +36, Ramkumar +24 |
+
+So satisfying the one direct measurement of the quantity doubles the error on
+the proxy and breaks a row that currently passes. **No value of the two tilt
+gains satisfies all three rows**, which is the signature of a defect somewhere
+else.
+
+**Where it is: the lung-volume to apnoea-time coupling is about 2x too
+strong.** The model returns +42.3% apnoea time for a +39.7% lung-volume gain,
+about 1.07% per 1%. If Valenza's scaling is right, the true volume gain at
+BMI 44 and 25 degrees is about +59.5%, against Dixon's measured +32% — about
+0.54% per 1%. **A too-weak tilt factor and a too-strong coupling have been
+masking each other**, which is why neither row could be fixed from the tilt
+gains and why moving them makes things worse in both directions.
+
+**A hypothesis, flagged as such and NOT claimed.** Heard control fails in the
+same direction — 354.2 s against a 244-314 s band, i.e. the model holds
+saturation too long. An overstated lung-volume to apnoea-time coupling would do
+exactly that, which would make three of the four blocking rows one defect. It
+is a different configuration and has not been tested. It must not be written up
+as established until it is.
+
+**Nothing was tuned and no parameter was moved.** The 1.50x above is a probe,
+not a change.
+
+**THE BEFORE-STATE IS NOW VERIFIED, and none of the four is from this work.**
+`test_validation.py` run at `b02404c` -- the commit before this session's only
+physics change, provenance printed -- gives the SAME four blocking rows:
+
+| row | at b02404c | today |
+|---|---|---|
+| Heard control, time to SpO2<95% | 353.7 s | 354.2 s |
+| Valenza tilt_factor at 30 deg, BMI 42 | 1.5 x | 1.466 x |
+| tilt, BMI 44 at 25 deg | **42.3 %** | **42.3 %** |
+| ICSM jet, PaO2 at cricothyroidotomy | 25.2 mmHg | 25.0 mmHg |
+
+No row newly fails. The tilt row is unchanged to the digit, which is what the
+structural argument predicted: `tilt_factor()` has no cardiac output in it. The
+other three moved by fractions. **The suite was already red before this session
+and the missing hook is why nobody saw it.**
+
+One incidental confirmation: at `b02404c` the Valenza band PRINTS as "expect
+2-2" and today as "expect 1.70-2.00". The band did not change -- that is the
+`_num()` formatter added later in the session for exactly this illegibility.
+
+**THE HEARD BUCCAL 750 s IS AN ETHICS CAP, AND ONE OF MY OWN CONCERNS IS
+WITHDRAWN.** A. Heard confirmed on 2026-09-30 that the 750 s cut-off was set by
+the ethics committee because blood gas sampling was not available, and
+"otherwise we would have continued". I had raised the buccal row as a one-sided
+band hiding a possible overshoot -- the model holds SpO2 at 99.88% at 750 s and
+99.04% at one hour, i.e. never desaturates. **With the cap explained that
+reading is wrong**: exceeding 750 s is what "we would have continued" predicts,
+and the row passing is legitimate. The band cannot separate a model predicting
+800 s from one predicting infinity, but no band could, because the data are
+right-censored. Closing that needs per-patient times with censoring flags, not
+a different band. Recorded in `test_validation.py` at the row itself.
+
+**What does NOT go away is the Heard CONTROL arm**, which the cap does not
+touch:
+
+| | measured | model |
+|---|---|---|
+| time to SpO2<95% | IQR 244-314 s | **354 s** |
+| SpO2 at 296 s, the published median | 95 % | **98.73 %** |
+
+At the moment the average patient reached 95% the model still has them at
+98.7%. **That is the same 30 degree reverse-Trendelenburg obese configuration
+as the two failing tilt rows**, failing in the same direction -- too much
+apnoea time for the lung volume. Three of the four blocking rows are now on one
+pathway and one of them shares the other's exact geometry.
+
+**Ruling taken 2026-09-30: the CO2 channel is parked.** Its bookkeeping is
+sound (content right to 1.00x, mass balance under 1%) and what is open is the
+pH relation at extreme hypercapnia, which does not feed the oxygen side. Work
+moves to the oxygen side, where all four blocking rows are.
+
+## Current state — 2026-09-29 (thirteenth entry): the long-window CO2 gap is NOT the store. Frumin's PaCO2 is a DERIVED number, and the disagreement is in the pH/PCO2 relation
+
+The twelfth entry's sweep ended by calling the Frumin/Kaiser conflict "two eras
+of measurement" and proposing three candidates: (a) the model is modern and
+Frumin stays KNOWN_OPEN, (b) the model is historical and three gas-exchange
+defects reopen, (c) find a mechanism distinguishing them. **Candidate (c) was
+pursued and a mechanism was found, but it is not in the CO2 stores, and the
+first three things it was tried on all failed. Nothing was tuned and no
+parameter was moved.**
+
+**Frumin never measured PaCO2.** This is read from the paper (p.790), not
+recalled: plasma CO2 CONTENT by Kopp-Natelson microgasometer, pH
+potentiometrically by glass electrode, and then "the arterial carbon dioxide
+tension and the buffer base were **estimated** from the nomogram of Singer and
+Hastings, or from the Henderson-Hasselbalch equation for the higher carbon
+dioxide tension values." Kaiser 2024 reads PaCO2 off an electrode. **The two
+eras do not report the same measured quantity**, and every comparison made
+against Frumin's PaCO2 until now compared a measurement to an estimate.
+
+**The starting-condition hypothesis is REFUTED.** Table 1 gives duration,
+highest PaCO2 and average rate per subject, so each subject's starting PaCO2 is
+inferable as peak - rate x duration. The inference is checkable against his
+prose and passes: subjects 4/6/8 come out at 25-27 mmHg (the methods
+hyperventilate before apnoea) and subject 7 at 64.5 (the paper describes him as
+beginning with "a moderate respiratory acidosis"). Run from each subject's own
+start and duration, the model reproduces the DIRECTION but not the level:
+
+| subj | min | start | rate measured | rate model | peak measured | peak model |
+|---|---|---|---|---|---|---|
+| 4 | 45 | 25.0 | 3.0 | 1.18 | 160 | 78 |
+| 5 | 18 | 41.8 | 4.9 | 2.23 | 130 | 82 |
+| 6 | 45 | 25.0 | 3.0 | 1.18 | 160 | 78 |
+| 7 | 53 | 64.5 | 3.5 | 2.07 | 250 | 175 |
+| 8 | 38 | 27.4 | 2.7 | 1.33 | 130 | 78 |
+
+The spread of starting points does not explain the spread of rates. Note also
+that subject 5 began at 41.8 — **Kaiser's own starting point** — and reached
+130 in 18 minutes, where Kaiser's cohort starting at 43 reached ~73 in 15. Like
+for like, the two eras differ by about 2.4x, and no starting condition
+reconciles them.
+
+**BUT THE MODEL'S CO2 CONTENT IS RIGHT.** Inverting Frumin's own
+Henderson-Hasselbalch step recovers the plasma CO2 content his gasometer
+measured, and the model — whose content comes from its own mass balance, so the
+comparison is not circular — agrees:
+
+| subj | Frumin pH | Frumin PaCO2 (est) | Frumin content | model pH | model PaCO2 | model content | gap PaCO2 | gap content |
+|---|---|---|---|---|---|---|---|---|
+| 4 | 6.88 | 160 | 33.6 | 7.19 | 78.3 | 32.1 | 2.04x | 1.05x |
+| 5 | 6.97 | 130 | 32.9 | 7.18 | 82.1 | 32.6 | 1.58x | 1.01x |
+| 6 | 6.87 | 160 | 32.9 | 7.19 | 78.3 | 32.1 | 2.04x | 1.03x |
+| 7 | 6.72 | 250 | 38.2 | 6.94 | 174.6 | 41.2 | 1.43x | 0.93x |
+| 8 | 6.96 | 130 | 32.3 | 7.19 | 78.0 | 32.1 | 1.67x | 1.00x |
+
+Mean overstatement on PaCO2 **1.75x**; on plasma CO2 content **1.00x**.
+**The model puts the right amount of CO2 in the blood.** The entire PaCO2
+discrepancy is a pH discrepancy of 0.21-0.31 units. Confirming this from the
+other side: hold the model's own content at 32.1 mmol/L and impose Frumin's
+MEASURED pH, and his reported PaCO2 falls out — 6.88 gives 153 against his 160,
+6.87 gives 156 against 160, 6.97 gives 127 against 130.
+
+**So the CO2 store was never the defect**, which is why the twelfth entry's
+nine-case sweep could not find a store size that satisfied all three
+benchmarks, and why halving the fast store — the lever `apnoea_core.py` already
+records as having buried three real bugs — appeared to work. It was moving the
+right output for the wrong reason.
+
+**Three candidate mechanisms for the pH gap were tested. All three fail.**
+
+1. *The estimator itself.* Ruled out: the classic 1959 constants (pK' 6.10,
+   s 0.0301) and the model's Kelman pK'(pH,T) agree to under 1% at these
+   extremes, and pushing the model's own state through Frumin's estimator
+   returns the model's PaCO2 (79.9), not his (160).
+2. *The buffer line.* The model titrates CO2 at fixed Siggaard-Andersen ACTUAL
+   base excess using the patient's real haemoglobin — the IN VITRO whole-blood
+   line. The whole-body in vivo line is weaker, conventionally represented by
+   putting cHb ~5 g/dL into the base-excess residual. Direction correct, size
+   far too small: cHb 14 -> 9 moves the 45-minute rate 1.18 -> 1.37 against a
+   measured 3.0, about a tenth of the gap, and below cHb 9 the acid-base
+   inversion collapses numerically (PaCO2 3.0, pH 8.2 — an artefact, not a
+   result).
+3. *Base excess.* Frumin's (pH, PaCO2) pairs imply a base deficit of -8 to -11
+   mmol/L, and an independent calculation — what deficit puts the model at his
+   pH and his PaCO2 at once — gives -8.5. The agreement is real. **The
+   prediction still fails**: `be` is a Patient property, not a model parameter,
+   and setting it to -9 gives PaCO2 92 at 45 minutes, not 160 (rate 1.49
+   against 3.0), recovering about a quarter of the gap.
+
+**Why (3) fails is the structural finding.** Lowering base excess makes blood
+hold LESS CO2 at any PCO2, so the model's plasma content falls from 32.1 to
+26.3 mmol/L as the deficit is applied. **The model trades content against pH.
+Frumin's subjects had a high content AND a low pH at the same time, and no
+value of base excess reproduces both.** The disagreement is therefore in the
+content/pH/PCO2 relation itself at extreme hypercapnia — a region where the
+model has never been tested and where Frumin's PaCO2 is an extrapolation off
+the end of a 1959 nomogram. Either could be wrong; this work does not settle
+which, and says so.
+
+**One caveat that cannot be argued away.** The implied base deficit was backed
+out of Table 2's serial pH (subject 6: 7.36 control, then 7.13/7.06/6.95/6.87
+at 10/20/30/40 min) by assuming a LINEAR PaCO2 ramp. It comes out roughly
+constant at -8 to -11 rather than accumulating, which refutes "metabolic acid
+builds up over the apnoea". But the true PaCO2 curve is front-loaded, and
+assuming linearity is assuming the very trajectory in dispute. **Standing
+versus accumulating cannot be separated from this data. The level can.**
+Table 3 also rules out circulatory collapse as the source: mean arterial
+pressure ROSE 26% during apnoea and fell only afterwards.
+
+**What this changes for the ruling.** The choice is no longer (a)/(b)/(c) over
+two eras of CO2 measurement. The CO2 bookkeeping is vindicated — content is
+right to 0-7% against the only held measurement past fifteen minutes — and the
+open question is narrower and better posed: **is the model's acid-base relation
+correct above PaCO2 ~100, and is Frumin's estimated PaCO2 trustworthy there?**
+The Frumin rows stay KNOWN_OPEN and no parameter moved.
+
+**What this does NOT explain.** Stock's obstructed 1-5 minute slope (model
+1.92, measured 3.4) is a SHORT window, where the pH excursion is small and none
+of this applies. It remains separately open and must not be folded into this.
+
+## 2026-09-28 (twelfth entry): cardiac output is keyed on body surface area, and the "wrong gradient" is retracted
+
+**Three rulings were taken and all three are done.** They are listed in the
+order they were ruled, not the order they matter.
+
+**1. The CO2 decay gap is closed by internal consistency, not by a paper.**
+The eleventh entry said there was an oxygen mass-balance check and no CO2 one,
+and that the CO2 rate's decay past 15 minutes was constrained by nothing held.
+`test_co2_mass_balance` now asserts that CO2 produced (`vco2_metab * dur`)
+equals the rise in the alveolar store plus the rise in the blood/tissue/slow
+store, at 15 and 60 minutes, for a lean and an obese patient. It is the ONLY
+benchmark that reaches past 15 minutes. **O'Loughlin was weighed for this job
+and set aside**: its long-window number is venous, a single mean over the whole
+apnoea, and banded 50-350 Pa/min — too wide to test an arterial decay.
+
+**It does not close to machine precision, and that is recorded rather than
+hidden.** The residual is -0.5% (lean) and -0.7% (obese) at 15 min, -0.3% and
+-0.4% at 60 min, and it SHRINKS at finer dt (-0.39% at dt 0.1, -0.32% at
+0.05). So it is a discretisation artefact of the coarse long-run step, not a
+leak. The band is ±1%, which is the level the accounting actually holds to.
+
+**2. The CO2 channel is dropped from the queue.** See the revised queue in the
+eleventh entry. The obstructed Stock slope stays KNOWN_OPEN and is not to be
+chased with a compensating term.
+
+**3. CARDIAC OUTPUT IS NOW PROPORTIONAL TO BODY SURFACE AREA, and the claim
+that its gradient had the wrong sign is RETRACTED.**
+
+Madronio 2025 (*Heart Lung Circ* 34:1109-18, cardiac MRI, n=57, **read at
+source**) measures cardiac index FLAT across body size: 3.103 L/min/m² in the
+healthy (BSA 1.84, CO 5.71) against 3.139 in BMI≥30 (BSA 2.45, CO 7.69) —
+**1.16% apart**. Cardiac output rises with body size, in the direction this
+model already had. The Tokics 5.70 → Perilli 4.90 "fall" was a comparison
+between two studies twelve years apart with a reduced phase-4 supine value at
+one end. **The defect was the EXPONENT, not the direction.**
+
+Measured, the exponent is weight^0.51 ≈ BSA^1.04. The model used weight^0.75:
+12% low at the lean end, catching up only by rising too fast, with an implied
+cardiac index climbing **16%** across the span where the measurement moves 1%.
+
+**Measured first, then fixed, on a ruling.** The row was added to KNOWN_OPEN at
+16.01% for exactly one commit — long enough for the arbiter to hold the defect
+— then closed by re-keying `co_anaes()` onto a new `bsa()`:
+
+| | before | after | measured |
+|---|---|---|---|
+| lean, awake CO | 5.00 | **5.64** | 5.71 (1.08) |
+| obese, awake CO | 7.72 | **7.51** | 7.69 (1.36) |
+| cardiac-index spread | 16.01% | **0.1%** | 1.16% |
+
+`bsa()` is **Mosteller, not Du Bois**, and that was decided by measurement:
+against Madronio's own reported BSA, Mosteller reads -1.8%/-1.7%, Du Bois
+-2.5%/-6.7%. Du Bois under-reads the obese body, which is the end of the range
+this model exists to get right.
+
+**AND THEN STELFOX 2006 CONFIRMED IT OUT OF SAMPLE.** Read at source after the
+re-key was already committed, so nothing in the model was set from it: *Crit
+Care Med* 34:1243-6, **n=700**, cardiac output by **thermodilution or Fick**
+during coronary angiography, **BMI 10.6-91.6** — an order of magnitude more
+patients than Madronio, over four times the BMI range, and measured invasively
+rather than imaged.
+
+| | model | Stelfox |
+|---|---|---|
+| cardiac output per unit BMI | **0.089** L/min per kg/m² | 0.08 (95% CI **0.06-0.10**) |
+| cardiac-index spread, BMI 16 → 46 | **+0.25** L/min/m² | 0.3, **not significant** (p = .571) |
+
+He finds no association at all between BMI and cardiac index (0.003 L/min/m²,
+95% CI -0.008 to 0.014). That is the same law from a different instrument in a
+different population, and the model lands inside his confidence interval
+without having seen him. It is now a benchmark row, `Stelfox, cardiac output
+per unit BMI`, banded on his own interval.
+
+**One expectation of mine was wrong and is corrected here rather than quietly
+dropped:** Stelfox was chased as the ANAESTHETISED cross-check that would
+settle `co_drop_frac`. It is not one. His patients are awake in a
+catheterisation laboratory, so like Madronio he grades the awake body-size law
+and says nothing about the anaesthetic drop. He also reports no haemoglobin.
+**The anaesthetised level is still open and still has only Kaiser and Tokics
+behind it.**
+
+**WHAT IT COST, stated rather than compensated. One new blocking failure.**
+
+| row | before | after | band |
+|---|---|---|---|
+| ICSM rescue, post-rescue PaO2 | 49.5 PASS | **51.5 FAIL** | 33.5-51.1 kPa |
+
+It overshoots the ceiling by 0.4 kPa, **0.8%**, and it is a MODEL comparator —
+Laviola's simulator, not a patient. Nothing was tuned to bring it back.
+**CORRECTED 2026-09-30 against a verified before-state.** This entry originally said "Blocking is 4 → 5, known-open 3 → 2". Both halves were wrong, and neither was ever computed. A suite run at `b02404c`, the commit before this change, reports **4 BLOCKING and 3 KNOWN OPEN**; the suite today reports **4 BLOCKING and 5 KNOWN OPEN**. So blocking did not move at all, and known-open went 3 → 5: the `cardiac index is body-size independent` row was REMOVED because this change made it pass, and the ICSM rescue row and two Frumin rows were added after it. Every other moved row stayed in band
+and moved coherently: lean desaturation got slower (Toner sham 507.8 → 510.2 s,
+Berthoud control 547.1 → 549.5) because a lean patient now has more cardiac
+output and so more venous oxygen buffer, and the obese got marginally faster
+(Berthoud obese 204.3 → 203.9). **Heard control went 353.7 → 354.2 s, i.e.
+0.5 s FURTHER from its band.** That is the predicted direction and it is not a
+reason to undo the change.
+
+`test_parity.py` is green — `model.js` carries the same `bsa()` and the page is
+rebuilt.
+
+**WHAT IS STILL OPEN ON CARDIAC OUTPUT: the ANAESTHETISED LEVEL.** Awake is now
+right. Anaesthetised is not: 4.47 at 75 kg and 4.53 at 77 kg against Kaiser's
+baseline median of 5.0 (n=91, anaesthetised, apnoeic) and Tokics' 5.70. The
+single remaining lever is `co_drop_frac` at 0.25, against Gunnarsson's 70-85%,
+and it was deliberately not moved in the same edit as the body-size law.
+**Note also that the Kaiser comment in `apnoea_core.py` quotes an ANAESTHETISED
+median of 5.0 directly above what was an AWAKE `co_ref` of 5.0.** Whether those
+were once conflated is recorded nowhere, so it is not asserted — but it would
+explain the shortfall exactly.
+
+**AND THE SHUNT FIT IS NOW STALE.** `shunt_base_eff` was fitted by inverting
+Pelosi's blood gases THROUGH the old cardiac output, and that cardiac output
+has moved (+15% lean, -3% obese). The fitted law was not re-derived here —
+that is the subject of this PR and deserves its own ruling.
+
+**Five papers read at source and registered** in `sources_registry.py`, which
+is now 22 sources: Fraioli 1973, Benumof 1997, the Baraka/Benumof 1999
+correspondence, Madronio 2025, and Babinski 1986 (abstract only, `read=None`,
+a dog study set aside). **Fraioli was previously listed as UNREAD** — it was
+one of ICSM/Laviola's own validation references.
+
+**Fraioli 1973 independently corroborates this model's mechanism.** Human
+apnoeic oxygenation, n=31: PaO2 falls because PaCO2 rises and, more
+importantly, **alveolar nitrogen rises**, and the heavier/smaller-FRC group
+accumulates more nitrogen relative to its lung volume (277.5 vs 169.5 mL) and
+so desaturates faster. That is the aventilatory mass-flow law and the unwashed
+low-V/Q term. It agrees with Heller 1963 on its own numbers (air -295 torr/5
+min against Heller's -300; on oxygen 415 torr at 5 min against 419), and its
+FRC/weight threshold of ~50 mL/kg is the same obesity penalty Berthoud and
+Gander measure. Its PaCO2 rate of 3.25 torr/min looks high against Kaiser's
+2.1 until you notice it starts from a HYPERVENTILATED 24.5 torr and lands on
+73.2 at 15 min — Kaiser goes 43 → 73 over the same window. **Same endpoint,
+different starting point.**
+
+**The oxygen prediction was checked against Benumof 1997 and is sound.** At the
+model's own FAO2 of 0.87, sealed airway: SaO2 80% at 7.2 min (healthy 70 kg)
+and 2.8 min (obese 127 kg) against Benumof's 8.7 and 3.1, with asystole at 9.9
+and 5.2 min. Benumof's own model OVERpredicts the measured times in 7 of 11 of
+his Table 1 comparisons, so sitting slightly faster than him sits closer to the
+patients. **The model is not generally too slow to desaturate** — the Heard
+failure is specific to that row's regime (deliberate partial obstruction, buccal
+oxygen, clock from drug injection), not a general oxygen defect.
+
+## Current state — 2026-09-26 (eleventh entry): apnoeic oxygenation is CO2-limited, and this model runs that channel ~5x too slow
+
+**A. Heard's argument, and it overturned what this session had told him.**
+Carbon dioxide entering the alveolus displaces oxygen from a fixed-volume
+lung, so the oxygen store falls even on 100% oxygen, and falls faster in a
+small lung. At ~30 mL/min of alveolar CO2 output an hour costs **1,800 mL of
+oxygen, held in 2,034 mL of lung**: apnoeic oxygenation is **finite and
+CO2-limited even in the lean**, and reaches its limit sooner in an obese
+patient.
+
+**His two figures reproduce to the last digit**, and both are volumes of
+ALVEOLAR GAS rather than of oxygen — the distinction matters because an
+earlier draft of this entry compared them against an oxygen mass. His
+"(0.87)" is the alveolar oxygen fraction of TOTAL pressure,
+`(760 - 47 - 40)/760 = 0.8855`:
+
+| his figure | derivation | value |
+|---|---|---|
+| 33.9 mL/min | 30 / 0.8855 | 33.88 mL of **lung gas** per minute |
+| 2,034 mL | 1800 / 0.8855 | 2,033 mL of **lung**, holding 1,800 mL of O2 |
+
+So the like-for-like rate against this model is **30.0 mL of O2 per minute**.
+
+**The mechanism was already in the code**, at the aventilatory mass flow:
+
+```
+deficit = vo2_lung - vco2_lung - vn2
+inflow  = min(q_max, max(deficit, 0.0) + refill)
+```
+
+Only the NET absorbed volume is drawn in, so lung oxygen changes by
+`-(vco2_lung + vn2)` whatever the inspired fraction. Earlier the same day this
+session said the store was self-sustaining on oxygen and that FRC stopped
+mattering. **Both wrong**, and the line above is what says so.
+
+**FRC governs the oxygenated case — by falling FAO2, not by exhaustion.**
+3600 s, 100% O2, airway open, 30 deg head up, FEO2 0.87 at t=0:
+
+| BMI | FRC | FAO2 0 → 60 min | lung O2 0 → 60 min | PaCO2 at 60 min |
+|---|---|---|---|---|
+| 22.0 | 3544 mL | 0.870 → **0.583** | 2440 → 1634 mL | 136.3 mmHg |
+| 34.5 | 1929 mL | 0.870 → **0.408** | 1279 → 600 mL | 144.4 mmHg |
+| 45.0 | 1507 mL | 0.870 → **0.305** | 975 → 342 mL | 154.0 mmHg |
+
+**And it does not terminate.** BMI 22 at 4 h is still **98.6%**, because the
+displacement rate collapses as rising PaCO2 closes the alveolar-venous CO2
+gradient:
+
+| hour | lung O2 | FAO2 | PaCO2 | SpO2 | loss that hour |
+|---|---|---|---|---|---|
+| 0 | 2439 mL | 0.870 | 40.0 | 99.0% | — |
+| 1 | 1633 mL | 0.582 | 136.5 | 99.8% | 13.4 mL/min |
+| 2 | 1342 mL | 0.479 | 184.5 | 99.6% | 4.9 mL/min |
+| 3 | 1127 mL | 0.402 | 230.0 | 99.2% | 3.6 mL/min |
+| 4 | 988 mL | 0.352 | 261.0 | 98.6% | 2.3 mL/min |
+
+**AND THE "2.5x" AND "5x" ARE WITHDRAWN.** They set the model's 60-minute
+and FOUR-HOUR mean rates against 30 mL/min. Every measurement held here is a
+SHORT-WINDOW rate — Stock 1-5 min, Kaiser 15 min — and a four-hour mean of a
+decaying quantity is not the same measurement. It is the same class of error
+as the 33.9-against-30 basis mix-up corrected the day before.
+
+**His 30 mL/min is itself about 3.6x the modern measured rate.** Sustained
+for an hour it puts 1,800 mL of CO2 into a 2,804 mL alveolus — PACO2 498
+mmHg. Nothing held is near that. The MECHANISM is right and is in the code;
+the RATE is high by roughly three-fold, and the arithmetic showing it uses
+only numbers already in this repository.
+
+**WHAT IS ACTUALLY OPEN is that the rate decays and nothing tests it:**
+
+| window | model PaCO2 rise |
+|---|---|
+| 0–5 min | 4.24 mmHg/min |
+| 0–15 min | 2.62 — **the last window any held paper reaches** |
+| 0–60 min | 1.61 |
+| 0–240 min | 1.00 |
+
+**Every CO2 benchmark in the suite ends by 15 minutes.** The decay is
+UNTESTED, not shown wrong — a hole in the benchmark set rather than a
+demonstrated defect, and the real reason Frumin's 53-minute apnoea was worth
+chasing. **Frumin cannot be obtained** (author, 2026-09-27), so that hole
+needs either another long-apnoea source or an internal-consistency check.
+
+**Where the CO2 goes, measured, needing no paper** (production is a model
+parameter, `vco2_metab = vo2 * rq`, rq 0.8, so 184.7 mL/min here):
+
+| window | produced | into lung | into stores | % to lung |
+|---|---|---|---|---|
+| 15 min | 2,770 mL | 156 mL | 2,614 mL | 5.6% |
+| 240 min | 44,320 mL | 869 mL | 43,451 mL | **2.0%** |
+
+**There is an oxygen mass-balance check in `test_validation.py`, and now a CO2
+one** — `test_co2_mass_balance`, added 2026-09-27 on the ruling to fill this
+gap by internal consistency rather than a long-apnoea paper (O'Loughlin was
+weighed and set aside: its long-window number is venous, a single mean, and
+banded too wide to test the arterial decay). It adds two diagnostics to
+`simulate()` — `lung_co2` (alveolar store) and `co2_stores` (blood+tissue+slow),
+both declared PY_ONLY in `test_parity.py` as `cum_o2_in` already is — and
+asserts that CO2 produced (`vco2_metab * dur`) equals the alveolar-store rise
+plus the blood/tissue-store rise. It is the ONLY benchmark that reaches past 15
+minutes; it closes to under 1% out to an hour, the residual being negative and
+shrinking at finer dt, so a discretisation artefact of the coarse long-run
+step, not a leak. It does NOT test the rate against data — nothing held reaches
+that far — it tests that beyond the 15-minute ceiling the model's own
+book-keeping still closes. Exact residuals are in the test's own output, not
+quoted here, so they cannot rot.
+
+**His rate on this model's own stores** is the clearest form of it:
+
+| BMI | lung O2 at t=0 | lasts |
+|---|---|---|
+| 22.0 | 2440 mL | 81.3 min |
+| 34.5 | 1279 mL | 42.6 min |
+| 45.0 | 975 mL | **32.5 min** |
+
+An hour of apnoeic oxygenation is comfortable at BMI 22 and is **already
+over** at BMI 45.
+
+**RETRACTED 2026-09-27 — THE CO2 DEFECT IS OBSTRUCTED-ONLY, and the entry
+above originally said otherwise.** In an apnoeic lung nothing leaves, so
+alveolar CO2 output and the rise in PaCO2 are ONE quantity: 3.933 mL of CO2
+per mmHg in a 2804 mL alveolus. On a MATCHED WINDOW everything is comparable:
+
+| source | regime | mmHg/min | mL/min |
+|---|---|---|---|
+| Kaiser 2024, n=91, **read in full** | patent, 100% O2, 15 min | 2.10 | 8.3 |
+| Frumin via O'Loughlin, n=8 | patent, secondhand | 3.00 | 11.8 |
+| **this model at 15 min** | patent, 100% O2 | **2.62** | **10.3** |
+| Stock 1989, **read at source** | **obstructed**, 1-5 min | 3.40 | 13.4 |
+| **this model, obstructed 1-5 min** | **obstructed** | **2.00** | **7.9** |
+
+**The model matches the PATENT measurements and fails only the OBSTRUCTED
+one.** `test_validation.py` already bands the Kaiser rate 1.8-3.0 and the
+model passes. So the CO2 channel has no demonstrated defect in the regime
+apnoeic oxygenation actually happens in, and the Stock row remains what it
+always was: an obstructed-airway failure, KNOWN_OPEN since 2026-09-22. **Fixing the CO2 channel is what makes the oxygenated case
+terminate; a compensating term would break Stock further while appearing to
+help here.**
+
+**Three retractions, all this session's own errors, all recorded in commits.**
+A claimed NaN at 4 h was `stop_sao2` passed as a percentage (it takes a
+fraction) — the model is finite in every channel to 14400 s. A claimed
+Jones/Damia contradiction dissolved when Watson & Pride were read. And
+"Frumin is not in this repository" was asserted from memory and is **false**:
+`SOURCES.md` §2b has carried his page 789 since 2026-09-21. What is genuinely
+unheld is **pages 790-798**, and with them the pH 6.72, the PaCO2 250 and the
+53 minutes — none of which may be cited until they arrive.
+
+**One configuration fact from the held page, load-bearing for anyone modelling
+him:** denitrogenation was 100% oxygen for **at least 30 minutes at 8 L/min or
+more** through a cuffed tube. Frumin's unwashed low-V/Q fraction — lung whose
+airway shut before preoxygenation began and which never sees the oxygen —
+should therefore be set near **zero**, not at the 28% Reinius measured after a
+clinical preoxygenation. His 18-55 min is the **surgical window, not an
+endpoint**; nothing held says why any case ended.
+
+**Regenerated 2026-09-26.** CI: `parity` green, `page-freshness` green,
+`benchmarks` red by design. Locally `check_sources.py --check` ok,
+`build_page.py --check` up to date, `test_validation.py` **4 blocking / 2
+known-open, the same names**.
+
+**No number moved anywhere in this session's six commits, and that is
+measured rather than assumed.** `apnoea_core.py` gained comment only, so two
+full `handover_numbers.py` runs either side of it were diffed line for line:
+**959 lines, one difference — the provenance timestamp.** That is the
+verification the file exists to provide, and it is done.
+
+**So do NOT re-run `handover_numbers.py` first.** It takes over two hours, it
+did not finish in either attempt, and what it still has to offer is only the
+CURRENT DRIFT LIST — which values quoted in this document have rotted. Worth
+doing, not worth blocking on. Its new CO2 section **was** proven to execute:
+extract the section and stub `check()` if you need to test the tail of that
+file again without paying for the head. Both its checks pass at 21.40 and
+19.38 mL O2/min.
+
+**Queue, revised 2026-09-27 (ruling): the CO2 channel is dropped.** It was
+inserted on the "too slow" finding, and that finding is withdrawn — on a
+matched window the model sits inside the patent CO2 measurements (Kaiser 15
+min, banded 1.8-3.0, passes), so there is no demonstrated CO2 defect in the
+regime apnoeic oxygenation happens in. The ONLY remaining CO2 disagreement is
+the OBSTRUCTED Stock slope, and it stays exactly where it was — KNOWN_OPEN
+since 2026-09-22, not a queue item and not to be chased with a compensating
+term (which would break Stock further). The internal-consistency CO2
+mass-balance check added the same day (`test_co2_mass_balance`) is what now
+guards the channel's book-keeping. So the queue is: cardiac output (~25% low on
+three sources) → `shunt_cc_k` → V̇O2.
+
+**QUEUE AGAIN, 2026-09-29: THE CO2 CHANNEL IS BACK, AND IT IS THE HEAD OF THE
+QUEUE.** The 2026-09-27 ruling that dropped it rested on two grounds. The
+first — that on a matched 15-minute window the model sits inside the patent
+measurements — still holds. **The second does not.** That ruling said the decay
+beyond 15 minutes "is tested by NOTHING held". Frumin 1959 was read IN FULL on
+2026-09-29 and tests exactly it: apnoeas of 18-55 minutes, airway patent on an
+oxygen reservoir, PaCO2 rising at approximately **3 mmHg/min, range 2.7-4.9**.
+
+**The model gives 1.64 over 45 minutes — roughly half — and its rate DECAYS
+where Frumin's is sustained** (2.27 at 15 min, 1.64 by 45). PaCO2 reaches 114
+mmHg at 45 min against his 130-160 in five of eight subjects and an estimated
+250 in the one taken to 53 minutes. Arterial pH at 40 minutes is 7.09 against
+Table 2's 6.87 in subject 6, whose control pH of 7.36 sits fairly against this
+model's 7.40. Two benchmark rows now hold that, both ruled open.
+
+So the decay is a **demonstrated defect in a patent airway**, not an untested
+hole, and it is no longer only the obstructed Stock slope. **The warning from
+the eleventh entry stands and is now load-bearing: a compensating term must
+not be reached for, because it would break Stock further while appearing to
+help here.** Queue: **CO2 channel (the long-window decay)** → cardiac output's
+anaesthetised level → `shunt_cc_k` → V̇O2.
+
+**THE DECAY WAS SWEPT THE SAME DAY, AND IT IS NOT A PARAMETER PROBLEM.** Three
+constraints at once, because fixing one alone is not a fix (regenerated by
+`handover_numbers.py`):
+
+| change | Frumin 45 min | Kaiser 15 min | Stock 1-5 min obstructed |
+|---|---|---|---|
+| **target** | **2.7-4.9** | **1.8-3.0** | **3.4** |
+| baseline | 1.64 | 2.27 | 1.92 |
+| `v_tis_co2_fast` 22 → 11 | 2.15 | **3.31** | **3.38** |
+| `v_tis_co2_fast` 22 → 33 | 1.31 | 1.81 | 1.34 |
+| `v_tis_co2_slow` 140 → 70 / 280 / 35 | 1.73 / 1.60 / 1.88 | ~2.28 | 1.92 |
+| `k_co2_slow` 0.8 → 0.2 | 2.65 | 2.59 | 2.02 |
+| `k_co2_slow` 0.8 → 2.0 | 1.01 | 1.86 | 1.74 |
+| fast 11 **and** slow 35 | 2.71 | **3.40** | **3.39** |
+
+**Three things fall out of it.**
+
+**1. The hypothesis that the SLOW compartment drives the decay is REFUTED.**
+It was the obvious one — a 140 L store filling would flatten the rate — and it
+is wrong. Halving it, doubling it, or cutting it to a quarter moves the
+45-minute rate from 1.64 only to 1.73, 1.60 and 1.88. The slow store is nearly
+inert on this question.
+
+**2. FRUMIN AND STOCK ARE ONE DEFECT, and the lever that fixes them is already
+ruled wrong.** Halving the fast store moves Stock 1.92 → 3.38 against a
+measured 3.4, and Frumin 1.64 → 2.15 at the same time. That is the eleventh
+entry's guess — "the same defect seen from two ends" — confirmed
+quantitatively. But `apnoea_core.py`'s own parameter block already says
+halving the fast store hits Stock and that **it was the wrong lever**, because
+the real cause was three gas-exchange defects and retuning the store would
+have buried them. This sweep does not overturn that; it reproduces it
+independently, which is worth something on its own.
+
+**3. WHAT IS ACTUALLY IN CONFLICT IS TWO ERAS OF MEASUREMENT, NOT THE MODEL.**
+The parameter block states it plainly and Frumin now sharpens it: the stores
+are tuned to the MODERN rate of ~2.1 mmHg/min — Kaiser 2024 at 2.0-2.1,
+Toner 2.25, Gustafsson 1.8 — while the HISTORICAL series report 3.0-3.4:
+Frumin 1959 at 2.7-4.9, Stock 1989 obstructed at 3.4, Eger & Severinghaus at
+3.0. **No single store size satisfies both.** The sweep measures the width of
+that gap: at `v_tis_co2_fast` 22 the model sits with the modern cluster and
+fails Frumin; at 11 it sits with the historical cluster and fails Kaiser's
+band. **This is measurement against measurement, like the `k_rv_bmi` conflict,
+and it wants a ruling on which era the model is for — or a mechanism that
+distinguishes them.** Candidates for such a mechanism, none tested: Frumin's
+subjects were variously hyperventilated (one to PaCO2 24.5) or already
+acidotic, his 250 mmHg is estimated rather than measured, and Kaiser's cohort
+was capped at 15 minutes by protocol so it never sampled the late window at
+all.
+
+**Nothing was changed on the strength of this.** No parameter moved.
+
+**Queue, 2026-09-28: the cardiac-output item is HALF done.** Its
+*body-size law* is fixed — `co_anaes()` is re-keyed onto `bsa()`, cardiac
+output proportional to body surface area, on Madronio 2025 read at source —
+and the "~25% low on three sources" phrasing above is superseded: the level
+error is not uniform and the gradient was never reversed (see the retraction
+further down this file). **What is still open is the ANAESTHETISED LEVEL.**
+Awake is now right (5.64 against Madronio's 5.71); anaesthetised is still low
+against the two measurements that bear on it — Kaiser's 91 patients at a
+baseline median of 5.0 and Tokics at 5.70, against this model's 4.47 at 75 kg
+and 4.53 at 77 kg. The single remaining lever is `co_drop_frac`, at 0.25
+against Gunnarsson's 70-85%, and it was deliberately NOT moved in the same
+edit as the body-size law. So the queue is: **cardiac output — anaesthetised
+level only** → `shunt_cc_k` → V̇O2.
+
+## Current state — 2026-09-26 (tenth entry): closing capacity stops depending on BMI
+
+**Ruled and applied.** `closing_capacity()` is now Buist & Ross 1973 on a
+Quanjer 1993 TLC — `CC/TLC% = 0.525·age + 14.348` times
+`TLC = 7.99·height − 7.08` litres. `cc_at_20`, `cc_per_year` and `cc_per_bmi`,
+three values with no source anywhere, are gone. Jones & Nzekwu's TLC-vs-BMI
+correction (`cc_tlc_bmi`) was **ruled off**: it layers a second source on a
+first. The code is kept, defaulting False, so the choice stays costable.
+
+**Closing capacity is now independent of body mass.** That is the substance.
+The retired curve carried 45 mL per BMI unit, so obesity moved the lung towards
+closure from both ends at once — FRC down *and* closing capacity up. Nothing
+sourced supported the second half. Obesity now reaches closure by pulling FRC
+onto a fixed closing volume and by nothing else, which is what Milic-Emili and
+BJA Education both describe.
+
+| closing capacity, 1.75 m | retired | adopted |
+|---|---|---|
+| 45 y, BMI 22 | 2300 mL | **2621** |
+| 45 y, BMI 45 | 3200 mL | **2621** |
+| 25 y, BMI 45 | 2800 mL | **1896** |
+
+**The no-free-parameter test improves and nothing was fitted.** Age at which
+closing capacity overtakes awake FRC, published ~44 y:
+
+| | crossover |
+|---|---|
+| retired | 55.0 y |
+| **adopted** | **41.7 y** |
+| adopted, FRC age term restored | 40.9 y |
+
+13.0 years of error become 2.3. The FRC age term used to make this *worse*
+(55.0 → 59.9); on the adopted curve it makes it better. Recorded either way,
+compensated neither way.
+
+**It costs nothing in the suite.** Two full runs, 38 checks each: **both
+columns 34 pass, 2 fail, 2 worse — the same four, at the same values.** Only 13
+of 38 move at all.
+
+> **Regenerating this.** These are suite results, not `handover_numbers.py`
+> checks — a full run is 15–30 minutes, which is why `variant_cost.py` is kept
+> out of both the hook and `handover_numbers.py`. Three commands reproduce the
+> whole comparison from scratch:
+>
+> ```
+> python3 variant_cost.py cc_legacy > retired.out
+> python3 test_validation.py        > adopted.out
+> python3 variant_cost.py --diff retired.out adopted.out
+> ```
+>
+> The per-row figures below come out of that third command. Nothing here was
+> typed from memory, and nothing here needs a file that is not in the
+> repository. Two not to call clean: `tilt, BMI 35 at 30°` was already
+failing and gets 0.2 worse (50.8 → 51.0 against a range ending at 45), and
+`Stock obstructed, PaO2 at 5 min` now sits 2.1 mmHg above its floor having
+fallen 17.
+
+**Shunt cost:** Pelosi BMI 45 12.40 → 10.49%, Reinius 11.77 → 9.55%, Perilli
+12.53 → 9.11%, Heard 7.68 → 7.24%, lean BMI 22 3.48 → **3.88%**. Obese falls,
+lean rises; both directions were written down before the change.
+
+### Two regressions that are nobody's fault here, and two gates that cannot see them
+
+`Stock obstructed, 1-5 min slope` reads **1.9** against a `KNOWN_OPEN` baseline
+of **4.60**; `ICSM jet, PaCO2` reads **53.8** against **71.70**. Both are
+`[WORSE]` — the suite's most serious verdict.
+
+**They are not from this change, from the closing-capacity redesign, or from
+the Pelosi FRC adoption.** Measured directly on the configuration
+`handover_numbers.py` grades, all four combinations of the two retirement
+switches agree:
+
+| model | obstructed PaCO₂ slope | a-A gap growth |
+|---|---|---|
+| shipped | 1.94 mmHg/min | −0.13 |
+| retired closing capacity only | 1.95 | −0.11 |
+| legacy exponential FRC only | 1.94 | −0.12 |
+| **both — the 2026-09-22 model** | **1.96** | **−0.10** |
+
+`HANDOVER` records 4.60 and +2.13 for that same configuration.
+
+**And a bisect across the whole window came back negative, which is the larger
+finding.** Eight full suite runs in eight git worktrees — every commit that
+touches `apnoea_core.py` between the 22 September ruling and the oldest
+surviving suite output — all give 1.9–2.0 and 54.1, *including `4579c4e`
+itself, the commit whose ruling recorded those rows as 4.60 and 71.70*. Nothing
+in the window moved them, because they were already here. **Those two
+`KNOWN_OPEN` values have never been reproducible from the model they were
+supposedly measured from**, so the suite has been reporting `[WORSE]` since the
+day the baseline was written. `c12b22f`, the parent of that commit, is the last
+place the 4.60 could have come from.
+
+> **Regenerating this.** The four-switch table is in `handover_numbers.py`. The
+> bisect is not — it is a measurement across git history, not of the working
+> tree — so the procedure is recorded instead: `git worktree add --detach` each
+> commit from `git log --reverse 4579c4e..1288632 -- apnoea_core.py`, run
+> `test_validation.py` in each, and read the two rows. `test_validation.py` is
+> byte-identical across that whole window, which is what makes the comparison
+> clean.
+
+**Why two days passed without anyone noticing** — both gates are deaf, each for
+a reason that looked sound alone:
+
+- `.githooks/pre-commit` blocks on the suite's non-zero exit, but the suite
+  exits non-zero whenever *anything* blocks and four rows are ruled open. It
+  fires on every commit regardless, so every commit on this branch has been
+  `--no-verify`. A gate that always fires carries no information.
+- CI runs the suite with `continue-on-error: true`, discarding the exit code
+  that carries value drift, then grades **names only** — deliberately, so a
+  baseline number is not duplicated outside `KNOWN_OPEN`. It never reads the
+  `!!` lines in the output it was handed.
+
+Between them a ruled-open row can drift arbitrarily far and CI stays green.
+**Ruled 2026-09-26: leave CI as it is.**
+
+### Numbers in this file that had stopped reproducing
+
+Chased by measurement, not reasoning. Four shunt values recorded 2026-09-25 for
+a Buist CC on Quanjer's TLC (10.22/9.31/9.11/6.50) reproduce **exactly** under
+`frc_legacy_exp`, the exponential lung-volume form retired that same day.
+Overriding `closing_capacity()` by hand gives the shipped numbers to the last
+digit, so CC was never the mover. The Heard control desaturation recorded at
+307.60 s reproduces to 0.01 s under `frc_legacy_exp` + `cc_legacy` + the
+1-second inversion cadence; the cadence accounts for 0.4 s of the 36, the FRC
+form for the rest. Both are now pinned to the switches that reproduce them in
+`handover_numbers.py` rather than deleted.
+
+**`val_shipped.out` is mislabelled.** Its provenance reads 2026-09-25 13:02 —
+41 minutes *before* the Pelosi adoption commit at 13:43. The run called
+"shipped" is the pre-adoption model.
+
+### Three defects in the costing tool
+
+1. **`cc_tlc_bmi` is a dataclass field, not a plain class attribute**, so the
+   subclass trick `variant_cost.py` uses would have been discarded by the
+   generated `__init__` — the variant would have run, printed its banner, and
+   reported *the base model's numbers under the variant's name*, silently. This
+   trap produced two wrong comparisons the same day. `_variant_class()` now
+   re-declares such fields, re-applies the decorator, **and probes an instance
+   to prove the switch took**, aborting if it did not.
+2. `variant_cost.py --diff` tabulates suite runs side by side by disagreement.
+3. **That parser was wrong twice**, both caught only by counting its rows
+   against the file. It required a space-free unit, dropping 2 benchmarks
+   including the anaemia band; then it matched only `PASS|FAIL`, so it could
+   not see `[WORSE]` at all — **and a blocked suite was reported as clean.**
+
+## Current state — 2026-09-25 (ninth entry): the FRC adoption swept across BMI
+
+Four spot patients were measured when Pelosi's shape was adopted.
+`adoption_sweep.py` now sweeps it, and **the effect peaks in the middle, not at
+the obese end** — which four spot patients could not have shown.
+
+| BMI | legacy | adopted | change | |
+|---|---|---|---|---|
+| 24 | 369.4 s | 355.8 | −13.6 | −3.7% |
+| **28** | 284.4 | 261.4 | **−22.9** | −8.1% |
+| 32 | 222.2 | 200.0 | −22.2 | −10.0% |
+| **36** | 181.1 | 159.8 | −21.2 | **−11.7%** |
+| 40 | 149.0 | 133.2 | −15.8 | −10.6% |
+| 44 | 123.9 | 118.7 | −5.2 | −4.2% |
+| 48 | 107.2 | 107.2 | 0.0 | — |
+
+Time to SpO₂ 90%, obstructed airway after preoxygenation, 1.65 m, age 45.
+
+**Three peaks in three places**, and the difference is the finding:
+
+| | peaks at | |
+|---|---|---|
+| FRC removed | BMI 34 | 132 mL |
+| seconds lost | **BMI 28** | −22.9 s |
+| per cent lost | BMI 36 | −11.7% |
+
+**Nothing moves at either end, for two different reasons.** Below BMI 22 the
+two forms agree exactly by construction; above about BMI 48 both are already
+floored at residual volume. So the obese-but-not-extreme patient loses the most
+time, because the morbidly obese one is already floored and has little left to
+lose. **A model change judged only at the extremes would have looked inert.**
+
+
+## Current state — 2026-09-25 (eighth entry): Roy 1963 read — the last incomplete citation is closed
+
+**Roy SB, Bhatia ML, Mathur VS, Virmani S.** Hemodynamic effects of chronic
+severe anemia. *Circulation* 1963;28(3):346-356. **This was the last genuinely
+incomplete citation in the repository** — its author was recorded nowhere, and
+whether it was a paper or a meeting abstract was unknown, which mattered
+because `test_validation.py` labels it CLINICAL. **It is a full paper.** The
+label is honest.
+
+**Two of our three claims are confirmed verbatim** from the Summary: group B is
+Hb 4.0–6.5 mean 4.5, and its cardiac index is 6.3 L/min/m².
+
+**The third is not in the paper.** We record *"against a normal ~3.2"*. The
+paper gives its own normal — 65 healthy volunteers in the same laboratory,
+stated three times — as **2.5 to 5.0 L/min/m²**. The ratio depends entirely on
+which normal is used:
+
+| | |
+|---|---|
+| 6.3 / **3.2** (ours, source unknown) | **1.97×** |
+| 6.3 / 3.75 (the paper's midpoint) | **1.68×** |
+| 6.3 / 5.0 (its upper limit) | 1.26× |
+
+`test_validation.py` bands this at **1.7–2.3×** and we return 1.97×. **The
+paper's own midpoint gives 1.68×, below the band.** SOURCES.md already
+suspected this row grades the fit against the number the fit was made from —
+confirmed, and the number is not even the paper's. **Not changed; the band is a
+ruling.**
+
+**But Table 5 is a paired dataset and is far stronger than two group means** —
+25 patients with Hb and cardiac index before *and after* treatment, each his
+own control. Fitting `k` in `(7/hb)^k`:
+
+| `k` | at Hb 4.5 | against |
+|---|---|---|
+| 0.471 | 1.23× | each patient's own post-treatment CI |
+| 0.826 | 1.44× | the paper's normal midpoint |
+| 1.305 | 1.78× | the paper's normal lower limit |
+| **1.535** | **1.97×** | **ours** |
+
+**The paired estimate understates, and the paper says why**: mean cardiac index
+after treatment is 5.36, near the top of its own normal range, because
+*"patients who once become hyperkinetic may take a much longer time for the
+cardiovascular adjustment"*. So it is a floor, not an estimate. **Read
+together, the primary data bracket `hb_co_exp` from below rather than refuting
+it** — 1.535 sits at or just above the top of what the paper supports. What is
+not defensible is the 3.2.
+
+**And a population caveat that is larger than the parameter question.**
+*"Anemia was due to ankylostomiasis in 45 patients"* of 51 — chronic hookworm
+anaemia of at least four months. `hb_co_factor` is applied to **any** low
+haemoglobin in this model, **including acute blood loss**, where the
+circulation has had no months in which to adapt. **Nothing in this paper
+licenses that extension, and the model makes it silently.**
+
+**The registry earned itself on its first day.** Adding Roy to
+`sources_registry.py` regenerated README's table automatically; no second place
+had to be remembered.
+
+## Current state — 2026-09-25 (seventh entry): four rulings, and the model changed
+
+Ruled **"1 leave, 2 yes, 4 unavailable, 5 yes"**. The second of these is the
+first change to the shipped physics on this branch since the shunt re-key.
+
+**2. ADOPTED: anaesthetised FRC now carries Pelosi's measured shape.**
+`frc_anaes()` was `frc_awake()` minus an induction drop, with its BMI
+dependence coming entirely from an exponential fitted **without** the offset
+that every published regression of this quantity has. It now carries Pelosi's
+own measured curve as a **shape** — FRC(BMI)/FRC(22) — with the **level left
+ours**, exactly what the model already does with Quanjer's height term.
+**No new parameter.** `model.js` changed in the same commit and
+`airway_scenario.html` is rebuilt.
+
+Measured cost, from four full suite runs before the ruling:
+
+| | legacy | **adopted (C)** |
+|---|---|---|
+| blocking failures | 4 | **4, the same four names** |
+| Heard control [244–314 s] | 307.6 | **272.0** |
+| mean \|error\| vs Pelosi's measured FRC | 7.79% | **1.86%** |
+
+**Two things about the adoption that were not in the costed variant.**
+
+*The shape goes on `frc_anaes()`, not `frc_awake()`.* Pelosi measured the
+anaesthetised lung. Applying his shape to the awake volume and subtracting the
+induction drop afterwards over-steepens it, because the drop is absolute and so
+eats a growing fraction as the lung shrinks. **`frc_awake()` is unchanged**,
+and with it the expiratory reserve and `unwashed_fraction()`.
+
+*A guard was added.* Pelosi's regression is steeper than the form it replaces,
+so below about **BMI 17** it extrapolates the anaesthetised lung **above** the
+awake one — anaesthesia adding gas, which is impossible. The induction drop
+stays an upper bound. The two forms agree exactly at BMI 22 by construction, so
+the guard binds only below it and **cannot have moved the benchmarks**: the
+leanest patient in `test_validation.py` is BMI 22.86.
+
+**And the adoption has a cost the cost table could not see.** Re-deriving the
+Pelosi inversion against the adopted model afterwards: the **inversion itself
+did not move at all** (it is a shunt equation at fixed alveolar PO₂ over two
+seconds, so it barely depends on FRC), which means the cardiac-output finding
+survives unchanged. But `shunt_base_eff()` reads closure against `frc_anaes()`,
+so the lower anaesthetised FRC **raises the shunt** by up to 0.89 pp between
+BMI 30 and 42 — nothing at 22 where the forms agree exactly, nothing at 50
+where both are floored at RV. `shunt_anat` and `shunt_cc_k` were fitted against
+the *old* `frc_anaes`, so **the law has moved away from the curve it was fitted
+to: worst residual 0.25 → 1.01 pp, fourfold.** No benchmark row reads that
+residual, which is why four full suite runs did not show it. **Not refitted** —
+that would be tuning to a curve, through a cardiac output already known to have
+the wrong gradient.
+
+**Verified after the fact:** `test_validation.py` on the adopted model gives
+**4 blocking, the same four names**, with every key row matching the costed
+variant exactly (Toner 439.3, Heard 272.0, tilt 28.0 / 50.6 / 38.4). The guard
+moved nothing, as predicted. `test_parity.py` passes, 0 failures.
+
+**1. RULED: FRC stays age-flat.** Quanjer's `0.009·age` term remains
+unimplemented, and that is now a decision rather than an omission. Gutierrez
+2004 — a second reference set, 300 men, read at source — has **no age term at
+all** in its men's FRC equation, and implementing Quanjer's moves the CC = FRC
+crossover *further* from the published ~44. The caveat is kept: Gutierrez's FRC
+model is weak (r² = 0.17), and a term can be absent because it is small *or*
+because the data cannot see it. **The two reference sets genuinely disagree and
+this ruling picks one.**
+
+**4. Watson & Pride 2005 is unavailable.** It stays on the wanted list because
+the question it would answer stays open — and that question is now *sharper*
+than when it was added, not vaguer. Gutierrez let Jones be converted to
+millilitres, and the model is thereby found to claim that lying flat costs a
+lean patient **30%** of FRC and a BMI 50 patient **63%**. ~~That number is now
+untestable with what is held~~ — **STRUCK 2026-09-26, Damia 1988 tested it and
+it is wrong; see the eleventh entry.** What this paper would still do is break
+the Jones/Damia tie, which is now the load-bearing uncertainty. It was the model's largest
+unverified structural claim about position.
+
+**5. ADOPTED: the read-status of every source is generated, not written.**
+Five claims about what had been read were found wrong today across four
+documents. The cause is structural — *the same fact was written in four places
+with no link between them*, and prose does not fail a test when it drifts.
+`sources_registry.py` now holds it once; `check_sources.py` regenerates
+README's table from it and runs `--check` in the pre-commit hook, which is
+where an invariant *between documents* belongs.
+
+**Fixing it caught four more wrong rows.** README told a sponsor that Toner
+2019, Heard 2017, O'Loughlin 2020 and Kaiser 2024 were unread. **All four had
+been read**, and its summary said *"six of these eight have not been read"*
+when **six of the eight had been**. That is the most consequential document
+error found today: it is sponsor-facing, and it understated the project's
+evidential base by the width of the table.
+
+## Current state — 2026-09-25 (sixth entry): Gutierrez read; Jones is now a level
+
+**Gutierrez 2004 was obtained and read at source** — the reference set every
+per cent in Jones & Nzekwu is a per cent *of*, and the one paper that could
+turn Jones from a shape into a level. It did that, and three other things.
+
+**1. It corroborates Quanjer's level to 0.2%.** For a 1.75 m, 45-year-old man
+Quanjer predicts an FRC of 3410 mL and Gutierrez 3417 mL — two reference sets
+built two decades and an ocean apart, on the quantity this model's height term
+*is*. The strongest check the FRC level has had.
+
+**2. And they flatly disagree about age, which bears on an open ruling.**
+Quanjer's men's FRC carries +0.009·age and rises **14.1%** across 20–70.
+**Gutierrez's has no age term at all.** The model is currently age-flat because
+Quanjer's term was never implemented, and that has sat recorded as a defect
+awaiting a ruling — **a second reference set now says age-flat is right for
+men.** With implementation moving the CC = FRC crossover 55.0 → 59.9 years,
+*further* from the published ~44, there is now a positive case for leaving it
+out rather than an unfixed omission. Caveat kept: Gutierrez's FRC model is weak
+(r² = 0.17), and a term can be absent because it is small *or* because the data
+cannot see it. **Still a ruling.**
+
+**3. Jones in millilitres — and the model's posture claim becomes a number.**
+
+| BMI | Jones, mL (seated awake) | ours, mL (supine awake) | implied supine/seated |
+|---|---|---|---|
+| 22 | 3585 | 2500 | **0.697** |
+| 30 | 2857 | 1791 | 0.627 |
+| 40 | 2368 | 1180 | 0.498 |
+| 50 | 2125 | 778 | **0.366** |
+
+The model says lying flat costs a lean patient **30%** of FRC and a BMI 50
+patient **63%**. The direction is right; the size at the obese end is a strong
+claim **nothing in this repository tests**. Watson & Pride 2005 is exactly that
+measurement and is on the wanted list. Jones gives no cohort height or age, so
+the *level* of this ratio moves with the geometry chosen (0.77 to 0.66 at BMI
+22 across 1.60–1.85 m) — but its **fall is ×0.525 at every height**, so the
+claim that the posture cost nearly doubles does not depend on that choice.
+
+**4. And one number that was hiding in a constant.** Our `rv` is documented
+ANAESTHETISED SUPINE and sits at **55%** of Gutierrez's seated-awake
+prediction. So the model **already embodies a 45% seated-to-anaesthetised fall
+in residual volume** at the lean end. The `k_rv_bmi` retraction earlier today
+said that step was one the model *"does not represent at all"*. **It does
+represent it; it just cannot vary it** — which is a smaller and more precise
+gap than the one recorded this morning.
+
+**What it does not settle.** Its TLC is 7132 mL at 1.75 m against Quanjer's
+6902, so the crossover-implied 6676 is now below *both* and the TLC gap
+**widens** slightly rather than closing. And its own population is not obese
+(median BMI 25.2 men, 23.6 women), so its remark that "BMI was not predictive"
+speaks to the normal-weight spread, not to obesity.
+
+### A fourth retraction, and it is the same error twice in one day
+
+This morning I "corrected" the Gutierrez entry by **striking its issue
+number**, `11(6)`, on the grounds that Jones's reference list gives no issue.
+**The paper's own self-citation block reads `Can Respir J 2004;11(6):414-424`
+and every page footer reads `Vol 11 No 6`.** The `(6)` was right, and I removed
+it because one source did not repeat it — *reasoning from what a document does
+not say*, in the act of correcting an earlier instance of exactly that. Jones's
+reference list prints no issue number for **any** of its 35 references, so
+absence there was never evidence. The nine-author list is now the paper's own.
+
+## Current state — 2026-09-25 (fifth entry): three rulings, and three of my own claims retracted
+
+Ruled **"6 y 7 y 8 y"** on three standing offers. All three are done. Along the
+way three things this file or `SOURCES.md` asserted turned out to be wrong, and
+each is retracted rather than quietly amended.
+
+**8. The PR is out of draft.**
+
+**7. Roughly half the shunt's BMI dependence is a cardiac-output artefact.**
+`shunt_base_eff` was fitted by inverting Pelosi's measured oxygenation *through
+this model*, so it inherited our cardiac output — the one Tokics showed has the
+wrong **gradient**. Re-inverted through corrected ones:
+
+| inverted through | BMI 22 | BMI 50 | factor |
+|---|---|---|---|
+| our shipped cardiac output | 3.47% | 14.12% | **×4.07** |
+| a power-law CO through Tokics + Perilli | 6.31% | 11.40% | **×1.81** |
+| a flat CO at 5.30 L/min | 5.44% | 12.46% | **×2.29** |
+
+Both corrections roughly **halve** it, despite assuming different things. Our
+law's worst residual is 0.25 pp against the inversion **it was fitted to** and
+**2.84 pp** against a corrected one — worse than the 0.49 pp the re-key was
+judged on. The cardiac output is **upstream** of the shunt law, so refitting
+the shunt while it is wrong is fitting *around* the error. Caveats are recorded
+with it: the −0.3155 exponent is two points from two studies, published by
+nobody, extrapolating below both anchors at the lean end. **A sensitivity
+probe, not a parameter. Nothing was changed.**
+
+**6. The offset form is implemented behind two switches and costed.** Four full
+suite runs, regenerable with `variant_cost.py`:
+
+| | shipped | **B** asymptote at RV | **C** Pelosi shape | **D** Jones RV |
+|---|---|---|---|---|
+| blocking failures | **4** | **5** | **4** | **5** |
+| Heard control [244–314 s] | 307.6 PASS | **369.9 FAIL** | **272.0 PASS** | 307.6 PASS |
+| tilt, BMI 44 at 25° [15–40%] | 35.9 PASS | 28.5 PASS | 38.4 PASS | **9.9 FAIL** |
+| mean \|error\| vs Pelosi's FRC | 7.79% | 38.28% | **1.86%** | 23.50% |
+
+**C costs nothing and buys a great deal** — same four blocking rows by the same
+four names, fourfold better agreement with Pelosi, and Heard's obese control
+moves from the top of its band to the middle. It introduces **no parameter**:
+it carries Pelosi's own measured FRC(BMI)/FRC(22) as a shape with the level
+left ours, exactly what the model already does with Quanjer's height term.
+**Not adopted** — adopting it means changing `model.js` in the same commit.
+
+**B breaks the very measurement that motivated it**, because the offset and the
+exponent are not independent: `k_frc_bmi` = 0.0417 was calibrated with no
+offset, so bolting an asymptote underneath can only inflate the obese lung.
+**D destroys the obese tilt response** (35.9% → 9.9%): with Jones's RV the
+obese lung is pinned at its floor, and tilt works by *raising* FRC, so there is
+nothing left to lift.
+
+### Three retractions
+
+**The `k_rv_bmi` conflict I recorded in the fourth entry was overstated.**
+Jones's RV slope puts residual volume **above** Pelosi's *measured*
+anaesthetised FRC from **BMI 33.6** up — an expiratory reserve of −251 mL at
+BMI 45, which is impossible. `rv` is documented "ANAESTHETISED SUPINE"; Jones
+measured **seated awake**. Not the same quantity. What survives: Reinius's
+single CT point is still the only anchor for the supine anaesthetised slope,
+and the seated-to-anaesthetised fall in RV — **a step this model does not
+represent at all** — must be large in the obese.
+
+**"Heard is already too slow at 319.8 s" was wrong twice over**, and I repeated
+it in four files and several commit messages. 319.8 is the *before* value of a
+change made on 2026-09-23; the current shipped figure is **307.6 s and it
+PASSES**. The direction of the argument survives — variant B slows it to 369.9
+and it fails — but it was not already failing.
+
+**"Four citations cannot be ordered" was wrong on all four counts.** Flin's
+title is in `editorial.md`; Byun's author and title are in §2a of `SOURCES.md`;
+Kaiser's author is here in `HANDOVER.md` and **the paper was read on
+2026-09-22**; Varat's author is in §2a. I asserted all four from one list
+without grepping the repository — *reasoning from what a document does not
+say*, the move CLAUDE.md forbids by name. It also **concealed the one citation
+that really is incomplete**: *Circulation* 1963;28:346, author unrecorded, from
+which `hb_co_exp` = 1.535 is derived.
+
+## Current state — 2026-09-25 (fourth entry): Jones & Nzekwu read; the obese deficit moves again
+
+**Jones RL, Nzekwu MMU, *Chest* 2006;130(3):827–833 was obtained and read at
+source.** SOURCES.md has called it *"the decisive paper"* for FRC-against-BMI
+since the obese deficit was traced out of closing capacity. 373 patients,
+BMI 20–57, **seated and awake**, body plethysmography. Figure 4 gives
+FRC(%pred) = 231.9·exp(−0.070·BMI) + 55.2 and ERV(%pred) = 587.8·exp(−0.083·BMI)
++ 6.5.
+
+**It was read off a page image, so it was checked before anything was built on
+it:** six values from the paper's own prose and four Table 1 group means all
+reproduce from those two equations, worst gap 0.74 %pred.
+
+**A limit on it:** his percentages are of *Gutierrez 2004* predicted values,
+not Quanjer's. That reference set is not held here, so **his percentages cannot
+be converted to millilitres in this repository** — everything taken from him is
+a ratio or a slope.
+
+**1. `k_frc_bmi` now has a bracket, and above BMI 37 we fall out of it.**
+Jones is seated awake, Pelosi supine anaesthetised, and Jones states Pelosi's
+effect is the larger — so they should bracket a supine awake lung, which is
+what `frc_awake()` (resting lung volume, awake, lying flat) is. Per cent of FRC
+lost per BMI unit:
+
+| BMI | Jones, seated awake | **ours** | Pelosi, supine anaesthetised |
+|---|---|---|---|
+| 22 | 3.32 | **4.17** | 7.29 |
+| 30 | 2.38 | **4.17** | 5.70 |
+| 40 | 1.42 | **4.17** | 3.44 |
+| 45 | 1.07 | **4.17** | 2.47 |
+
+We leave the bracket at **BMI 36.70**, and the reason is structural: **both
+measured curves carry a non-zero offset** (Jones +55.2 %pred, Pelosi +460 mL)
+and decay to a floor, because squeezing a chest with body mass cannot drive the
+lung to nothing. **Ours decays to zero** and is caught by the hard `rv_eff()`
+clamp instead. Two independent regressions of the quantity have the offset; we
+have none.
+
+**This is not a claim that our obese FRC values are wrong** — they agree with
+Pelosi's helium to 11% across BMI 22–50. It is that **above BMI ~37 that
+agreement is carried by the residual-volume floor, not by the BMI term.**
+
+**2. So the deficit moves to `k_rv_bmi`, which had exactly one measurement
+behind it — and Jones is a second that disagrees.**
+
+| | per cent of RV lost per BMI unit | fall over BMI 22.5 → 37.5 |
+|---|---|---|
+| Jones, n = 373, plethysmography | 0.63 | 7.9% |
+| **ours** (Reinius CT, one point) | **1.98** | **26.4%** |
+
+Ours is **3.14× steeper**. This is **measurement against measurement** and it
+is *not* resolved. Plethysmography counts gas behind closed airways and CT
+counts aerated lung, so Jones should read higher in an obese chest — the
+direction of the gap; he is seated awake and Reinius supine anaesthetised; and
+his RV is derived as TLC − VC, not measured.
+
+**The cost of "correcting" it is large.** A lower `k_rv_bmi` raises obese RV,
+raising the floor `frc_anaes()` clamps to: at Pelosi's geometry a BMI 45
+patient's anaesthetised FRC rises **+32.4%** and a BMI 50 patient's **+45.9%**.
+More starting oxygen, less closure, **slower** desaturation — and Heard's obese
+control is already near the top of its band. **CORRECTED 2026-09-25:** this
+read "already too slow at 319.8 s", which was wrong twice over — 319.8 is the
+*before* value of a change made on 2026-09-23, and the current shipped figure
+is **307.6 s, which PASSES** inside 244–314. The direction of the argument
+survives (variant B slows it to 369.9 s and it FAILS), but it is not already
+failing. Recorded as
+information; **not** compensated elsewhere.
+
+**3. The ERV agreement we had was a compensating pair.** Our expiratory reserve
+volume is derived (`frc_awake − rv_eff`) and never fitted, so Jones's measured
+ERV is a free test. Mean absolute error against him over BMI 25–45: **3.62
+points as shipped, 7.21 with RV alone corrected** — twice as bad, and at BMI 45
+it drives our ERV to 0.4% of its lean value. The agreement comes from an FRC
+falling too fast and an RV falling too fast, subtracting. **The two cannot be
+fixed one at a time**; both want the same missing asymptote.
+
+**4. It bears on the open Buist & Ross ruling.** That ruling computes closing
+capacity as a percentage of a **Quanjer TLC, which has no weight term**. Jones
+measures TLC falling 0.50 %pred per BMI unit, so Quanjer overestimates the
+obese lung by **+5.3% at BMI 30, +11.2% at 40, +14.4% at 45** — and closing
+capacity with it. This does not sink the route; it quantifies a correctable
+bias in it. But the earlier costing (Perilli 12.53 → 9.11%) used the
+uncorrected TLC and therefore **overstates** how far the obese shunt would fall.
+
+**5. And it softens the cost recorded against the male ruling.** Jones reports
+**no significant difference between men and women in the best-fit regressions**
+for the effect of BMI on TLC, VC, RV, FRC, ERV or DLCO — which is why he pooled
+them. So the BMI *term* does not need a sex; only the base volume does. The
+female-majority worry falls on Quanjer's **level**, not on `k_frc_bmi`'s
+**slope**.
+
+**And one document error caught in passing.** SOURCES.md §3 still listed the
+FRC regression as *"the largest uncited lever in the model — no author, journal
+or year anywhere"*. Quanjer was read at source **the day before** and the code
+comment was updated; that table was not. Corrected, with the three real
+remaining departures (age term unimplemented, seated-vs-supine level, range
+unguarded) separated from the citation question they had been conflated with.
+It is exactly the rot CLAUDE.md warns of: prose in a markdown table. The
+Quanjer numbers that went into `handover_numbers.py` could not drift that way,
+and did not.
+
+**Nothing was changed in the model.** `apnoea_core.py` is comments only.
+
+## Current state — 2026-09-25 (third entry): two rulings taken
+
+**RULED: this is a male model.** Quanjer's men's FRC and TLC equations are used
+for every patient, deliberately, and a woman is modelled as a man of the same
+height and age. **The cost is now recorded rather than implied:** over
+1.55–1.75 m at age 45 his women's equations give FRC at 0.856–0.870 of the male
+value (~14% less) and TLC at 0.834–0.837 (~16% less), and the age term differs
+ninefold — 0.001 against 0.009 — so a woman's FRC is nearly age-flat where a
+man's is not.
+
+**Who this misses, stated plainly:** Tokics' cohort was 3 women of 10;
+**Pelosi's was seven women to one man per group** — and Pelosi is the curve
+`shunt_base_eff` is fitted to. A male model is being fitted through
+female-majority data. That is a ruled limitation, not a hidden one.
+
+**RULED: the page sentence is fixed, closing an open release item.**
+`airway_scenario.html` told the recipient that "closing capacity and the
+FRC–BMI relation are parameterised, not fitted to source data". Quanjer settled
+which side of that contradiction was wrong. The footer now separates the three
+claims it conflated — Quanjer's height and age basis read at source, a BMI term
+that agrees with but was not fitted to Pelosi's helium regression, and closing
+capacity values that disagree with their own source — and tells the recipient
+the model is male.
+
+**Still open, both answered "idk":** whether to implement Buist & Ross on
+Quanjer's TLC, and whether to implement Quanjer's FRC age term / guard his
+stated range. Neither has been touched.
+
+## Current state — 2026-09-25 (second entry)
+
+**Tokics 1996 was read at source.** The full author list is now a repository
+record — Tokics L, Hedenstierna G, Svensson L, Brismar B, Cederlund T,
+Lundquist H, Strandberg A, *J Appl Physiol* 1996;81(4):1822-1833 — where this
+repository had only "Tokics L, et al." and an author list supplied from memory
+had already been retracted once.
+
+**1. The cohort BMI, which SOURCES.md said was recorded nowhere.** Table 1 gives
+every height and weight: **mean BMI 25.20** (SD 2.79), **range 20.7–29.3**, mean
+1.756 m / 77.4 kg / 48.7 y, 3 women and 7 men. **Not one patient is obese.** So
+this is a normal-weight anchor and cannot speak to the obese end — which is part
+of what it has been used for.
+
+**2. THE 1.3 IS A STANDARD ERROR.** Table 3's footnote, verbatim: *"Values are
+means ± SE; n = 10."* The SD is 1.3 × √10 = **4.11**. **Every "in SD of Tokics
+5.0 (1.3)" this repository computed used a band 3.16× too narrow.** Our lean
+shunt is −0.34 SD from his mean, not −1.07. Corrected in SOURCES.md and
+`handover_numbers.py`.
+
+**3. The cardiac output finding, and it is the important one.**
+
+| | ours | measured | |
+|---|---|---|---|
+| Tokics lean, 77 kg | **4.04** | 5.7 | **−29%** |
+| Perilli obese, 125 kg | **5.78** | 4.9 | **+18%** |
+| change across the span | **+43%** | **−14%** | |
+
+**~~The sign of the gradient is wrong.~~** `co_anaes` scales on weight^0.75, so we
+rise 43% where the measurements fall 14%. This reframes a standing caveat: "our
+cardiac output is ~18% high" is **not an offset** — at the lean end we are 29%
+*low*. It matters beyond the row, because via Dantzker 1980 cardiac output is
+itself a shunt-reduction mechanism and **every shunt this repository inverted
+was inverted through this cardiac output.** Neither paper reports haemoglobin,
+so `hb 14` is ours in both; the cohorts differ by 12 years.
+
+> **RETRACTED 2026-09-28 — THE GRADIENT'S SIGN WAS NEVER WRONG, AND THIS ROW
+> IS WHY TWO CONFOUNDED POINTS SHOULD NOT HAVE BEEN DRAWN THROUGH.** Madronio
+> 2025 (*Heart Lung Circ* 34:1109-18, cardiac MRI, n=57, read at source)
+> measures cardiac output **rising** with body size, and rising in the way the
+> model already had it: 5.71 L/min at BSA 1.84 against 7.69 at BSA 2.45.
+> Tokics → Perilli was a comparison **between two studies** twelve years and
+> two cohorts apart, with Perilli's 4.9 a reduced phase-4 supine reading — the
+> "fall" was the confound, not a reversal. The −29% at the lean end stands;
+> the **+43% vs −14% span reversal does not**, and neither does anything built
+> on it.
+>
+> **What was actually wrong is the EXPONENT.** Madronio's cardiac *index* is
+> flat across body size — 3.103 vs 3.139 L/min/m², 1.16% apart — so cardiac
+> output is **proportional to body surface area**. weight^0.75 is too steep;
+> the model's implied cardiac index climbed 16% across the same span. Fixed
+> 2026-09-28 by re-keying `co_anaes()` onto a new `bsa()` (Mosteller, chosen
+> because Du Bois under-reads the obese body by 6.7% against Madronio's own
+> figures). See the entry at the head of this file.
+
+22 new checks, all passing. No model code changed.
+
+## Current state — 2026-09-25
+
+**Quanjer 1993 was read at source and it settled two things at once.** The PDF
+was uploaded to the session.
+
+**Quanjer PH, Tammeling GJ, Cotes JE, Pedersen OF, Peslin R, Yernault J-C.**
+Lung volumes and forced ventilatory flows. ECSC / official statement of the
+ERS. *Eur Respir J* 1993;6 Suppl 16:5-40. PMID 8499054. Table 6, p.26 — H is
+standing height in metres, A age in years, volumes in litres:
+
+| | Men | Women |
+|---|---|---|
+| **FRC** | **2.34H + 0.009A − 1.09** (RSD 0.6) | 2.24H + 0.001A − 1.00 |
+| **TLC** | **7.99H − 7.08** (RSD 0.70) | 6.60H − 5.79 |
+
+**1. The largest uncited lever in the model is now cited.** `apnoea_core.py`
+carried that men's FRC line with no author, journal or year since the
+2026-09-21 audit flagged it. It is Quanjer, coefficient for coefficient.
+
+Three things follow, none of them comfortable: it is the **men's** equation and
+this model has no sex (women's age term is 0.001 against men's 0.009); Quanjer
+measures **seated** while `frc_ref` is supine, so the model takes his *shape*
+and sets its own *level* (3410 mL seated vs our 2500 supine, ratio 0.733, not
+itself sourced); and the **age term is still not implemented** — restoring it
+moves the crossover 55.0 → 59.9 years, *further* from the literature's ~44.
+
+It also **closes an open release item**: `airway_scenario.html` says the FRC–BMI
+relation is "parameterised, not fitted to source data" and the code said
+"anchored to the standing predicted-FRC regression". The code was right; the
+page is wrong.
+
+**2. The TLC that blocked Buist & Ross now exists, and it has no age term** —
+confirming from a primary source what SOURCES.md had only reasoned to.
+
+**3. And the crossover test predicted it before the paper was read.** Inverting
+the published 44-year supine CC=FRC crossover gave **6676 mL** at 1.75 m;
+Quanjer measures **6902 mL**. They agree to **3.3%** — on a quantity the model
+did not contain, from a paper nobody here had read. The strongest independent
+check the closing-capacity block has ever had.
+
+**What it would cost. APPLIED 2026-09-26 on a ruling — see the tenth entry at
+the top of this file.** A Buist CC on Quanjer's own TLC drops every obese shunt.
+The four values recorded here on the day — Perilli **9.11%**, Reinius
+**9.31%**, Pelosi BMI 45 **10.22%**, Heard **6.50%** — were measured on the
+exponential FRC form retired hours earlier, and the shipped model gives 9.11 /
+9.55 / 10.49 / 7.24. Both sets are now pinned in `handover_numbers.py`, the old
+ones to `frc_legacy_exp`. `cc_at_20`, `cc_per_year` and `cc_per_bmi` are gone.
+
+**The range we leave:** Table 6 applies to ages 18–70 and heights 1.55–1.95 m in
+men; the model guards neither.
+
+15 new checks in `handover_numbers.py`, all passing; total failures unchanged at
+166.
+
+## Current state — 2026-09-24
+
+Work on branch `claude/obese-shunt`. The section below dated 2026-09-22 is the
+previous state and is kept as the record.
+
+**The baseline shunt is no longer keyed on BMI.** `shunt_base_eff()` — the
+shunt a patient already has when the apnoea starts — now reads lung volume
+against closing capacity, `x = (cc − frc_anaes)/frc_anaes`, through a shared
+`closure_x()` helper that the runtime collapse term and the unwashed low-V/Q
+fraction also use. Two fitted parameters where the previous quadratic in BMI
+had three; `shunt_floor` retired as unreachable. Full reasoning, the fit, the
+anchors and the costs are in **SOURCES.md, "The shunt re-keyed off BMI"**.
+
+**What it fixed.** Perilli 2003 measures oxygenation *improving* with head-up
+tilt, PaO₂ +33 mmHg, despite cardiac output falling. The BMI-keyed model gave
+**−11.8** — the wrong sign. It now gives **+17.3**, and **+36.2** if the
+cardiac-output term is removed, against that measured +33. Perilli was never in
+the fit.
+
+**What it cost.** It fits Pelosi worse: worst residual **0.49** percentage
+points against **0.27**. Reinius loses a near-exact hit (PaO₂/FiO₂ 251.7 →
+261.6 against a measured 252, still inside his groups' 225–266). Valenza
+improves (−0.11 → +0.11 SD). Recorded, not compensated.
+
+**Benchmarks unchanged: 4 blocking, same four names.** Nine of thirty-four rows
+moved, none changed tag. `test_parity.py` passes.
+
+### Is desaturation robust? Asked 2026-09-25, and it splits in two
+
+**Time-to-threshold: yes.** Timestep `dt` 0.05 against a half-step reference
+differs by **0.03–0.05%**. Compartment count `n_vq` 20 → 320 moves obese
+desaturation by **0.05 s, 0.016%** — the first time compartment convergence has
+been checked on desaturation rather than on the CO₂ slope. It is live for CO₂
+and inert for desaturation timing; both are now measured.
+
+**Rate of change of SaO₂: no, and the reason is a defect.**
+`apnoea_core.py` inverts the blood gas — the source of SaO₂, PaO₂, PaCO₂ *and*
+pH — **once per simulated second**, holding the last value in between whatever
+`dt` is. SaO₂ is therefore a staircase:
+
+| `dt` | apparent steepest fall | drop in the one non-flat step | steps exactly flat |
+|---|---|---|---|
+| 0.100 | −5.46 %/s | −0.546% | 0.900 |
+| 0.050 | −10.89 %/s | −0.544% | 0.950 |
+| 0.025 | −21.74 %/s | −0.544% | 0.975 |
+
+The apparent rate **doubles as `dt` halves**, the drop per step is constant, and
+the flat fraction is exactly `1 − dt` — so precisely one step per second is
+non-flat. On a patched copy inverting every step the **true** steepest fall is
+**0.544 %/s** with no step over 1 %/s: the shipped model overstates the peak
+rate **twentyfold** at `dt` 0.05.
+
+**It does not poison the benchmarks.** SpO₂ is an exponential filter over the
+staircase, so the probe reading is smooth. Time to SpO₂ < 90% is 326.25 s
+patched against 326.7 shipped — 0.45 s, 0.14% — and every benchmark reads SpO₂.
+What *is* affected: any rate read off SaO₂, the instant a given true saturation
+is reached (good to ~1 s), and PaO₂/PaCO₂/pH from the same cached tuple.
+Whether that bears on the backward-PaCO₂-step diagnostic is **not tested**.
+
+**The fix is not free:** every-step inversion costs **2.5×** runtime (22 s → 55 s
+for 600 s of apnoea), taking CI's benchmark job from ~15 to nearer 40 minutes.
+A finer grid or interpolation would buy most of it for less. **Needs a ruling.**
+
+### And the dominant uncertainty is not the shunt
+
+±10% on each lever, change in obese time to SpO₂ 90% (baseline 326.7 s):
+
+| lever | worst change |
+|---|---|
+| `vo2_ref` — oxygen consumption | **11.8%** |
+| `frc_ref` — **the uncited regression** | **11.8%** |
+| `k_frc_bmi` — also uncited | 6.4% |
+| `shunt_anat` — this branch's work | **0.06%** |
+| all closing-capacity terms | ≤ 0.9% |
+
+**Two levers carry desaturation and one of them has no author, journal or year
+in this repository.** `frc_ref` is the regression `apnoea_core.py` labels the
+largest uncited lever, and Quanjer/ECSC 1993 would source it — the same paper
+that would unblock closing capacity.
+
+**The shunt barely touches timing.** This branch changed *oxygenation* — the
+PaO₂ a patient starts from — and hardly moved how long they last. Both are
+true; they are different questions, and the benchmark set mixes them.
+
+### Two things this opened, neither of them done
+
+**1. The same closure is counted twice.** `closed_target` applies the same law
+to the same quantity at the current lung volume and grows `collapsed` from
+**zero**, so the closure already present at induction — which is what the
+baseline shunt *is* — is added again as the apnoea runs. At BMI 45 that is a
+12.09% baseline plus a collapse term climbing to 17.72%. The overlap is older
+than today; what changed is that both terms are now the same law of the same
+quantity, so it is finally legible. The coherent fix is one law with
+`collapsed` initialised to its induction value, which changes the collapse
+kinetics and every benchmark. **Needs a ruling.**
+
+**2. `closing_capacity()` became load-bearing** — and chasing it on
+2026-09-24 produced a correction to the line above. It first read "none of them
+is sourced… the largest unsourced dependency in the model". **That was wrong.**
+Buist & Ross 1973 was read at source on 2026-09-23 and gives
+`CC/TLC (%) = 0.525·age + 14.348`. `cc_at_20`, `cc_per_year` and `cc_per_bmi`
+are unsourced **values** that disagree with a source we hold — a smaller
+problem than an unsourced quantity.
+
+**What actually blocks the fix:** Buist gives CC as a percentage of **TLC**,
+and this model has no TLC. That is the whole of the remaining work.
+
+**Three things the chase established, all regenerated by
+`handover_numbers.py`:**
+
+- **The crossover number in SOURCES.md had rotted.** It recorded ours at 50.6
+  years against a literature ~44. It reproduces at neither reading: **55.0**
+  against awake FRC, 35.0 against anaesthetised. Our disagreement is *wider*
+  than the document claimed.
+- **Our FRC is age-flat**, because `height_factor()` quotes a regression with
+  an age term and drops it. Restoring it moves the crossover **55.0 → 59.9**,
+  i.e. *further* from 44 — so the error is not all in closing capacity.
+  Recorded, not compensated.
+- **The crossover pins the TLC.** Inverting the published 44-year target gives
+  **6676 mL** at 1.75 m, and **6658 mL** with the FRC age term restored — 0.3%
+  apart, so it does not depend on that open question. Buist & Ross and the
+  crossover test are consistent with each other; our regression is consistent
+  with neither. At that TLC the obese shunt *falls* (Perilli 12.53 → 10.31%).
+
+**Not applied.** 6.7 L is what the crossover implies, not a value read from
+anywhere. The TLC source — Quanjer/ECSC 1993 — could not be read: this
+environment's network policy refuses every primary host. It is now the
+highest-value paper on the wanted list, because it would probably also identify
+the uncited FRC regression that is the model's largest uncited lever.
+
+### Still true from before
+
+`handover_numbers.py` has **166** checks failing across about twenty blocks,
+down from 192 immediately after the re-key: the 26 closed are exactly the rows
+this change touched — Pelosi, Perilli, Reinius, Valenza, Gander — which were
+rewritten with it and now pass.
+
+**The remaining 166 were deliberately not re-baselined.** They are drifted
+values sitting under prose that has to be read before the number is trusted,
+which is how ten reversed conclusions were caught on this branch. Some of them
+will have *moved* with this change, because the lean baseline shunt fell
+3.71% → 3.61%; none of them started failing because of it, as far as the check
+below reaches.
+
+**`buccal_numbers.py` was stale before this change, and the PR body said it
+was clean.** Run against the previous commit it fails **six** rows, every one
+of them obese — the recorded values predate both the tilt → cardiac-output term
+and the Pelosi curve, committed the same day, and the file was not re-run after
+either. The re-key moved the obese rows back toward the recorded values, so
+three now drift rather than six; all three have been updated and it passes.
+The lesson is the one this project already knows: a number is only as fresh as
+the last run of the script that produces it, and "clean" must mean *clean on
+this commit*.
+
+**Scope of that claim, stated because it is partial.** A run of
+`handover_numbers.py` on the pre-change model was started and killed early, so
+it covers **128** of the checks rather than all of them. Across those 128 the
+pass/fail status is **unchanged in both directions** — nothing went `ok` → FAIL
+and nothing went FAIL → `ok`. The blocks beyond that point have not been
+compared, and the cheap way to close the gap is one clean run of the script on
+each side of this commit.
+
+## Current state — 2026-09-22
+
+### THREE RULINGS, 2026-09-22 — read these before the chronology below
+
+**1. Stock 1989 is the arbiter.** Other people's simulators are comparators
+and cannot settle a question about this model. The consequence was not the
+demotion, it was what it exposed: Stock was arbitrating only his CO2. His
+OXYGEN had sat in this file as prose for months. It is now graded, and it
+fails — PaO2 **61 against a measured 314 (87)**, SaO2 **85.3% against "every
+one of 14 above 92%"**. That is the model's largest disagreement with any
+human measurement, larger than the CO2 slope that has had most of the
+attention. Both rows are one mechanism on two scales, not two findings.
+
+**2. `crs` 85 → 75.** Respiratory system compliance — how much lung and chest
+wall expand per unit of pressure. Set to Rothen 1993 Table II group 1
+(n=10, 75 (19) mL/cmH2O), the better-powered of that paper's two groups.
+**75 is the value that buys nothing**: `crs` 60 would have taken the failing
+Stock slope to 4.371 and PASSED it, 75 gives 4.601 and still fails. That is
+why it is 75 — a move that also happens to pass the benchmark under argument
+is indistinguishable from fitting, whatever the intent. It bought a real
+improvement elsewhere: Moreault's sealed-lung pressure went -17.7 → **-19.8
+against a measured -20 (5)**.
+
+**3. The "~510 s" band is struck.** Its stated source is in neither document
+we hold. It is removed, not re-banded and not re-sourced.
+
+### The suite after those three
+
+**33 PASS, 4 KNOWN OPEN, 0 BLOCKING.** The four open rows are the three Stock
+rows above plus `ICSM jet, PaCO2`, which rides the same CO2 limb. They are
+recorded in `KNOWN_OPEN` at the head of `test_validation.py` **with the value
+on the day they were ruled**, so the hook still blocks if one gets worse and
+says so if one starts passing. They do not gate commits because they are ruled
+open, NOT because they are acceptable. A baseline holding only names would be
+a mute button; holding the value makes an improvement a visible event.
+
+---
+
+## Current state (earlier) — 2026-09-10
+
+**Read this before anything below.** The rest of this file is chronological and
+carries corrections layered on corrections. Where it conflicts with this table,
+this table wins. Every number here is regenerated by `handover_numbers.py`,
+which fails if any has drifted.
+
+### THE COMPLIANCE UNIT ERROR — CORRECTED 2026-09-17
+
+**Every model number in this file changed on 2026-09-17.** Read this before
+comparing anything below against anything you remember.
+
+`simulate()` converted the respiratory compliance from mL/cmH2O to mL/mmHg by
+DIVIDING by 1.35951. Compliance is volume PER pressure, so that conversion is
+the reciprocal of the pressure one: it should MULTIPLY. Two lines later the
+same constant is applied correctly to `p_collapse`, which is a pressure. The
+pressure conversion had been applied to a compliance.
+
+The error was squared on the round trip out of `_recoil`, so the model ran at
+1.35951^2 = 1.85x the stiffness its parameter stated: **an effective 46
+mL/cmH2O where the label said 85**, and below the 75 (19) and 60 (15) that
+Rothen 1993 measured in anaesthetised adults. Both implementations had it
+identically (`apnoea_core.py`, `model.js`), which is why `test_parity.py`
+never caught it. **Parity tests agreement, not correctness.**
+
+What it did, at the Stock reference patient:
+
+| | before | after | measured |
+|---|---|---|---|
+| Moreault, pressure at 1008 mL absorbed | -30.4 | **-17.7** | -20 (5) |
+| Stock obstructed 1-5 min slope | 4.03 | **4.75** | 3.4 |
+| Toner sham, time to SpO2 <95% | 402.3 s | 402.2 s | 447 (IQR 405-525) |
+| Heard control | 288.4 s | 288.4 s | 296 (IQR 244-314) |
+
+**The mechanics limb goes from 52% out to 11.5% out. The CO2 slope leaves its
+band and `test_validation.py` FAILS on it.** Thirty-five of thirty-six checks
+pass; the failure is `Stock obstructed, 1-5 min slope`, 4.75 against a band
+of 2.4-4.4 at the time, and 4.72 since the `n_vq` change below. (A SECOND
+failure joined it on 2026-09-20 — `ICSM jet, PaCO2 at cricothyroidotomy`, 73.4
+against 75.8-93.4, when the recoil floor moved. 34 PASS, 2 FAIL was the count
+until 2026-09-22; it is now **33 PASS, 4 KNOWN OPEN, 0 blocking** — see the
+three rulings at the head of this file. See *THE RECOIL FLOOR*.) The oxygen limb
+barely moves, because desaturation is set by oxygen stores rather than by lung
+pressure.
+
+This was committed with `--no-verify` and the suite is RED. That is deliberate.
+The rule in CLAUDE.md is that a correction which makes a benchmark worse is
+information, not a reason to avoid the correction, and a unit error is wrong
+whatever it does to a benchmark. **Do not "fix" the red by reaching for a
+compensating parameter.**
+
+#### The trade-off it exposes is NOT general — CORRECTED 2026-09-18
+
+This file said the trade-off "is the same one every lung volume lever produces,
+and it is now the central open question". That was **asserted, not tested**.
+Tested, it is false. Regenerated by `handover_numbers.py`:
+
+**Regenerated 2026-09-22 at `crs` 75.** Every row moved when the compliance
+ruling landed; the CONCLUSION did not, which is the point of keeping the table
+in a script rather than in prose.
+
+| lever | Stock 1-5 min slope | Moreault P at 1008 mL | d slope | d P |
+|---|---|---|---|---|
+| baseline (shipped, `crs` 75) | 4.60 | -19.8 | — | — |
+| `tau_mix` 25 | 6.09 | -19.9 | +32% | -0.1% |
+| `tau_mix` 90 | 3.09 | -19.9 | -33% | -0.1% |
+| `vq_log_sd` 0.50 | 3.16 | -19.8 | -31% | -0.0% |
+| `vq_log_sd` 1.18 | 7.56 | -19.8 | +64% | -0.0% |
+| `crs` 60 | 4.37 | -24.2 | -5% | -22% |
+| `crs` 110 | 4.92 | -14.0 | +7% | +29% |
+| `stiff_below_rv` 0.05 | 3.78 | -30.0 | **-18%** | -52% |
+| `rv` 900 | 5.17 | -13.3 | +12% | +33% |
+| `rv` 1300 | 4.11 | -35.8 | -11% | -81% |
+
+Two CO2 levers, four mechanics levers, each at both ends of its plausible
+range. Every row is a row `handover_numbers.py` checks; intermediate settings
+are in that script's other blocks and are not repeated here, because a quantity
+recorded twice in one document is a quantity that will disagree with itself.
+
+**Mixing and dispersion move the CO2 slope by a factor of two and the Moreault
+pressure by a tenth of a percent.** What coupling exists runs one way only and
+weakly: the four mechanics levers drag the slope about by 4-17%, while neither
+CO2 lever moves the pressure at all.
+
+The `stiff_below_rv` 0.05 row moved from 4.11 to **3.94 on 2026-09-20** when
+the recoil floor went to minus systolic. It is the only row that moved, and for
+a reason worth keeping: it was the one setting soft enough to drive the
+pressure onto the old -50 floor, so its lever was being clipped. This was
+flagged at the time it was first run — the sweep was comparing two mechanical
+regimes — and is now simply gone. **The separability conclusion is unchanged
+and slightly stronger**: the strongest mechanics lever moves the slope 17%
+where the weakest CO2 lever moves it 32%.
+
+So **the two red limbs are separable and can be worked separately**, and the
+CO2 defect is not a lung-volume question. It belongs where "The one open
+defect" below already puts it: whatever sets the arterial-to-alveolar gap.
+`tau_mix` 60 (slope 4.00) and `vq_log_sd` 0.50 (3.16) each land the Stock
+slope back inside its 2.4-4.4 band on their own, with the mechanics untouched —
+which is precisely why neither may be set there. A fit is not a mechanism, and
+CLAUDE.md has refused that trade four times.
+
+It also broke a reproduction: `editorial.md`'s claim that a 0.8 mm aperture
+holds >90% for 30 minutes in a lean patient used to reproduce exactly at 90.0
+and now gives 83.4. See `buccal_numbers.py`.
+
+And it put eight of `protocol/predictions.py`'s registered predictions out of
+band. **Regenerated 2026-09-18**; the script is green again and
+`protocol/study.html` carries the new numbers. The pressures roughly halved
+(-15.6 -> -8.6 cmH2O at 180 s), the release inrush halved in speed and doubled
+in duration, and the volumes barely moved, because they are set by the gas
+balance and not by the pressure. One SPECIFICATION changed with them: see "The
+three-way study protocol" below.
+
+### WHAT THE DEFECTS DO TO THE ANSWERS — 2026-09-20
+
+Read this before quoting any number the model produces. Each defect is mapped
+onto the claims it contaminates, with the direction of the error.
+
+#### 1. The buccal work is NOT contaminated. This is the important one.
+
+**All four Toner and Heard benchmarks run `patent(p, ...)` — `resistance=2`, a
+patent airway.** The -81% obstructed PaO2 error does not touch them. In the
+patent and ventilated regimes our oxygen is **+13%** (Ebata) and **+22%**
+(Tokics), and all four checks pass.
+
+And that is not luck: **buccal oxygen requires a patent airway to do anything
+at all.** This file already records that it "buys exactly ZERO once occluded".
+So the regime where the model is worst is the regime where the buccal
+intervention has no effect anyway.
+
+#### 2. The obstructed desaturation SHAPE is wrong in both halves, opposite ways
+
+Obstructed, `feo2_start` 0.87:
+
+| SpO2 | reached at |
+|---|---|
+| 98% | 223 s |
+| 95% | 258 s |
+| **92%** | **285 s** |
+| 90% | 300 s |
+| 80% | 365 s |
+| 40% | 544 s |
+
+**Stock measured every one of 14 patients above 92% at all times, with 7
+completing 300 s. We cross 92% at 285 s.** So we desaturate too early.
+
+**Hardman & Wills put SaO2 90->40% at 1.56 min. We take 4.06 min** — 12.3
+%/min against their 33. So once past 90% we desaturate three times too slowly.
+
+**The total agrees with Laviola (544 s here, ~510 s theirs) BY CANCELLATION.**
+Two errors of opposite sign. So:
+
+| question the model is asked | reliability |
+|---|---|
+| "when does desaturation start?" | **pessimistic — too early** |
+| "how long to critical (SaO2 40%)?" | roughly right, by luck |
+| **"once they start dropping, how long have I got?"** | **DANGEROUSLY OPTIMISTIC** |
+
+That last row is the one that matters clinically. Asked how long between the
+saturation starting to fall and disaster, the model says **four minutes** where
+the only other model of this regime says **ninety seconds**. Do not use it for
+that question.
+
+#### 3. The protocol's safety predictions err in the SAFE direction
+
+`protocol/study.html` occludes the tube and predicts SpO2 94% at about 264 s,
+concluding "the sequence ends more than a minute before the rule fires". Since
+we desaturate too early, **real participants will hold saturation LONGER than
+predicted** — Stock's patients were all above 92% at 300 s. The study is more
+feasible than the protocol claims, and its margin is wider than stated. The
+prediction is wrong; the safety conclusion drawn from it survives.
+
+#### 4. CO2 claims are sound to 180 s and about 10% high at 300 s
+
+We track Stock to within 0.7% at 180 s and are +10% at 300 s. **Short-duration
+hypercapnia claims are reliable; five-minute ones overstate PaCO2 by about
+10%.** The pH LEVEL is right to a few thousandths; the pH SLOPE is 12% shallow,
+so acidosis at high PCO2 is slightly understated.
+
+#### 5. Haemodynamic claims degrade as the patient deteriorates
+
+CO -12% and MAP -6% at Ebata's mild stress; **CO -30% and MAP -50%** at
+Laviola's SaO2 40%. We predict a MORE collapsed circulation than either
+comparator. Conservative for a warning; **wrong if used to argue there is time
+for a rescue**, and wrong in the direction of predicting arrest too early.
+
+#### 6. The boundary of validity
+
+**Beyond about 300 s of complete obstruction there is no human measurement at
+all** — Stock's table stops there. Past that point this model extrapolates, so
+does ICSM, so does NPS, and the two published ones disagree with us by a factor
+of three on the terminal desaturation rate. Any claim past 300 s of complete
+obstruction is unvalidated, and saying so is not a courtesy — nothing in the
+literature can currently settle it.
+
+### WHY OUR PaO2 DOES NOT FOLLOW STOCK — diagnosed 2026-09-20
+
+Stock: 412 -> 314 over 300 s of complete obstruction, a 24% fall. Ours:
+512 -> 61, an 88% fall. The largest disagreement in the whole comparator set.
+
+**The alveolar oxygen is very nearly right. The crash is entirely in the
+alveolar-to-arterial step.**
+
+| t | Stock PaO2 | our PaO2 | our **PAO2** | FAO2 | volume | shunt | PAN2 |
+|---|---|---|---|---|---|---|---|
+| 0 | 412 | 512 | 620 | 0.870 | 2012 | 5.0% | 54 |
+| 60 | 402 | 461 | 581 | 0.817 | 1783 | 5.8% | 79 |
+| 120 | 385 | 329 | 546 | 0.771 | 1527 | 7.4% | 110 |
+| 180 | 383 | 135 | 507 | 0.717 | 1284 | 10.2% | 145 |
+| 300 | 314 | **61** | **379** | 0.551 | 850 | 18.0% | 248 |
+
+**PAO2 at 300 s is 379 — above Stock's arterial 314, which is where an
+alveolar value should sit.** The lung is doing the right thing. Everything is
+lost between alveolus and artery.
+
+#### What it is NOT. Four levers, tested, PaO2 at 300 s:
+
+| | PaO2 |
+|---|---|
+| shipped | 60.5 |
+| `p_collapse` -200, collapse floor removed | 60.5 (**+0%**) |
+| `max_closed` 0.02, closure shunt suppressed | 62.2 (+3%) |
+| `co_drop_frac` 0, anaesthetic CO drop removed | 67.4 (+11%) |
+| `co_drop_frac` 0 AND `sv_itp_gain` 0 | 67.5 (+12%) |
+
+Not the pressure floor, not the closure shunt, not the circulation. Together
+they buy 12% of a gap that needs 400%.
+
+#### And it is NOT the same defect as the CO2 gap — hypothesis tested, refuted
+
+It was tempting: arterial blood is a PERFUSION-weighted mix while `PAO2` is a
+VOLUME-weighted mean, which is exactly the asymmetry this file has been calling
+the untested cause of the CO2 a-A gap. If the two were one defect, `vq_log_sd`
+would collapse both together. It does not:
+
+| `vq_log_sd` | PaO2 | a-A **O2** gap | a-A **CO2** gap |
+|---|---|---|---|
+| 0.20 | 127 | **178** | -0.81 |
+| 0.30 | 96 | **224** | -0.92 |
+| 0.50 | 71 | 280 | 3.47 |
+| 0.70 shipped | 61 | 319 | 8.27 |
+
+**At the dispersion that zeroes the CO2 gap, a 178 mmHg oxygen gap remains and
+PaO2 is 127 against Stock's 314.** The CO2 gap is dispersion-driven; the oxygen
+gap has a large dispersion-INDEPENDENT floor. Two different defects.
+
+> ### THIS REFUTATION IS ITSELF REFUTED — 2026-09-21
+>
+> **The test above left the shunt switched on**, so what it measured as a
+> "dispersion-independent floor" was the shunt. Re-run with the shunt forced to
+> exactly zero (`shunt_base` 0, `perfusion_gain` 0, `inflow_mech_frac` 0,
+> `max_closed` 0 — in plain terms, no blood allowed to bypass gas exchange by
+> any route), the floor is not there:
+>
+> | `vq_log_sd` — how unevenly blood flow and gas volume are matched | a-A O2 gap, shunt ON (old test) | a-A O2 gap, shunt OFF | PaO2, shunt OFF |
+> |---|---|---|---|
+> | 0.01 | — | **-38.7** | **327.5** |
+> | 0.20 | **178** | **42.4** | 252.9 |
+> | 0.50 | 280 | 253.6 | 86.1 |
+> | 0.70 shipped | 319 | 295.4 | 70.1 |
+>
+> The gap **collapses with the dispersion** and goes slightly negative at a
+> near-uniform lung, and PaO2 there is **327.5 against Stock's measured
+> 314 (87)** — inside the measurement. So the oxygen defect and the CO2 defect
+> ARE one defect: blood mixes by CONTENT, which is linear, but is reported as
+> PARTIAL PRESSURE, which is curved, so a perfusion-weighted content average
+> lands low on the curve. The 178 mmHg "floor" was 136 mmHg of shunt plus 42 of
+> residual dispersion.
+>
+> **The shunt is not the actor either, and that was tested separately.** The
+> long-promised `shunt_base` sweep was finally run: taking it from 0.05 to 0.00
+> moves PaO2 only 60.5 -> 64.1, and total shunt is still 0.132 because the
+> per-unit absorption collapse supplies it. Turning off every collapse lever as
+> well reaches shunt exactly 0.000 and PaO2 70.1 — still 295 mmHg below alveolar.
+> Only the dispersion moves it.
+>
+> **This does not license setting `vq_log_sd` low.** Tokics measures the spread
+> WIDER than we use, not narrower, so the fix cannot be the parameter. What the
+> test changes is the question: it is no longer "what is the extra oxygen
+> defect" but "is one shared mechanism — perfusion-weighted content averaging
+> across a V/Q spread — implemented correctly?" One thing that argues it is not:
+> classical teaching is that V/Q inequality is largely CORRECTABLE by a high
+> inspired oxygen fraction while true shunt is not, yet here a zero-shunt lung
+> with alveolar PO2 above 360 still produces a 295 mmHg gap. That is the next
+> thing to check, and it is a mechanism question, not a parameter sweep.
+
+#### THE MECHANISM, TRACED — 2026-09-21
+
+Ran with the shunt forced to exactly zero throughout, so nothing below is a
+bypass effect. An instrumented copy of the model was used to look inside the
+80 lung units (provenance printed the scratch path, per CLAUDE.md).
+
+**Inside the lung at 300 s.** The units are BIMODAL, not spread:
+
+| percentile by own PO2 | PO2 | its blood's saturation | O2 content | share of blood flow | share of gas volume |
+|---|---|---|---|---|---|
+| 0 | 38.2 | 39.3% | 8.01 | 1.91% | 1.19% |
+| 25 | 43.6 | 38.3% | 7.82 | 0.24% | 0.06% |
+| 50 | 182.1 | 100.0% | 20.64 | 0.77% | 0.28% |
+| 75 | 379.7 | 99.9% | 21.23 | 1.43% | 2.21% |
+| 100 | 405.1 | 100.0% | 21.30 | 0.23% | 0.77% |
+
+**41% of the blood flow goes to units sitting at mixed-venous PO2** — units
+that have had their oxygen taken and can give none back. They are a shunt in
+everything but name, which is why turning the named shunt off changed nothing.
+Perfusion-weighted mean content is 17.15 mL/dL against 20.10 fully saturated.
+
+**Faster stirring does not fix it.** `tau_mix` is the time constant for
+cardiogenic mixing between units — HANDOVER has always called it "not well
+characterised". Sweeping it 180× with the shunt off:
+
+| `tau_mix` (s) | PAO2 | PaO2 | a-A gap |
+|---|---|---|---|
+| 1 | 282.8 | 99.6 | **183.1** |
+| 45 shipped | 365.5 | 70.1 | 295.4 |
+| 180 | 390.6 | 60.9 | 329.8 |
+
+At near-instant stirring a **183 mmHg gap survives**. So the gap is not simply
+"units that have not had time to equilibrate with each other".
+
+#### AND THE HEADLINE "PaO2 81% LOW" OVERSTATES IT — this is the part that matters
+
+**PaO2 is a hypersensitive readout above about 150 mmHg**, because the oxygen
+dissociation curve is flat there: the blood is already saturated, so a
+negligible content change moves PaO2 enormously. Going from 99% to 100%
+saturation costs 0.20 mL/dL of content and takes PaO2 from 158 mmHg to
+unbounded. The same disagreement with Stock, stated three ways:
+
+| | Stock, measured | ours | difference |
+|---|---|---|---|
+| PaO2 | 314.0 | 60.5 | **-80.7%** |
+| SaO2 | 99.87% | 85.34% | **-14.5%** |
+| arterial O2 content | 21.02 mL/dL | 17.34 mL/dL | **-17.5%** |
+
+**The model is 17.5% low on arterial oxygen content.** That is a serious
+disagreement and it is still the largest in the project — but it is an ordinary
+one, not the 81% catastrophe the PaO2 framing implies, and the difference is
+not rhetorical. It changes three things:
+
+1. **This limb should be judged on content or saturation, not PaO2.** Every
+   scorecard row and every future band for it. PaO2 above 150 mmHg carries
+   almost no information about oxygen carriage and enormous numerical leverage.
+2. **It puts the oxygen and CO2 limbs on the same scale.** CO2 is out by about
+   10% at 300 s; oxygen by 17.5% on content. Comparable, one mechanism, and
+   the CO2 limb no longer looks like the only real problem.
+3. **It makes the "81%" entries above overstatements** wherever they appear in
+   this file. They are not struck, because -80.7% on PaO2 is arithmetically
+   true; but it is the wrong denominator and should not be quoted alone again.
+
+#### ONE MECHANISM, AND AT A UNIFORM LUNG BOTH LIMBS LAND ON STOCK — 2026-09-21
+
+**Not a discretisation artefact.** `n_vq` is how many parallel units the lung is
+chopped into. Refining it 16-fold changes nothing: PaO2 70.1 at 20 units, 70.2
+at 320, the gap 296.2 -> 295.0. Converged. The 41% is a property of the physics
+as modelled.
+
+**The CO2 limb behaves identically**, same zero-shunt condition:
+
+| `vq_log_sd` | a-A **CO2** gap | a-A **O2** gap | PaCO2 | PaO2 |
+|---|---|---|---|---|
+| 0.01 | **-0.39** | **-38.7** | **58.85** | **327.5** |
+| 0.50 | 5.14 | 253.6 | 64.94 | 86.1 |
+| 0.70 shipped | 10.91 | 295.4 | 72.52 | 70.1 |
+| 0.90 | 15.55 | 327.4 | 79.14 | 61.6 |
+
+**At a near-uniform lung both limbs land inside Stock's measurements
+simultaneously** — PaCO2 58.85 against 63 (9), PaO2 327.5 against 314 (87).
+One mechanism, and removing it fixes both at once. That is the strongest
+single result this project has produced about its own failure.
+
+**And it is blocked by the same wall.** Tokics measures the spread WIDER than
+we use, not narrower, so the fix cannot be the parameter. But note precisely
+what Tokics measured: **ventilation/perfusion dispersion in a VENTILATED lung**.
+In apnoea there is no ventilation. The quantity that actually drives this model
+is the dispersion of gas VOLUME against perfusion, which is not the same
+quantity and has never been measured in an apnoeic human. `vq_log_sd` is a
+volume dispersion wearing a ventilation dispersion's name and being judged
+against a ventilation dispersion's measurement.
+
+**That is the open question, and it is a definition question, not a fit.**
+Either the two dispersions are the same number, in which case the model is
+wrong somewhere else entirely; or they are not, in which case the Tokics
+constraint does not apply as written and the honest position is that this
+parameter is unconstrained by any measurement. Nobody here has established
+which, and no sweep can settle it.
+
+#### THE SCORECARD, RESTATED ON OXYGEN CONTENT
+
+Three of the four oxygen rows were the flat-curve artefact, not disagreements:
+
+| comparator | regime | on PaO2 | **on arterial O2 content** |
+|---|---|---|---|
+| Ebata 1991 | patent | +13.0% | **+0.7%** |
+| Tokics 1996 | ventilated | +21.9% | **+0.8%** |
+| Laviola 2026 | obstructed, at SaO2 40% | -2.3% | -3.3% |
+| **Stock 1989** | **obstructed** | **-80.7%** | **-16.7%** |
+
+**On the quantity that matters for oxygen delivery the model agrees with Ebata
+to 0.7% and Tokics to 0.8%.** Laviola is measured on the steep part of the
+curve where PaO2 is informative, so that row was always sound.
+
+This sharpens rather than softens the Stock problem: it is no longer one of
+several oxygen discrepancies of assorted sizes, it is **the only one**, and it
+is obstruction-specific. Everything patent or ventilated is essentially exact.
+
+#### What is left, and it is a specific question
+
+A near-homogeneous lung, alveolar PO2 above 300, cardiac output propped up,
+collapse floor removed — and still a 178 mmHg alveolar-to-arterial oxygen gap.
+
+The candidate that survives is **the flatness of the oxygen dissociation curve
+at high PO2**: end-capillary blood is fully saturated, so mixing in even a
+small fraction of venous blood costs little CONTENT but enormous TENSION. That
+is the mirror image of the CO2 curvature question, and it would mean the
+oxygen gap is driven by the SHUNT FRACTION acting on a saturated curve, not by
+V/Q spread — which fits `max_closed` being nearly inert (that lever suppresses
+closure-driven shunt, not the baseline 5%).
+
+**The next test is the baseline shunt**, `shunt_base`, swept against PaO2 at
+300 s — not `max_closed`, which is what was tested and is the wrong lever. If
+the oxygen gap is shunt-on-a-flat-curve, `shunt_base` will move it hard and
+`vq_log_sd` will not. If neither does, the remaining suspect is the
+end-capillary equilibration itself.
+
+Stock's patients were **not paralysed**. Whether a lung with residual muscle
+tone develops less absorption shunt over five minutes than our 18% is the
+physiological question underneath all of this, and nothing we hold measures it.
+
+### IS THERE A NEGATIVE PRESSURE THAT PREVENTS CARDIAC OUTPUT? — 2026-09-20
+
+**No, not within anything measured — and Condos 1987 says why.**
+
+That paper is already used below to source `sv_itp_gain`. What was never
+recorded is its **mechanism**, which is the answer to the question:
+
+> "The reduced right cardiac dimensions during the sustained Mueller manoeuvre
+> reflect an increased impedance to venous return to the right heart. We
+> postulated that this results from a **collapse of the great systemic venous
+> trunks at the thoracic inlets. This is confirmed by two-dimensional
+> echocardiographic measurements**... This collapse is responsible for the
+> great augmentation of the hydrodynamic driving pressure for flow from the
+> extrathoracic large veins to the right atrium, **in the face of reduced
+> cardiac output and venous return levels**."
+
+**The cavae do collapse. Collapse LIMITS venous return; it does not abolish
+it, and it raises the driving pressure downstream of itself.** So the venous
+return curve plateaus rather than falling to zero. At a mean right atrial
+pressure of **-17 mmHg** their cardiac output fell only **6.0 -> 5.3 L/min, 12%**
+(p 0.0257), stroke volume 83 -> 74 mL (p 0.046), n=10 at cardiac
+catheterisation. Nothing stopped.
+
+#### What our model does, and what it does not
+
+`apnoea_core.py:746` — one linear, one-sided term with an arbitrary floor:
+
+```python
+itp  = min(0.0, (p_abs - PB) * 1.35951) * itp_fraction      # 0.60
+sv_f = ... * max(0.15, 1.0 + sv_itp_gain * itp)             # 0.0025 /cmH2O
+```
+
+| alveolar | pleural | stroke-volume factor |
+|---|---|---|
+| -30 | -18.0 | 0.955 |
+| -50 (the old clamp) | -30.0 | 0.925 — 7.5% lost |
+| **-70.4 (where a sealed lung actually settles)** | **-42.3** | **0.894 — 10.6% lost** |
+| -149.55 (the recoil floor, never reached) | -89.7 | 0.776 |
+| -200 | -120.0 | 0.700 |
+| **-567** | -340.2 | **0.150 — the floor finally binds** |
+
+**There is no pressure at which this model prevents cardiac output.** The
+`max(0.15, ...)` floor needs alveolar **-567 cmH2O** to bind, which is about
+where Hardman & Wills' NPS goes. And **there is no venous-return curve and
+nothing representing caval collapse at all** — the term is pure afterload,
+fitted at -30 cmH2O and extrapolated as a straight line into a region with no
+data.
+
+So the model reaches the right ANSWER (no arrest from pressure alone) without
+the MECHANISM, and its extrapolation below about -50 cmH2O is unsupported.
+
+#### And our cardiac output rises when it probably should not
+
+| t | alveolar | pleural | CO | MAP | HR | SpO2 |
+|---|---|---|---|---|---|---|
+| 0 | 0.0 | 0.0 | 3.75 | 68 | 70 | 99.0 |
+| 120 | -5.7 | -3.4 | 4.21 | 71 | 74 | 100.0 |
+| 240 | -15.2 | -9.1 | **4.51** | 72 | 77 | 96.5 |
+| 360 | -49.7 | -29.8 | 4.22 | 64 | 74 | 79.6 |
+| 540 | -50.0 | -30.0 | 0.69 | 10 | 12 | 39.0 |
+
+**CO climbs 20% to 240 s while pleural pressure falls to -9 cmH2O.**
+Hypercapnic inotropy and tachycardia outrun the ITP penalty. The eventual
+collapse is hypoxic bradycardia (HR 77 -> 12), not mechanics.
+
+**Condos's subjects were NORMOCAPNIC**, so their 12% is the ITP effect clean.
+**We have no comparator anywhere for negative ITP PLUS hypercapnia**, which is
+the actual apnoea case, and that is exactly the combination our model resolves
+in favour of the inotropy. Unvalidated.
+
+#### Correction to the scorecard above
+
+It lists Condos 1987 and Wright 2023 under "record two or more but cannot be
+configured". True for a TIME COURSE — a Mueller manoeuvre is 5-15 s. **False
+as a blanket statement**: both already source `sv_itp_gain`, and for the
+ITP-to-stroke-volume coupling they are the best human data in the set.
+
+### THE RECOIL FLOOR — found incoherent, then ruled on, 2026-09-20
+
+The argument that found it: **if the patient still has a cardiac output, gas
+is still being absorbed. In a sealed lung that gas has to come out of volume
+or out of pressure. So the pressure must keep falling.** Ours did not.
+
+`_recoil` returns `max(p, floor)`. The PRESSURE was clamped at `p_collapse` =
+-50 cmH2O. Nothing clamped the VOLUME — it is set by the gas that is left, and
+it kept falling. So from 361 s the model reported a pressure its own recoil
+function contradicted, by 21 cmH2O at 590 s, over a window that is a third of
+the survivable time. A modelling choice would clamp the STATE; that clamped
+the REPORT and let the state run on underneath.
+
+#### The ruling
+
+> "There is and probably never will be any data on what happens in the lung
+> when the pressure passes -20 cmH2O. I propose we have a limit where the
+> negative pressure exceeds the systolic pressure. It's arbitrary, but we need
+> to decide something and move on." — A.H., 2026-09-20
+
+Taken. `p_collapse` is now `-SBP_SUPINE * 1.35951` = **-149.55 cmH2O**, with
+`SBP_SUPINE = 110.0` mmHg defined at the top of `apnoea_core.py`. It is a
+CONVENTION, recorded as one, and the code says so. Its only defence beyond
+the ruling is that a transmural gradient that size cannot leave blood in the
+pulmonary vessels, so nothing the gas model says past it would be meaningful
+anyway.
+
+#### What the ruling turned up, which was not the point of it
+
+**The runaway `p_collapse` was guarding against does not exist.** Setting the
+floor where it cannot bind does not produce a runaway, because the model
+already had its own terminator and nobody had looked for it.
+
+| output | max difference, shipped vs **no floor at all** (`-1e6`), over 900 s |
+|---|---|
+| volume, pressure, PaO2, PaCO2, SaO2, pH, CO, MAP | **0.000e+00** |
+
+Not "small". Bit-identical. And nothing comes near the floor:
+
+| configuration, floor set to -1e6 so it cannot bind | min pressure | margin to floor |
+|---|---|---|
+| default air seal | -70.4 | 79.1 |
+| preoxygenated seal | -70.4 | 79.1 |
+| obese 120 kg / 1.70 m | -68.6 | 81.0 |
+| `vo2_ref` 400 | -70.7 | 78.9 |
+| no terminal bradycardia — heart runs on | -71.5 | 78.0 |
+| no bradycardia + `vo2_ref` 400 | -73.3 | 76.2 |
+
+**What actually stops the pressure falling is the absorption gradient
+closing.** Alveolar PO2 falls to mixed venous PO2, at which point there is
+nothing left to take up; CO2 coming out of blood holds the residual volume.
+Forcing the heart to keep beating for 1800 s so nothing else can terminate
+the run:
+
+| t | P (cmH2O) | V (mL) | PAO2 | PvO2 | PACO2 |
+|---|---|---|---|---|---|
+| 300 | -33.7 | 845 | 375.5 | 40.7 | 64.1 |
+| 540 | -70.4 | 439 | 21.0 | 12.8 | 75.2 |
+| 900 | -71.5 | 426 | 1.4 | 0.0 | 74.5 |
+| 1790 | -71.6 | 425 | 0.0 | 0.0 | 74.6 |
+
+So the answer to "surely the pressure must continue to fall" is **yes, and it
+does — to about -70 cmH2O, and then it genuinely stops**, for a reason that
+was in the model all along. The old -50 clamp was sitting just above the real
+asymptote and masking it.
+
+#### What the move costs
+
+Not free, and the costs run the way the incoherence predicted.
+
+1. **The ITP stroke-volume term is now charged over the whole fall.** At the
+   -70.4 asymptote the factor is **0.892** against 0.925 at the old clamp —
+   the 3.2 points the clamp was not charging.
+2. **Gas tensions move by about 2%** of dry pressure in the late window.
+3. **Not the oxygen defect.** That is at 300 s, before the old clamp ever
+   bound, and is unchanged to 0.01 mmHg by all of this. `p_collapse` -200 had
+   already shown +0% and this confirms it from the other side.
+4. **The pressure chart's flat tail was an artefact** and is now gone. Any
+   reuse of the earlier chart needs the caveat; the rebuilt one does not.
+
+#### And it broke a benchmark. Recorded, not compensated.
+
+`test_validation.py` goes from **1 FAIL to 2**. The new one is `ICSM jet,
+PaCO2 at cricothyroidotomy`:
+
+| floor | PaCO2 at SaO2 40% | pressure there | band 75.8-93.4 |
+|---|---|---|---|
+| -50 (old) | 77.36 | -50.00 | in, by 1.6 |
+| -60 | 75.25 | -60.00 | out, by 0.6 |
+| -70 | 73.35 | -69.73 | out, by 2.4 |
+| -149.55 (shipped) and anything below | 73.35 | -69.73 | out, by 2.4 |
+
+The mechanism is not subtle: a deeper vacuum is a lower alveolar PCO2 for the
+same quantity of gas, so more CO2 leaves the blood and arterial PCO2 falls.
+Note the last two rows — below -70 nothing changes at all, because the lung
+never gets there.
+
+**No band is being moved and no parameter is being reached for**, per
+CLAUDE.md. Two things make this an acceptable loss. It is a **MODEL
+comparator, not a measurement**, and this file already records that ICSM's
+obstructed numbers are an extrapolation from patent-airway validation exactly
+as ours are — see *How ICSM validated itself*. And the correction that caused
+it is one the model's own mechanics demanded: **a benchmark that passed only
+because a reported pressure contradicted its own recoil function was not
+passing for a reason.** It passed by 1.6 mmHg on a 21 cmH2O inconsistency.
+
+It also moves the direction of that row from -8.6% to **-13.3%**, which is
+information: our PaCO2 under deep obstruction is further below ICSM's than it
+looked, while our Stock slope is still too STEEP. Those two point opposite
+ways and that tension is now sharper, not hidden.
+
+#### What is still not modelled
+
+The floor stood in by fiat for three things: units closing and ceasing to
+absorb, a chest-wall or mediastinal hard limit, and flow stopping. **None of
+those is modelled now either.** The difference is that the floor no longer
+touches any result, so those absences are visible instead of being absorbed
+into a clamped number. If a mechanism is ever wanted here it should be the
+stop-absorbing rule, which is the physiologically correct terminator and
+would also bear on the shunt — not a different floor.
+
+
+### THE PATENT-AIRWAY CO2 SLOPE IS 18% LOW, NOT 2-3x LOW — 2026-09-22
+
+`README.md` has been calling the patent-airway CO2 slope "a weakness nothing
+currently tests", our 1.70 mmHg/min against "a classical 3-5". **Both halves of
+that sentence were wrong.** It is now tested, and the comparator is not 3-5.
+
+**Measured: the Toner transcutaneous trace, one patient, ID glottic01, 7 March
+2017.** Unpublished; use authorised by A. Heard on 2026-09-21 under the terms in
+`SOURCES.md`. Transcutaneous CO2 at 1 Hz; this monitor recorded no SpO2 and no
+O2, so the trace constrains the CO2 limb and nothing else.
+
+| | value |
+|---|---|
+| baseline, 14:20-14:41 (1260 s) | 35.46 mmHg, SD 0.63 |
+| **slope, 14:42:30-14:50:00 (452 s)** | **2.160 mmHg/min, r = 0.9959** |
+| peak | 53 mmHg, falling after ~14:51 as ventilation resumed |
+| excursion, baseline to peak | 17.5 mmHg over about 9 min |
+
+**Our model, the Toner configuration already in `test_validation.py`** (70 kg,
+1.75 m, 45 y, Hb 15, supine, patent airway, buccal pharyngeal oxygen), which is
+the right arm because nobody stays apnoeic nine minutes on room air:
+
+| | value |
+|---|---|
+| slope, 2.5-9.25 min | **1.778 mmHg/min** |
+| slope, 1-5 min | 1.680 mmHg/min |
+| excursion over 9.25 min | 25.7 mmHg |
+
+**So we are 18% LOW on the slope, against a measurement, not against a
+textbook.** And it agrees with the study's own published figure: Toner reports
+0.30 kPa/min = 2.25 mmHg/min transcutaneous, which this single trace
+independently reproduces at 2.16.
+
+#### The direction is the finding
+
+| regime | ours | measured | error |
+|---|---|---|---|
+| **obstructed** (Stock 1989) | 4.72 | 3.4 | **+39% TOO STEEP** |
+| **patent** (Toner trace, and Toner's published figure) | 1.78 | 2.16 / 2.25 | **-18% TOO SHALLOW** |
+
+**The model is too steep when the airway is sealed and too shallow when it is
+open.** That matters more than either number. A global error in the CO2
+chemistry — the dissociation curve, the buffering, the tissue stores — would
+move both limbs the SAME way, because all of them act regardless of the airway.
+An error that flips sign with the airway state cannot be any of those. It points
+at what the airway does: dilution by entrained gas when open, and the
+V/Q-weighting mechanism when sealed.
+
+That is consistent with the V/Q finding above — the arterial-to-alveolar gap
+mechanism is switched on hard under obstruction and largely off when fresh gas
+keeps the compartments equilibrated — and it is the first evidence that the two
+CO2 disagreements are one mechanism seen from two sides rather than two faults.
+
+#### What this does NOT license
+
+- **It is one patient.** The slope is beautifully linear (r = 0.9959) but n = 1.
+- **Transcutaneous is not arterial.** The sensor lags by roughly 30-120 s, so
+  the true apnoea onset precedes the visible upturn and the peak trails the end
+  of apnoea. The SLOPE of the linear segment is the robust quantity and is what
+  is quoted; the baseline offset is not (35.5 transcutaneous against our 40.1
+  arterial start, and transcutaneous normally reads HIGHER than arterial, so
+  this patient was probably mildly hyperventilated before the apnoea).
+- **No parameter and no band may be set from it**, per the authorisation terms.
+  It corroborates and it contradicts; it does not calibrate.
+- **The model numbers here are in `handover_numbers.py` and cannot rot. The
+  measured numbers are NOT**, deliberately: the spreadsheet is untracked, so a
+  check reading it would fail for every recipient. They are dated instead.
+
+### TWO FAULTS, NOT ONE — my own "one mechanism" claim refuted, 2026-09-22
+
+Yesterday I wrote that the sign flip was "the first evidence that the two CO2
+disagreements are ONE mechanism seen from two sides rather than two faults".
+**That was wrong, and the test designed to confirm it refuted it instead.**
+
+**The discriminator.** If one mechanism drove both limbs, a lever on it would
+move BOTH, in opposite directions. Move each lever and watch both. Sealed =
+Stock configuration, 1-5 min (measured 3.4). Patent = Toner buccal
+configuration, 2.5-9.25 min (measured 2.16). Both at the shipped patient.
+
+| lever | SEALED | PATENT |
+|---|---|---|
+| **shipped** | **4.629** | **1.778** |
+| `vq_log_sd` 0.35 — half the V/Q spread | **2.058** | 1.778 |
+| `vq_log_sd` 0.90 | **5.946** | 1.777 |
+| `tau_mix` 15 s — fast stirring between units | **7.466** | 1.778 |
+| `vo2_ref` 300 — 20% more CO2 made | 4.631 | **2.307** |
+| `rq` 0.9 — more CO2 per O2 consumed | 4.928 | **2.078** |
+| `v_tis_co2_fast` 15 — 32% smaller fast store | 5.480 | **2.408** |
+| `k_co2_slow` 0.4 — slower deep store | 4.694 | **1.925** |
+| `v_tis_co2_slow` 90 | 4.627 | 1.781 |
+
+**The levers partition cleanly and the sets are disjoint.**
+
+- **The V/Q levers move the sealed limb by up to 61% and the patent limb by
+  ZERO.** `vq_log_sd` 0.35 halves the sealed slope and changes the patent slope
+  in the fourth decimal place. `tau_mix` 15 s raises the sealed slope 61% and
+  leaves the patent slope identical.
+- **The production and store levers move the patent limb and barely touch the
+  sealed one.** `vo2_ref` 250 to 300 moves the patent slope 30% and the sealed
+  slope by **0.002 mmHg/min — four hundredths of one percent**.
+
+That is about as clean an orthogonality as a model of this kind ever gives, and
+it means **the two red CO2 limbs are separate faults that can be worked
+independently.**
+
+**Why, mechanically.** The arterial-minus-alveolar CO2 gap, measured:
+
+| t (s) | sealed | patent |
+|---|---|---|
+| 60 | -0.18 | 0.11 |
+| 150 | -0.05 | -0.12 |
+| **300** | **+8.27** | **-0.05** |
+| 450 | +1.20 | 0.03 |
+| 555 | -2.52 | 0.08 |
+
+**When the airway is open the gap is zero to within a tenth of a mmHg at every
+timepoint.** Fresh gas keeps the compartments equilibrated, so the V/Q-weighting
+mechanism — the one that makes arterial blood a perfusion-weighted content
+average read through a curve — has nothing to bite on. Seal the airway and it
+switches on hard. So the mechanism identified on 2026-09-21 is real, and it is
+**exclusively an obstructed-airway mechanism**. It cannot explain the patent
+shortfall because it is not operating there.
+
+#### What each fault now points at
+
+**Sealed, +39% too steep: the V/Q weighting.** Already localised. Blocked by the
+definition question — `vq_log_sd` is a gas-volume dispersion judged against a
+ventilation dispersion measured in a ventilated lung.
+
+**Patent, -18% too shallow: CO2 production or the fast tissue store.** New, and
+more tractable. Two candidates, and they pull in opposite directions:
+
+- `vo2_ref` = 250 mL/min would need to rise to about 285 to fix the slope.
+  **But that is the wrong way.** `vo2_ref` is uncited (see the audit), and the
+  one external handle we hold — Farmery & Roe quoting Nunn — puts anaesthetised
+  VO2 at **0.20 L/min against our 232 mL/min**, i.e. our production is if
+  anything already too HIGH. Raising it to fit would be tuning against the
+  literature, which CLAUDE.md forbids.
+- `v_tis_co2_fast` = 22 would need to fall to about 18. **This is the live
+  candidate**, because that store is calibrated against the "Sci Rep 2023"
+  paper that nobody here has read — now identified as Kaiser HA et al.,
+  *Sci Rep* 2024;14:3617, open access. The store is the least-sourced thing in
+  the CO2 limb and it is exactly what the patent slope is sensitive to.
+
+**So the single most valuable paper for this defect is Kaiser 2024**, and the
+prediction is specific: if their measured CO2 kinetics imply a smaller fast
+store than 22, the patent limb resolves without touching anything else, and
+without touching the sealed limb at all.
+
+### HARDMAN 1998 AND LAVIOLA 2020 READ — 2026-09-22
+
+Both were obtained on 2026-09-21 and sat unread. Reading them settled a stale
+entry and turned up the deepest explanation yet for the obstructed divergence.
+
+#### THE NOTTINGHAM SIMULATOR HAS NO V/Q DISTRIBUTION AT ALL
+
+Hardman JG, Bedforth NM, Ahmed AB, Mahajan RP, Aitkenhead AR. *Br J Anaesth*
+1998;81:327-332. This is the foundational validation of the NPS, and every
+model comparator in this project descends from it. **Appendix 1, verbatim:**
+
+> "The lungs are modelled as comprising equipment, anatomical and alveolar
+> deadspaces, and ventilated, perfused alveoli. **Complete mixing of gases
+> within the alveoli is assumed.** … **Blood flow through the lung is modelled
+> as two compartments: shunted and non-shunted blood.** … Each packet comes to
+> a true equilibrium with alveolar gases…"
+
+**One well-mixed alveolar compartment, and blood flow split two ways.** We run
+**80 parallel V/Q compartments**. So the mechanism identified on 2026-09-21 as
+our sealed-airway fault — arterial blood being a perfusion-weighted CONTENT
+average across a V/Q spread, read back through a curved dissociation
+relationship — **cannot exist in the NPS. It is structurally absent.**
+
+Three consequences, and the third is the one that matters:
+
+1. It explains why the two models diverge specifically under obstruction. The
+   V/Q mechanism switches on when the airway seals (a-A CO2 gap +8.27 at 300 s
+   sealed, -0.05 patent) and there is nothing corresponding in theirs.
+2. **The ICSM comparator cannot arbitrate our V/Q question in either
+   direction.** Agreement would not corroborate the mechanism and disagreement
+   would not refute it, because their model has no such degree of freedom. Any
+   future use of an ICSM number to argue about V/Q is void.
+3. It sharpens the open definition question rather than answering it. If a
+   single well-mixed compartment is right for a sealed lung, our spread is the
+   error. If a sealed lung really does develop the spread we model, theirs is.
+   **Nothing in either simulator settles that; only a measurement could.**
+
+**"apnoea" and "apnea" appear ZERO times in the entire paper**, as do "V/Q"
+and "ventilation-perfusion". Its own scope sentence: it is recommended "as a
+clinical tool for predicting the effects of alterations in mechanical
+ventilation in stable patients in the intensive care unit". Validated on 31
+ICU patients against changes in minute volume or FiO2, with 95% limits of
+agreement PaO2 -2.07 to +2.47 kPa, PaCO2 -0.33 to +0.67, pH -0.023 to +0.033.
+This is now read from the paper rather than argued from citations, and it
+supports what this file already said about the ICSM validation chain.
+
+Two smaller corrections it forces:
+
+- **The "Hardman ECF 11.6 against our 24.7" comparison was unlike-for-unlike.**
+  Appendix 2 gives `BEecf = [HCO3-] - 11.6 x (7.4 - pH) - 24`. That is an
+  extracellular (blood plus interstitial) base-excess conversion applied to a
+  blood-gas machine reading, not the simulator's internal blood buffering. Our
+  24.7 is Siggaard-Andersen's non-bicarbonate buffer capacity for WHOLE BLOOD.
+  Different quantities; the discrepancy was never real.
+- **They use Thomas's equation** for content-to-partial-pressure; we use
+  Severinghaus. `bloodgas.py`'s PROVENANCE header raises that choice and can
+  now name which model uses which.
+
+#### THE LAVIOLA 2020 RESCUE COMPARATOR IS REPRODUCIBLE — the note saying otherwise was stale
+
+`handover_numbers.py` listed "Laviola 2020 airway rescue (38.7 vs 42.3 kPa)"
+under **NOT REPRODUCIBLE**. Having read the paper, the protocol is exactly what
+`test_validation.py` already implements: 100 virtual subjects, 3 min of 100%
+oxygen, apnoea with an obstructed upper airway, obstruction relieved at SaO2
+60%, supraglottic FO2 100%; reported post-rescue PaO2 **42.3 (4.4) kPa**.
+
+Ours gives **43.92 kPa** — inside one SD. And it is insensitive to the only
+detail we had to assume, their preoxygenation:
+
+| `feo2_start` | trigger (s) | post-rescue PaO2 (kPa) |
+|---|---|---|
+| 0.80 | 399 | 40.60 |
+| **0.87 shipped** | **423** | **43.92** |
+| 0.90 | 431 | 44.96 |
+| 0.95 | 443 | 45.89 |
+
+**Every value across the plausible range sits inside their 1 SD.** The orphaned
+38.7 came from a configuration nobody recorded; the configuration in
+`test_validation.py` is written down, matches the published protocol, and
+reproduces. The NOT REPRODUCIBLE entry is struck. **Ellis 2022 remains
+genuinely unreproducible** and stays there.
+
+### THE PATENT-AIRWAY DEFECT IS A 60-SECOND TRANSIENT — 2026-09-22
+
+Toner 2019 and Kaiser 2024 both obtained and read. Between them they locate the
+patent-airway CO2 fault precisely, and they correct two things I wrote
+yesterday.
+
+**Read from Toner 2019** (*Anesth Analg* 128:1154-9, n=20, patent airway,
+prolonged laryngoscopy):
+
+- sham apnoea time with SpO2 >94%: median **447 s, IQR 405-525** — and the
+  paper says "median (interquartile range)", so **it is an IQR**, settling the
+  question the Brown commentary raised about Heard's spreads.
+- buccal: 750 s (750-750).
+- **early CO2 accumulation "linear": buccal 3.16, sham 2.82 mmHg/min**.
+- **prolonged buccal: NONLINEAR, "declined over time", averaging 2.22 mmHg/min.**
+- mean tracheal pressure: buccal **0.21 (SD 0.39)**, sham **0.56 (SD 1.25)** cmH2O.
+
+**Read from Kaiser 2024** (*Sci Rep* 14:3617, n=91): preoxygenated to EtO2 >90%,
+15 min apnoeic oxygenation, arterial samples every 2 min. PaCO2 median **43
+(IQR 10) rising to 73 (IQR 14)**, mean change **2.1 mmHg/min**. Cardiac output
+median **5.0 to 6.5 L/min, +30%**.
+
+#### The finding
+
+| window | SEALED (ours) | PATENT (ours) |
+|---|---|---|
+| **0-1 min** | **11.76** | **12.16** |
+| 1-2 min | 1.75 | 1.38 |
+| 2-5 min | 5.59 | 1.91 |
+| 5-10 min | — | 1.85 |
+| 10-15 min | — | 1.75 |
+
+**The first-minute rise is essentially identical in the two regimes, 11.76
+sealed against 12.16 patent.** Sealed, that is right: Stock measured **12 mmHg
+in the first minute** under obstruction and the suite checks it. Patent, it is
+wrong by nearly **four times**: Toner's early phase is linear at 3.16 mmHg/min,
+so about 3.2 mmHg in the first minute.
+
+**The model applies an obstruction-sized equilibration transient to an open
+airway.** At apnoea onset arterial CO2 jumps toward mixed venous because gas
+exchange stops clearing it. Sealed, it has nowhere to go and the jump is large.
+With a patent airway and fresh gas flowing past, CO2 can still leave the
+alveolus, and the jump should be heavily damped. Ours is barely damped at all.
+
+**This resolves an inconsistency I could not explain yesterday.** Measured over
+a window that INCLUDES the first minute we look too steep — 2.482 against
+Kaiser's 2.1. Measured over a window that EXCLUDES it we look too shallow —
+1.78 against Toner's 2.22 and the Glottic trace's 2.16. Both are symptoms of
+one localised error: a first-minute transient about 4x too large, followed by a
+plateau that is slightly too shallow.
+
+#### Two things I wrote yesterday that are wrong
+
+1. **"Our slope increases with time where Toner's declines" — WRONG.** Ours
+   declines monotonically once the transient is past: 1.92, 1.89, 1.86, 1.82,
+   1.78, 1.72 over successive windows to 15 min. Toner reports the same
+   direction. **The shape agrees.** My earlier claim compared a 1-5 min window
+   against a 2.5-9.25 min window, and the first was contaminated by the
+   transient. Comparing two windows that straddle a transient measures the
+   transient, not the shape.
+2. **The "fast CO2 store smaller than 22" prediction was badly posed.** Kaiser
+   reports a rate, not a store. Deriving a store from their rate through our own
+   model and then using it to correct that model is circular — the exact pattern
+   the source audit flagged for `co_co2_gain`. The prediction cannot be tested
+   by this paper and should not be counted as either confirmed or refuted. What
+   Kaiser does give is a **third independent measurement of the patent rate**,
+   agreeing with Toner and the Glottic trace.
+
+#### Smaller corrections these two papers force
+
+- **Our Sci Rep citation year is wrong: it is 2024, not 2023.** But **n=91 is
+  right** — 91 complete data sets were analysed. Corrected in `SOURCES.md`.
+- **The +30% cardiac output rise is real and correctly transcribed** (5.0 to
+  6.5 L/min). Ours gives +35.9% over the same 15 min. The circularity the audit
+  flagged is unchanged — we fit `co_co2_gain` to that +30% and then grade
+  against it — but at least the target is now verified.
+- **"No published study records pressure and CO2 together during apnoea" needs
+  a qualifier.** Toner records tracheal pressure AND transcutaneous CO2 in the
+  same patients. The pressure is near zero (0.21 and 0.56 cmH2O) because the
+  airway is patent, so it does not touch the obstructed claim the three-way
+  study rests on — but the sentence as written is too broad and should say
+  **under obstruction**.
+
+### The one open defect
+
+**Arterial CO2 is far too sensitive to V/Q spread.** Tokics 1996 measures
+log QSD in anaesthetised paralysed supine adults at 0.80 (isotope) to 1.18
+(inert gas). Setting `vq_log_sd` to those NUMBERS gives a Stock slope of 5.41
+and 7.56 against a measured 3.4 — but `vq_log_sd` is not log QSD, and at the
+settings that actually DELIVER 0.80 and 1.18 the slopes are **5.85 and 8.25**.
+See "`vq_log_sd` is NOT the log QSD it is compared against" below. We currently
+pass only because `vq_log_sd` 0.70 delivers a dispersion of 0.644, below even
+the awake inert-gas 0.67. (Those were 5.02 and 7.44 before the Kelman buffer shift was
+applied on 2026-09-15. It helped and did not fix this.) The mechanism is the arterial-to-alveolar CO2 gap, which carries
+the ENTIRE obstructed excess and is generated by mixing CO2 CONTENTS across
+heterogeneous compartments and inverting to a partial pressure. Its size scales
+with the CURVATURE of the CO2 dissociation curve.
+
+**THAT SENTENCE IS BACKWARDS — tested 2026-09-19.** Removing the curvature
+quadruples the gap, 8.35 -> 32.81 mmHg. Curvature SUPPRESSES the gap. And the
+curvature IS the acid-base response: at frozen pH our law is strictly
+proportional to PCO2. See "The NPS validation paper, and what its CO2 equation
+overturns".
+
+**The curve has now been checked, and it is not the answer.** Kelman 1967 and
+Douglas 1988 were obtained on 2026-09-14. Both limbs are verified against the
+papers, and a real error was found: Douglas eq 6 takes `[Hb]` in **g/100 mL**
+and we were passing mmol/L, which made the red-cell correction too weak and put
+whole-blood content 8.7% high — the "51 vs 48" `bloodgas.py` had recorded as
+unexplained. Fixed in both implementations; arterial content is now 47.50 mL/dL
+against a textbook ~48, at Hb 14, pH 7.40, PCO2 40 and SO2 0.97 — the
+configuration `bloodgas.py`'s NOTE_DOUGLAS states. `handover_numbers.py` now
+CHECKS that anchor rather than printing it. The pH there is given, not solved
+from base excess; at BE 0 the same anchor is 47.36.
+
+Correcting it moved the absolute content by 4.2 mL/dL and **every CO2 slope by
+under 0.05 mmHg/min**, because the error was close to a uniform scaling and the
+dynamics depend on dC/dP rather than C. The obstructed a-A gap at 300 s went
+6.68 -> 7.01, i.e. slightly the wrong way. So the dissociation curve is
+exonerated and **the cause of the over-sensitivity is once again unknown.**
+Kelman was the critical path on the hypothesis that curvature explained the
+gap; that hypothesis is now dead and the search is open.
+
+#### Where to look next: `vq_log_sd` is not a V/Q dispersion — 2026-09-18
+
+`vq_log_sd` appears **exactly once** in `apnoea_core.py`, at line 457, and its
+only product is the gas-VOLUME share:
+
+```python
+w     = exp(-z^2/2);  w /= w.sum()        # perfusion share
+ratio = exp(vq_log_sd * z)
+vol   = w * ratio;    vol /= vol.sum()    # share of alveolar gas VOLUME
+```
+
+`model.js` is built the same way. Inflow is then distributed in proportion to
+volume, so **specific ventilation is uniform by construction** and, in a PATENT
+run, V̇A/Q̇ dispersion does equal `vq_log_sd` — which is what makes the Tokics
+comparison look legitimate. **Under obstruction there is no ventilation at all,
+so the only thing `vq_log_sd` can still be is a VOLUME-per-perfusion
+dispersion**, and that is what sets each compartment's local rate of PCO2 rise.
+
+Those are two different physical quantities, and the model forces them equal.
+Tokics measures V̇A/Q̇ by MIGET and by isotope. Neither measures regional gas
+volume per unit perfusion. **We have been calibrating a volume distribution
+against a ventilation measurement.**
+
+Regenerated by `handover_numbers.py`:
+
+| `vq_log_sd` | Stock obstructed | patent | a-A gap at 300 s | 1st-min rise |
+|---|---|---|---|---|
+| 0.30 | 1.89 | 1.65 | **-0.91** | 12.13 |
+| 0.40 | 2.42 | 1.66 | 1.03 | 12.11 |
+| 0.50 | 3.16 | 1.66 | 3.60 | 12.08 |
+| 0.70 (shipped) | 4.72 | 1.68 | 8.35 | 12.02 |
+| 0.80 (Tokics isotope) | 5.41 | 1.69 | 10.32 | 11.99 |
+| 1.18 (Tokics inert gas) | 7.56 | 1.72 | 16.35 | 11.79 |
+| | measured **3.4** | | | measured **12** |
+
+Three things fall out of that table.
+
+1. **The patent arm is inert** — 1.65 to 1.72 across a four-fold change. The
+   parameter is doing essentially nothing except under obstruction, which is
+   why no patent-airway dataset could ever have caught this.
+2. **The first-minute rise is inert too**, 11.8 to 12.1 against a measured 12.
+   The bulk CO2 bookkeeping is right at every value. Only the gap moves.
+3. **The a-A gap changes SIGN between 0.30 and 0.40.** That is a hard bracket,
+   not a fitted one: below it the model says arterial CO2 runs BELOW alveolar
+   in a sealed lung.
+
+Stock's 3.4 needs a volume dispersion near 0.5. **That is not permission to set
+it to 0.5.** CLAUDE.md has refused four fits and this would be a fifth. What
+the table licenses is a different claim: *the quantity that should be measured
+is regional gas volume per unit perfusion, and we do not have it.* If that
+turns out to be near 0.5 in the anaesthetised supine adult, the model is right
+for a reason. If it turns out to be 0.8 like the ventilation dispersion, this
+hypothesis is dead too and the mechanism is elsewhere.
+
+**Nothing in the repository settles it.** SPECT/CT regional FRC against regional
+perfusion would; no such paper has been read here. Until one is, this is a
+direction, not a finding.
+
+##### Looked for it 2026-09-18. It is not in the papers we hold.
+
+Tokics 1996 and Rothen 1993 were re-read for it. Neither measures regional gas
+VOLUME against regional perfusion.
+
+- **Tokics 1996** comes closest and still does not do it. SPECT gives regional
+  ventilation and regional perfusion in the same ten subjects, but its regional
+  axis is ventilation, not volume. Its only volume figure is whole-lung: "the
+  calculated mean gas volume (FRC) approximates 2.0 liters" (p. 1829), against
+  the 2,012 mL our 70 kg / 1.75 m patient carries. That is an independent
+  agreement on the total, and it says nothing about the distribution.
+- **Rothen 1993** uses Hounsfield units only to threshold atelectasis, "between
+  -100 and +100 HU". No regional volume-perfusion pairing.
+
+So the discriminating measurement is still not in hand. But going to look for it
+turned up two things in Tokics that this file had been missing.
+
+##### 1. Tokics reports log V̇SD as well as log Q̇SD. We only ever used log Q̇SD.
+
+Table 3, read from the page 2026-09-18:
+
+| | log Q̇SD | log V̇SD |
+|---|---|---|
+| awake, inert gas | 0.67 ± 0.07 | 0.54 ± 0.06 |
+| anaesthetised, inert gas (MIGET) | **1.18** ± 0.12 | **0.62** ± 0.05 |
+| anaesthetised, isotope (SPECT) | **0.80** ± 0.04 | **0.78** ± 0.04 |
+
+**The model forces the two equal.** Perfusion weight is Gaussian in z and
+ln(V̇/Q̇) is linear in z, so the ventilation weight is the same Gaussian shifted,
+with the same width. Computed over the shipped grid the difference is -0.012 at
+`vq_log_sd` 0.50, -0.033 at 0.70, -0.061 at 0.869 and -0.179 at 1.282 — never
+more than a seventh, where the measurement wants a factor of 1.9.
+
+That means the model can approximately represent the ISOTOPE lung, where the two
+are 0.80 and 0.78, and **cannot represent the MIGET lung at all**, where they are
+1.18 and 0.62, a factor of 1.9 apart. Breaking that tie needs ln(V̇/Q̇) nonlinear
+in z, or a non-Gaussian perfusion distribution. One parameter cannot do it.
+
+##### 2. `vq_log_sd` is NOT the log Q̇SD it has been compared against
+
+The z grid is `np.linspace(-2.2, 2.2, n)`. Truncating a Gaussian at ±2.2σ
+discards the tails, so the discrete distribution has **SD 0.9206, not 1**, and
+
+    model log Q̇SD = 0.9206 × vq_log_sd
+
+The factor is insensitive to `n_vq` (0.9336 at 20, 0.9206 at 80, 0.9171 at 400).
+So:
+
+| | |
+|---|---|
+| shipped `vq_log_sd` 0.70 actually delivers log Q̇SD | **0.644** |
+| to deliver Tokics' isotope 0.80 needs `vq_log_sd` | 0.869 |
+| to deliver Tokics' inert gas 1.18 needs `vq_log_sd` | 1.282 |
+
+**This file said we "pass only because `vq_log_sd` is set to 0.70, below
+measurement". It is worse than that: the delivered dispersion is 0.644, below
+even the AWAKE inert-gas 0.67.**
+
+##### Correcting the comparison makes the benchmark WORSE, and that is recorded
+
+At the settings that actually deliver Tokics' numbers:
+
+| delivers log Q̇SD | `vq_log_sd` | Stock obstructed | patent | a-A gap at 300 s |
+|---|---|---|---|---|
+| 0.62 (inert-gas log V̇SD) | 0.673 | 4.52 | 1.68 | 7.69 |
+| 0.67 (awake log Q̇SD) | 0.728 | 4.92 | 1.68 | 8.82 |
+| 0.78 (SPECT log V̇SD) | 0.847 | 5.71 | 1.69 | 11.14 |
+| 0.80 (SPECT log Q̇SD) | 0.869 | **5.85** | 1.69 | 11.50 |
+| 1.18 (inert-gas log Q̇SD) | 1.282 | **8.25** | 1.73 | 18.41 |
+| | | measured **3.4** | | |
+
+This file recorded 5.41 and 7.56 at those two measurements. The true figures are
+**5.85 and 8.25**, so the gap to Stock is larger than we had written down.
+CLAUDE.md: a correction that makes a benchmark worse is information. It is
+recorded and nothing is being reached for to offset it.
+
+**The grid was NOT widened.** Truncating at ±2.2σ is a legitimate discretisation
+choice; what was wrong was comparing the parameter to a measured log Q̇SD as
+though they were the same number. Widening to ±3σ or ±4σ would make the
+parameter mean what its name says and would move every benchmark in the suite.
+That is a decision, not a correction, and it is left open.
+
+It is also free of the mechanics: the separability table above has `vq_log_sd`
+moving the Moreault pressure by 0.0%, so this can be worked without reopening
+the pressure limb.
+
+### "35 of 36 pass" is a weak statement — 2026-09-18
+
+Verified by running the suite: **35 PASS, 1 FAIL, 36 checks.** (**34 PASS, 2
+FAIL since 2026-09-20**, when the recoil floor moved and took `ICSM jet, PaCO2`
+out of band. Everything this section says about what the count is worth applies
+unchanged — and the new failure is a MODEL comparator, which is exactly the
+kind of row the section argues should not be counted alongside a measurement.)
+The count is right. As a measure of the model's health it is close to meaningless, and this
+file has been leaning on it. What the 36 actually contains:
+
+- **Five of them are one assertion counted five times.** `no cardiac response
+  at Hb 15 / 14 / 10 / 8 / 7 (must be inert)` is a loop, each iteration
+  expecting exactly 1.0-1.0 and each returning 1.0.
+- **Two pass by not happening.** `Toner buccal, held to 750 s` and
+  `Heard buccal, held to 750 s` both report **9999.0** against a band of 750 to
+  1e9. That is `time_to`'s "never reached" sentinel. True, but it is an
+  absence, not an agreement, and neither can fail from above.
+- **Four test the integrator, not the physiology** — dt convergence, oxygen
+  balance closing, stroke volume constant within a run, aventilatory mass flow.
+  The file says so itself: "if this fails the integrator is unstable, not the
+  physiology."
+- **Several bands are wide enough to swallow large error:**
+
+| check | band | value |
+|---|---|---|
+| oxygen balance closes | -200 to +900 mL | 2.4 |
+| O'Loughlin venous PCO2 rate | 50-350 Pa/min | 213.2 |
+| ICSM rescue not sustained | 0-60 % | 33.1 |
+| Moreault, subatmospheric | -50 to -12 cmH2O | -17.7 |
+
+- **They are not independent.** Three tilt checks from one limb, four ICSM jet
+  checks from one scenario, four Toner/Heard checks from two.
+
+Strip the duplicates, the sentinels and the self-checks and there are roughly
+**sixteen distinct claims against measured data**, not thirty-six.
+
+Two more things about how to read it. `Stock obstructed, first minute` passes
+at 12.0 against a band of 9-15 — exact, but that band is +-25%, so it would
+pass on a badly wrong model. And the Moreault check only became a LIVE check on
+2026-09-17: before the compliance fix the value sat pinned at the -50
+`p_collapse` floor, which is the band's own lower edge, so it could not fail
+from below.
+
+**The honest sentence is not "35 of 36 pass".** It is: the CO2 limb is the most
+heavily tested thing in the suite and it fails the one check with a tight band
+against a real measurement. Everything else either passes comfortably, passes
+inside a band too wide to discriminate, or is not testing the model against the
+world at all.
+
+### Stock 1989 also measured OXYGEN, and we never used it — 2026-09-18
+
+Re-read on 2026-09-18 looking for SaO2 under complete obstruction. It was in
+our hands the whole time. **Table 1 has a PaO2 column**, and the Results text
+says, verbatim: *"Pulse oximeter and laboratory SaO2 remained above 0.92 at all
+times."*
+
+Table 1, read from the page (mean ± SD):
+
+| apnoea t (s) | N | pH | PaCO2 | PaO2 |
+|---|---|---|---|---|
+| 0 | 14 | 7.42 ± 0.06 | 39 ± 5 | 412 ± 108 |
+| 20 | 13 | 7.38 ± 0.07 | 44 ± 7 | 423 ± 136 |
+| 40 | 14 | 7.35 ± 0.06 | 48 ± 8 | 452 ± 69 |
+| 60 | 14 | 7.34 ± 0.07 | 50 ± 7 | 402 ± 16 |
+| 120 | 13 | 7.32 ± 0.06 | 53 ± 6 | 385 ± 163 |
+| 180 | 11 | 7.31 ± 0.05 | 56 ± 6 | 383 ± 84 |
+| 240 | 6 | 7.28 ± 0.05 | 59 ± 7 | 332 ± 93 |
+| 300 | 7 | 7.26 ± 0.06 | 63 ± 9 | 314 ± 87 |
+
+Their fitted equation, also from the page:
+
+    PaCO2 = (PaCO2)0 + 0.044(t) + 2.72[ln(t)],  t in seconds
+
+**Against it, at the shipped `feo2_start` 0.87:**
+
+| t (s) | model PaO2 | Stock PaO2 | model SaO2 |
+|---|---|---|---|
+| 0 | 512 | 412 ± 108 | 100.0 |
+| 60 | 461 | 402 ± 16 | 100.0 |
+| 120 | 329 | 385 ± 163 | 99.9 |
+| 180 | **135** | 383 ± 84 | 98.7 |
+| 240 | **80** | 332 ± 93 | 93.3 |
+| 300 | **61** | 314 ± 87 | **85.3** |
+
+**The model tracks to 120 s and then collapses, and Stock does not.** At 300 s
+we are at PaO2 61 with SaO2 85.3%, against a measured 314 and an explicit
+statement that no patient was ever below 0.92.
+
+**It is not a preoxygenation-assumption artefact.** Tried at `feo2_start` 0.80
+and 0.70, where the baseline matches Stock better (462 and 392 against 412 ±
+108), the collapse is the same or faster: SaO2 at 300 s is 82.9% and 77.1%. The
+model loses oxygen too fast under obstruction wherever it starts, because the
+sealed lung is shrinking and the shunt is rising.
+
+**Read the late rows with care.** N falls 14 → 7, and one of the three stopping
+rules WAS SaO2 reaching 0.93, so the 240 and 300 s rows are conditioned on not
+having desaturated — survivor bias, in the direction that flatters Stock. But
+the bias cannot carry it: if the model were right almost nobody would reach
+300 s above 0.92, and half of them did. The ±16 SD at 60 s is also anomalous
+beside ±108, ±136 and ±163 elsewhere in the column; it is transcribed as
+printed and should be treated with suspicion.
+
+Two design differences from our Stock reference patient, both unmodelled:
+their patients had **no neuromuscular blockade** (enflurane deep enough to
+abolish effort), so chest wall tone is not a paralysed one; and they were
+36 ± 14 yr where we run 45.
+
+**This is a second, independent line of evidence on the same limb.** Every
+oxygen benchmark in the suite — Toner, Heard, O'Loughlin, ICSM — uses a patent
+airway or a rescue. **Nothing in the suite has ever tested oxygen under
+obstruction**, which is the regime the whole project is about, and the first
+time it is tested the model is badly wrong. Regenerated by
+`handover_numbers.py`.
+
+### Every paper we hold, every channel it records — 2026-09-19
+
+All 15 uploaded PDFs screened for SaO2, PaO2, PaCO2, pH, CO, HR, MAP. Four
+record **two or more AND can be configured**. Regenerated by
+`handover_numbers.py`.
+
+| study | channels | regime |
+|---|---|---|
+| Tokics 1996 Table 2 | CO HR MAP PaO2 PaCO2 | anaesthetised, **ventilated** (our t=0) |
+| Stock 1989 Table 1 | PaCO2 pH PaO2 SaO2 | **complete obstruction**, 300 s |
+| Ebata 1991 Table II | PaCO2 pH PaO2 CO MAP HR | **apnoeic oxygenation**, 10 min |
+| Laviola 2026 S5 | CO MAP SaO2 PaO2 PaCO2 | CICO at SaO2 40%, **model** comparator |
+
+Three more record two or more but cannot be configured **as a time course**:
+**Chen & Scharf 1998** (pigs), **Condos 1987** and **Wright 2023** (voluntary
+Mueller, 5-15 s). Note Condos and Wright ARE used, and are the best human data
+we hold, for the ITP-to-stroke-volume coupling — see "Is there a negative
+pressure that prevents cardiac output?" above.
+Rothen 1993, Wei 2020, Venegas 1998, Moreault 2021, Ellis 2022, both Kelman
+papers and Douglas record fewer than two of the seven.
+
+#### CONSOLIDATED SCORECARD — rebuilt 2026-09-20
+
+Supersedes the table immediately below, which predated Hardman & Wills 2006
+and Hardman 1998. Every row marked MEASURED or MODEL, and by regime, because
+those decide how much weight a disagreement carries.
+
+| comparator | kind | regime | channel | ours | theirs | diff |
+|---|---|---|---|---|---|---|
+| **Stock 1989** | MEASURED | **obstructed** | PaCO2 at 180 s | 56.37 | 56 (6) | **+0.7%** |
+| | | | PaCO2 at 300 s | 69.39 | 63 (9) | +10.1% |
+| | | | pH at 300 s | 7.24 | 7.26 (0.06) | -0.3% |
+| | | | titration slope | -0.67 | **-0.758** | +11.7% |
+| | | | **PaO2 at 300 s** | **60.5** | **314 (87)** | **-80.7%** |
+| | | | SaO2 at 300 s | 85.3 | >92 stated | -11.1% |
+| **Ebata 1991** | MEASURED | patent | PaCO2 at 600 s | 75.29 | 78 (3) | -3.5% |
+| | | | pH at 600 s | 7.20 | 7.17 (0.02) | +0.4% |
+| | | | PaO2 at 600 s | 375.3 | 332 (38) | +13.0% |
+| | | | CO | 5.03 | 5.7 (0.8) | -11.7% |
+| | | | MAP | 76.2 | 81 (7) | -5.9% |
+| | | | HR | 81.1 | 100 (7) | -18.9% |
+| **Tokics 1996** | MEASURED | ventilated | PaO2 at t=0 | 194.0 | 159.1 (31.9) | +21.9% |
+| **Hardman & Wills** | MODEL | closed | to SaO2 90% | 5.60 | 6.54 | -14.4% |
+| | | | **SaO2 90->40%** | **5.07** | **1.56** | **+225%** |
+| | | open | to SaO2 90% | 9.25 | 8.40 | +10.1% |
+| | | | SaO2 90->40% | 3.22 | 2.20 | +46.2% |
+| **Laviola 2026** | MODEL | obstructed | time to SaO2 40% | 504 s | ~510 s | -1.2% |
+| | | | PaO2 | 27.7 | 28.3 (0.4) | -2.3% |
+| | | | **PaCO2** | **73.4** | **84.6 (4.4)** | **-13.3%** |
+| | | | CO | 1.79 | 2.7 (0.1) | -33.7% |
+| | | | **MAP** | **27.4** | **57.4 (2.4)** | **-52.3%** |
+
+The four Laviola rows moved on 2026-09-20 with the recoil floor (see *THE
+RECOIL FLOOR*), and the PaCO2 row **broke a benchmark**: 77.4 on the old -50
+floor, inside `test_validation`'s 75.8-93.4 band by 1.6 mmHg, and 73.4
+unclamped, outside it by 2.4. Recorded, not compensated.
+
+Tokics' PaCO2, CO, HR and MAP are excluded: the PaCO2 is circular (we set
+`paco2_start` from their table) and the three haemodynamics are the `Patient`
+allometry, not a simulation. Only PaO2 is informative there.
+
+**By channel:**
+
+| | across comparators |
+|---|---|
+| PaCO2 | Stock +1% / +10%, Ebata -3%, Laviola -13% |
+| pH | Stock -0%, Ebata +0% — but the SLOPE is 12% shallow |
+| PaO2 | **Stock -81%**, Ebata +13%, Tokics +22%, Laviola -2% |
+| SaO2 | Stock -11% |
+| CO | Ebata **-12%**, Laviola **-34%** |
+| MAP | Ebata **-6%**, Laviola **-52%** |
+| HR | Ebata -19% (dopamine-driven, expected) |
+
+Four readings, one of them new.
+
+1. **CO2 is sound except in the last two minutes of obstruction.** +0.7% at
+   180 s, -3% on Ebata, -13% against an independent model. The red benchmark
+   is a late-window failure, not a broken limb.
+2. **pH level is exact; the pH SLOPE is not.** -0.3% and +0.4% on the values,
+   12% shallow on the titration line. Our buffering is too strong — a
+   level-versus-slope distinction the single-point checks could never see.
+3. **The oxygen defect is obstruction-specific.** -81% obstructed against
+   +13% and +22% patent and ventilated. Nothing that acts in all regimes can
+   explain it.
+4. **NEW — the haemodynamic error SCALES WITH SEVERITY.** Ebata's patients
+   are mildly stressed (PaCO2 78, PaO2 332, saturation normal) and we are
+   -12% on CO and -6% on MAP. Laviola's are at SaO2 40% and we are **-30% and
+   -50%**. That is a gradient, not a constant offset: **the sicker the
+   patient, the worse we get.** It points at the cardiovascular RESPONSE to
+   extreme hypoxia, hypercapnia and negative intrathoracic pressure, not at
+   the baseline allometry — which the Tokics exclusion above shows we have
+   never actually tested anyway.
+
+**Signed divergence, model minus measured** (superseded by the scorecard
+above; kept because the by-study layout is easier to scan):
+
+| study | SaO2 | PaO2 | PaCO2 | pH | CO | HR | MAP |
+|---|---|---|---|---|---|---|---|
+| Tokics (ventilated) | — | +22% | ~~+0%~~ | — | (-29%) | (-11%) | (-10%) |
+| Stock (obstructed) | -11% | **-81%** | +10% | -0% | — | — | — |
+| Ebata (apnoeic ox.) | — | +13% | -3% | +0% | -12% | -19% | -6% |
+| Laviola (CICO) | — | -1% | -9% | — | **-30%** | — | **-50%** |
+
+**Read the Tokics row with care — corrected 2026-09-19.** It is the model's
+t = 0, and t = 0 is not a simulation.
+
+- **Its PaCO2 cell is CIRCULAR and is struck through.** The run sets
+  `paco2_start=35.7` from Tokics' own table and reads 35.8 back out. That is an
+  input echoed to an output and it was wrong to table it as agreement.
+- **CO, HR and MAP are in brackets because they test the ALLOMETRY, not the
+  simulator.** Verified: `pt.co_anaes()` and `r['co'][0]` are both 4.044. The
+  -29% is a statement about `co_anaes()` at 77.4 kg, with no dynamics in it.
+- **Only PaO2 carries information**, because it is derived from `feo2_start`
+  through the gas equation and the shunt rather than set directly.
+
+The other three rows are genuine simulation outputs at the stated times.
+
+**And the two patent configurations really are patent.** Checked by running
+Ebata's configuration both ways. Patent: 2,098 mL of O2 drawn in over 600 s,
+mean inflow 211 mL/min (which is about VO2, as aventilatory mass flow should
+be), alveolar volume 2012 -> 2011 mL, pressure -0.01 cmH2O. The same patient
+obstructed: zero inflow, volume 2012 -> 372 mL, pressure pinned at the -50
+floor, PaO2 375 -> 26, PaCO2 75.3 -> 96.4. The model separates the regimes
+sharply, which is what makes the Stock disagreement a statement about the
+obstructed branch specifically.
+
+Three patterns, and they localise the faults better than anything else here.
+
+**1. The CO2 limb is the BEST-agreeing channel in the whole set.** PaCO2 lands
+within 10% of all four, and pH within a few hundredths, including on Ebata's
+brain-dead patients and Laviola's independent model. The failing
+`Stock obstructed, 1-5 min slope` is a SLOPE error: at 300 s the absolute
+PaCO2 is only 10% high (69.4 against 63 ± 9, 0.7 SD). Worth holding onto — the
+one red check in the suite is not saying the CO2 bookkeeping is broken.
+
+**2. The oxygen error appears ONLY under complete obstruction.** PaO2 is +22%,
++13% and -1% on the other three and **-81%** on Stock. Not a dissociation-curve
+problem, not a preoxygenation problem, not a stores problem — those would show
+everywhere. Something about the sealed lung specifically.
+
+**Do not read Laviola's -1% as a second opinion that rescues it.** Their
+endpoint IS SaO2 40%, so we sample at a matched saturation and the dissociation
+curve then forces PaO2 to agree. It is near-automatic and not an independent
+test of the oxygen time course.
+
+**But the timing does agree**: we reach SaO2 40% at 502 s against their ~510 s.
+So **two independently built models agree with each other on the rate of
+desaturation under obstruction, and both disagree with the one human
+measurement.** That is the sharpest statement of the oxygen problem we have.
+
+**3. The haemodynamics run LOW everywhere.** CO -29%, -12%, -30%; MAP -10%,
+-6%, -50%; HR -11%, -19%. Never high, at any condition. The worst is at
+Laviola's CICO point: CO -30% (8 SD) and MAP -50% (12 SD). HANDOVER has
+recorded that haemodynamic disagreement qualitatively for a while; this is the
+number.
+
+**Caveats that are not the model's fault.** Ebata's patients were brain-dead,
+mean body temperature 36.0 °C, and **all nine were on dopamine** with two also
+on dobutamine — so their HR of 100 is pharmacologically driven and our -19% is
+expected rather than a defect. Tokics' ± is SE, converted here to SD as
+SE·sqrt(10). Stock's 300 s row is 7 of 14 survivors and one stopping rule was
+SaO2 0.93, so it is conditioned on not having desaturated.
+
+**And the coverage gap this exposes.** Of the four, only Stock is a human
+measurement under complete obstruction — the regime the project is about — and
+it is the one we disagree with most. Ebata is patent-airway, Tokics is
+ventilated, Laviola is a model.
+
+### How ICSM validated itself, and why our agreement with it means less than it looked — 2026-09-19
+
+Checked 2026-09-19 in the Laviola 2026 supplement (S3), which is the only
+description of the ICSM simulator we hold.
+
+**The chain, drawn out.** Reconstructed and checked 2026-09-19 because it is
+easy to get lost in; "held" means the document is in this session.
+
+```
+Laviola 2026  (CICO jet, COMPLETE OBSTRUCTION)          <- HELD, read
+  |  "ICSM ... based upon the Nottingham Physiology Simulator"
+  |
+  +- "widely validated in numerous previous investigations 2-7"
+  |    2 Hardman 1998   mechanical ventilation          <- not held
+  |    3 Hardman 2003   CO2 elimination / deadspace     <- not held
+  |    4 McCahon 2008   ARDS oxygenation indices        <- not held
+  |    5 Hardman 2010   a PaO2 prediction formula       <- not held
+  |    6 Das 2011       systems-engineering validation  <- not held
+  |    7 Saffaran 2017  paediatric ARDS                 <- not held
+  |        -> none is apnoea, let alone obstruction
+  |
+  +- apnoea modules "validated against clinical investigations 34-37"
+       34 Fraioli 1973     apnoeic oxygenation          <- not held
+       35 Berthoud 1991    preoxygenation               <- not held
+       36 Baraka 2007      nasopharyngeal insufflation  <- not held
+       37 Gustafsson 2017  THRIVE                       <- not held
+            -> three of the four require a PATENT airway by construction
+
+Hardman & Wills 2006  (children, open AND closed)       <- HELD, read
+  |  same simulator lineage (NPS)
+  |
+  +- "a validated predictor ... during apnoea ... including airway patency"
+  |    ref 1  Anesth Analg 2000;90:614-8                <- not held
+  |           "VALIDATION of a set of physiological models"
+  |    ref 2  Anaesthesia 2005;60:741-6                 <- not held
+  |           "Hypoxaemia during OPEN-AIRWAY apnoea"
+  |
+  +- its own "specific validation for this investigation",
+     online Appendix 1                                  <- not held
+```
+
+**There is a genuine trap in the source material.** Anesthesia & Analgesia 2000
+volume 90 carries TWO adjacent Hardman/Wills/Aitkenhead papers:
+
+- **614-618** — "...**validation** of a set of physiological models"
+- **619-624** — "**Factors determining** the onset and course of hypoxaemia"
+
+**Laviola 2026 cites 619-624** (the use, under "used to study apnea) and **does
+not cite 614-618 anywhere**. Hardman & Wills 2006 cites 614-618 as the
+validation. So the apnoea validation paper exists in the lineage but the CICO
+paper we compare ourselves against does not point at it.
+
+**And neither document cites Stock 1989.** Checked both reference lists; the
+only "Stock" in Hardman & Wills is *Stocks J*, on infant FRC. So the single
+human measurement of gas exchange under complete tracheal occlusion — the paper
+our one red benchmark is built on — is absent from the validation chain of the
+simulator being used to model complete obstruction.
+
+**The supplement contains no validation data of its own.** Searched it for
+"compared with", "agreement", "calibrated", "tuned", "fitted to": zero hits.
+The entire claim is one sentence of citation:
+
+> "It has been widely validated in numerous previous investigations 2-7"
+
+Refs 2-7 are mechanical ventilation (Hardman 1998), CO2 elimination and dead
+space (Hardman 2003), ARDS oxygenation indices (McCahon 2008), a PaO2
+prediction formula (Hardman 2010), a systems-engineering validation (Das 2011)
+and paediatric ARDS (Saffaran 2017). **None is an airway-obstruction study.**
+
+The apnoea modules are validated separately, against refs **34-37**:
+
+| ref | study |
+|---|---|
+| 34 | Fraioli, Sheffer, Steffenson. Pulmonary and Cardiovascular Effects of **Apneic Oxygenation** in Man. Anesthesiology 1973;39:588-96 |
+| 35 | Berthoud, Peacock, Reilly. Effectiveness of **preoxygenation** in morbidly obese patients. BJA 1991;67:464-6 |
+| 36 | Baraka et al. Supplementation of pre-oxygenation using **nasopharyngeal oxygen insufflation**. Anaesthesia 2007;62:769-73 |
+| 37 | Gustafsson et al. Apnoeic oxygenation using **THRIVE** — a physiological study. BJA 2017;118:610-7 |
+
+**Three of those four cannot be done on an obstructed airway at all**, because
+each delivers gas to the lung: apnoeic oxygenation, nasopharyngeal insufflation
+and THRIVE. The fourth (Berthoud) we have not read and its apnoea airway state
+is not determinable from the citation. **Only the citations were read, not the
+papers.**
+
+**So ICSM's apnoea validation rests on patent-airway oxygen delivery, and its
+use in a CICO paper is an extrapolation into complete obstruction — exactly as
+ours is.**
+
+That reframes the divergence table above. We reach SaO2 40% at 502 s against
+their ~510, and it was tempting to read that as two independent models
+corroborating each other. **It is not corroboration. It is two extrapolations
+from the same kind of patent-airway data, landing in the same place, and both
+landing a long way from Stock 1989** — the one human measurement under complete
+obstruction, where our PaO2 at 300 s is 81% low. Agreement between the models
+carries almost no evidential weight for the obstructed regime.
+
+Two incidental correspondences worth recording, neither of them validation:
+their anatomical dead space is **150 mL**, the same as our `vd_anat`; and their
+alveolar compartment count `N_alv` is **100**, against the 80 we moved to on
+2026-09-18 for the monotonicity reason. Independent arrival at the same order.
+
+Their in-silico cohort is **100 virtual healthy adults, 45-90 kg**, with
+parameters "ranged to fall within normal ranges" from the literature — so the
+SDs in Table S5 are cohort spread by construction and were never measurement
+uncertainty. `test_validation.py` already says that; this confirms it from the
+method section.
+
+**Lead, unread:** Fraioli 1973 is titled as covering the *cardiovascular*
+effects of apnoeic oxygenation in man, so it may carry CO, MAP and HR alongside
+gases. If it does it would be a fifth entry in the cross-study table above and
+the only one besides Ebata with haemodynamics during apnoea. Not in this
+repository.
+
+### Hardman & Wills 2006: the obstruction effect has the WRONG SIGN — 2026-09-19
+
+**Hardman JG, Wills JS. The development of hypoxaemia during apnoea in
+children: a computational modelling investigation. Br J Anaesth
+2006;97:564-70.** MODEL, not measurement. Nottingham Physiology Simulator
+(NPS), the lineage ICSM is built on.
+
+**The first comparator we hold that runs BOTH open and closed airway.** Their
+18-yr-old is the entry closest to our adult: 170 cm, 54 kg, Hb 140 g/L, Crs
+144 mL/cmH2O, CO 5100 mL/min, VO2 250 mL/min, FRC 1769 mL.
+
+Matched by setting `feo2_start` to reproduce their stated post-preoxygenation
+PaO2 (62 kPa at 1 min, 81 kPa at 3 min), so the comparison is of apnoea
+dynamics and not of how each model preoxygenates. Minutes from start of apnoea:
+
+| airway | preO2 | early (to 90%) ours / theirs | late (90→40%) ours / theirs | total ours / theirs |
+|---|---|---|---|---|
+| closed | none | 0.55 / 0.74 | 2.42 / 1.72 | 2.97 / 2.46 |
+| closed | 1 min | 4.95 / 5.11 | **4.40 / 1.62** | 9.35 / 6.73 |
+| closed | 3 min | 5.60 / 6.54 | **5.07 / 1.56** | 10.67 / 8.10 |
+| open | none | 0.57 / 0.82 | 2.55 / 1.91 | 3.12 / 2.73 |
+| open | 1 min | 7.78 / 6.32 | 3.10 / 2.09 | 10.88 / 8.41 |
+| open | 3 min | 9.25 / 8.40 | 3.22 / 2.20 | 12.47 / 10.60 |
+
+**The early phase agrees within about 15%.** The terminal phase does not.
+
+| terminal rate, SaO2 90→40% | ours | theirs |
+|---|---|---|
+| closed airway | **9.9 %/min** | 32.1 %/min (they state 33 across ages) |
+| open airway | **15.5 %/min** | 22.7 %/min (they state 26 across ages) |
+
+**And the sign of the obstruction effect is INVERTED.** Closing the airway
+makes their patient desaturate FASTER (33 against 26 %/min); it makes ours
+desaturate **SLOWER** (9.9 against 15.5). That is not a magnitude disagreement,
+it is a direction disagreement, and it is the first one this project has found.
+
+#### The mechanism is the depressurization floor, and the human measurement is on our side
+
+Their stated mechanism is explicit: *"the alveolar oxygen tension is the
+product of the intra-alveolar pressure and the alveolar oxygen fraction"*, so
+a closed lung's PaO2 crashes because the **pressure** crashes.
+
+Their Table 4, intrathoracic pressure when SaO2 reaches 40%, closed airway,
+18-yr-old: **100.01 kPa** (no preO2), **72.50** (1 min), **44.34** (3 min).
+Those read as absolute pressures — the no-preO2 value is atmospheric. So their
+3-min-preoxygenated patient reaches about **-57 kPa gauge, which is roughly
+-580 cmH2O**.
+
+Ours asymptotes near **-70 cmH2O**, about eight times less. ~~That single
+parameter explains the inverted sign~~ — **struck 2026-09-20.** That sentence
+credited the disagreement to `p_collapse`, and it was never `p_collapse`: the
+floor now sits at -149.55 and removing it entirely changes nothing at all (see
+*THE RECOIL FLOOR* above). -70 cmH2O is what this model's mechanics give. The
+comparison itself stands, and is sharper for being a mechanism difference
+rather than a parameter one: their closed lung loses half its absolute pressure
+and ours loses 9% of it.
+
+**Moreault 2021 MEASURED -20 (5) and -31 (10) cmH2O in human lungs.** We give
+-17.7. Whatever is wrong with our terminal desaturation, **the NPS
+depressurization is an order of magnitude beyond anything anyone has measured
+in a human thorax**, and our mechanics limb is the one sitting near the
+measurement. Both models cannot be right, and this is the sharpest fork in the
+whole comparison set:
+
+- their desaturation rate may match their validation (which we do not hold),
+  but it is produced by a pressure excursion that Moreault rules out;
+- our pressure matches Moreault, and our terminal desaturation is 3x too slow.
+
+**That is the thing to work on next.** It is a single, well-posed question:
+what makes a sealed lung desaturate fast WITHOUT a pressure excursion that
+human measurement forbids?
+
+Note on their units: Table 4 is headed "intrathoracic pressure" while the text
+discusses "intra-alveolar pressure". Read here as absolute because the
+no-preoxygenation value is atmospheric. Transcribed as printed.
+
+#### Correction to "How ICSM validated itself" below
+
+That section said ICSM's apnoea validation rests on patent-airway oxygen
+delivery. **That is accurate about what the Laviola 2026 supplement cites, and
+incomplete about the lineage.** Hardman & Wills 2006 cites, as NPS apnoea
+validation:
+
+- ref 1: Hardman, Wills, Aitkenhead. **Investigating hypoxaemia during apnoea:
+  validation of a set of physiological models.** Anesth Analg 2000;90:614-8
+- ref 2: McNamara, Hardman. Hypoxaemia during **open-airway** apnoea.
+  Anaesthesia 2005;60:741-6
+
+and states the NPS "is a validated predictor of the course of hypoxaemia in
+adults during apnoea and has been used successfully to predict the effects of
+preoxygenation, functional residual capacity, oxygen consumption, **airway
+patency**, pulmonary deadspace and shunt during apnoea."
+
+So there IS an apnoea validation paper in the lineage, and the Laviola 2026
+supplement did not list it among its validation refs 2-7. **Neither has been
+read here.** Ref 2 is titled open-airway. Hardman & Wills also report "specific
+validation of the NPS for this investigation" in an online Appendix 1 we do not
+hold. The narrower claim stands: nothing we have read validates any of these
+models against a human measurement under complete obstruction.
+
+**Leads, unread:** Anesth Analg 2000;90:614-8 (the validation), and their refs
+28-29, Frumin 1959 "Apnoeic oxygenation in man" and Holmdahl 1956 "Pulmonary
+uptake of oxygen, acid-base metabolism, and circulation during prolonged
+apnoea" — the latter titled as carrying circulation during prolonged apnoea.
+
+#### Anesth Analg 2000;90:614-8 — SOUGHT 2026-09-19, NOT OBTAINED
+
+**Hardman JG, Wills JS, Aitkenhead AR. Investigating hypoxaemia during apnoea:
+validation of a set of physiological models. Anesth Analg 2000;90(3):614-8.**
+**PMID 10702446. DOI 10.1097/00000539-200003000-00021.** Its companion, the
+"Factors determining" paper, is PMID 10702447 / DOI ...-00022 — adjacent, which
+is consistent.
+
+This is **the** paper in the chain above. Could not be retrieved: every route
+is blocked by this environment's egress proxy (publisher, PubMed, OpenAlex,
+Crossref, Semantic Scholar, CORE, the Nottingham repository, ResearchGate —
+all refuse). Only keyword search reaches the network, and it returns prose, not
+documents.
+
+**A search summary claims it validated the NPS "by reproducing the
+methodologies and results of four published clinical studies" and that it
+"tested with both open airway and obstructed airway conditions". TREAT BOTH AS
+UNVERIFIED AND DO NOT RECORD THEM AS FACT.** The identical search tool, minutes
+earlier, confidently attributed Stock 1989's figures to Holmdahl 1956 (see
+below). The obstructed-airway claim in particular is exactly the claim that
+would change the conclusion of the chain above, which is the strongest possible
+reason to insist on reading the paper itself.
+
+**What to check first when it is obtained:** whether any of its comparator
+studies is a human measurement under COMPLETE airway obstruction, and if so
+which. That single fact decides whether "nothing we have read validates any of
+these simulators against a human measurement under complete obstruction" stays
+true once we have read it.
+
+#### Holmdahl 1956 — SOUGHT 2026-09-19, NOT OBTAINED
+
+**Holmdahl MH. Pulmonary uptake of oxygen, acid-base metabolism, and
+circulation during prolonged apnoea. Acta Chir Scand 1956;212(Suppl):1-128.**
+PMID 13326155. A 128-page Uppsala doctoral thesis.
+
+Could not be retrieved from this environment. Every route is blocked by the
+network egress proxy — PubMed, DiVA (Uppsala's repository), archive.org,
+HathiTrust, Springer, Wiley, Wikipedia, doi.org and LIBRIS all refuse. Only
+keyword search works, and it returns summaries rather than documents.
+
+**It is worth chasing.** By its title it carries oxygen uptake, acid-base AND
+circulation, in humans, during PROLONGED apnoea. That would make it the only
+human dataset we have with haemodynamics during apnoea besides Ebata 1991, and
+it sits in exactly the regime where we and Hardman & Wills diverge most: the
+terminal phase, where our desaturation is three times too slow and theirs is
+driven by a pressure excursion Moreault rules out.
+
+**And a warning, because this is the project's oldest failure mode.** The
+search summary returned while looking for it confidently attributed to Holmdahl
+a PaCO2 rise of "12 mmHg during the first minute and 3.4 mmHg/minute
+thereafter". **Those are Stock 1989's figures**, verified off the page in this
+session. A secondary summary invented a provenance. No number from Holmdahl is
+recorded anywhere in this repository and none may be until the thesis itself is
+read.
+
+### The NPS validation paper, and what its CO2 equation overturns — 2026-09-19
+
+**Hardman JG, Bedforth NM, Ahmed AB, Mahajan RP, Aitkenhead AR. A physiology
+simulator: validation of its respiratory components and its ability to predict
+the patient's response to changes in mechanical ventilation. Br J Anaesth
+1998;81:327-32.** Read from the page. This is Laviola 2026's validation ref 2
+and Hardman & Wills 2006's ref 4 — a load-bearing node in the chain above.
+
+#### What it validates, and how
+
+25 ICU patients, 30 data sets, then 16 patients and 31 data sets for the
+prediction part. **Its own scope claim is explicit:** *"We recommend the NPS as
+a clinical tool for predicting the effects of alterations in mechanical
+ventilation in stable patients in the intensive care unit."* Not apnoea. Not
+obstruction.
+
+**Table 1 is substantially a self-consistency check, and the paper says so.**
+The NPS was supplied with shunt, deadspace, VO2, R, cardiac output, FIO2,
+minute volume, Hb, temperature and base excess — all derived from the same
+patients' blood gases — and Appendix 1a states the alignment algorithm
+*"attempts to match the simulator values for PaO2 and PaCO2 with those of the
+patient"*, adjusting VO2, shunt, R and deadspace until it fits, adding: **"This
+single solution is not necessarily the correct or even the most likely
+solution."** Table 1's biases (PaO2 0.012 kPa, PaCO2 0.002 kPa, pH -0.0002)
+measure how well that fit converged, not predictive accuracy.
+
+**Table 2 is the predictive part, and it shows a real CO2 bias:**
+
+| change after a ventilator adjustment | measured | predicted | bias |
+|---|---|---|---|
+| PaO2 (kPa) | 5.76 (3.25) | 5.95 (3.51) | +0.20 |
+| **PaCO2 (kPa)** | **0.60 (0.45)** | **0.77 (0.55)** | **+0.17** |
+| pH | 0.040 (0.031) | 0.044 (0.034) | +0.005 |
+
+**The NPS over-predicts the size of a PaCO2 change by 28%**, and the paper says
+so: *"Figure 3 demonstrates a consistent prediction of too large a change in
+PaCO2."* Worth holding beside our own over-prediction of the Stock slope.
+
+**The 1998 NPS had no V/Q distribution at all.** Appendix 1: *"Complete mixing
+of gases within the alveoli is assumed"* and *"Blood flow through the lung is
+modelled as two compartments: shunted and non-shunted blood."* Two compartments.
+Laviola 2026 runs `N_alv` = 100, so the model grew — but **the validation was
+performed on a structurally far simpler lung than the one now used for CICO.**
+
+#### Appendix 2 overturns this file's stated CO2 mechanism
+
+Their CO2 content equation, verbatim:
+
+    CaCO2 (ml/litre) = PaCO2 x 50.76 / 10^(0.019 x (temperature - 37))
+
+**Linear in PaCO2. No bicarbonate curve, no pH term, no haemoglobin, no
+saturation, so no Haldane effect.**
+
+Now the part that matters for us. **At fixed pH our own law is already exactly
+that form:**
+
+| PCO2 | content at pH 7.40 FIXED | dC/dP | content at pH solved from BE 0 | dC/dP |
+|---|---|---|---|---|
+| 30 | 35.04 | | 41.01 | |
+| 40 | 46.72 | 1.168 | 46.59 | 0.558 |
+| 50 | 58.39 | 1.168 | 51.09 | 0.450 |
+| 60 | 70.07 | 1.168 | 54.90 | 0.381 |
+
+At frozen pH, `co2_content` is **strictly proportional** to PCO2 — dC/dP is
+1.168 at every interval, and C(40)/40 is 1.168 to three figures. **So the
+entire curvature of the physiological CO2 dissociation curve, in this model,
+IS the acid-base response.** The plasma algebra at fixed pH contributes none of
+it. The NPS equation is our own law with the pH response deleted.
+
+**Substituting the NPS form makes everything dramatically worse:**
+
+| | ours | NPS form |
+|---|---|---|
+| Stock obstructed slope (measured 3.4) | 4.72 | **10.38** |
+| patent slope | 1.68 | 0.55 |
+| a-A gap at 300 s | 8.35 | **32.81** |
+| first-minute rise (measured 12) | 12.02 | **4.59** |
+
+**This file has said the a-A gap's "size scales with the CURVATURE of the CO2
+dissociation curve". Tested, the sign is backwards: removing the curvature
+QUADRUPLES the gap.** Curvature suppresses the gap; it does not create it.
+
+And it explains why Kelman looked exonerating. The [Hb] correction changed the
+curve's LEVEL and moved every slope by under 0.05 mmHg/min. **It never varied
+the thing that actually generates the curvature — the acid-base coupling — so
+that hypothesis was never tested until now.**
+
+**The untested lever is therefore the strength of the acid-base response**, not
+the dissociation curve's calibration. That is the next well-posed experiment on
+the CO2 limb.
+
+**And the two models' choices are coupled, so neither piece transfers.** NPS
+pairs a linear CO2 law with a two-compartment lung, where there is no
+heterogeneity for the missing pH response to act on. We pair a curved law with
+80 compartments. Dropping their CO2 equation into our lung gives an a-A gap of
+33 mmHg, which is why it cannot simply be borrowed.
+
+Two smaller differences, recorded: their oxygen carrying capacity is **1.36
+mL/g** against our `HUFNER` 1.34, and their saturation comes from **Thomas's
+equation** where ours uses Severinghaus.
+
+### The acid-base lever is REFUTED, and the sweep found a latent defect — 2026-09-19
+
+The Hardman 1998 read made the strength of the acid-base response the untested
+lever on the CO2 limb. Swept it. **It is not the answer.**
+
+The lever is the Siggaard-Andersen non-bicarbonate buffer capacity in
+`ph_from_pco2_be`, `(9.5 + 1.63*cHb)` mmol/L per pH unit — **24.7 at Hb 15**,
+the in-vitro whole-blood value. Hardman 1998 Appendix 2 uses
+`BE_ecf = [HCO3-] - 11.6*(7.4 - pH) - 24`, i.e. **11.6 flat**, the
+extracellular-fluid value. A factor of 2.13 apart, and a real modelling
+question rather than a knob: CO2 loaded during apnoea distributes through the
+whole extracellular space, not only blood. Baseline is preserved across the
+sweep because the `(pH - 7.4)` term vanishes at pH 7.40, so only the RESPONSE
+moves.
+
+| buffer capacity | beta | Stock (3.4) | patent | a-A at 300 s | 1st min (12) | pH at 300 s | Moreault |
+|---|---|---|---|---|---|---|---|
+| x0.8 | 19.7 | 4.68 | 1.91 | 6.82 | **13.29** | 7.216 | — |
+| **x1.0 shipped** | **24.7** | **4.72** | **1.68** | **8.35** | **12.02** | **7.231** | **-17.7** |
+| x1.5 | 37.0 | 4.85 | 1.35 | 10.27 | 10.04 | 7.257 | — |
+| x2.0 | 49.3 | 5.02 | 1.17 | 11.77 | 8.89 | 7.273 | — |
+
+**Over a 2.5-fold span of buffering the Stock slope moves 4.68 to 5.02 — 7% —
+while the first-minute rise swings 13.29 to 8.89, a 50% move on the quantity
+that currently matches Stock's measured 12 almost exactly.** It is a weak lever
+on what fails and a strong lever on what works, and the direction that helps
+the slope is the direction that breaks the rise. Refuted.
+
+Moreault is -17.7 at every buffering level, so separability holds here too.
+
+#### And the low-buffering half of the sweep is INACCESSIBLE — a latent defect
+
+At beta 19.7 and above the sweep is valid. At 14.8, 11.6 and 9.9 every run
+returned Stock 0.00, first-minute 0.00, a-A gap around -70 and pH 8.2-8.3.
+**That is not physiology, it is the Douglas red-cell pole.**
+
+`co2_content`'s RBC correction has a pole at pH 8.142. At BE 0 and Hb 15 with
+shipped buffering:
+
+| PCO2 | content |
+|---|---|
+| 3.0 | **-11.46 mL/dL** |
+| 3.935 | **0.00 — the zero crossing**, at pH 7.993 |
+| 10.0 | 20.81 |
+| 40.0 | 46.59 |
+
+`bloodgas.py`'s own note says the pole is reached by "any PCO2 below about 2.4
+mmHg". **Measured, the content is already negative at 3.0 mmHg — and 3.0 is
+exactly where `pco2_from_co2_content` sets its lower bracket `lo`.** In the
+shipped configuration content rises monotonically from 3 upward so `brentq`
+still finds the right root, which is why this has never bitten. It is one sign
+change away from biting.
+
+At ECF buffering it bites immediately: pH at PCO2 3 becomes 8.261, **past** the
+pole, and content wraps round to +74.86. The inverse's `resid(lo) > 0` test then
+fires and clamps PaCO2 to 3.0 mmHg for the whole run — which is precisely the
+0.00 rows above.
+
+**So we cannot currently represent Hardman's buffer capacity at all.** Whether
+11.6 or 24.7 is right for a whole apnoeic patient is a real open question, and
+answering it needs the bracket and the pole handled first. Recorded as a
+defect, not fixed here: fixing it changes no benchmark in the accessible range
+and should be done deliberately rather than folded into a sweep.
+
+### Stock's pH column is a buffer measurement, and the defect switches on at 200 s — 2026-09-19
+
+The acid-base sweep could not reach the low-buffer half of the range. **It did
+not need to: Stock 1989 Table 1 already measured it.** The table pairs pH with
+PaCO2 at eight times, in humans, under complete obstruction. Paired, those two
+columns ARE the CO2 titration line, `dpH/dlog10(PCO2)` — a direct measurement
+of effective in-vivo buffer capacity, in our own regime. We had only ever
+checked pH as a single point at 300 s.
+
+| | dpH/dlog10(PCO2) |
+|---|---|
+| **Stock 1989**, complete obstruction, n=14 | **-0.758** (8 points), -0.768 (endpoints) |
+| **Ebata 1991**, patent airway, n=9 | **-0.837** |
+| **ours** | **-0.669** (8 points) |
+| in-vitro whole blood | about -0.55 |
+| whole-body / extracellular fluid | about -0.75 to -0.80 |
+
+**Both human measurements land on the in-vivo value; we sit between the two,
+closer to in-vitro.** Our buffering is measurably too strong, in exactly the
+direction Hardman 1998's ECF capacity of 11.6 implies — and toward the region
+the Douglas pole currently blocks.
+
+**It is sourced, and it is not the cause of the failing slope.** The sweep
+above already showed the Stock slope moves 7% over a 2.5-fold span of
+buffering, and the direction that steepens the titration line toward -0.76 is
+the direction that pushes the first-minute rise from 12.02 to 13.29, away from
+Stock's measured 12. So this is a correction that makes one benchmark slightly
+better and another slightly worse — recorded, not compensated for.
+
+#### And the CO2 defect switches on at about 200 s
+
+| t (s) | Stock PaCO2 | ours |
+|---|---|---|
+| 0 | 39 | 39.1 |
+| 20 | 44 | 44.4 |
+| 40 | 48 | 49.6 |
+| 60 | 50 | 50.9 |
+| 120 | 53 | 52.6 |
+| 180 | 56 | **56.4** |
+| 240 | 59 | **63.5** |
+| 300 | 63 | **69.4** |
+
+**We track Stock to within about 1 mmHg all the way to 180 s and then diverge
+in the final two minutes**, ending +6.4 out. That is a far sharper
+localisation than "the 1-5 min slope is wrong", and it kills any explanation
+that acts uniformly in time — including the buffering, the dissociation curve
+and the stores, all of which act from t = 0.
+
+**What starts at 200 s is the lung having shrunk far enough for the shunt to
+climb.** The a-A gap over the same window goes -0.17 at 60 s to 8.37 at 300 s
+and the shunt 5.9% to 18.2%. The defect is in that coupling, which is where
+the perfusion-weighted-content against volume-weighted-fraction asymmetry
+lives — still the one thing never tested.
+
+### A second defect: arterial CO2 FALLS inside a sealed lung — 2026-09-16
+
+At the default `n_vq` of 20, which every benchmark in the suite uses, PaCO2 is
+**not monotonic** during a clamped-airway apnoea. CO2 has no route out of a
+sealed lung. The sign is wrong.
+
+**FIXED 2026-09-18 by raising the default `n_vq` from 20 to 80.** It is a
+discretisation artefact; 80 is the first compartment count with none of it.
+
+| n_vq | Stock 1-5 min slope | steps where PaCO2 falls | a-A gap at 300 s |
+|---|---|---|---|
+| 20 (the old default) | 4.75 | 24 | 8.37 |
+| 40 | 4.74 | 8 | 8.46 |
+| 60 | 4.72 | 2 | 8.36 |
+| **80 (the default now)** | **4.72** | **0** | **8.35** |
+| 100 | 4.71 | 0 | 8.40 |
+| 200 | 4.71 | 0 | 8.26 |
+
+The likely mechanism is that compartments close one at a time as the lung
+shrinks, so with 20 of them each closure steps the shunt by ~5% of perfusion
+and jolts arterial CO2. That has NOT been confirmed and no fix is attempted
+here.
+
+**It bought CORRECTNESS, not accuracy, and that is the useful part.** The
+slope moves 4.75 -> 4.72 against a measured 3.4, and the a-A gap is converged
+at about 8.4 mmHg from 60 compartments upward. **The disagreement with Stock is
+a property of the model's physics, not of its discretisation**, so no amount of
+refinement will remove it. The mechanism has to change. Cost: about 80% more
+runtime, so the pre-commit gate goes from roughly eight minutes to fifteen.
+
+The first-minute rise is 12.02 at every compartment count, completely
+insensitive. That is the bulk-store term, and it is the cleanest statement of
+where the model is sound and where it is not: the CO2 bookkeeping is right, the
+heterogeneity term is wrong.
+
+And `test_validation.py` checks timestep convergence
+(`test_timestep_stability`) but has never checked compartment-count
+convergence. The size is inside the 5% working tolerance; the SIGN is not a
+tolerance question, which is why this is recorded rather than waved through.
+
+### Established by measurement
+
+| finding | how |
+|---|---|
+| CO2 stores are NOT the fault | venous slopes agree obstructed 1.80 vs patent 1.74 |
+| the excess is entirely the a-A gap | grows +2.13 mmHg/min obstructed, −0.04 patent |
+| not shunt | suppressing closure RAISES the gap to 7.3 |
+| not the p_collapse floor | removing it leaves the coupling at +0.86 |
+| not the alveolar CO2 store | under 2 mL between conditions, under 0.1 mmHg |
+| cardiac output carries ~28% | +0.22 of +0.80 for a matched CO change |
+| `sv_itp_gain` 0.0025 is conservative | human Mueller: 0.0033 (Condos), 0.00476 (Wright) |
+| and nearly inert on the knot | 4.72 → 4.66 across that whole range |
+| Stock is not an outlier | Stock's Table 2: terminal rise 3 (Eger & Severinghaus), 3.4 (Stock), 3 (Belsh). **We do NOT sit inside** — see below |
+
+### Larger problem — and it is smaller than it looked
+
+This entry used to read "our PATENT 1-5 min slope is 1.70 against a classical
+3-5". **That was not a like-for-like comparison.** Stock 1989 Table 2 (obtained
+2026-09-14) separates two different quantities that the literature quotes
+interchangeably:
+
+| | what it is | values in Stock's Table 2 |
+|---|---|---|
+| **terminal rise** | the slope AFTER the first minute | Eger & Severinghaus 3, Stock 3.4, Belsh (brain-dead) 3 |
+| **linear rise** | (end - start)/duration, first minute included | Frumin 3.2, Payne 4.6, Holmdahl 5 |
+
+**The paper was read in full on 2026-09-16 and Table 2 transcribed from the
+page.** All six values above are confirmed exactly. Two corrections came out of
+it. The brain-death row is **Belsh** et al. (Arch Intern Med 1986;146:2385-8),
+not Welsh. And Table 2 gives Eger & Severinghaus a terminal rise of **3**, a
+single value, with an initial rise of **13** — not the "10-12 then 3-5" this
+file carried from secondary sources. Stock's own summary is that "the terminal
+slope of 3-4 mmHg/min was consistent" across studies.
+
+**That kills the 3–5 range.** Our obstructed slope is 4.72, which sits inside
+3–5 and outside 3–4. The widening proposal below rested on a range the one
+source we have actually read does not support.
+
+Stock says so explicitly: a linear estimate "would tend to be larger than the
+true terminal rate of rise because the more rapid early increase would be
+averaged with the smaller terminal rise", and the effect is worst over short
+study periods. So the "classical 3-5" is a terminal 3-3.4 and a linear 3.2-5,
+and our 1.70 was being measured against the wrong one. The terminal figures are
+also OBSTRUCTED, where ours is 4.34.
+
+On the like-for-like comparison the model looks far better than the old entry
+suggested. In Toner's configuration our patent arm gives a LINEAR rise of
+**2.74** (sham) and 3.02 (buccal), against published linear estimates of
+3.2 (Frumin) to 5 (Holmdahl) — the same kind of quantity, and the right order.
+The old 1.70 was a terminal slope being compared against linear figures.
+
+What remains true: nothing in the suite tests the patent slope at all.
+`test_cardiac_output` uses a 15-minute average the first-minute jump dominates,
+so it reads 2.38 and passes. A benchmark should assert the LINEAR rise, since
+that is what the published patent-airway values are, and Frumin 3.2 over a long
+study period is the closest published comparator.
+
+### Refused four times, each with reasons below
+
+Tuning `v_tis_co2_fast`, `stiff_below_rv`, `vq_log_sd` or `tau_mix` to make
+Stock pass. Each works; none has a mechanism. `vq_log_sd` 0.55 is now known to
+be a move AWAY from measurement by about a factor of two.
+
+### A structural gap in the dead space — found, not yet sourced
+
+This is a statement about our own code and needs no outside data to make.
+
+`vd_anat` is a stack of `vd_segments` laminae advected by the net inflow, with
+**no exchange at all between the airway and the alveoli**. It is pure plug
+flow. In a patent-airway room-air apnoea that produces this:
+
+| | 60 s | 120 s | 180 s | 240 s |
+|---|---|---|---|---|
+| mouth lamina | 21.0 | 21.0 | 21.0 | 21.0 |
+| carina lamina | 25.0 | 21.0 | 21.0 | 21.0 |
+| alveolar | 79.2 | 67.1 | 55.4 | 43.9 |
+
+A 58-point oxygen step across one lamina boundary at 60 s is not a gradient the
+airway can hold. The heart stirs gas across every airway face on every beat,
+and molecular diffusion does the rest. Hardman's model carries an explicit
+anatomical dead-space gas-mixing module alongside its cardiogenic oscillations
+(2026 supplement); ours has cardiogenic mixing BETWEEN COMPARTMENTS (`tau_mix`)
+and nothing between airway and alveolus.
+
+**BLOCKED, and deliberately so.** The mechanism is easy to write — equal-volume
+swaps across each face, conserving gas and moving only composition. The problem
+is the rate. Adding a new degree of freedom with no published measurement to
+set it against would make the model less trustworthy, not more, and the obvious
+calibration target is data we have decided not to use. So nothing goes in until
+there is a PUBLISHED source for airway gas mixing during apnoea. A prototype
+was written and discarded; it is not in this repository and its parameter was
+never chosen.
+
+Do not "fix" this by picking a plausible-looking mixing rate. That is the
+failure this file exists to prevent.
+
+### The Kelman buffer shift — APPLIED 2026-09-15
+
+The acid-base limb of the Haldane effect now follows Kelman 1968 p.264 rather
+than the Siggaard-Andersen oxygen term it replaced. The patch file is gone;
+this is the record of what it did and why.
+
+Kelman 1968 p.264 states the reduced-haemoglobin buffer shift explicitly:
+
+    dpH = 0.003 * Hb(g/dL) * (1 - saturation)
+
+citing Siggaard-Andersen 1964 and, as measurement, Rossi & Roughton 1962's
+**+0.048 +- 0.008 pH on complete reduction of blood from five normal
+subjects**. Our Siggaard-Andersen oxygen term delivers **+0.0249 at Hb 15** —
+about half the measured shift.
+
+Applying Kelman's form instead:
+
+| | before | after | target |
+|---|---|---|---|
+| obstructed a-A gap at 300 s | 7.01 | **5.83** | — (this is the defect) |
+| Stock obstructed 1-5 min slope | 4.34 | **4.03** | 3.4 measured |
+| Toner sham, whole-apnoea rise | 2.74 | **2.59** | published linear 3.2-5 |
+| Toner buccal, whole-apnoea rise | 3.02 | 3.02 | — |
+| patent terminal slope | 1.64 | 1.61 | — |
+| Stock slope at measured V/Q 0.80 | 5.02 | 4.67 | 3.4 — **still far out** |
+| Stock slope at measured V/Q 1.18 | 7.44 | 6.74 | 3.4 — **still far out** |
+
+**Every figure in the table above predates the compliance unit fix of
+2026-09-17 and is kept as the historical record of what Kelman did.** For
+current values see the top of this section and `handover_numbers.py`. The
+post-Kelman column reading 4.03 is now 4.75; 4.67 is now 5.29; 6.74 is now
+7.40.
+
+The signature is exactly right: it acts only where saturation falls, so the
+buccal arm is untouched and the obstructed arm moves most. It is a sourced
+correction to a measured value, not a parameter fitted to a benchmark.
+
+**It does not rescue the per-compartment patch.** With both applied, Stock goes
+to 4.89 and the a-A gap to 8.66 — worse than either alone, and the suite fails.
+So the two are not two halves of one fix, and
+`patches/haldane-per-compartment-ph.patch` stays held.
+
+**And it does not close the V/Q defect**, only narrows it. At the measured
+spread the slope is still roughly double the measurement. The open defect above
+stands.
+
+**Everything below this section in the file predates this change.** Obstructed
+CO2 numbers in the chronological body are pre-Kelman and are superseded by the
+values here and by `handover_numbers.py`, which is the regenerable record.
+
+### Held, written but not applied
+
+`patches/haldane-per-compartment-ph.patch` — corrects a real inconsistency (the
+per-compartment pH used a hard-coded so2=0.99), verified in both languages,
+parity holds. Unapplied because it takes the Stock slope to 4.7 and the hook
+blocks on failure. It made the disagreement bigger, which is evidence FOR a
+real defect elsewhere.
+
+### Superseded claims still present in the text below
+
+| claim | status |
+|---|---|
+| "the coupling is the Muller effect, not the gas" | **WRONG.** It is V/Q heterogeneity |
+| "`sv_itp_gain` is not evidenced" | **WRONG.** Human data bracket it; ours is low |
+| "Ebata shows our CO2→CO gain 1.8x too strong" | **RETRACTED.** Their baseline was 45, on dopamine, hypothermic, brain-dead |
+| the six model comparators | **ONE simulator.** All Hardman/Nottingham |
+
+### The buccal work — where the model actually earns its keep — 2026-09-15
+
+Every number below regenerates from `buccal_numbers.py`, which fails if one
+drifts. Published configurations only: Toner 2019 (lean) and Heard 2017
+(obese). **These two trials are the model's strongest ground** — nothing was
+ever tuned to them, deliberately (see the `vq_log_sd` note below), and the
+defects that dominate this file are all in the OBSTRUCTED CO2 limb, which no
+buccal claim touches.
+
+**The mechanism, quantified.** Aventilatory mass flow draws ~250 mL/min into
+the lung whether or not buccal oxygen is running. What changes is what it
+carries. By 300 s the lean patient has drawn in **298 mL of oxygen on room air
+and 1011 mL with the pharynx at 100%**. Same flow, different gas. No trial can
+produce this number.
+
+**Benefit grows with BMI**, i.e. with risk: room air time falls 570 s at BMI 22
+to 181 s at BMI 45, while buccal holds past the trials' ceiling throughout.
+
+**Anaemia does NOT shorten time to desaturation** — 394 s at Hb 8 against 402 s
+at Hb 15. SpO2 is a saturation, not a content: the anaemic patient has a
+smaller oxygen store but needs proportionally less removed to fall the same
+distance, and the two cancel. The cardiac-output response is inert above Hb 7
+and is not doing this. Clinical intuition runs the other way, so it is worth
+publishing as a null.
+
+**Occlusion, and why the technique is not a CICO intervention.** With the
+airway occluded, buccal oxygen does **exactly nothing**: 256 s (lean) and 198 s
+(obese) to SpO2 <95%, identical whether the pharynx holds room air or 100%
+oxygen. It acts at the MOMENT THE AIRWAY OPENS, by deciding what rushes in.
+An obese patient obstructed from induction and relieved at laryngoscopy at
+300 s is at 73.4%; two minutes later, **56.8% on room air against 99.8% with
+buccal**. Room air gives a bump, buccal gives a rescue.
+
+**How narrow a channel will do.** `R = 394*(1/d mm)^4`, anchored on
+`AirwayEpoch`'s documented 1 mm <-> 1.3 cmH2O at 3.3 mL/s:
+
+| aperture | lean SpO2 at 30 min | obese |
+|---|---|---|
+| 0.8 mm | **90.0** | 69.1 |
+| 0.6 mm | **64.2** | 34.4 |
+
+A 0.2 mm change takes the lean patient from 90% to 64%. Patency is effectively
+binary and **the threshold is sub-millimetre** — which is the argument that
+matters clinically, because no laryngoscopic scoring system resolves anything
+like that finely. POGO and Cormack-Lehane both score how much glottis is
+visible IN ORDER TO INTUBATE; neither scores whether a gas conduit existed,
+which is a threshold perhaps a thousandfold coarser. **The published view-rate
+literature therefore systematically understates how often the airway is
+adequate for buccal oxygen to work.** No study reporting that endpoint was
+found.
+
+### Corrections to `editorial.md`, found 2026-09-15
+
+The draft carries model numbers whose configurations were never recorded.
+Checked against the current model:
+
+| claim | status |
+|---|---|
+| 0.8 mm holds >90% for 30 min in a LEAN patient | **NO LONGER REPRODUCES.** It gave 90.0 and matched exactly until the compliance unit fix of 2026-09-17; it now gives **83.4** |
+| ...and in an obese patient | **WRONG**, and now further out: 69.1 before the unit fix, **35.0** after. No aperture fixes it |
+| complete occlusion fails at 402 s (lean) | **mislabelled.** 402 s is the PATENT room-air figure to the second; occlusion is 256 s |
+| complete occlusion fails at 264 s (obese) | occlusion is 198, patent room air 288. Model has moved since; not resolvable |
+| 50-70 s of buccal benefit in a CICO progression | **NOT REPRODUCIBLE.** No progression specified. Buccal buys zero once occluded, so it must be banked beforehand — from what timeline is unrecorded |
+| alveolar PN2 395 mmHg in "the morbidly obese" | **not checkable.** No weight given; at the Heard configuration it is 246 |
+
+The obese 30-minute ceiling is **not** an aperture limit and **not** nitrogen:
+with the airway wide open and alveolar PO2 above 350 mmHg, saturation is still
+86.4%. That is SHUNT, and it belongs in the closing-capacity paragraph rather
+than the patency one.
+
+**Nothing in `editorial.md` has been edited.** It is the author's prose; these
+are findings about it.
+
+### Agreed, not yet built
+
+Things decided in conversation that no file yet carries. A decision that lives
+only in a chat transcript is lost at the next compaction — this section exists
+because the lungs-and-head visualisation was agreed, recorded in a summary as
+"deferred by the user" when the transcript says "lets try", and only noticed
+weeks later when the user asked where it had gone. It is built now (`ebe55b9`);
+the section is not.
+
+| agreed | state | why not done |
+|---|---|---|
+| ~~widen the Stock band to the literature 3–5~~ | **WITHDRAWN 2026-09-16** | The 3–5 range came from secondary sources. Stock's Table 2, now read from the page, gives Eger & Severinghaus a terminal rise of 3 and the consistent range as 3–4. There is no 3–5 to widen to, and widening would have let the held Haldane patch (4.7) through on a range that does not exist. `test_validation.py` keeps 2.4–4.4 |
+| benchmark the PATENT 1–5 min slope | not done | would **fail** at 1.70 against a classical 3–5. Adding it turns an untested weakness into a red suite, so it lands with the fix, not before |
+| model the jet insufflation protocol | not started | You set the order at "chase the co2 till we get it right, then look at jet insufflation", and answered the one open design question with **"discrete release for all time between boluses"** — the cannula open to atmosphere for the whole inter-bolus interval. Nothing was built. It needs an **outflow branch the model does not have**: `inflow` is clamped non-negative in both implementations (`apnoea_core.py:827`, `model.js:283`), so gas can only ever enter. `test_icsm_jet_2026` benchmarks the apnoea BEFORE cricothyroidotomy, not the jetting. The CO2 defect above is still open, so the order you set still holds — but the decision was made and had no home |
+
+Add a row when something is agreed and not immediately built. Delete the row
+when it is built, naming the commit — not when it is merely started.
+
+### Waiting on
+
+**Obtained 2026-09-14:** Kelman 1967, Kelman 1968, Douglas 1988, Stock 1989.
+What each settled is above and in `protocol/evidence.md`.
+
+**Eger & Severinghaus 1961** is the one still outstanding, and it matters less
+than it did: Stock's Table 2 reports its numbers as a 13 mmHg first-minute rise
+and a terminal 3 mmHg/min, which is what we wanted it for.
+
+**Stock recorded NO airway pressure.** The paper monitored pulse oximetry and
+ECG only; its single mention of pressure is systemic blood pressure. So the
+pressure-and-CO2 pairing under OBSTRUCTION still does not exist in the
+literature, and the three-way study's core justification is intact.
+
+**Toner's tracheal O2 traces** — Andy believes these still exist. Ask for the
+**SHAM** arm and the **first 120 s**; the buccal traces would settle nothing.
+Reasoning and the sensitivity table are in Open work item 2.
+
+**Three documents in the ICSM/NPS chain, and the person who has all of them.**
+Sought 2026-09-19, all blocked from this environment. Andy is a **co-author of
+Laviola 2026** (Laviola, Dinsmore, Lacquiere, Niklas, **Heard**, Hardman), and
+**Jonathan Hardman is senior author of every item on this list**:
+
+| document | what it would settle |
+|---|---|
+| Anesth Analg 2000;90:614-8, PMID 10702446 | whether the NPS was ever validated against human data under COMPLETE obstruction |
+| Hardman & Wills BJA 2006, **online Appendix 1** | their own apnoea-in-children validation, not held |
+| McNamara & Hardman, Anaesthesia 2005;60:741-6 | the open-airway half of the apnoea validation |
+
+`j.hardman@nottingham.ac.uk` (corresponding author line of the 2006 paper).
+
+**Better asked than inferred.** Three commits here triangulate from reference
+lists what he can answer in two sentences. Two questions worth putting to him
+directly:
+
+1. Has the NPS been validated against human measurement under complete airway
+   obstruction, and if so against what?
+2. **What does the NPS do about a pressure floor?** His 2006 Table 4 reaches
+   about -580 cmH2O in a 3-min-preoxygenated 18-yr-old, and Moreault 2021
+   measured -20 (5) and -31 (10) in human lungs. That is a real discrepancy
+   between two models, not a literature question, and it is the mechanism
+   behind the inverted sign recorded above.
+
+Failing that: Royal Perth Hospital library has Ovid/Wolters Kluwer access to
+Anesth Analg well past 2000 — quote PMID 10702446. The BJA appendix is
+supplementary material on the article record at academic.oup.com and is often
+ungated. ResearchGate's "request full-text" reaches Hardman in one click.
+
+**PRIORITY, revised 2026-09-19: do not buy this yet.** The Hardman 1998 read
+made the acid-base response the untested lever on the CO2 limb, and **that
+experiment needs no paper at all** — it is runnable from this repository today.
+Until it is done we do not know whether the acid-base limb is the culprit, and
+if it is not, Holmdahl's acid-base chapter answers a question we have stopped
+asking. Run the experiment, then decide.
+
+Holmdahl's value if the experiment does implicate the buffering: its title
+carries **acid-base metabolism AND circulation during PROLONGED apnoea**, which
+is two of our three open defects. Our only haemodynamic-during-apnoea dataset
+is Ebata's nine brain-dead patients at 36 C on dopamine, too confounded to tell
+a model defect from a drug effect, and our haemodynamics run low at every
+condition. What it will NOT settle: it is almost certainly patent-airway, since
+1956 prolonged-apnoea work was diffusion oxygenation, so **Stock remains the
+only human measurement under complete obstruction and no paper will change
+that.**
+
+**When you do want it: it is NOT really a thesis hunt, and asking for it as one
+will send you to rare books.** It was published as **Acta Chirurgica Scandinavica,
+Supplementum 212 (1956), pp 1-128**. Acta Chir Scand ran to 1992 and medical
+libraries hold it in bound journal runs WITH the supplements, so this is an
+ordinary document-supply request.
+
+| route | how to ask |
+|---|---|
+| **RPH library** | word it "Acta Chirurgica Scandinavica, 1956, Supplementum 212, pages 1-128, Holmdahl MH" — a routine ILL their system knows. Check Trove / Libraries Australia; the older medical school libraries (Melbourne, Sydney, UWA) likely hold bound 1950s runs |
+| **Uppsala University Library** | <https://www.uu.se/en/library/borrow-and-request/request-a-digital-copy> — scanned page by page, OCR'd PDF by email. **SEK 100 start fee + SEK 3/page, so about SEK 484 for the 128 pages**, credit card, normally ten business days. Their own alumnus and later vice-chancellor, so holdings are certain |
+| **Hedenstierna, Uppsala** | see below |
+| **Hardman** | cites Holmdahl in the 2006 paper, so may have a scan — same email as the three documents above |
+| **LIBRIS** (<https://libris.kb.se>) | Swedish national union catalogue; lists every Swedish holding and supports international ILL if RPH needs a supplying library named |
+
+Try RPH first — a bound run costs nothing and is faster than SEK 484 — with
+Uppsala as the guaranteed fallback. Uppsala's page carries a copyright note
+about works still in protection needing the rightsholder's authorisation; it
+reads as aimed at reproduction and publication rather than a single research
+copy, and 1956 is still in copyright (life + 70). Say in the request that it is
+a single copy for private research. **None of these pages could be loaded from
+this environment — every library domain is egress-blocked — so the fees and
+turnaround above are from search results, not from the pages themselves.**
+
+**The Uppsala connection is closer than it looks.** **Göran Hedenstierna,
+Department of Clinical Physiology, University Hospital of Uppsala, is a
+co-author of TWO papers already in our set** — Tokics 1996 and Rothen 1993 —
+at the same institution as Holmdahl and the direct academic descendant of his
+department.
+
+And there is a reason to contact him independent of the scan: **Tokics 1996
+Table 3 is what `vq_log_sd` is calibrated against**, and it reports log Q̇SD and
+log V̇SD separately (1.18 and 0.62 on inert gas) where our construction forces
+them equal, so we cannot match both. See "`vq_log_sd` is NOT the log QSD it is
+compared against". That is a question for the person who measured them.
+
 ## Start here
 
 ```
-python3 test_validation.py     # every benchmark, as pass/fail
-python3 run.py                 # a single scenario with plots
+pip install -r requirements.txt   # numpy, scipy, matplotlib (+ node for the port)
+./setup-hooks.sh                  # once per clone: gate commits on the benchmarks
+python3 test_validation.py        # every benchmark, as pass/fail
+python3 test_parity.py            # apnoea_core.py vs model.js, within 1%
+python3 run.py                    # a single scenario with plots
 ```
 
 `test_validation.py` is the important one. Several changes during development
 silently broke earlier agreements and were only caught by re-running things by
-hand. Run it after every change.
+hand. That is no longer left to memory: `.githooks/pre-commit` runs both test
+files before every commit and refuses the commit if either fails.
+`setup-hooks.sh` enables it, and has to be run once per clone because git does
+not clone hooks.
+
+If you genuinely need to commit a broken intermediate state, `git commit
+--no-verify` skips it — say in the message which benchmark is broken and why.
+
+Both suites exit non-zero on failure and both work under pytest. `check()`
+records rather than raises, so one run reports every failure instead of
+stopping at the first; a sentinel test at the foot of each file carries the
+verdict into pytest.
 
 ## Files
 
@@ -26,9 +4443,23 @@ hand. Run it after every change.
 | `airway_scenario.html` | self-contained interactive page, embeds `model.js` |
 | `build_page.py` | regenerates the HTML from `model.js` + template |
 | `test_validation.py` | all benchmarks as executable tests |
+| `test_parity.py` | the two implementations against each other, within 1% |
+| `parity_driver.js` | stdin/stdout shim so Python can drive `model.js` |
 | `run.py` | simple entry point for one scenario |
+| `.githooks/pre-commit` | page freshness + both test files; blocks on failure |
+| `setup-hooks.sh` | enables the hook; run once per clone |
+| `requirements.txt` | the Python dependencies. JavaScript has none |
+| `protocol/study.html` | protocol for the three-way study. See below |
+| `protocol/predictions.py` | regenerates every number that protocol quotes |
+| `protocol/evidence.md` | what the literature does and does not pair. Read before benchmarking |
+| `CLAUDE.md` | read-first rules. Exists because each one was broken |
+| `handover_numbers.py` | regenerates the numbers quoted in this file |
+| `patches/` | written but unapplied changes; the reason is in this file |
 
-`build_page.py` must be re-run after any change to `model.js`.
+`build_page.py` must be re-run after any change to `model.js`. The pre-commit
+hook will not do it for you, but `build_page.py --check` will tell you that you
+forgot, and the hook runs it first — the page embeds its own copy of the model,
+so a stale HTML runs different physics from the file next to it.
 
 ## What is validated, and against what
 
@@ -36,7 +4467,17 @@ Two classes of target, and they are not equal. Clinical studies are
 measurements in patients and are the arbiters. ICSM/Nottingham results are
 another group's simulation — useful comparators, not truth.
 
-### Clinical (all currently pass)
+### Clinical — HEADING WAS FALSE, corrected 2026-09-21
+
+This said **"(all currently pass)"**. It does not: `Stock obstructed, 1-5 min
+slope` fails, and the values in this table are pre-2026-09-17, i.e. from before
+the compliance unit fix. Three positioning rows were measured on 2026-09-20 as
+27.47 / 36.95 / 26.03% against the 33 / 40 / 24% recorded here, and they drifted
+in BOTH directions, so this is not one stale run. **The table below is stale and
+is kept only as the historical record.** The authoritative scorecard is
+*CONSOLIDATED SCORECARD* in Current state; the authoritative suite state is
+`python3 test_validation.py`. These rows drifted silently because `tilt_gain_*`
+is checked by no script — see `SOURCES.md`.
 
 | study | target | model |
 |---|---|---|
@@ -48,15 +4489,194 @@ another group's simulation — useful comparators, not truth.
 | O'Loughlin 2020, venous PCO2 rate | 0.15 (0.10) kPa/min | 0.22 |
 | Sci Rep 2023, cardiac output at 15 min | +30% | +36% |
 | Sci Rep 2023, PaCO2 rate | 2.1 mmHg/min | 2.4 |
+| Stock 1989, obstructed, first minute | 12 mmHg | 12.2 |
+| Stock 1989, obstructed, 1-5 min slope | 3.4 mmHg/min | 4.3 |
+| Varat 1972, cardiac output rise below Hb 7 | none above 7 | none |
+| Circulation 1963, cardiac output at Hb 4.5 | 1.97x (CI 6.3 vs 3.2) | 1.97x |
+| Moreault 2021, sealed lung, 1008 mL gas absorbed | -20 (5) cmH2O | -30.4 |
+| Moreault 2021, sealed lung, 1260 mL gas absorbed | -31 (10) cmH2O | -50.0 |
 | Lane / Ramkumar, 20 deg head-up | +24 to +36% | +33% |
 | Altermatt, BMI 35, 30 deg | +32% | +40% |
 | Dixon, BMI 44, 25 deg | +32% | +24% |
+
+### CO2 under obstruction: three defects, found 2026-09
+
+Every CO2 benchmark above uses a PATENT airway. Under OBSTRUCTION the model
+was producing 41.75 mmHg/min against Stock's measured 3.4 -- twelve times
+too fast -- and nothing in the suite looked, so nothing failed. There is now
+a `test_stock_1989` and it should not be removed.
+
+Three separate defects, all in the same few lines of gas exchange:
+
+1. **One pH for the whole lung.** `ph_c` was solved once from mean alveolar
+   PCO2 and applied to every compartment. Pricing a compartment at 60 mmHg
+   with the lung mean's pH inflated its CO2 content by up to 2.45x; content
+   went linear in PCO2, losing the dissociation curve's saturation, and
+   arterial PCO2 ran to 250 while alveolar sat at 112 and venous at 113 --
+   arterial outside both, which is impossible. Now solved per compartment.
+
+2. **The pole at pH 8.142 is reachable, and per-compartment pH reaches it.**
+   Item 4 below was right that this was closer than it looked. A compartment
+   whose gas has collapsed onto the 1e-9 floor has a PCO2 that is the ratio of
+   two floor values: a sealed run visits 1.8e-06 and 566 mmHg. Anything below
+   ~2.4 mmHg puts the pH past `co2_content`'s pole, where content changes
+   sign. The lung mean was always physiological so it never met the pole;
+   per compartment walks into it, and Python and JavaScript landed either side
+   and disagreed by 8.5%. The pH solve input is now clamped to [5, 250].
+
+3. **Collapsed compartments kept their perfusion.** `q_w` is the resting
+   distribution and never changed with collapse. Collapse was handled only in
+   aggregate, as `shunt`, so the right AMOUNT of blood bypassed but not from
+   the right COMPARTMENTS: a fully collapsed unit still received its full
+   share of the non-shunted blood and set arterial content with its floor-value
+   gas. Non-shunted perfusion is now weighted by `q_w * (1 - coll_c)`.
+
+**The CO2 store parameters were deliberately NOT touched.** Halving
+`v_tis_co2_fast` hits Stock's 3.4 exactly, and that is the trap: it buries
+three real bugs under a parameter that then no longer means what its name
+says. Fixing the three and refitting nothing leaves the obstructed slope at
+4.3 against 3.4, which is where it stands -- a known 26% residual, recorded
+rather than tuned away.
+
+**Open.** Stock found a LOGARITHMIC fit best, i.e. a decelerating curve; ours
+accelerates modestly over minutes 1-5, because by then the sealed lung has
+lost half its volume and the rising shunt sets arterial CO2. Nothing measured
+settles which is right over that window -- 14 patients fitted piecewise cannot
+resolve the curvature -- so the benchmark guards only against runaway.
+
+### Haemoglobin is a dial now, and the circulation answers to it
+
+Hb was always in the physics -- oxygen content, CO2 content, the Van Slyke
+base excess through cHb, the Haldane term. What was missing was any
+CIRCULATORY response to it, and without one the low end of the range was not
+a patient: at Hb 4 with a fixed cardiac output, oxygen delivery came to 0.91
+times consumption. The tissues were being sent less than they were using
+before the apnoea started.
+
+Two measured anchors, neither fitted to anything of ours:
+
+  Varat, Adolph & Fowler, Am Heart J 1972;83:415-26 -- the rise begins at
+  7 g/dL or less. Above that, nothing.
+
+  Hemodynamic Effects of Chronic Severe Anemia, Circulation 1963;28:346 --
+  Hb 4.0-6.5 (mean 4.5) gave a cardiac index of 6.3 L/min/m2 against a
+  normal ~3.2. Very nearly double.
+
+A power law through both, (7/hb)**1.535, capped at 3x. Delivery at Hb 4 is
+now 2.16 times consumption. Systemic vascular resistance is divided by the
+same factor, because reduced viscosity and vasodilatation are WHY the output
+rises: without that, mean arterial pressure would double alongside it, where
+real anaemic patients run a normal or slightly low MAP on a markedly reduced
+resistance. MAP holds at 68 mmHg across the whole range.
+
+**It is exactly 1.0 at and above 7 g/dL**, so every pre-existing benchmark --
+all of which run Hb 14-15 -- is untouched by construction, and the first
+check in `test_anaemia_cardiac_response` asserts that inertness. A change to
+the circulation that quietly moved the oxygenation results would be very hard
+to trust afterwards.
+
+Two things to know:
+
+- **The knee at 7 is hard, and reality's is soft.** Varat says the rise
+  "usually" begins there, "with many exceptions". The artefact is that the
+  worst oxygen delivery in the whole range sits exactly at Hb 7 (1.56x),
+  because that patient has the small blood store and no compensation yet.
+  Nothing incoherent comes of it, but a smooth onset would be more faithful
+  if anyone wants to source one.
+- **Desaturation time barely moves with Hb** -- 298 s at Hb 15 against 302 s
+  at Hb 4, obstructed. That is not a bug. During apnoea the FRC oxygen
+  dominates the store, not the blood, so quartering the haemoglobin barely
+  touches the time course. It surprises people, including me: I predicted a
+  large shortening and measured almost none.
+
+Cyanosis, when the head visualisation lands, should be driven by
+DEOXYGENATED haemoglobin rather than saturation -- roughly 5 g/dL is the
+clinical threshold. At Hb 15 the head starts turning around SpO2 67%, which
+is right; at Hb 4 deoxyHb cannot reach 5 g/dL at ANY saturation, so that
+patient can never look cyanotic however dead they are. That is the classic
+trap, and driving it from deoxyHb gives it for nothing.
+
+### Axial cardiogenic mixing: tested, bounded, not the answer
+
+`tau_mix` stirs gas BETWEEN compartments. The same heartbeat also stirs it
+ALONG the airway, and that arm is absent: there is no outflow term anywhere,
+`inflow` is clamped non-negative, so with a patent airway CO2 has no route out
+of the lung at all. That looked like the missing CO2 clearance path.
+
+It was built and measured. As a diffusive chain over pharynx | dead space |
+alveoli, scaling with cardiac output, with the pharyngeal boundary present
+only when the airway is patent -- so obstruction removes the boundary rather
+than the stirring, the dead space equilibrates in seconds, and net transport
+stops by itself. Gated that way the obstructed case is bit-identical at every
+strength (12.16 mmHg first minute, 4.35 mmHg/min slope), which is the right
+behaviour and worth keeping if anyone rebuilds this.
+
+**It is capped by oxygenation, not by CO2.** Dispersion is species-independent,
+so the same chain that carries CO2 out carries nitrogen IN whenever the
+pharynx is room air. Toner's sham arm is the binding constraint:
+
+| end-to-end mL/min | Toner sham (380-525 s) | patent PaCO2 (2.1) |
+|---|---|---|
+| 0 | 402 | 2.45 |
+| 50 | 394 | 2.44 |
+| 100 | **377 FAIL** | 2.40 |
+| 300 | 313 | 2.16 |
+
+The value that would fix CO2 is ~300 mL/min. The ceiling is ~75. So at any
+strength the oxygenation data permits -- about 1 mL per beat -- it changes the
+patent CO2 rate by ~1%, and it is NOT the explanation for CO2 clearance. That
+is why the store and curve-shape account above is the one the model uses.
+
+Two caveats before anyone re-opens this. The bound assumes pharyngeal FO2 =
+0.21 in the sham arm, which item 2 below already flags as uncertain; a higher
+residual pharyngeal FO2 would loosen it. And a first attempt at this measured
+the mechanism at roughly a tenth of its true strength by parameterising the
+per-node conductance rather than the end-to-end one -- the dead space is
+discretised into `vd_segments` for the inrush CFL condition only, and putting
+physics on that number makes it depend on a numerical choice.
+
+Worth knowing for anything that reads per-compartment gas: **a collapsed
+compartment's gas fractions are numerical debris**, not small numbers. Any new
+code that touches `fr_c` per compartment must either clamp or weight by the
+open fraction, exactly as these three fixes do.
 
 Two things the model reproduces that were not built into it, and which are
 therefore worth something: the arterial-venous CO2 gradient REVERSES during
 apnoea (O'Loughlin describe this and attribute it to pulmonary CO2 retention
 plus the Haldane effect), and failure requires TWO coincident abnormalities
 rather than one, which matches Toner's single outlier and O'Loughlin's two.
+
+### The two implementations against each other
+
+`test_parity.py` runs `apnoea_core.py` and `model.js` on identical inputs and
+requires every output to agree within 1%. It currently does with three orders
+of margin — worst case 0.03%, and four of the six scenarios agree exactly —
+across long apnoeic oxygenation, a desaturating room-air control, the reopening
+inrush, a sealed airway and a partial obstruction. The two scenarios that are
+not exact are the ones that drive a compartment to gas exhaustion, where the
+per-species floor differs (1e-9 mL in Python, 1e-12 in the JavaScript); that
+and the other latent differences are listed at the foot of `test_parity.py`.
+
+It did not when it was written. `model.js` had kept the well-mixed nitrogen
+exchange that `apnoea_core.py` replaced with a per-compartment one, and by 15
+minutes the two were 21% apart on PaO2, 14% on shunt and 25% on absorption
+atelectasis. Nothing caught it because SpO2 — the output anyone looks at —
+stayed within 1% throughout: the oxygen plateau holds saturation flat while the
+gas exchange underneath it drifts. Anything comparing only desaturation times
+would have called the port fine.
+
+Three smaller drifts went with it: a sealed airway could vent gas through an
+airway that is by definition closed; `lungO2` was reported one step stale,
+which is 35% out at an inrush; and the HPV stimulus PvO2 was refreshed only
+once a second where the Python refreshes it every step, so hypoxic
+vasoconstriction was driven by a tension up to 0.9 s old. That last one is
+small — 0.03% on the HPV fraction — but it was the entire residual, and
+removing it made four of the six scenarios agree exactly.
+
+The comparison is limited to where the model says it predicts anything —
+SaO2 >= 70% and PaCO2 <= 150 — see Numerical notes for why the upper CO2
+bound is not merely caution. Saturation is compared over the whole run
+regardless.
 
 ### Model comparators
 
@@ -65,8 +4685,604 @@ rather than one, which matches Toner's single outlier and O'Loughlin's two.
 | Laviola 2020, airway rescue | 42.3 (4.4) kPa | 38.7 kPa |
 | Ellis 2022, pregnancy BMI 24 | 25.4 min | 18.1 min |
 | Ellis 2022, pregnancy BMI 50 | 9.9 min | 5.8 min |
+| ICSM jet 2026, PaO2 at cricothyroidotomy | 28.3 (0.4) mmHg | 29.1 |
+| ICSM jet 2026, PaCO2 at cricothyroidotomy | 84.6 (4.4) mmHg | 82.7 |
+| ICSM jet 2026, time to SaO2 40% | ~510 s | 500 s |
+
+**THESE ARE NOT SIX INDEPENDENT COMPARATORS. THEY ARE ONE SIMULATOR.**
+Established September 2026 from the author lists:
+
+    Hardman 1998, NPS validation   Hardman, Bedforth, Ahmed, Mahajan, Aitkenhead
+    Laviola 2020, airway rescue    Laviola, Niklas, Das, Bates, HARDMAN
+    Ellis 2022, pregnancy          Ellis, Laviola, Stolady, Valentine, Pillai, HARDMAN
+    ICSM jet 2026 (Anesth Analg)   Laviola, Dinsmore, Lacquiere, Niklas, Heard, HARDMAN
+
+Every one is the Nottingham Physiology Simulator lineage with Jonathan Hardman
+on it. Six rows across three studies is **one data point**, not six -- agreeing
+with them, or disagreeing, is agreeing or disagreeing with a single model. The
+suite is right to label them "not measurements"; it does not currently say they
+are all the same other people. Weight them accordingly, and do not let a
+comparator row veto a change that the CLINICAL benchmarks accept -- in
+particular the `ICSM jet, PaCO2 at cricothyroidotomy` row, which is the one
+that keeps appearing at band edges in this file.
+
+What that architecture is, from Hardman 1998 Appendix 1: a SINGLE well-mixed
+alveolar compartment with equipment, anatomical and alveolar deadspaces; blood
+flow in two compartments only, shunted and non-shunted, with shunt and
+deadspace supplied as INPUTS rather than emerging; blood time-sliced into
+packets each brought to true partial-pressure equilibrium with alveolar gas;
+CO2 content from **Kelman 1967**; and peripheral metabolism as "simple
+production of carbon dioxide and extraction of the preset VO2" with **no tissue
+CO2 store kinetics at all**. The paper itself offers that last omission as the
+reason for its own prediction error: "Equilibration requires modification of
+dissolved tissue stores in addition to the gas reservoirs in blood and
+functional residual capacity."
+
+Two consequences worth holding on to. That architecture **cannot produce an
+arterial PCO2 above alveolar** -- one well-mixed alveolus plus true
+equilibration puts PaCO2 between PACO2 and PvCO2 -- so it has no analogue of
+the a-A gap that carries our whole obstructed CO2 excess, and cannot corroborate
+it either way. And with no tissue store kinetics it is a poor comparator for the
+apnoeic CO2 rise specifically, which is precisely the window Stock measures.
+
+**Do not over-apply the 1998 description.** The 2026 supplement shows the modern
+version carries 100 compartments, so the architecture has moved on
+substantially in 25 years. What is quoted above is the 1998 paper.
+
+### The Ellis pregnancy comparator, and why the shortfall is worse than recorded
+
+Ellis et al.'s reply to Lyons (Br J Anaesth 2023, response to Br J Anaesth 2022;
+129:581-7) gives the configuration detail we lacked. Their pre-oxygenation
+endpoints DIFFER BY ARM: **FE'O2 80% for HFNO against 90% for tidal**, chosen
+from evidence that HFNO achieves a lower FE'O2 in pregnant subjects.
+
+Lyons's published objection is exactly that this biases the comparison. Ellis
+defend the choice but concede in print that "this assumption should be tested
+with further research" and that "further work is needed to establish the
+profile of alveolar denitrogenation during various methods of pre-oxygenation".
+So the comparator's own inputs are contested in the literature.
+
+That does NOT rescue our shortfall, and it is worth being clear that it makes it
+worse. We run `feo2_start` 0.87, ABOVE their HFNO endpoint of 0.80, and still
+come up 29% short at BMI 24 and 41% short at BMI 50. Starting oxygen cannot be
+the explanation. And if Lyons is right that HFNO reaches a higher FE'O2 than
+Ellis assumed, their times lengthen and our shortfall grows.
+
+Note also that the Ellis rows are a RECORDED COMPARISON, not a test in
+`test_validation.py`, so the exact configuration behind 18.1 and 5.8 min is not
+reproducible from this repository. Anyone re-opening this should regenerate
+them before drawing conclusions.
+
+### The collapse investigation, 2026-09 -- read before touching the mechanics
+
+Chasing the jet-insufflation scenario exposed the mechanics limb, which had
+never been benchmarked by anything. What follows is the whole investigation,
+including the parts that failed, so nobody repeats them.
+
+**The question.** At SaO2 40% after complete obstruction the model puts the
+lung at 590 mL -- 29% of FRC -- which at the time sat on the `p_collapse = -50`
+floor. (The floor moved to -149.55 on 2026-09-20 and no longer binds; the
+volume is unaffected, since the floor never clamped the volume. See *THE RECOIL
+FLOOR*.) The comparator
+model's published pressures implied a lung near its relaxation volume. Same
+oxygen uptake, opposite sign of pressure.
+
+**What is NOT the problem.** The volume loss is forced: 1936 mL of O2 absorbed
+minus ~364 mL of nitrogen returned leaves 1572 mL, and VO2 is benchmarked. The
+-50 then follows arithmetically -- the linear term gives -16.6 and the sub-RV
+stiffening the other -38.9. No setting of the chosen-not-fitted parameters
+escapes it: halving `stiff_below_rv` AND dropping `rv` to 700 mL still only
+reaches -26.
+
+**A hypothesis that FAILED, and why.** Collapse ought to be self-limiting:
+units that close leave the mechanical circuit, so they stop contributing FRC
+and compliance and the deficit is relieved rather than deepened. Implemented
+as a closing-pressure feedback, it did not work -- the floor was reached at
+420 s instead of 300 s and that was all. The reason is worth knowing:
+**the compartments that close first hold 50% of the perfusion but only 25% of
+the volume**, so closing the dependent lung creates a large shunt while
+relieving almost no mechanical deficit. Mapping "low V/Q" onto "the dependent
+lung" is fine for gas exchange and wrong for mechanics; these compartments are
+a FUNCTIONAL decomposition, not a spatial one, and the model cannot represent
+"the dorsal half collapses and takes half the thoracic volume with it". That
+is architectural, not a parameter.
+
+**Nitrogen sets the floor.** Absorption is self-limiting after all, but through
+gas exchange rather than mechanics: it stops dead at 430 mL when alveolar PO2
+falls to mixed venous, and the residual is 81% nitrogen at tissue equilibrium.
+So anything touching body nitrogen stores -- preoxygenation, obesity, the fat
+compartment's four-hour time constant -- moves the floor. Dropping FEO2 from
+0.87 to 0.60 puts the trigger pressure at -10.9 instead of -50. That lever is
+not available (0.87 is right for three minutes of preoxygenation) but it says
+what the floor is made of, and nothing benchmarks it.
+
+**Then the measurement arrived, and the model was right.** Moreault 2021
+sealed one lung in patients, chest closed, transducer in the bronchus:
+-20 (5) cmH2O at 504 mL resorbed, -31 (10) at 630 mL, returning toward
+atmospheric once the pleura was opened. A sealed lung DOES develop large
+negative pressure. Compared at MATCHED GAS ABSORBED -- their volumes were measured at
+atmospheric pressure, and a lung shrinks by LESS than the gas that leaves it
+because the remainder expands, an error worth not repeating -- and doubled for
+a whole lung, we give -30.4 where they measured -20 (5) and hit the -50 floor
+where they measured -31 (10). So the DIRECTION and regime are confirmed and
+the MAGNITUDE is not: we run 10-20 cmH2O too negative. That is the first
+evidence ever brought to bear on `stiff_below_rv` and it says the term is too
+stiff. `test_moreault_2021` asserts the direction, which was genuinely in
+doubt; the overshoot is under Known disagreement.
+
+### The comparator model, and a correction
+
+I concluded from the main text of Laviola 2020 and the 2026 jet paper that
+ICSM modelled shunt as a fixed 1-3% input with no atelectasis and no lung
+mechanics. **That was wrong**, and it was wrong in an avoidable way: it rested
+on word-absence in short clinical papers and on reading a cohort-configuration
+table as a model specification. The supplementary material (SDC S3a) shows
+100 alveolar compartments in parallel, each with configurable compliance,
+inlet resistance, vascular resistance, extrinsic pressure and threshold
+opening pressure; alveolar pressure as a cubic in volume; `P_ext` explicitly
+carrying "the outward pull of the chest wall"; volume-dependent PVR; and
+hypoxic vasoconstriction. The 1-3% is the anatomical shunt ON TOP of
+V/Q-derived shunt from those 100 compartments. Structurally the two models are
+close relatives.
+
+**Where they genuinely differ is one parameter.** ICSM's threshold opening
+pressures are **TOP = 3-12 cmH2O**. Rothen 1993 measured re-expansion of
+atelectasis by CT in anaesthetised adults with healthy lungs and found
+20 cmH2O does essentially nothing (6.4 -> 5.9 cm2), 30 gives 45%, and 40 is
+needed to clear it -- and that repeated inflations add nothing. A 1000 mL
+insufflation is, in Rothen's own calibration, about a 20 cmH2O inflation.
+So whether a narrow-bore cannula insufflation can act as a recruitment
+manoeuvre turns entirely on whether TOP is 3-12 or 30-40. If it is the latter,
+recruitment needs pressures that also exceed the safe volume envelope: there
+is no window between the pressure that recruits and the pressure that injures.
+This is the open question, and it is empirically settleable.
+
+**And the gas state agrees anyway.** Despite all of the above, at the moment
+of cricothyroidotomy the two models land in the same place: PaO2 29.1 vs
+28.3 (0.4), PaCO2 82.7 vs 84.6 (4.4), time to SaO2 40% 500 s vs ~510 s, none
+of it tuned. The mechanics disagreement does not propagate into the blood
+gases. `test_icsm_jet_2026` records the gas channels.
 
 ### Known disagreement
+
+**A CONFLICT between two clinical measurements -- read this before touching
+`stiff_below_rv`, `itp_fraction` or `sv_itp_gain`.** These three are coupled,
+and two measurements in patients now pull against each other through them.
+
+Moreault's pressures say the sub-RV stiffening is far too stiff.
+`stiff_below_rv = 0.15` is not the retained compliance directly: the term is
+additive in series, so the lung keeps `stiff/(1+stiff)` of its compliance
+below RV, i.e. **13%** -- an eightfold stiffening the instant it crosses
+residual volume, and it is what drives the pressure onto the -50 floor.
+Softening it fixes the pressure. It also breaks Stock:
+
+    stiff  retained  P@1008 (-20)  P@1260 (-31)  Stock 1-5 min (3.4)
+    0.15     13%        -30.4         -50.0          4.3   in band
+    0.50     33%        -24.4         -40.4          4.9   FAILS
+    1.00     50%        ~-23          ~-34           5.1   FAILS
+    2.00     67%        -22.2         -30.4          5.2   FAILS
+
+**THE COUPLING IS V/Q HETEROGENEITY. Established September 2026 by
+elimination; this replaces an earlier claim here that it was the Muller
+effect, which was wrong.** Alveolar PCO2 barely moves across the sweep
+(63.0 -> 63.3 at 300 s), and neither does shunt (0.181 both) or mixed venous
+PCO2 (57.7 -> 57.9). What moves is the arterial-to-alveolar CO2 gap: +6.7 at
+stiff 0.15 against +9.5 at stiff 2.00.
+
+Four candidates were tested and three excluded:
+
+  CARDIAC OUTPUT -- partly, about a quarter. Changing CO alone via
+    `co_drop_frac`, mechanics untouched, gives +0.22 of slope for +6.4% CO,
+    where the stiffness change gives +0.80 for +6.1% CO. So CO carries about
+    28% of it and something else carries the rest.
+  SHUNT -- excluded. Identical to three decimal places across the sweep.
+  THE p_collapse FLOOR -- excluded, and this was the best guess. At stiff 0.15
+    the pressure sits exactly on the -50 floor while at stiff 2.00 it does
+    not, so the sweep compares two mechanical regimes. But moving the floor to
+    -200 so it never binds leaves the coupling at +0.86 instead of +0.80. Not
+    the floor.
+  THE ALVEOLAR CO2 STORE -- excluded on magnitude. The lung holds about 77 mL
+    of CO2 and the two conditions differ by under 2 mL, which spread over the
+    blood volume is under 0.1 mmHg against the 3.2 mmHg observed.
+
+Then the decisive one. Shrink the V/Q spread and the coupling vanishes
+exactly:
+
+    vq_log_sd   stiff 0.15   stiff 2.00   coupling
+      0.70         4.35         5.15       +0.80
+      0.20         1.98         1.98       -0.00
+      0.05         2.02         2.01       -0.00
+
+At the same time the arterial-to-alveolar CO2 gap collapses from +6.7 to
+-0.8. So the whole coupling -- including its cardiac-output component, which
+also disappears at low spread despite CO still differing by 2.9% there -- is
+carried by the heterogeneity of the 20 compartments. Arterial CO2 is formed by
+mixing CONTENTS across compartments and then inverting to a partial pressure;
+in a heterogeneous lung that mixing is nonlinear and its offset depends on the
+lung's state, which is what `stiff_below_rv` changes. In a near-homogeneous
+lung there is nothing for it to act on.
+
+**AND THIS REFRAMES THE WHOLE DISAGREEMENT.** `vq_log_sd` controls the Stock
+slope far more strongly than `stiff_below_rv`, `sv_itp_gain` or the CO2 stores,
+and it does so without touching the first-minute rise at all:
+
+    vq_log_sd | 1st min   slope   a-A gap   PaCO2@300   shunt@300
+      0.30    |   12.3     1.99     -0.8       60.3       0.146
+      0.40    |   12.2     2.49      1.1       62.3       0.154
+      0.50    |   12.2     3.07      2.9       64.6       0.163
+      0.60    |   12.2     3.79      5.1       67.4       0.172
+      0.70    |   12.2     4.35      6.7       69.6       0.181
+
+**Stock's measured 3.4 sits at vq_log_sd of about 0.55**, and the first-minute
+value stays at 12.2 against a measured 12 throughout. So the 26% Stock residual
+is most likely a V/Q-spread question, not a CO2-store or mechanics question.
+
+**The full suite was then run at 0.50, 0.55 and 0.60.** Every benchmark, not
+just Stock. Values shown; `*` marks a failure:
+
+    benchmark                                  expect      0.50   0.55   0.60
+    Toner sham, time to SpO2<95%              380-525     423.2  418.8  413.8
+    Heard control, time to SpO2<95%           244-314     305.9  302.0  297.8
+    O'Loughlin SpO2 at 18.7 min                95-100      99.8   99.7   99.6
+    O'Loughlin venous PCO2 rate                50-350     224.9  224.5  223.9
+    PaCO2-PvCO2 gradient, 5 s                  -20--1      -8.6   -8.6   -8.6
+    PaCO2-PvCO2 gradient, 10 min (reversed)      0-12       1.8    1.8    1.8
+    tilt, non-obese 20 deg                      15-40      27.8   27.9   27.8
+    tilt, BMI 35 at 30 deg                      20-45      39.9   39.3   38.6
+    tilt, BMI 44 at 25 deg                      15-40      28.7   28.0   27.3
+    cardiac output rise at 15 min               20-45      35.8   35.8   35.8
+    arterial PaCO2 rate                           2-3       2.4    2.4    2.4
+    Stock obstructed, first minute               9-15      12.2   12.2   12.2
+    Stock obstructed, 1-5 min slope               2-4       3.1    3.5    3.8
+    Moreault, sealed lung subatmospheric      -50--12     -30.4  -30.4  -30.4
+    Moreault, pressure tracks gas removed      -40--5     -19.9  -19.9  -19.9
+    ICSM rescue, post-rescue PaO2               34-51      45.4   45.3   45.0
+    ICSM rescue on room air NOT sustained        0-60      32.9   33.0   33.0
+    ICSM jet, time to SaO2 40%                400-620     490.0  490.0  496.0
+    ICSM jet, PaO2 at cricothyroidotomy         25-31      27.9   28.2   28.5
+    ICSM jet, PaCO2 at cricothyroidotomy        76-93      72.6*  74.5*  77.9
+    oxygen balance closes                    -200-900      -4.2   -3.0   -1.5
+    aventilatory mass flow at 2 min           120-260     223.8  223.8  223.9
+    (the anaemia, MAP, SV and dt checks are bit-identical throughout)
+
+**At 0.60 all 36 checks pass.** At 0.55, 35 pass and the single failure is
+`ICSM jet, PaCO2 at cricothyroidotomy` at 74.5 against a band of 76-93 --
+missed by 1.5 mmHg. At 0.50 the same one misses by 3.4.
+
+Two things about that failure. It is the ONLY thing that breaks anywhere in
+the range, and it is a **MODEL COMPARATOR** -- another group's simulation,
+which this suite explicitly labels "not measurements". So fitting Stock costs
+agreement with a simulation and nothing else. No clinical benchmark moves out
+of band anywhere between 0.50 and 0.70.
+
+And some things improve. Toner's sham arm goes 402.0 at spread 0.70 to 413.8
+at 0.60, which moves it from just below their reported IQR of 405-525 to
+inside it. Heard goes 288.2 to 297.8, still inside 244-314. Moreault does not
+move at all, as expected, since the mechanics are untouched. Neither does the
+PaCO2-PvCO2 reversal, the anaemia ladder, or the tilt series.
+
+**So the position is:** the Stock residual can be removed by one parameter, in
+a direction that was predicted from the mechanism rather than found by
+scanning, at a cost of one model-comparator check and with two clinical
+benchmarks moving slightly closer to their measured values.
+
+**Nothing was changed, and think hard before changing it.** `vq_log_sd` 0.70
+is listed under "Chosen, not fitted" in the provenance section precisely
+because the note there records that spread 0.5 with mixing 25 s hits Toner and
+Heard almost exactly, and that the middle was chosen rather than tuned SO THAT
+THE TRIALS STAY AS VALIDATION. Moving it to 0.55 to satisfy Stock would very
+likely improve Toner and Heard as well -- which is the point: it would convert
+three independent validations into one fit, and there would then be no
+untouched trial left to test the model against. That is a decision about what
+the model is for, not a parameter tweak, and it is not one to make while
+chasing a benchmark.
+
+What would settle it properly is a MEASURED log SD of the perfusion
+distribution in anaesthetised adults -- MIGET data.
+
+**SETTLED, FROM THE PAPER. Tokics L, Hedenstierna G, Svensson L, Brismar B,
+Cederlund T, Lundquist H, Strandberg A. V/Q distribution and correlation to
+atelectasis in anesthetized paralyzed humans. J Appl Physiol 1996;81:1822-33.**
+n=10, anaesthetised, PARALYSED, supine -- our patient exactly -- measured awake
+and then anaesthetised in the same people, by MIGET and by SPECT. **Table 3**
+(not Table 2), means +- SE, n=10. Re-transcribed from the page 2026-09-16:
+
+                       awake        anaesthesia      anaesthesia
+                                    (inert gas)      (isotope)
+    shunt Qs, %      0.2 +- 0.1     5.0 +- 1.3       6.9 +- 1.9
+    Qlow, %          1.2 +- 0.5     7.1 +- 1.8       3.6 +- 0.8
+    log QSD          0.67 +- 0.07   1.18 +- 0.12     0.80 +- 0.04
+    log VSD          0.54 +- 0.06   0.62 +- 0.05     0.78 +- 0.04
+    VD, %            30 +- 5.0      32 +- 3          5.3 +- 1.6
+
+**Nine values in the previous transcription were wrong, every one of them a 5
+and a 7 exchanged.** The three log QSD figures the V/Q argument rests on were
+correct and are unchanged. Two independent checks confirm the shunt value
+before the table was read: the paper's own regression between techniques,
+Qs_iso = 0.29 + 1.26*Qs_gas, maps 5.0 to 6.6 (close to the measured 6.9) and
+7.0 to 9.1 (nothing like it); and the paper states log VSD was HIGHER by
+isotope than by inert gas, true of 0.78 vs 0.62 and false of the old 0.58.
+
+The convention matches ours: MIGET calls perfusion below V/Q 0.005 SHUNT and
+reports it separately, so log QSD is the spread of the NON-shunt distribution,
+which is what `vq_log_sd` is. Directly comparable.
+
+**Our 0.70 is below the measured anaesthetised value on both techniques**
+(0.80 isotope, 1.18 inert gas) and barely above the AWAKE value of 0.67. Our
+baseline shunt of 5.0% **lands on their measured 5.0 +- 1.3%**, not under it,
+and inside their range of 0.4-12.2%. The old entry said it "sits just under
+their 7.0"; that was the transposition above. Only ONE V/Q parameter is below
+measurement, not two.
+
+**And setting the spread to the measured value breaks Stock badly:**
+
+    vq_log_sd | shunt@0s  shunt@300s | Stock 1st min   1-5 min slope
+       0.70   |    5.0%      18.1%   |     12.2            4.35   shipped
+       0.80   |    5.0%      18.9%   |     12.1            5.02   measured, isotope
+       1.18   |    5.0%      21.3%   |     11.9            7.44   measured, MIGET
+
+against a measured 3.4 and a band of 2.4-4.4.
+
+**This is the sharpest statement of the defect we have, and it is not about the
+value of the parameter.** The model only passes Stock at all because its V/Q
+spread is set BELOW what is measured in this exact population. At a
+physiological spread the arterial CO2 runs away. So the fault is the
+SENSITIVITY: real lungs at log QSD 1.18 give 3.4 mmHg/min and ours gives 7.44.
+d(slope)/d(spread) is far too steep, and that steepness is the a-A gap
+mechanism documented above.
+
+Two structural notes. Their log VSD is 0.62-0.74 and FALLS slightly with
+anaesthesia while log QSD rises; we have no independent ventilation-spread
+parameter at all, since all compartments share one alveolar pressure and
+volumes are held. And their dead space is 30-32% by inert gas against 7.3% by
+isotope, a threefold disagreement between techniques in the same patients,
+which is a fair warning about how much any single MIGET number should be
+trusted.
+
+*(Superseded, kept for the record: the abstract-only estimate below pointed the
+same way but for weaker reasons.)*
+
+**The earlier abstract-only reading. ABSTRACT ONLY.** Gunnarsson et al., Eur Respir J 1991;4:1106-16,
+state in their abstract that the mean log Q SD in their COPD patients was 0.99
+against an "upper 95% confidence limit of normal subject: **0.60**", and a
+second source gives the normal median range as 0.3-0.6. Anaesthesia is
+consistently reported to INCREASE log SDQ above the awake value. If that holds,
+then an anaesthetised paralysed adult sits at or above 0.6, our shipped 0.70 is
+defensible, and moving to 0.55 would put the model below the upper limit of the
+AWAKE normal range -- further from measurement, not closer. **On that reading
+the Stock fix is not available and the 26% residual stands, needing another
+explanation.**
+
+Two things must be checked before this is treated as settled. First, MIGET
+computes log SDQ on the NON-SHUNT distribution, excluding compartments below
+V/Q 0.005; our `vq_log_sd` likewise sits alongside a separate shunt and
+collapse mechanism, so the comparison is roughly like-for-like, but that has
+been assumed rather than confirmed against the papers' own definition. Second,
+none of these numbers has been read in the source.
+
+**A second search settles the direction. ABSTRACT ONLY, but now four
+independent numbers agree and all of them point the same way:**
+
+    normal young awake              0.3-0.6   (upper 95% limit 0.60)
+    COPD patients, awake            0.99      Gunnarsson, ERJ 1991;4:1106
+    elderly awake supine (61-72 y)  0.93      MIGET halothane study, below
+    elderly, halothane + IPPV       1.67      same study, same patients
+    ---------------------------------------------------------------
+    OUR MODEL, anaesthetised 45 y   0.70
+
+The 0.93 and 1.67 are from a MIGET study of nine patients aged 61-72 studied
+awake and then under halothane with mechanical ventilation; the search did not
+disambiguate between PMID 6837252 and PMID 6428137 as its source, so check
+which before citing.
+
+So the measured spread in ANAESTHETISED adults is substantially ABOVE 0.70, not
+below it. Our 0.70 already sits under the awake value for older subjects. That
+kills the Stock fix outright: moving to 0.55 is unsupportable, and if the
+parameter moves on evidence it should move UP, which makes the Stock slope
+WORSE, not better. **The 26% Stock residual stands and needs an explanation
+that is not the V/Q spread.**
+
+Three caveats, none of which changes the direction. Those patients are 61-72
+against our 45, and spread widens with age. Halothane is not modern
+anaesthesia. And MIGET computes log SDQ on the NON-SHUNT distribution,
+excluding compartments below V/Q 0.005, while ours sits alongside a separate
+shunt and collapse mechanism -- so if anything our 0.70 should be compared
+against a MIGET number with its shunt already removed, which is what these are.
+
+The paper to get remains **Tokics L, Hedenstierna G, et al. V/Q distribution
+and correlation to atelectasis in anesthetized paralyzed humans. J Appl Physiol
+1996;81(4):1822-33** (PMID 8904605, doi 10.1152/jappl.1996.81.4.1822): ten
+anaesthetised, PARALYSED, supine adults with MIGET and CT, awake and
+anaesthetised in the same people, which is our patient exactly and younger than
+the halothane cohort. No free copy was found -- no repository, thesis or mirror
+surfaced, only the publisher. Until then, 0.70 ships and the sweep at 0.50-0.60
+stands as a recorded negative result rather than a proposal.
+
+So: Moreault says less vacuum; less vacuum means more cardiac output; more
+cardiac output means a faster CO2 rise; and Stock says our CO2 rise is
+already 26% too fast at 4.3 against 3.4.
+
+**Nothing was changed, deliberately.** Making Stock pass again would mean
+moving `itp_fraction` or `sv_itp_gain` at the same time, and those are exactly
+as unvalidated as the term being fixed -- `sv_itp_gain` carries its own note
+saying the pig magnitude does not transfer and tuning to it would be wrong.
+One unvalidated change compensating another is how the single lung-wide pH,
+the perfusion of collapsed units and the pole at 8.142 all survived for so
+long underneath CO2 store parameters that had been sized to hide them. Do not
+repeat it. If you soften the sub-RV term, Stock will fail and that failure is
+information, not an obstacle.
+
+**And `sv_itp_gain` is cited to a paper whose own oxygen arm contradicts it.**
+The comment at `sv_itp_gain` cites Chen L, Scharf SM, J Appl Physiol
+1998;84:1289: sedated pigs, obstructed apnoea, cardiac output 2.97 -> 2.39
+L/min while MAP rose 103 -> 124 Torr. That is the **room-air** arm. The same
+study has an **oxygen** arm in which the same intrathoracic pressure, -31 Torr
+(-42 cmH2O), was reached with oxygenation preserved, and there stroke volume
+and cardiac output were **unchanged**. The fall in the room-air arm is
+therefore attributable to hypoxaemia and its autonomic consequences, not to
+the mechanical Muller effect. The mechanical coupling the source actually
+supports is about zero -- and our patient is the oxygenated one, so the arm
+that applies is the arm showing no effect.
+
+**But the parameter is not unevidenced, and it is too SMALL, not too large.
+Corrected from the full texts, September 2026.** Two human studies measure
+intrathoracic pressure and stroke volume simultaneously in normoxic subjects:
+
+  Wright 2023 (AJP-Heart 325:H1235), n=19 healthy, ITP -30 cmH2O held 15 s:
+    LV SV 70+-16 -> 60+-16 mL, EDV 120 -> 108, ESV unchanged, EF 59 -> 55.
+    -14.3%, i.e. a gain of 0.00476 per cmH2O. ESV unchanged with EDV down
+    makes this a PRELOAD effect, the same mechanism as in our patient.
+  Condos 1987 (Circulation 76:1020), n=10 at cardiac catheterisation with
+    multisensor micromanometry: CO 6.0 -> 5.3 L/min, SV 83 -> 74 mL, SVR
+    1331 -> 1892, mean RA pressure 7 -> -17 mmHg. SV -10.8% at an
+    intrathoracic swing of -24 mmHg = -32.6 cmH2O, i.e. 0.0033 per cmH2O.
+
+Ours is 0.0025 -- **conservative by 1.3x to 1.9x against both**. The CITATION is
+what is wrong, not the number, and if the number moves it should move UP.
+
+Duration remains open. A Mueller manoeuvre is 5-15 s and our patient takes three
+minutes; but Wright's effect GROWS from 10% at 5 s to 14.3% at 15 s, which
+argues against a pure transient. Nothing published reaches three minutes.
+
+**AND IT BARELY MATTERS, which was the surprise.** At hb 15.0, as
+`test_stock_1989` runs it:
+
+    stiff  sv_itp_gain | P@1008  P@1260 | 1st min  slope | CO@300  shunt
+     0.15     0.00250  |  -30.4   -50.0 |   12.2   4.35  |  4.30   0.181
+     0.15     0.00330  |  -30.4   -50.0 |   12.2   4.30  |  4.19   0.180
+     0.15     0.00476  |  -30.4   -50.0 |   12.2   4.24  |  3.98   0.180
+     2.00     0.00250  |  -22.2   -30.4 |   12.2   5.15  |  4.57   0.181
+     2.00     0.00476  |  -22.2   -30.4 |   12.2   5.01  |  4.37   0.180
+
+Adopting the human value moves the Stock slope 4.35 -> 4.24 against 3.4. The
+Muller term does NOT rescue Stock, and softening `stiff_below_rv` to satisfy
+Moreault still fails at 5.01 with the human gain. So the Chen & Scharf
+mis-citation, while real, is **nearly inert on the knot** -- much less
+consequential than this section previously implied.
+
+**AND THE MECHANISM RECORDED ABOVE IS CONTRADICTED BY THE MODEL ITSELF.**
+The claim "the coupling is the Muller effect, not the gas" does not survive the
+sweep:
+
+    gain 0.0025 -> 0.00476 at stiff 0.15:  CO -7.4%,  slope -2.5%
+    stiff 0.15 -> 2.00 at gain 0.0025:     CO +6.3%,  slope +18.4%
+
+Two manipulations of comparable size, both acting through cardiac output, with
+slope sensitivities differing about SEVENFOLD and in opposite proportion.
+Cardiac output cannot be the mediator of the stiffness effect. Shunt is
+identical across every row (0.180-0.181), so it is not shunt either. **What the
+real mediator is has not been established, and no guess is recorded here.**
+`stiff_below_rv` does control the Stock slope, strongly; the reason given above
+for why it does is wrong. Fixing that description is item 3 of the next steps
+in `protocol/evidence.md`.
+
+Removing the term makes Stock worse, not better:
+
+    sv_itp_gain  stiff |  P@1008   P@1260  Stock 1-5 min
+                       | -20 (5) -31 (10)          3.4
+         0.0025   0.15 |   -30.4    -50.0         4.35
+         0.0000   0.15 |   -30.4    -50.0         4.51
+         0.0000   0.50 |   -24.4    -40.4         5.06
+         0.0000   1.00 |   -22.9    -33.8         5.22
+         0.0000   2.00 |   -22.2    -30.4         5.31
+
+So the model passes the Stock benchmark partly by a mechanism its own citation
+does not support. Note that every correction available points the same way:
+deleting the Muller term raises cardiac output and speeds the CO2 rise;
+softening `stiff_below_rv` makes the pressure less negative, which also
+weakens the Muller term, which also speeds the CO2 rise. Both defensible fixes
+push Stock further out of band. That is the knot, stated in one place.
+
+**Nothing was changed here either, and do not delete `sv_itp_gain` on its
+own** -- it would read as a correction while making the fit worse and while
+leaving `stiff_below_rv` untouched. What decides it is a measurement of
+cardiac output and airway pressure in the same OXYGENATED patients. If CO is
+unchanged at -15 cmH2O in humans the term goes, and the CO2 limb has to absorb
+the whole 26% residual by itself.
+
+**What would settle it:** one study measuring airway pressure AND PaCO2 in the
+same patients during obstructed apnoea -- a clamped tracheal tube, which is
+physiologically the same event as any circuit disconnection. At present we
+have Moreault's pressures in one group and Stock's CO2 in another, thirty
+years apart, with no way to know which limb is wrong. That study is designed
+and was ready for ethics.
+
+**Whether anyone has already measured it (searched September 2026).** Outside
+Moreault there appears to be no human measurement of airway pressure developing
+under obstruction from gas absorption alone. What exists is adjacent and does
+not substitute:
+
+- The one-lung-ventilation literature does measure bronchial pressure directly
+  in the non-ventilated lung via a catheter to a differential transducer, and
+  reports it becoming progressively negative. Moreault 2021 is the one we use;
+  the same method appears in the wider lung-isolation literature and is the
+  most promising place to look for a second dataset.
+- Negative-pressure pulmonary oedema reports quote intrathoracic pressures
+  beyond -100 cmH2O, but those are generated by forced inspiration against a
+  closed glottis. That is an active effort, not passive absorption, and the
+  magnitude does not transfer -- it is the same category error as the pig
+  study above.
+- Animal obstructive-apnoea models clamp a tracheal cannula or apply a set
+  negative pressure (-50 to -150 mbar in rat upper-airway work). They report
+  pressure APPLIED, not pressure DEVELOPED, so they bound the mechanics
+  without measuring the quantity we need.
+- Obstructive sleep apnoea gives oesophageal pressure swings during obstructed
+  events, again effort-driven.
+
+Dale WA, Rahn H. Rate of gas absorption during atelectasis. Am J Physiol
+1952;170:606-13 is the closest classical source and is held here.
+
+**The full evidence map is `protocol/evidence.md`.** Pressure+haemodynamics HAS
+been paired (Wright 2023, Condos 1987) and CO2+haemodynamics HAS been paired
+(Ebata 1991, patent airway). What has never been paired is **pressure with
+CO2**, which is the pairing that identifies the faulty limb.
+
+**Retracted:** an earlier version said Ebata showed our CO2-to-cardiac-output
+gain to be 1.8x too strong. The full text destroys that. Baseline PaCO2 was 45,
+not 40 -- ventilation was deliberately slowed beforehand. Every patient was on
+dopamine 5-30 ug/kg/min, two also on dobutamine. Body temperature was
+34.0-37.4 C. And the paper's own thesis is that the response in brain death is
+"markedly depressed compared with those in volunteers and patients under
+general anaesthesia", so using it as a like-for-like comparator inverts its
+argument. Ebata gives the ladder instead:
+
+    awake, from Cullen and Eger        0.17  L/min per mmHg PaCO2
+    our model, anaesthetised           0.034 L/min per mmHg
+    brain-dead on dopamine at 35.8 C   0.027 L/min per mmHg (from their table)
+
+We sit between awake and brain-dead, where an anaesthetised patient belongs,
+and we already match the Sci Rep n=91 benchmark at +35.8% against +30%
+reported. If anything we are LOW: Price et al., quoted by Ebata, put
+anaesthesia at a half to a third of the awake response, i.e. 0.057-0.085.
+**Nothing should change on the strength of Ebata, and any future change is more
+likely upward.**
+
+What Ebata does offer are two clean candidate benchmarks that do not depend on
+sympathetic integrity: **mean PAP 11 -> 17 mmHg and PVR 112 -> 183 (+63%) at
+PaCO2 78 / pH 7.17**, correlated at r=0.72. Our pulmonary limb has almost
+nothing testing it.
+
+**Pressure under obstruction runs too negative.** Moreault 2021 measured
+-20 (5) cmH2O at 504 mL of gas resorbed from one sealed lung and -31 (10) at
+630 mL. Doubled for a whole lung we give -30.4 and -50.0. The sub-RV
+stiffening term is the likely cause: at these volumes it contributes about
+-39 of the total against -17 from the linear term, and it has never had data
+behind it. Do not simply soften it -- the collapse notes above show the
+volume loss itself is forced by benchmarked VO2, so anything done here has to
+keep `test_moreault_2021` and the Stock CO2 rates.
+
+**Haemodynamics below SaO2 ~70%.** At the cricothyroidotomy point ICSM gives
+CO 2.7 (0.1) L/min and MAP 57.4 (2.4) mmHg; we give 1.98 and 29. Our patient
+is far more shocked. This is not defended -- it is the region the parameter
+provenance section already calls illustrative and not predictive, and a MAP of
+29 at SaO2 40% is the less plausible of the two. Deliberately NOT given a
+benchmark band wide enough to pass, because that would hide it. The gas
+channels of the same comparison are benchmarked and agree closely.
+
+**Weight sensitivity of the apnoea.** Our PaCO2 at the trigger spans 64-121
+mmHg across 46-90 kg; theirs has an SD of 4.4 over the same range, and their
+time to SaO2 80% has an SD of 1 second across the whole cohort. Our
+desaturation time varies far more with body size than theirs does. Unexplained.
 
 Mohanty 2021 (buccal RAE vs nasal cannula, obese) reports a buccal mean of
 375 s where Heard reports a median of 750 s in a similar population. Four
@@ -90,7 +5306,7 @@ be compared with Heard's.
 
 ### Anchored in measurement
 - O2 dissociation: Severinghaus with Kelman Bohr correction. Exact.
-- HPV: Marshall BE et al. Respir Physiol 1994;96:231-47. PSO2 =
+- HPV: Marshall BE, Clarke WR, et al. Respir Physiol 1994;96:231-47. PSO2 =
   PvO2^0.41 x PAO2^0.59, half-max 39.4 mmHg, PVR max 3.15x.
 - Cardiac output response: 0.97% of baseline per mmHg PaCO2, from the Sci Rep
   n=91 measurement in exactly this population. Split evenly between rate and
@@ -113,9 +5329,15 @@ be compared with Heard's.
   than tuned, deliberately, so the trials stay as validation.
 
 ### Unverified
-- Douglas, Jones & Reed 1988 CO2 content constants were written from memory.
+- ~~Douglas, Jones & Reed 1988 CO2 content constants were written from memory.
   Absolute content runs ~6% high (51 vs 48 mL/dL arterial). Slope is right so
-  dynamics are unaffected, but CHECK AGAINST THE PAPER before publishing.
+  dynamics are unaffected, but CHECK AGAINST THE PAPER before publishing.~~
+  **DONE 2026-09-14, struck 2026-09-21.** The paper was obtained and Eq 6
+  verified against it; `[Hb]` is in g/100 mL and reading it as mmol/L was a real
+  error, now fixed. Arterial content went 51.6544 -> 47.4984 mL/dL. See
+  `bloodgas.py`'s PROVENANCE header. This entry outlived its correction by a
+  week and was still telling readers to check a settled thing — it is the
+  reason `SOURCES.md` now exists as the single place reading status is recorded.
 - The bradycardia curve and the terminal rhythm timings (18/12/6 bpm, ten
   seconds each) are illustrative. Anything below SaO2 ~70% is not predictive.
 
@@ -129,6 +5351,354 @@ be compared with Heard's.
   ten-second rolling minimum, which is also what a monitor would show.
 - Runs continued past the terminal rhythm are numerical noise. Do not plot
   them; `stop_sao2` exists for this.
+- **Above PaCO2 ~150 the arterial CO2 inverse misbehaves.** Not just
+  unvalidated — wrong. In a 15-minute obstructed-then-rescued obese run, PaCO2
+  reads 218 mmHg at 650 s, 138 at 700 s, 126 at 725 s, 230 at 825 s: twelve of
+  ninety ten-second intervals have PaCO2 FALLING, once by 43.8 mmHg. With no
+  ventilation there is nothing to remove CO2, so it cannot fall at all.
+  `pco2_from_co2_content` solves a residual whose inner SO2/pH fixed point is
+  poorly conditioned at that end, so successive one-second solves land on
+  different roots. Both implementations do it and agree with each other while
+  doing it, so it is not a port problem. 150 is already `co2_response_cap`,
+  past which this file says the model is not valid, and every benchmark
+  finishes well below it — so nothing published is affected. But the model
+  does not merely stop being predictive up there, it starts producing
+  impossible numbers, and if anything is ever to be claimed in that range this
+  needs fixing first. Reproduction is in the note at the foot of
+  `test_parity.py`.
+
+## The three-way study protocol
+
+`protocol/study.html` is the protocol for the study that would settle the three
+open disagreements at once — airway pressure against Moreault, PaCO2 against
+Stock, and the haemodynamic response against Chen & Scharf — by measuring all
+three in the same patients. It exists because no dataset does this, and because
+each of those three conflicts is currently arguable only against a source that
+measured one channel.
+
+A fourth channel was added after the first draft: the **volume entrained when
+the occlusion is released**. It is worth more than it looks.
+
+- It is a *molar* measurement, so unlike the pressure channel it does not
+  depend on where the transducer sits or on whether small airways have closed
+  between the transducer and the alveolus. That is the standing objection to
+  every airway-pressure measurement in this literature, and this channel is
+  immune to it.
+- It is a direct measurement of apnoeic oxygen uptake, which cannot otherwise
+  be obtained in an obstructed patient. At 180 s the model puts it at 742 mL,
+  made of −842 mL O2, −11 mL CO2 and +111 mL N2.
+- The CO2 term is almost exactly nil because PACO2 rises 42% while the lung
+  shrinks 36%. That near-cancellation means the volume constrains the CO2 limb
+  in a way the arterial sample does not.
+- **It can falsify the recruitment limb outright.** The model's refill term
+  targets FRC unconditionally: it has no mechanism that withholds gas from
+  units that closed, so it *must* predict full restoration. If Rothen's opening
+  pressures apply in vivo, closed lung will not reopen at the few cmH2O a
+  passive inrush generates and the measured volume falls short by 125 mL at
+  BMI 22.9 and 162 mL at BMI 32.7. A shortfall of any size is a result the
+  model cannot accommodate.
+
+The measurement is by flow integration through a **calibrated fixed-orifice
+resistor**. Released into an open circuit the inrush peaks at 4.3 L/s with 90%
+of the volume in 0.39 s, which is at or beyond a common adult flow head's linear
+range and needs a bandwidth clinical equipment does not have. A resistor in the
+release path fixes it, and does NOT change the answer — so long as the release
+finishes inside the window — because the endpoint is the chest wall returning to
+its relaxed volume and not the path the gas took:
+
+| release R, cmH2O/(L/s) | peak flow | 99% by | volume at 5 s |
+|---|---|---|---|
+| 2 (open) | 4.30 L/s | 0.85 s | 742 mL |
+| 5 | 1.72 L/s | 2.16 s | 742 mL |
+| **10 (specified)** | **0.86 L/s** | **3.86 s** | **741 mL** |
+| 20 | 0.43 L/s | — | 705 mL, incomplete |
+| 50 | 0.17 L/s | — | 515 mL, incomplete |
+
+R = 10 is still specified, but **the usable range narrowed from 5-20 to 5-10 on
+2026-09-17**: the compliance unit fix nearly doubled the compliance, so the same
+absorbed gas develops about half the vacuum, the inrush is about half as fast
+and takes about twice as long, and R = 20 no longer finishes inside the
+five-second window — it delivers 705 of 742 mL and is still flowing. This is the
+one place in the protocol where the unit error changed a SPECIFICATION and not
+just a predicted number. Interrupting the inflow two or three times and reading
+the static plateau gives quasi-static P-V points through the re-inflation --
+the opening pressure of closed lung, measured with no gas delivered and nothing
+above atmospheric.
+
+An earlier draft restored the pressure by syringe injection and read the volume
+injected. Rejected: it needs many strokes of a clinical syringe or an unwieldy
+3 L calibration syringe, and it delivered gas into the lung, which cost the
+protocol a risk assessment it no longer needs. Worth recording that half the
+argument against flow integration was wrong -- added resistance changes the flow
+PROFILE and not the VOLUME, since the endpoint is mechanical. Only the bandwidth
+half stood, and a resistor answers it.
+
+`protocol/predictions.py` regenerates every number quoted in the document from
+`apnoea_core` and fails if any of them has drifted. Run it before the protocol
+is submitted, and against any later commit, to see whether the registered
+predictions still hold. It is deliberately not part of the pre-commit suite:
+these are predictions about the world, not benchmarks the model must pass, and
+they are expected to move when the model is corrected. What must not happen is
+that they move silently.
+
+## Is Stock an outlier? No — and asking moved the problem to the patent side
+
+Checked September 2026. SECONDARY SOURCES, not yet read in the original.
+
+**Eger EI, Severinghaus JW. The rate of rise of PaCO2 in the apneic
+anesthetized patient. Anesthesiology 1961;22:419-25** (PMID 13725901, doi
+10.1097/00000542-196105000-00013, reported to be free) is the foundational
+measurement and describes anaesthetised apnoea with a **PATENT** airway:
+**10-12 mmHg in the first 30-60 s, then 3-5 mmHg/min.**
+
+On matched windows:
+
+    source                          airway     1st min   1-5 min slope
+    Eger & Severinghaus 1961        patent      10-12      3-5
+    Stock 1989 (n=14)               OBSTRUCTED  12         3.4
+    OUR MODEL, obstructed                       12.2       4.35
+    OUR MODEL, patent                           11.6       1.70
+    Ebata 1991 (n=9, brain-dead)    patent      -          3.3 over 0-10 min avg
+    Schafer & Caronna 1978          patent      -          3.2 over 0-10 min avg
+
+Three things follow, and the third is the important one.
+
+1. **Stock's 3.4 is NOT an outlier.** It sits at the low end of the classical
+   range for anaesthetised apnoea, and if anything is on the low side, since
+   obstruction ought to be at least as fast as a patent airway.
+2. **Our obstructed 4.35 is INSIDE the classical 3-5 range.** The "26%
+   residual" -- 39% with the held Haldane patch -- is measured against ONE
+   study's point estimate, with a band of +-30% around it, while the
+   foundational reference gives a range that comfortably contains our value.
+   That does not make the a-A gap analysis wrong; the gap is real and is still
+   the reason obstructed and patent differ so much here. But it does mean the
+   residual has been over-weighted as evidence of a defect.
+3. **Our PATENT 1-5 min slope of 1.70 is roughly HALF the classical 3-5, and
+   nothing in the suite tests it.** `test_cardiac_output` checks the patent
+   rate as `(PaCO2_final - 40)/15`, a FIFTEEN-MINUTE AVERAGE, which the
+   first-minute jump dominates: 11.6 of the total arrives in minute one, so the
+   average reads 2.38 and passes a band of 1.8-3.0 while the underlying slope
+   is 1.70. The averaging hides it.
+
+**So the larger discrepancy is on the patent side, not the obstructed side, and
+it has been invisible because of how the benchmark is computed.** Whether the
+model is too slow patent or Eger and Severinghaus's range is wider than their
+mean cannot be settled without reading them.
+
+Two changes to consider, neither made:
+
+- Widen the Stock band from +-30% of 3.4 to the literature's 3-5, citing Eger
+  and Severinghaus. This is NOT the same as widening a band to admit a
+  failure -- it is replacing one study's point estimate with the range the
+  field actually reports -- but it should be done only with the paper read,
+  and it would make the held Haldane patch (4.72) applicable.
+- Add a benchmark for the PATENT 1-5 min slope against 3-5. The model would
+  currently FAIL it at 1.70. That is the honest consequence of asking the
+  question and it should not be avoided by not adding the test.
+
+**Get Eger & Severinghaus 1961 before acting on either.** It is reported free.
+
+## Where the Stock residual actually lives — located, not yet fixed
+
+Established September 2026 after V/Q spread, CO2 stores, mechanics, the Muller
+term and cardiac output had all been excluded. Nothing in the model has been
+changed on the strength of this.
+
+**The whole excess is in the arterial-to-alveolar CO2 gap, and the CO2 stores
+are exonerated.** Run the same patient obstructed and patent:
+
+                          obstructed   patent
+      PaCO2 slope 60-300s     4.35      1.70
+      PACO2 slope             2.63      1.74
+      PvCO2 slope             2.01      1.80
+      a-A gap growth         +1.72     -0.04   mmHg/min
+
+The VENOUS slopes agree. Whole-body CO2 storage behaves identically in the two
+conditions, so no store parameter can be the fault -- which retires the lever
+HANDOVER has warned about since the beginning. The obstructed excess is
+entirely the a-A gap, which opens late:
+
+        t     a-A    shunt   SaO2
+       60    -0.2    0.058  100.0
+      120    -0.3    0.075   99.9
+      180    +1.3    0.103   98.5
+      240    +6.3    0.140   93.1
+      300    +6.7    0.181   84.9
+
+**It is not shunt.** Suppressing global closure (`max_closed` 0.02) drops shunt
+to 0.142 and the gap goes UP to 7.3 with the slope at 4.50. Raising `hb` to 18
+to delay desaturation drops the gap to 5.8 and the slope to 3.91, so
+desaturation contributes, but only about a fifth of it.
+
+**It is inter-compartmental mixing, and the shipped value is too fast.**
+`tau_mix` controls it monotonically, and touches only the slope -- the first
+minute stays at 12.1-12.2 against a measured 12 across the whole range:
+
+    tau_mix   1st min   slope   a-A@300
+        8       12.2     8.95     21.0
+       15       12.2     7.25     16.3
+       25       12.2     5.77     10.9
+       45       12.2     4.35      6.7   <- shipped
+       60       12.2     3.85      5.4
+       75       12.2     3.3       ~4     <- Stock's measured 3.4
+       90       12.1     2.99      2.3
+      150       12.1     2.33      0.4
+      off       12.1     1.46     -2.5
+
+Note the direction, which is the opposite of the obvious guess: FASTER mixing
+makes the gap and the slope WORSE. Why that is has not been established.
+
+**A patency-gated version passes everything.** Physical argument: cardiogenic
+stirring does not stop when the tube is clamped, but BULK FLOW does -- with a
+patent airway roughly 250 mL/min of aventilatory mass flow sweeps down the
+airway and redistributes gas between units on top of the stirring, and a sealed
+lung has only the stirring. Implemented as 45 s patent, 75 s sealed, the full
+suite gives **36 of 36, with the Stock slope at 3.3**:
+
+    Toner sham        402.0 s   IDENTICAL to shipped
+    Heard control     288.2 s   IDENTICAL
+    O'Loughlin SpO2    99.1 %   IDENTICAL
+    Moreault          -30.4 / -19.9   IDENTICAL
+    Stock slope         3.3     was 4.35, measured 3.4
+    ICSM jet PaCO2     76.1     was 82.7, band 76-93 -- now at the edge
+
+The patent benchmarks are bit-identical BY CONSTRUCTION, since the gate does
+not touch them. That is the attraction: unlike the `vq_log_sd` route, this
+cannot convert Toner and Heard from validation into fit.
+
+**Why it has NOT been adopted.** Four reasons, and the first is decisive.
+
+1. `tau_mix_sealed = 75` was chosen to hit Stock. One new parameter fitted to
+   one benchmark, in a regime where that benchmark is the ONLY constraint --
+   so Stock stops being validation for sealed-lung mixing the moment it is
+   made. That is the same trade refused three times already in this file.
+2. The physical argument is plausible but UNQUANTIFIED. Nobody has calculated
+   whether 250 mL/min of mass flow is enough to take lung mixing from 75 s to
+   45 s. Until that number exists, 75 is a fitted value wearing a mechanism's
+   clothes.
+3. ICSM jet PaCO2 lands on the band edge at 76.1.
+4. The mechanism by which `tau_mix` drives the a-A gap at all is not
+   understood -- only that it does, monotonically, in the counter-intuitive
+   direction.
+
+**Next step is the calculation in (2), not another sweep.** If mass flow at
+250 mL/min through a lung of this size plausibly halves a mixing time constant,
+the change is a correction and Stock becomes a genuine pass. If it does not,
+this is another parameter compensating for something else and must be recorded
+and left alone.
+
+### A separate, real inconsistency found on the way
+
+`apnoea_core.py` computes the per-compartment pH with **`so2=0.99` hard-coded**:
+
+    ph_c = [bg.ph_from_pco2_be(pc, be, hb, so2=0.99, temp=temp) for pc in ...]
+    cc_co2_c = bg.co2_content(p_co2_c, ph_c, sc_o2_c, hb, temp)
+
+so the pH is computed as if the blood were fully saturated while the content
+then uses the true per-compartment saturation. `ph_from_pco2_be`'s own
+docstring says that saturation term IS the acid-base limb of the Haldane
+effect and that under-representing it "translates directly into an overestimate
+of the rate of rise of PaCO2" -- which is the defect we have.
+
+It is real but small per-compartment: at SO2 0.85 it costs 0.0035 pH and 0.74%
+of CO2 content. It is harmless while SaO2 is near 0.99, which is why no
+patent-airway benchmark ever caught it.
+
+**IT HAS BEEN WRITTEN AND IT MAKES STOCK FAIL. The patch is held in
+`patches/haldane-per-compartment-ph.patch` and is NOT applied.**
+
+The fix solves pH and SO2 together, three passes from 0.99, in both
+`apnoea_core.py` and `model.js` identically. Parity holds after it (worst
+channel 0.194%). Validation goes to 35 of 36: the only failure is the Stock
+slope at **4.7** against a band of 2.4-4.4, where the shipped model gives 4.35.
+PaCO2 at 300 s goes 69.6 -> 71.1 and the a-A gap 6.7 -> 8.2.
+
+**Note the sign, and do not repeat my error in reading it.** The docstring of
+`ph_from_pco2_be` warns that under-representing its saturation term
+"translates directly into an overestimate of the rate of rise of PaCO2". That
+is about omitting the term from BOTH ends, which shrinks the a-v content
+difference. What the code actually did was omit it only from the END-CAPILLARY
+pH while handing the true saturation to `co2_content` -- a different error with
+the OPPOSITE sign. Correcting it RAISES end-capillary CO2 content by about
+0.7%, so arterial PCO2 rises and the slope gets worse.
+
+So the fix is right and the residual is bigger than recorded: not 26% too fast
+but **39%**. The fix did not create that, it revealed it. A parameter-free
+correction that sharpens a disagreement is evidence of a real defect elsewhere,
+not of a tuning problem.
+
+It is unapplied only because the pre-commit hook blocks on a failing benchmark
+and widening the band to admit 4.7 would be hiding. Apply it together with
+whatever finally explains the a-A gap, and re-derive any mixing constant AFTER
+it rather than before -- the fix moves the value such a constant would need.
+
+## Removing the V/Q spread — the two arbiters point opposite ways
+
+Asked 2026-09-22: what does `vq_log_sd` actually do to every reported variable?
+`vq_log_sd` is the width of the ventilation-to-perfusion distribution — in
+plain terms, how unevenly air and blood are matched from one region of the lung
+to the next. Two runs of **this** model, identical but for that one number.
+**A** is the shipped 0.70. **B** is 0.01, one effectively uniform alveolar
+compartment, which is the *structure* Hardman 1998 Appendix 1 describes for the
+Nottingham simulator.
+
+**B is our code emulating their structure. It is not their model, not their
+output, and no B number may be reported as an ICSM result.**
+
+Configuration is `test_validation.test_stock_1989` exactly — 70 kg, 1.75 m,
+45 y, Hb 15.0, tracheal tube clamped, room air in the airway — so the Stock
+comparison is like-for-like with the benchmark. Drawn by `vq_chart.py`,
+arbitrated in `handover_numbers.py` under "REMOVING THE V/Q SPREAD".
+
+| at 300 s | A, spread on 0.70 | B, spread off 0.01 | Stock 1989 measured |
+|---|---|---|---|
+| PaO2 | 60.98 | 157.48 | **314 (87)** |
+| SaO2 | 85.30 | 99.11 | **>92% in all 14** |
+| PaCO2 | 71.01 | 60.09 | 63 (9) |
+| pH | 7.231 | 7.276 | 7.26 (0.06) |
+| first-minute CO2 rise | 12.02 | 12.16 | 12 |
+| 1–5 min slope | **4.72** | **1.95** | 3.4, band 2.4–4.4 |
+| SaO2 40% reached at | 513 s | 496 s | — |
+
+**On oxygen the spread is most of the defect and it points one way.** Killing it
+moves PaO2 from 61 to 157 against a measured 314 — a 2.6× move toward the
+measurement — and turns a saturation that FAILS Stock's "every patient above
+92%" into one that passes. It does not reach 314, so the spread is not the whole
+oxygen story.
+
+**On CO2 the spread brackets the measurement rather than fixing it.** 4.72 is
+39% high, 1.95 is 43% low, and Stock's 3.4 sits between them. On the absolute
+300 s value *both* are inside ±1 SD of 63 (9), so the slope is the only
+statistic that discriminates. An earlier draft of this finding claimed B was "in
+band" on the 300 s value where A was "out". Both are in. That claim was wrong,
+came from running Hb 14 rather than the benchmark's 15, and is struck here
+rather than quietly dropped.
+
+The first-minute rise is **inert** to the spread — 12.02 against 12.16, both on
+a measured 12 — so the bulk CO2 bookkeeping is right either way and only the
+arterial-to-alveolar gap moves. That is the same conclusion the dispersion block
+reaches by a different route.
+
+**And against Laviola 2026 the sign reverses.** Removing the spread makes
+agreement WORSE on PaO2, PaCO2, cardiac output and mean arterial pressure at the
+SaO2 40% state. So the human measurement wants LESS spread and the other
+simulator wants MORE.
+
+**Neither arbitrates.** Laviola's simulator has no V/Q distribution at all (see
+"The Nottingham simulator has no V/Q distribution"), so it cannot be an authority
+on this parameter; and Stock's two channels disagree with each other.
+
+**This is not permission to split the difference.** `vq_log_sd` 0.50 puts the CO2
+slope in band at 3.16 and would move oxygen too. That is a fit, not a mechanism,
+and CLAUDE.md forbids it. The parameter stays at 0.70 pending a written ruling.
+
+**What would settle it, and what would not.** Time-to-desaturation is nearly
+blind to this parameter — 513 s against 496 s, a 3.3% difference across the
+entire plausible range of the thing that moves PaO2 by 2.6×. **Any experiment
+reading out desaturation TIME cannot decide it.** It needs a gas state measured
+under obstruction, which is Stock and only Stock, or a measurement of regional
+gas volume against regional perfusion, which nobody in this repository has made
+and which is not what Tokics measured.
 
 ## Open work, roughly by value
 
@@ -136,16 +5706,73 @@ be compared with Heard's.
    Would anchor two of the four collapse parameters. This is the single most
    valuable missing dataset. Mohanty's starting PaO2 of 328 mmHg is one such
    measurement and implies ~16% shunt; more would pin the regression.
-2. **Toner's tracheal oxygen traces**, if they still exist. Would let
-   pharyngeal patency be fitted from measurement rather than assumed. In their
-   absence, present pharyngeal FO2 as a declared sensitivity band; Toner's
-   published primary outcome (tracheal O2 maintained >90%) already bounds it,
-   and O'Loughlin bypasses the question by delivering below the glottis.
+2. **Toner's tracheal oxygen traces.** Andy believes these still exist
+   (2026-09-10). **Ask for the SHAM arm, not the buccal arm** -- which is the
+   opposite of the obvious request, and the sensitivity says why:
+
+       pharyngeal FO2   sham, time to SpO2<95%    Toner: 447 s, IQR 405-525
+             0.21            402.0 s   BELOW the IQR   <- what we ship
+             0.25            417.7 s   in band
+             0.30            439.7 s   in band, near their median
+             0.40            493.4 s   in band
+             0.50            565.9 s   above
+
+       pharyngeal FO2   buccal, time to SpO2<95%  Toner: held to 750 s
+             1.00, 0.95, 0.90   holds       <- 1.00 is what we ship
+             0.80            1075.7 s   holds
+             0.70             822.9 s   holds
+             0.60             668.4 s   fails
+
+   The model assumes the sham pharynx is INSTANTLY room air at 0.21, and that
+   is the only value tested that falls below Toner's IQR. After preoxygenation
+   to ETO2 0.87 the upper airway holds oxygen-rich gas that must wash out over
+   some seconds, so early mass flow entrains something richer than 0.21. That
+   washout has never been measured and is the single assumption carrying our
+   Toner shortfall.
+
+   The buccal arm settles nothing: anything at or above 0.70 holds to 750 s,
+   and Toner's published bound of tracheal O2 >90% is already deep inside the
+   safe region. Do not spend effort on those traces.
+
+   **What to ask for:** time-resolved tracheal oxygen fraction in the SHAM arm
+   from the onset of apnoea, at whatever sampling rate was recorded, per
+   subject if possible and mean +- SD otherwise. **The first 120 s is what
+   matters.** Also the per-subject preoxygenation endpoint (ETO2), since that
+   sets the initial condition of the washout.
+
+   **This is a measurement replacing an assumption, not a fit.** The
+   distinction matters: setting `fgo2` to 0.30 because it lands on Toner's
+   median would be exactly the tuning refused four times in this file. Taking
+   the number the trace gives, whatever it is, is not.
 3. **Reconcile or explain the Ellis pregnancy comparator.** 40% short in both
    arms and has resisted every structural change. The pregnancy physiology in
    our configuration was assembled from textbook multipliers, not their
    methods, so the fault may be ours.
-4. **Check the Douglas 1988 constants.**
+4. **Check the Douglas 1988 constants**, and while in `bloodgas.py`, make
+   `pco2_from_co2_content` well-behaved above PaCO2 150 (see Numerical notes).
+   A second root-selection problem sits in the same residual, and it is closer
+   than it looks: `co2_content` has a pole at pH 8.142, and the residual goes
+   multi-rooted once the pH at the bracket's low end (PCO2 3) passes it, which
+   happens from base excess **-0.50** over Hb 10-18 and T 33-38. Base excess 0
+   — the value the model actually uses — is therefore already past the pole.
+   What keeps the current path clean is only that the band of CO2 contents
+   which traps the solver is narrow: at BE 0 the two implementations agree to
+   1.3e-7 over 1500 random states. That margin is incidental, not structural,
+   so do not record this as "safe below BE +6".
+
+   **Update 2026-09: this became reachable and was hit.** Per-compartment pH
+   drove it directly (see "CO2 under obstruction" above). The clamp added
+   there guards the alveolar path only. The bracket in `bloodgas.py` is still
+   unfixed and this remains the right item to do.
+
+   Where it bites they disagree completely — content 69.0, BE +6, Hb 14, O2
+   content 16 gives Python PCO2 3.0004 mmHg at pH 8.203 against `model.js`'s
+   58.285 at pH 7.358, 94.9% apart. Note which is which: 3 mmHg at pH 8.2 is
+   the spurious root against the bracket's lower end, and it is the PYTHON on
+   it. So this is the one place where making the port track the reference is
+   the wrong move; fix the bracket in `bloodgas.py` so only the physiological
+   root is admitted. It becomes reachable the moment anyone models a metabolic
+   alkalosis.
 5. **Paediatric parameterisation.** Absent entirely; Hardman & Wills 2006
    cannot currently be tested.
 6. **A simulation study of operator performance under stable versus falling

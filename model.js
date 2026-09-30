@@ -1,3 +1,6 @@
+// Copyright (c) 2026 A. M. B. Heard. All rights reserved.
+// Unpublished research software. See LICENSE: use in any publication
+// requires prior written permission. Cite as in CITATION.cff.
 // model.js — browser port of bloodgas.py + apnoea_core.py.
 // Bisection replaces brentq; otherwise the equations are identical.
 // Verified against the Python reference in verify_port.py.
@@ -23,15 +26,22 @@ const po2FromO2Content=(c,hb,pH,pco2,T)=>{
 const co2Sol=T=>{const d=37-T;return 0.0307+0.00057*d+0.00002*d*d;};
 const pkPrime=(pH,T)=>6.086+0.042*(7.4-pH)+(38-T)*(0.00472+0.00139*(7.4-pH));
 const phFromPco2Be=(pco2,be,hb,so2,T)=>{
+  // Kelman 1968 p.264 applies the reduced-haemoglobin buffer shift explicitly
+  // as dpH = 0.003 * Hb(g/dL) * (1 - saturation), citing Siggaard-Andersen
+  // 1964 and Rossi & Roughton's measured +0.048 +- 0.008 pH on complete
+  // reduction of normal blood. The Siggaard-Andersen oxygen term this
+  // replaces gave only 0.0249 at Hb 15 -- about half the measured shift.
   const hbm=hb*0.6206;
   return bisect(pH=>{
     const hco3=co2Sol(T)*pco2*Math.pow(10,pH-pkPrime(pH,T));
     return (1-0.0143*hbm)*((hco3-24.8)+(9.5+1.63*hbm)*(pH-7.4))
-           -0.2*hbm*(1-so2)-be;},4.5,10.5,34);};
+           -be;},4.5,10.5,34) + 0.003*hb*(1-so2);};
 const co2Content=(pco2,pH,so2,hb,T)=>{
-  const hbm=hb*0.6206;
+  // Douglas 1988 eq 6 takes [Hb] in g/100 mL, not mmol/L -- see the note in
+  // bloodgas.py's co2_content. phFromPco2Be above DOES use mmol/L, because
+  // Siggaard-Andersen's cHb genuinely is in mmol/L; the two are different.
   const pl=co2Sol(T)*pco2*(1+Math.pow(10,pH-pkPrime(pH,T)));
-  return pl*(1-(0.0289*hbm)/((3.352-0.456*so2)*(8.142-pH)))*MLCO2/10;};
+  return pl*(1-(0.0289*hb)/((3.352-0.456*so2)*(8.142-pH)))*MLCO2/10;};
 const arterialState=(cco2,be,hb,o2c,T)=>{
   const st=pco2=>{let so2=0.9,pH=0,po2=0;
     for(let i=0;i<8;i++){pH=phFromPco2Be(pco2,be,hb,so2,T);
@@ -42,13 +52,28 @@ const arterialState=(cco2,be,hb,o2c,T)=>{
   let pco2; if(res(3)>0)pco2=3; else if(res(400)<0)pco2=400; else pco2=bisect(res,3,400,34);
   const[pH,po2,so2]=st(pco2); return {pco2,pH,po2,so2};};
 
+// GAS VOLUME IS ALLOCATED IN PROPORTION TO PERFUSION. Ruled 2026-09-22.
+// This used to read vol[i] = w[i]*Math.exp(sd*z[i]), which allocated a
+// VOLUME using the V/Q RATIO -- a ratio of two FLOWS. In a sealed lung
+// ventilation is zero, so V/Q is undefined and cannot set the oxygen store.
+// It produced a 21.8-fold spread in gas volume per unit perfusion and was
+// the origin of a 295 mmHg alveolar-to-arterial gradient at ZERO shunt.
+// See apnoea_core.py vq_distribution() for the full reasoning and for what
+// the correction does and does NOT fix. `sd` is retained in the signature
+// because callers pass it and because the V/Q ratio itself still uses it
+// elsewhere; it no longer touches the gas store.
+// sd IS IGNORED, and deliberately so -- see apnoea_core.py vq_log_sd. After
+// the V/Q category-error fix the gas-volume share equals the perfusion share
+// and nothing constructs a V/Q ratio, so every compartment is identical at
+// t=0 and the dispersion parameter has no effect on any output, sealed or
+// patent. The argument is kept so the call sites and the Python signature
+// still line up for test_parity.py.
 function vqDist(n, sd){
   const z=[], w=[], vol=[];
   for(let i=0;i<n;i++) z.push(-2.2 + 4.4*i/(n-1));
   let ws=0; for(const zz of z){ const v=Math.exp(-0.5*zz*zz); w.push(v); ws+=v; }
   for(let i=0;i<n;i++) w[i]/=ws;
-  let vs=0; for(let i=0;i<n;i++){ const v=w[i]*Math.exp(sd*z[i]); vol.push(v); vs+=v; }
-  for(let i=0;i<n;i++) vol[i]/=vs;
+  for(let i=0;i<n;i++) vol.push(w[i]);
   return {q:w, v:vol};
 }
 
@@ -59,46 +84,186 @@ function derive(P){
   // lung volumes scale with height; adiposity only modifies them
   const hf=(2.34*P.height-1.09)/(2.34*1.75-1.09);
   // bed tilt: head-up lifts the abdomen off the diaphragm and raises FRC
+  // REVERTED 2026-09-26, same day as the change. Watson & Pride measure
+  // tilt_factor(90) as 1.275 lean and 1.032 obese where these give 2.170 and
+  // 2.418, and their BMI term has the opposite sign -- but they measured
+  // AWAKE subjects and this acts on the ANAESTHETISED lung. Solving on them
+  // made the model say head-up tilt HARMS obese patients, against four
+  // clinical trials. See apnoea_core.tilt_gain_lean for the full account.
   const tg=(P.tiltGainLean===undefined?0.0130:P.tiltGainLean)
           +(P.tiltGainBmi===undefined?0.00015:P.tiltGainBmi)*Math.max(0,bmi-25);
   const tiltF=Math.max(0.45,1+(P.tiltDeg||0)*tg);
-  const frcAwake=P.frcRef*hf*Math.exp(-0.0417*(bmi-22))*tiltF;
-  const frc=Math.max(300,(frcAwake-Math.min(P.frcDrop,0.25*frcAwake))*(P.frcScale||1));
-  const cc=(P.ccAt20+P.ccPerYear*(P.age-20)+P.ccPerBmi*Math.max(0,bmi-25))*hf*(P.ccScale||1);
+  // FRC CANNOT BE LESS THAN RESIDUAL VOLUME. Floor added 2026-09-23 and it
+  // is `rv`, not a constant. This line used to floor at 300 while
+  // apnoea_core.py floored the same quantity at 400, so the two disagreed
+  // wherever the floor bound; test_parity.py never caught it because no
+  // tested configuration got near it. At BMI 47 both bound, differently.
+  // See apnoea_core.py frc_awake() for the full reasoning.
+  // Residual volume is scaled for body size AND BMI, matching
+  // apnoea_core.py rv_eff(). Anchored on Reinius 2009: EELV 697 mL at
+  // BMI 45 after induction and paralysis, where ERV is ~0 so FRC ~= RV.
+  const rvEff=(P.rv||1100)*hf*Math.exp(-(P.kRvBmi===undefined?0.0198:P.kRvBmi)*Math.max(0,bmi-22));
+  // k_frc_bmi RE-SOLVED ON WATSON & PRIDE 2005, 2026-09-26:
+  // 0.0417 -> 0.0012 (Damia) -> 0.01074 (Watson & Pride's two supine
+  // cohorts, with frc_ref 2860). See apnoea_core.k_frc_bmi for why the
+  // two rulings differ and why neither paper contradicts the other.
+  // His 18 morbidly obese patients give supine FRC / Quanjer seated
+  // predicted = 0.700, flat in BMI (r -0.049, t -0.20 on 16 df), against
+  // the 0.13-0.42 the old constant gave those same patients. Mirrors
+  // apnoea_core.k_frc_bmi -- see the ruling there for the Jones conflict.
+  const frcAwake=Math.max(rvEff,P.frcRef*hf*Math.exp(-(P.kFrcBmi===undefined?0.01074:P.kFrcBmi)*(bmi-22))*tiltF);
+  // RULED 2026-09-25: anaesthetised FRC carries PELOSI'S MEASURED SHAPE,
+  // FRC(BMI)/FRC(22) from his helium regression, with the level left ours.
+  // Mirrors apnoea_core.py frc_anaes() -- read its docstring for why the
+  // shape goes here and not on frcAwake, and why the cap is needed below
+  // BMI 22 (Pelosi is steeper, and would otherwise have anaesthesia ADD gas).
+  // RULED 2026-09-26: offset is the MEAN of Pelosi 1998 (0.46) and Damia
+  // 1988 (0.9163, solved from his two measured cohorts through Pelosi's
+  // own form). Used only as a ratio to BMI 22, so the lean end is
+  // unchanged and the curve simply gets flatter. Mirrors apnoea_core.py.
+  const _pf=b=>11.97*Math.exp(-0.096*b)+0.6882;
+  const _cap=frcAwake-Math.min(P.frcDrop,0.25*frcAwake);
+  const _base=P.frcRef*hf*tiltF;
+  const _at22=_base-Math.min(P.frcDrop,0.25*_base);
+  const _pel=_at22*_pf(bmi)/_pf(22);
+  // RV FLOOR REMOVED HERE 2026-09-26, mirroring apnoea_core.frc_anaes().
+  // Damia 1988 measured anaesthetised FRC 0.84 L BELOW awake RV in 18
+  // morbidly obese patients. A paralysed chest has no expiratory muscle
+  // tone, so its passive volume may sit below a volume the awake patient
+  // reached by effort. THE AWAKE FLOOR ON LINE ABOVE STAYS: awake FRC
+  // below awake RV would be the same patient with the same muscles, and
+  // that really is impossible.
+  const frc=Math.min(_cap,_pel)*(P.frcScale||1);
+  // RULED 2026-09-26: closing capacity is BUIST & ROSS ON A PREDICTED TLC.
+  //   CC/TLC (per cent) = 0.525*age + 14.348   Buist & Ross 1973, combined
+  //   TLC = 7.99*height(m) - 7.08 litres       Quanjer 1993 Table 6, men
+  // The height factor is gone because Quanjer's TLC already carries height.
+  // ccTlcBmi applies Jones & Nzekwu's -0.50 %predicted per BMI unit, since
+  // Quanjer's TLC has no weight term and the obese lung is measurably
+  // smaller. Mirrors apnoea_core.py closing_capacity().
+  const _ccTlcB=(P.ccTlcBmi===true)?(98.7-0.50*(bmi-22.5))/98.7:1;   // OFF by ruling
+  const _ccFrac=((P.ccBuistSlope===undefined?0.525:P.ccBuistSlope)*P.age
+                +(P.ccBuistIntercept===undefined?14.348:P.ccBuistIntercept))/100;
+  const cc=(7.99*P.height-7.08)*1000*_ccTlcB*_ccFrac*(P.ccScale||1);
   const vo2=P.vo2Ref*Math.pow(abw/70,0.75)*(P.bmrScale||1)-0.27*P.weight;
-  const co=P.coRef*Math.pow(P.weight/70,0.75)*0.75;   // baseline at induction
+  // The circulation's answer to anaemia. Exactly 1 at and above the
+  // threshold, so a normal patient is untouched by it. Anchors and the fit
+  // are documented in apnoea_core.py; applied before the anaesthetic drop,
+  // so anaesthesia blunts the compensation in proportion.
+  const hbThr=P.hbCoThreshold===undefined?7.0:P.hbCoThreshold;
+  // anaemiaChronic: RULED 2026-09-25. Roy 1963 measured CHRONIC anaemia
+  // (hookworm, >= 4 months) and nothing licenses extending it to acute blood
+  // loss. Mirrors apnoea_core.py anaemia_co_factor(); default true, which is
+  // the OPTIMISTIC reading and is chosen to leave the benchmarks where they
+  // were, not because it is safer.
+  const anaemiaCo = (P.anaemiaChronic===false || P.hb>=hbThr) ? 1.0 : Math.min(
+    P.hbCoMax===undefined?3.0:P.hbCoMax,
+    Math.pow(hbThr/Math.max(P.hb,0.5), P.hbCoExp===undefined?1.535:P.hbCoExp));
+  // Head-up tilt costs cardiac output: Perilli 2003 measures 4.9 -> 4.0 L/min
+  // at 30 degrees, -18.4%, so 0.00612 per degree. Until 2026-09-24 tilt was a
+  // pure benefit here. The 0.40 floor is a guard and would only bind past 98
+  // degrees. Mirrors apnoea_core.py tilt_co_factor() -- see the parameter
+  // block there for what is weak about it.
+  const coTiltF=Math.max(0.40,1-(P.coTiltGain===undefined?0.00612:P.coTiltGain)*P.tiltDeg);
+  // Cardiac output is keyed on BODY SURFACE AREA, not a three-quarter power
+  // of total weight. Madronio 2025 measures cardiac index FLAT across body
+  // size (3.103 vs 3.139 L/min/m2), so CO is proportional to BSA. Mosteller
+  // rather than Du Bois because Du Bois under-reads the obese body by 6.7%
+  // against Madronio's own figures. Mirrors apnoea_core.py bsa()/co_anaes():
+  // ciRef is AWAKE and the 0.75 is (1 - co_drop_frac), the anaesthetic drop.
+  const bsa=Math.sqrt(P.weight*(P.height*100)/3600);
+  const co=(P.ciRef===undefined?3.12:P.ciRef)*bsa*anaemiaCo*0.75*coTiltF;  // at induction
   const fatKg=Math.max(5,P.weight*(0.10+0.011*Math.max(0,bmi-20)));
   const leanKg=P.weight-fatKg, lam=1.895e-5;
   const n2cap=[(5+0.10*leanKg)*1000*lam,(0.50*leanKg)*1000*lam,(fatKg/0.92)*1000*lam*5];
-  return {bmi,frc,cc,vo2:Math.max(60,vo2),co,n2cap,lam,hf,tiltF};
+  // Perfusion share whose airway was shut for the whole of preoxygenation
+  // and therefore never washed out its nitrogen: low V/Q, not shunt. Same
+  // closure law as the runtime collapse term, evaluated at the AWAKE lung
+  // volume because preoxygenation happens before induction. Exactly zero
+  // whenever awake FRC is at or above closing capacity. Mirrors
+  // apnoea_core.py Patient.unwashed_fraction() -- see the long note there.
+  // Baseline shunt: AIRWAY CLOSURE AT THE INDUCTION VOLUME, re-keyed off BMI
+  // on 2026-09-24. The driver is x = (cc - frc)/frc, the same quantity the
+  // runtime collapse term and the unwashed low-V/Q fraction use, differing
+  // only in which lung volume is passed. Both limits are physics: at x = 0
+  // the lung is at or above its closing capacity and the shunt is the
+  // bronchial/thebesian drainage shuntAnat; as the volume goes to zero the
+  // whole perfused bed is closed and the shunt tends to 1, so the asymptote
+  // is NOT a free parameter. BMI now enters only through FRC and closing
+  // capacity. Ceiling is a numerical guard, binding at x = 23.
+  // Mirrors apnoea_core.py shunt_base_eff() -- see the parameter block there
+  // for the fit, what it costs against Pelosi's quadratic, and the double
+  // count that re-keying exposed.
+  const _sanat=P.shuntAnat===undefined?0.03225:P.shuntAnat;
+  const _sck=P.shuntCcK===undefined?36.16:P.shuntCcK;
+  const _scl=P.shuntCeiling===undefined?0.40:P.shuntCeiling;
+  const _xs=Math.max(0,cc-frc)/Math.max(frc,100);
+  const shuntBaseEff=Math.min(_scl,_sanat+(1-_sanat)*_xs/(_xs+_sck));
+  const _xu=Math.max(0,cc-frcAwake)/Math.max(frcAwake,100);
+  const MAXC=P.maxClosed===undefined?0.25:P.maxClosed;
+  const CCK=P.ccK===undefined?1.5:P.ccK;
+  const unwashed=MAXC*_xu/(_xu+CCK);
+  return {bmi,frc,cc,vo2:Math.max(60,vo2),co,n2cap,lam,hf,tiltF,anaemiaCo,rvEff,unwashed,shuntBaseEff};
 }
 
 function simulate(P, epochs, dt=0.1){
-  const d=derive(P), {frc,cc,vo2,co,n2cap,lam,hf}=d;
-  const hb=P.hb,T=37,be=0,crs=P.crs/1.35951, vco2m=vo2*0.8;
+  const d=derive(P), {frc,cc,vo2,co,n2cap,lam,hf,anaemiaCo,rvEff,unwashed,shuntBaseEff}=d;
+  // crs is mL/cmH2O and rec() works in mmHg. Compliance is volume PER
+  // pressure, so the conversion is the RECIPROCAL of the pressure factor:
+  // multiply, do not divide. Matches apnoea_core.py -- see the note there.
+  const hb=P.hb,T=37,be=0,crs=P.crs*1.35951, vco2m=vo2*0.8;
   let vA=frc-150;
   const fo2=P.feo2, fco2=40/PDRY, fn2=Math.max(0,1-fo2-fco2);
   const ntot=vA*PDRY/GASK;
-  const NC=P.nVq||16, SD=P.vqLogSd===undefined?0.70:P.vqLogSd;
+  const NC=P.nVq||80, SD=P.vqLogSd===undefined?0.70:P.vqLogSd;
   const TAUMIX=P.tauMix===undefined?45:P.tauMix;
   const dist=vqDist(NC,SD), qw=dist.q, vw=dist.v;
   // n[3i]=O2, n[3i+1]=CO2, n[3i+2]=N2 for compartment i, mL STPD
   const MECH=P.inflowMechFrac===undefined?0.18:P.inflowMechFrac;
   const CVF=P.cvFrac||0.55;
   const n=new Float64Array(NC*3);
-  for(let i=0;i<NC;i++){ n[3*i]=vw[i]*ntot*fo2; n[3*i+1]=vw[i]*ntot*fco2;
-                         n[3*i+2]=vw[i]*ntot*fn2; }
+  // Units that never saw the oxygen. A compartment whose airway was shut
+  // throughout preoxygenation still holds the ALVEOLAR AIR it had when the
+  // airway closed -- alveolar gas is never inspired gas -- so its
+  // composition is the alveolar gas equation on room air. Taken from the
+  // LOW-V/Q end, index 0 upward, because closure happens in the dependent
+  // lung; the boundary compartment is split rather than rounded so the
+  // fraction does not step with nVq. Mirrors apnoea_core.py.
+  const share=new Float64Array(NC);
+  if(unwashed>1e-9){
+    let need=unwashed;
+    for(let i=0;i<NC && need>0;i++){
+      const take=Math.min(qw[i],need); share[i]=take/qw[i]; need-=take;
+    }
+  }
+  const pao2air=Math.max(0,0.2093*PDRY-40/0.8);
+  const ao2=pao2air/PDRY, aco2=40/PDRY, an2=Math.max(0,1-ao2-aco2);
+  for(let i=0;i<NC;i++){
+    const k=share[i], j=1-k;
+    n[3*i]  =vw[i]*ntot*(j*fo2 +k*ao2);
+    n[3*i+1]=vw[i]*ntot*(j*fco2+k*aco2);
+    n[3*i+2]=vw[i]*ntot*(j*fn2 +k*an2);
+  }
   const nc=new Float64Array(NC), pO2=new Float64Array(NC), pCO2=new Float64Array(NC),
         pN2=new Float64Array(NC), ccO2=new Float64Array(NC), ccC=new Float64Array(NC),
         vo2c=new Float64Array(NC), vco2c=new Float64Array(NC);
   const NS=10, vseg=15;
   let ds=[]; for(let i=0;i<NS;i++) ds.push([fo2,fco2,fn2]);
 
-  const pha0=phFromPco2Be(40,be,hb,0.99,T), pao2_0=fo2*PDRY;
-  const cao2=o2Content(pao2_0,hb,pha0,40,T), caco2=co2Content(40,pha0,0.99,hb,T);
+  const pha0=phFromPco2Be(40,be,hb,0.99,T);
+  // End-capillary oxygen content mixed ACROSS COMPARTMENTS: they no longer
+  // all hold the same gas. Using the uniform alveolar value would hide the
+  // low-V/Q units from the starting PaO2. CO2 is identical in every
+  // compartment at t=0, so it needs no mixing. Mirrors apnoea_core.py.
+  let cao2=0;
+  for(let i=0;i<NC;i++){
+    const tot=n[3*i]+n[3*i+1]+n[3*i+2];
+    cao2+=qw[i]*o2Content(n[3*i]/Math.max(tot,1e-12)*PDRY,hb,pha0,40,T);
+  }
+  const caco2=co2Content(40,pha0,0.99,hb,T);
   // arterial blood starts shunt-mixed (the plateau fixed point), not at the
   // alveolar value - see the Python for why this matters
-  const _f=Math.min(P.shuntBase===undefined?0.05:P.shuntBase,0.9);
+  const _f=Math.min(shuntBaseEff,0.9);
   const cao2s=cao2-(_f/(1-_f))*vo2/(co*10);
   let cvo2=cao2s-vo2/(co*10), cvco2=caco2+vco2m/(co*10);
   const NP=3;
@@ -106,6 +271,7 @@ function simulate(P, epochs, dt=0.1){
   let vO2=Array(NP).fill(cvo2), vC=Array(NP).fill(cvco2);
   let tO2=cvo2,tC=cvco2,sC=cvco2, collapsed=0, hpv=0, pvo2=40;
   const nc0=new Float64Array(NC), collC=new Float64Array(NC);
+  const wOpen=new Float64Array(NC);   // perfusion share of the OPEN lung
   for(let c=0;c<NC;c++) nc0[c]=n[3*c]+n[3*c+1]+n[3*c+2];
   let nc0Sum=0; for(let c=0;c<NC;c++) nc0Sum+=nc0[c];
   let n2p=[573,573,573];
@@ -120,7 +286,21 @@ function simulate(P, epochs, dt=0.1){
 
   const out={t:[],spo2:[],vol:[],fao2:[],pan2:[],paco2:[],ph:[],pao2:[],
              shunt:[],palv:[],lungO2:[],hpv:[],pvo2:[],co:[],hr:[],map:[],pap:[],sv:[],atel:[]};
+  // stride gates OUTPUT SAMPLING -- one row per simulated second. It must
+  // stay at 1/dt: apnoea_core.py samples its outputs at the same cadence and
+  // test_parity.py compares the two series row for row.
   let spo2=0.99, hist=[], last=null, stride=Math.round(1/dt);
+  // bgStride gates the BLOOD-GAS INVERSION, which is a different question
+  // and used to share this variable. RULED 2026-09-25: 0 means invert every
+  // step and is the default. The defect was that the interval did not scale
+  // with dt, so halving dt doubled the apparent rate of SaO2 fall.
+  // SEPARATING THESE TWO IS NOT COSMETIC: conflating them made the port emit
+  // twenty times as many output rows as the Python, and test_parity.py
+  // caught it at 8000%.
+  const bgStride=(function(){
+    var iv=(P.bgInvertInterval===undefined?0.0:P.bgInvertInterval);
+    return iv>0 ? Math.max(1,Math.round(iv/dt)) : 1;
+  })();
 
   for(let i=0;i<=N;i++){
     const ep=st[i];
@@ -128,14 +308,17 @@ function simulate(P, epochs, dt=0.1){
     for(let c=0;c<NC;c++){ nc[c]=n[3*c]+n[3*c+1]+n[3*c+2]; nd+=nc[c]; }
     let vv,pabs;
     { // recoil: linear, stiffening below RV, floored where units collapse
-      const rv=Math.max(200,(P.rv||1100)*hf-150), stiff=0.15, fl=(P.pCollapse||-50)/1.35951;
+      const rv=Math.max(200,rvEff-150), stiff=0.15, fl=(P.pCollapse||-149.5461)/1.35951;
       const rec=v=>{let p=(v-(frc-150))/crs; if(v<rv) p+=(v-rv)/(crs*stiff);
                     return Math.max(p,fl);};
       let lo=1,hi=frc+4000;
       for(let q=0;q<60;q++){const m=(lo+hi)/2;
         if((PB+rec(m)-PH2O)*m < nd*GASK) lo=m; else hi=m;}
       vv=(lo+hi)/2; pabs=PB+rec(vv);
-      if(pabs>PB){vv=nd*GASK/PDRY;pabs=PB;} }
+      // gas vents through an OPEN airway; it cannot vent through a SEALED
+      // one, where the pressure is instead allowed to rise - which is what
+      // returning nitrogen does to a closed lung
+      if(pabs>PB && isFinite(ep.R)){vv=nd*GASK/PDRY;pabs=PB;} }
     vA=vv; const pdry=pabs-PH2O;
     let tO=0,tC2=0,tN=0;
     for(let c=0;c<NC;c++){
@@ -174,7 +357,7 @@ function simulate(P, epochs, dt=0.1){
       const k=1+((P.hpvPvrMax||3.15)-1)*hpv;
       fEff=f0/(f0+k*(1-f0));
     }
-    const shunt=Math.min(0.95,Math.max(0,(P.shuntBase===undefined?0.05:P.shuntBase)+fEff));
+    const shunt=Math.min(0.95,Math.max(0,shuntBaseEff+fEff));
 
     // cardiac output rises with hypercapnia: +0.97% of baseline per mmHg
     // PaCO2 above 40 (Sci Rep 2023, n=91 apnoeic oxygenation, measured)
@@ -199,34 +382,65 @@ function simulate(P, epochs, dt=0.1){
     if(tLow>=TD){ const k=Math.floor((tLow-TD)/10);
       hrNow = k<RATES.length ? RATES[k] : 0; }
     // stroke volume: hypercapnic inotropy up, Muller effect down
+    // svItpGain is mis-cited but conservative: two human Mueller studies give
+    // 0.0033 and 0.00476 per cmH2O where we use 0.0025. Nearly inert on the
+    // Stock benchmark either way. See apnoea_core.py and protocol/evidence.md.
     const itp=Math.min(0,(pabs-PB)*1.35951)*(P.itpFraction||0.60);
     const svf=(1+(P.svCo2Gain===undefined?0.0045:P.svCo2Gain)*co2arg)
               *Math.max(0.15,1+(P.svItpGain===undefined?0.0025:P.svItpGain)*itp);
     coNow=Math.max(0.02, coBase*(hrNow/(P.hrBase||70))*svf);
     svNow=coNow*1000/Math.max(hrNow,1e-6);
-    svrNow=(P.svrBase||18)*Math.max(P.svrFloor||0.40,
+    // resistance falls with the output, or MAP would double alongside it
+    svrNow=(P.svrBase||18)/anaemiaCo*Math.max(P.svrFloor||0.40,
             1+(P.svrCo2Gain===undefined?-0.0045:P.svrCo2Gain)*co2arg);
     mapNow=coNow*svrNow;
     papNow=coNow*(P.pvrBase||1.40)*(1+((P.hpvPvrMax||3.15)-1)*hpv)+(P.pcwp||8);
     const n2cond=qf.map(q=>q*coNow*1000*lam);
     const cvO2=vO2[NP-1], cvC=vC[NP-1];
-    // one pH for the lung; every compartment then costs only analytic terms
-    const phc=phFromPco2Be(pACO2,be,hb,0.99,T);
+    // One pH PER COMPARTMENT. Using the lung mean priced a compartment at
+    // 60 mmHg with the mean's pH and inflated its CO2 content by up to 2.45x,
+    // which sent arterial PCO2 above both alveolar and venous. See the note
+    // in apnoea_core.py at the matching line.
     const qeff=coNow*(1-shunt)*10;
+    // Non-shunted blood goes to the parts of the lung still open, weighted by
+    // how open they are. See the open-fraction note in apnoea_core.py: the
+    // resting distribution kept sending a fully collapsed unit its full share
+    // of perfusion and mixing its floor-value gas into the artery.
+    let wsum=0;
+    for(let c=0;c<NC;c++){ wOpen[c]=qw[c]*(1-collC[c]); wsum+=wOpen[c]; }
+    wsum=Math.max(wsum,1e-12);
+    for(let c=0;c<NC;c++) wOpen[c]/=wsum;
     let vo2L=0, vco2L=0, mixO=0, mixC=0;
     for(let c=0;c<NC;c++){
+      // clamped to the correlations' domain: see apnoea_core.py. A
+      // collapsed compartment's PCO2 is a ratio of floor values and
+      // reaches co2Content's pole at pH 8.142.
+      const phc=phFromPco2Be(Math.min(250,Math.max(5,pCO2[c])),be,hb,0.99,T);
       const s2=so2FromPo2(pO2[c],phc,pCO2[c],T);
       ccO2[c]=HUFNER*hb*s2+O2SOL*pO2[c];
       ccC[c]=co2Content(pCO2[c],phc,s2,hb,T);
-      const qc=qeff*qw[c];
+      const qc=qeff*wOpen[c];
       vo2c[c]=qc*(ccO2[c]-cvO2); vco2c[c]=qc*(cvC-ccC[c]);
       vo2L+=vo2c[c]; vco2L+=vco2c[c];
-      mixO+=qw[c]*ccO2[c]; mixC+=qw[c]*ccC[c];
+      mixO+=wOpen[c]*ccO2[c]; mixC+=wOpen[c]*ccC[c];
     }
     const caN=(1-shunt)*mixO+shunt*cvO2, ccN=(1-shunt)*mixC+shunt*cvC;
 
-    const flux=n2p.map((p,j)=>n2cond[j]*(p-pAN2));
-    const vn2=flux[0]+flux[1]+flux[2];
+    // Each tissue store exchanges with each COMPARTMENT across that
+    // compartment's own nitrogen tension, weighted by its share of perfusion.
+    // Driving it from the whole-lung mean instead lets a unit that has already
+    // filled with nitrogen keep taking more, which matters because nitrogen
+    // accumulation is what drives both the FgO2 cliff and the absorption
+    // atelectasis. This tracks apnoea_core.py; the earlier well-mixed form put
+    // the two implementations 21% apart on PaO2 by 15 min.
+    const condTot=n2cond[0]+n2cond[1]+n2cond[2];
+    const pTisEff=(n2cond[0]*n2p[0]+n2cond[1]*n2p[1]+n2cond[2]*n2p[2])
+                  /Math.max(condTot,1e-12);
+    const vn2c=new Float64Array(NC);
+    let vn2=0;
+    for(let c=0;c<NC;c++){ vn2c[c]=condTot*qw[c]*(pTisEff-pN2[c]); vn2+=vn2c[c]; }
+    // each store gives up its share of the total
+    const flux=n2cond.map((cj,j)=>cj*(n2p[j]-pTisEff)+cj/Math.max(condTot,1e-12)*vn2);
     const deficit=vo2L-vco2L-vn2;
     let inflow=0;
     if(isFinite(ep.R)){
@@ -251,7 +465,7 @@ function simulate(P, epochs, dt=0.1){
       }
       // inflow follows absorption, not volume: compartments share one airway
       let dtot=0; const dfc=new Float64Array(NC);
-      for(let c=0;c<NC;c++){ dfc[c]=Math.max(vo2c[c]-vco2c[c]-vn2*qw[c],0); dtot+=dfc[c]; }
+      for(let c=0;c<NC;c++){ dfc[c]=Math.max(vo2c[c]-vco2c[c]-vn2c[c],0); dtot+=dfc[c]; }
       for(let c=0;c<NC;c++){
         const byAbs = dtot>1e-9 ? dfc[c]/dtot : nc[c]/Math.max(nd,1e-9);
         let sh2 = (1-MECH)*byAbs + MECH*(nc[c]/Math.max(nd,1e-9));
@@ -262,13 +476,13 @@ function simulate(P, epochs, dt=0.1){
           sh2=(1-w)*sh2 + w*(nc0[c]/nc0Sum); }
         n[3*c]   += (-vo2c[c])*dtm + sh2*add[0];
         n[3*c+1] += ( vco2c[c])*dtm + sh2*add[1];
-        n[3*c+2] += ( vn2*qw[c])*dtm + sh2*add[2];
+        n[3*c+2] += ( vn2c[c])*dtm + sh2*add[2];
       }
     } else {
       for(let c=0;c<NC;c++){
         n[3*c]   += (-vo2c[c])*dtm;
         n[3*c+1] += ( vco2c[c])*dtm;
-        n[3*c+2] += ( vn2*qw[c])*dtm;
+        n[3*c+2] += ( vn2c[c])*dtm;
       }
     }
     // cardiogenic stirring toward the lung-mean composition
@@ -288,25 +502,40 @@ function simulate(P, epochs, dt=0.1){
     for(let j=0;j<NP;j++){ aO2[j]+=(coNow/vas)*(p1-aO2[j])*dtm; aC[j]+=(coNow/vas)*(p2-aC[j])*dtm;
       p1=aO2[j];p2=aC[j]; }
     tO2+=((coNow*(aO2[NP-1]-tO2)*10-vo2)/(P.vTisO2*10))*dtm;
-    const fs=0.8*(tC-sC)*10;
-    tC+=((coNow*(aC[NP-1]-tC)*10+vco2m-fs)/(22*10))*dtm;
-    sC+=(fs/(140*10))*dtm;
+    // Store sizes are physiological, not fitted to a 15-minute average:
+    // fast = blood + vessel-rich group, slow = muscle + fat, conductance =
+    // their share of cardiac output. See apnoea_core.py's store note.
+    const kSlow=P.kCo2Slow===undefined?0.8:P.kCo2Slow;
+    const fs=kSlow*(tC-sC)*10;
+    tC+=((coNow*(aC[NP-1]-tC)*10+vco2m-fs)/((P.vTisCo2Fast||22)*10))*dtm;
+    sC+=(fs/((P.vTisCo2Slow||140)*10))*dtm;
     p1=tO2;p2=tC;
     for(let j=0;j<NP;j++){ vO2[j]+=(coNow/vvs)*(p1-vO2[j])*dtm; vC[j]+=(coNow/vvs)*(p2-vC[j])*dtm;
       p1=vO2[j];p2=vC[j]; }
 
-    if(i%stride===0||!last){ last=arterialState(aC[NP-1],be,hb,aO2[NP-1],T);
-      pvo2=po2FromO2Content(vO2[NP-1],hb,last.pH,last.pco2,T);
+    if(i%bgStride===0||!last){ last=arterialState(aC[NP-1],be,hb,aO2[NP-1],T);
       paco2Prev=last.pco2; sao2Prev=last.so2; }
+    // PvO2 is the only stimulus tension HPV has, and the venous pool moves
+    // every step, so apnoea_core.py recomputes it every step - outside the
+    // block that refreshes the arterial state once a second. Leaving it
+    // inside fed HPV a stimulus up to stride-1 steps stale (0.9 s at dt=0.1
+    // against the Python's 0.1 s), which the 250 s HPV lag then smoothed into
+    // a small persistent offset rather than removing.
+    pvo2=po2FromO2Content(vO2[NP-1],hb,last.pH,last.pco2,T);
     hist.push(last.so2);
     const lag=Math.round(25/dt);
     spo2+=(hist[Math.max(0,hist.length-1-lag)]-spo2)*(dt/8);
 
     if(i%stride===0){
+      // tO is the alveolar O2 from the TOP of this step, before the gas
+      // update; apnoea_core.py records the post-update sum, so recompute it
+      // here rather than reporting a quantity one step stale. Only visible at
+      // an inrush, where a step is ~300 mL, but that is where it is worst.
+      let lungO2=0; for(let c=0;c<NC;c++) lungO2+=n[3*c];
       out.t.push(i*dt); out.spo2.push(spo2*100); out.vol.push(vLung);
       out.fao2.push(pAO2/713); out.pan2.push(pAN2); out.paco2.push(last.pco2);
       out.ph.push(last.pH); out.pao2.push(last.po2); out.shunt.push(shunt);
-      out.palv.push((pabs-PB)*1.35951); out.lungO2.push(tO);
+      out.palv.push((pabs-PB)*1.35951); out.lungO2.push(lungO2);
       out.hpv.push(hpv); out.pvo2.push(pvo2); out.co.push(coNow); out.hr.push(hrNow);
       out.map.push(mapNow); out.pap.push(papNow); out.sv.push(svNow);
       out.atel.push(absorbed);

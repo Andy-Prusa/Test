@@ -1,0 +1,58 @@
+diff --git a/apnoea_core.py b/apnoea_core.py
+index 368048c..7460e93 100644
+--- a/apnoea_core.py
++++ b/apnoea_core.py
+@@ -740,9 +740,26 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
+         # and disagree by 8.5%. Collapsed units carry almost no perfusion, so
+         # clamping to the range over which the correlations are defined
+         # changes no gas exchange that is actually happening.
+-        ph_c = np.array([bg.ph_from_pco2_be(float(pc), be, hb, so2=0.99, temp=temp)
+-                         for pc in np.clip(p_co2_c, 5.0, 250.0)])
+-        sc_o2_c = bg.so2_from_po2(p_o2_c, ph_c, p_co2_c, temp)
++        #
++        # pH and SO2 are COUPLED and are solved together. The saturation term
++        # in ph_from_pco2_be is the acid-base limb of the Haldane effect -- as
++        # haemoglobin desaturates it becomes a weaker acid, so at fixed base
++        # excess the blood holds more CO2 at any given PCO2. This used to pass
++        # so2=0.99 as a fixed argument while handing the TRUE saturation to
++        # co2_content below, which suppressed that limb exactly when the
++        # patient desaturated, and ph_from_pco2_be's own docstring says
++        # under-representing it "translates directly into an overestimate of
++        # the rate of rise of PaCO2". Invisible to every patent-airway
++        # benchmark, where SaO2 never leaves 0.99. Three passes from 0.99
++        # converge to better than 3e-6 in pH; `pco2_from_co2_content` does the
++        # same fixed point internally for the inverse.
++        pc_clamped = np.clip(p_co2_c, 5.0, 250.0)
++        sc_o2_c = np.full(pt.n_vq, 0.99)
++        for _ in range(3):
++            ph_c = np.array([bg.ph_from_pco2_be(float(pc), be, hb,
++                                                so2=float(so), temp=temp)
++                             for pc, so in zip(pc_clamped, sc_o2_c)])
++            sc_o2_c = bg.so2_from_po2(p_o2_c, ph_c, p_co2_c, temp)
+         cc_o2_c = bg.HUFNER * hb * sc_o2_c + bg.O2_SOL * p_o2_c
+         cc_co2_c = bg.co2_content(p_co2_c, ph_c, sc_o2_c, hb, temp)
+ 
+diff --git a/model.js b/model.js
+index a480120..5aaba09 100644
+--- a/model.js
++++ b/model.js
+@@ -244,8 +244,17 @@ function simulate(P, epochs, dt=0.1){
+       // clamped to the correlations' domain: see apnoea_core.py. A
+       // collapsed compartment's PCO2 is a ratio of floor values and
+       // reaches co2Content's pole at pH 8.142.
+-      const phc=phFromPco2Be(Math.min(250,Math.max(5,pCO2[c])),be,hb,0.99,T);
+-      const s2=so2FromPo2(pO2[c],phc,pCO2[c],T);
++      // pH and SO2 are COUPLED: the saturation term in phFromPco2Be is the
++      // acid-base limb of the Haldane effect. This used to pass a fixed 0.99
++      // while handing the true saturation to co2Content, which suppressed
++      // that limb exactly when the patient desaturated. Three passes from
++      // 0.99, matching apnoea_core.py exactly. See there for the full note.
++      const pcc=Math.min(250,Math.max(5,pCO2[c]));
++      let phc=0, s2=0.99;
++      for(let it=0;it<3;it++){
++        phc=phFromPco2Be(pcc,be,hb,s2,T);
++        s2=so2FromPo2(pO2[c],phc,pCO2[c],T);
++      }
+       ccO2[c]=HUFNER*hb*s2+O2SOL*pO2[c];
+       ccC[c]=co2Content(pCO2[c],phc,s2,hb,T);
+       const qc=qeff*wOpen[c];
