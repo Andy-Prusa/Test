@@ -169,6 +169,28 @@ BENCHMARK_SOURCES = [
      "read in full 2026-09-28. Letter + reply, no data of its own; argues "
      "apnoeic diffusion oxygenation delays desaturation. Cites Benumof 1997 "
      "and Teller 1988 (69:980-2), NEITHER HELD"),
+    ("O'Croinin et al. 2024, *Physiol Rep* 12:e16054 (HUMAN, n=26)",
+     "whether the heart-rate response to APNOEA is driven by CO2 or by "
+     "hypoxia -- the human counterpart to Stengl",
+     "2026-09-30",
+     "READ AT SOURCE from upload, open access. 26 healthy AWAKE volunteers "
+     "(12 female, 23 yr, BMI 24) doing voluntary breath-holds under "
+     "hypercapnia (+5 torr PETCO2), hypoxia (PETO2 50 torr) and both. "
+     "HEADLINE: 'Under apneic conditions, the cardiac response is driven by "
+     "HYPOXIA.' Hypercapnic apnoeas were NOT different from normocapnic "
+     "(-14 +- 14 vs -11 +- 15 bpm, p=0.134); hypoxia deepened the "
+     "bradycardia (-19 +- 15). This SUPPORTS keying the model's bradycardia "
+     "on SaO2, which it does. "
+     "IT DOES NOT SETTLE THE CO2->HR GAIN, and must not be cited as if it "
+     "did. Its CO2 challenge was +5 torr against the 40-80 mmHg the model "
+     "works over; at +5 the current law predicts +1.6 bpm and the "
+     "Stengl-derived probe +4.6, both inside a +-14 bpm SD, so the study "
+     "cannot discriminate them. "
+     "AND IT IS AWAKE. The diving response that produces this bradycardia "
+     "needs an intact reflex; the model's population is anaesthetised and "
+     "PARALYSED. That is the identical trap already recorded at the Altermatt "
+     "tilt row in test_validation.py, where an AWAKE measurement was found to "
+     "constrain an anaesthetised parameter nowhere"),
     ("Stengl et al. 2013, *Crit Care* 17:R303 (PIGS, n=8+8+8)",
      "whether the cardiovascular response to acidosis is driven by pH or by "
      "CO2 -- the one design that separates them",

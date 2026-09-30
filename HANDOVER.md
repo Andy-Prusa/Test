@@ -5,6 +5,61 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-30 (eighteenth entry): the stroke-volume sign flip costs ONE benchmark, and that benchmark rests on a citation this project does not hold
+
+**The probe was run, not argued.** Both gains were derived from Stengl's
+measurements rather than fitted: `co_co2_gain` 0.0045 → **0.01328** (his HR
+x2.02) and `sv_co2_gain` +0.0045 → **-0.00352** (his SV x0.73). `co_max_factor`
+was left at 2.0 — and note that the existing ceiling turns out to be almost
+exactly Stengl's measured maximum HR multiplier, which is independent
+corroboration of a parameter that was already there. Run in a worktree with
+`provenance()` printed.
+
+**IT COSTS NOTHING ACROSS THE OXYGENATION SUITE.** Every other row is
+unchanged:
+
+| row | current | probe |
+|---|---|---|
+| Heard control, time to SpO2<95% | 354.2 s | 354.6 s |
+| Valenza tilt_factor | 1.47 x | 1.47 x |
+| tilt, BMI 44 at 25 deg | 42.3 % | 42.4 % |
+| ICSM jet, PaO2 | 25.0 | 25.0 |
+
+That is not luck. **Cardiac output barely moves at the PaCO2 the model
+actually works over**, because the two changes cancel: at PaCO2 60 it goes x1.19
+→ x1.18, at 70 x1.29 → x1.25. They diverge only above ~90 mmHg, which the
+model's scenarios never reach.
+
+**IT BREAKS EXACTLY ONE ROW**, and it is the one that encodes the very claim
+Stengl refutes: `stroke volume rises with hypercapnia`, band +5 to +30%, probe
+**-12.1%**. The probe's value is quantitatively what Stengl predicts — at
+Kaiser's CO2 load (+31 mmHg) his gradient gives -10.9%.
+
+**THE ASYMMETRY OF EVIDENCE IS THE POINT.** That benchmark's whole
+justification is the string `"clinical; Chest: HR, SV, CO and MAP all rose"` —
+no author, no year, no n, and **NO Chest paper is among the 26 registered
+sources**. It is a secondhand citation of a paper this project does not hold:
+the identical failure mode as citing Frumin through O'Loughlin, which this
+session already had to correct. Stengl, against it, was read in full with a
+complete haemodynamic table in a preparation matching this model's population.
+**Species is the one thing on the benchmark's side, and it is not nothing.**
+
+**O'CROININ 2024 DOES NOT SETTLE IT, AND MUST NOT BE CITED AS IF IT DID.**
+Human, n=26, and its headline is real: under apnoea the cardiac response is
+driven by HYPOXIA, not CO2 (hypercapnic -14 +- 14 vs normocapnic -11 +- 15 bpm,
+p=0.134). That **supports the model's bradycardia being keyed on SaO2**, which
+it is. But its CO2 challenge was **+5 torr**, where the current law predicts
++1.6 bpm and the probe +4.6, both inside a +-14 bpm SD — the study cannot tell
+them apart. And it is **AWAKE**: the diving response needs an intact reflex,
+where this model's population is anaesthetised and paralysed. That is the same
+trap already recorded at the Altermatt tilt row, where an awake measurement was
+found to constrain an anaesthetised parameter nowhere.
+
+**NOTHING WAS CHANGED.** What is needed is a ruling on which way the
+stroke-volume row should point, and that is a judgement about evidence — a
+pig study read in full against a human citation nobody here holds — not a
+number to compute.
+
 ## Current state — 2026-09-30 (seventeenth entry): acidosis and the circulation — the CO2 keying is VINDICATED, `sv_co2_gain` has the WRONG SIGN, and PVR needs a pH term
 
 Asked whether acidosis should have cardiovascular effects, and handed **Stengl
