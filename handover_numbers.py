@@ -4364,6 +4364,59 @@ print("    So a METABOLIC acidosis does reach the circulation in this model,")
 print("    indirectly, by lowering CO2 carriage so PaCO2 runs higher. An")
 print("    earlier claim of mine that it moved nothing was wrong.")
 
+# ---------------------------------------------------------------------------
+# Twenty-third entry: the tilt oxygen balance, from the MODEL'S OWN accounting.
+# This exists because the twenty-second entry's "1.64x amplifier" was built on
+# a hand-estimated blood store and had to be retracted. These come from the
+# simulation's identity: consumed = lung drawdown + inflow + blood/tissue,
+# obstructed so inflow is zero.
+# ---------------------------------------------------------------------------
+print()
+print("  TILT OXYGEN BALANCE. Blood and tissue supply ~200 mL by the threshold,")
+print("  NOT the ~640 mL estimated by hand, and tilt barely changes it. The")
+print("  extra apnoea time comes almost entirely from extra LUNG oxygen.")
+
+
+def _tilt_balance(w, h, age, hb, tilt, thr):
+    _o = []
+    for _t in (0.0, tilt):
+        _p = Patient(weight=w, height=h, age=age, hb=hb, tilt_deg=_t)
+        _r = simulate(_p, [AirwayEpoch(1200, resistance=np.inf, fgo2=0.21)],
+                      dt=0.05, feo2_start=0.87, stop_sao2=0.0)
+        _t95 = time_to(_r, 'spo2', thr)
+        _cons = _p.vo2_anaes() * _t95 / 60.0
+        _lung = _r['lung_o2'][0] - at(_r, 'lung_o2', _t95)
+        _o.append((_p.frc_anaes(), _r['lung_o2'][0], _t95, _cons, _lung,
+                   _cons - _lung))
+    return _o
+
+
+for _lab, _args, _want in (
+        ("Dixon BMI44 @25", (120, 1.65, 45, 14, 25.0, 92),
+         (903.0, 1325.0, 533.0, 844.0, 170.0, 242.0, 202.0, 201.0)),
+        ("Heard BMI34.5 @30", (105, 1.74, 42, 14, 30.0, 95),
+         (1274.0, 1918.0, 808.0, 1270.0, 230.0, 334.0, 192.0, 179.0)),
+        ("lean BMI22.9 @20", (70, 1.75, 45, 15, 20.0, 95),
+         (2328.0, 3032.0, 1566.0, 2071.0, 444.0, 567.0, 175.0, 147.0))):
+    (_f0, _l0, _t0, _c0, _u0, _b0), (_f1, _l1, _t1, _c1, _u1, _b1) = \
+        _tilt_balance(*_args)
+    _w = _want
+    check(f"{_lab}: FRC supine", _f0, _w[0], 2.0, " mL")
+    check(f"{_lab}: FRC tilted", _f1, _w[1], 2.0, " mL")
+    check(f"{_lab}: lung O2 at t=0, supine", _l0, _w[2], 3.0, " mL")
+    check(f"{_lab}: lung O2 at t=0, tilted", _l1, _w[3], 3.0, " mL")
+    check(f"{_lab}: time to threshold, supine", _t0, _w[4], 2.0, " s")
+    check(f"{_lab}: time to threshold, tilted", _t1, _w[5], 2.0, " s")
+    check(f"{_lab}: blood+tissue used, supine", _b0, _w[6], 6.0, " mL")
+    check(f"{_lab}: blood+tissue used, tilted", _b1, _w[7], 6.0, " mL")
+    print(f"    FRC +{100*(_f1/_f0-1):.1f}%, lung O2 at t=0 "
+          f"+{100*(_l1/_l0-1):.1f}%, time +{100*(_t1/_t0-1):.1f}%, "
+          f"blood+tissue {100*(_b1/_b0-1):+.1f}%")
+print("    LUNG OXYGEN AT t=0 RISES MORE THAN FRC DOES, and the excess is")
+print("    BMI-dependent (Dixon +58.4 vs +46.7; lean +32.3 vs +30.2). That")
+print("    gap is the one unexplained step. unwashed_fraction is NOT it --")
+print("    it is 1.77% supine and 0.00% tilted in Dixon, ~3 of 12 points.")
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")

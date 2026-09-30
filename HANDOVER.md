@@ -5,6 +5,60 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-30 (twenty-third entry): THE "1.64x AMPLIFIER" OF THE LAST ENTRY IS WRONG AND IS RETRACTED
+
+**The twenty-second entry claimed the model gets "+42.3% more time from +25.8%
+more oxygen — 1.64x more than the oxygen justifies". That is wrong.** It rested
+on a blood-plus-tissue store of ~640 mL that I computed from the pool
+parameters as an order-of-magnitude check — the entry flagged it as approximate
+and said it must be re-derived from the model's own oxygen balance before being
+quoted. Re-derived, it does not survive.
+
+**THE MODEL'S OWN ACCOUNTING**, using the identity `test_physical_consistency`
+already checks (consumed = lung drawdown + inflow + blood/tissue), obstructed so
+inflow is zero and the split is exact:
+
+| Dixon BMI 44, to threshold | supine | 25 deg | gain |
+|---|---|---|---|
+| FRC | 903 | 1325 mL | +46.7% |
+| lung O2 at t=0 | 533 | 844 mL | **+58.4%** |
+| time to threshold | 170 | 242 s | +42.3% |
+| O2 consumed | 728 | 1035 mL | +42.3% |
+| ...from lung | 526 | 835 mL | +58.8% |
+| ...from **blood+tissue** | **202** | **201 mL** | **−0.6%** |
+
+**Blood and tissue supply only ~200 mL by the threshold, not 640, and tilt does
+not change it** (−0.6% Dixon, −6.9% Heard, −16.0% lean). So the extra time comes
+almost entirely from extra lung oxygen, and the bookkeeping is internally
+consistent: weighting the +58.4% lung gain against an unchanged ~200 mL blood
+term gives +42.4%, against a measured-in-model time gain of +42.3%. **There is
+no spurious amplifier. The oxygen accounting is sound.**
+
+**MY SECOND HYPOTHESIS IS ALSO DEAD.** I proposed that the supine case was being
+cut short before spending its blood store. It is not — the blood contribution is
+flat. And I then proposed `unwashed_fraction` (perfusion whose airway was shut
+throughout preoxygenation) as the cause of the lung gain exceeding the FRC gain.
+It is 1.77% supine and 0.00% tilted in Dixon, 0.05% in Heard, 0.00% in the lean:
+it accounts for about 3 points of a 12-point gap and cannot carry it.
+
+**WHAT IS ACTUALLY LEFT, AND IT IS NARROW.** Lung oxygen at t=0 rises MORE than
+FRC does — +58.4% against +46.7% in Dixon, +57.3% against +50.5% in Heard, but
+only +32.3% against +30.2% in the lean. **The tilted lung starts with a higher
+mean alveolar oxygen FRACTION, and the effect is BMI-dependent.** That is the
+remaining unexplained step, and it is a far narrower target than "the coupling
+is 2x too strong". The V/Q distribution across compartments at the end of
+preoxygenation is where to look next; `unwashed_fraction` is not it.
+
+**THE BENCHMARK TENSION IS UNCHANGED BY ANY OF THIS.** The model still gives
+Dixon +42.3% against a measured +32%, and Valenza still demands a LARGER FRC
+gain which would push it further out. That conflict is real, it is not
+bookkeeping, and it is not yet explained.
+
+**THE LESSON, and it is the same one as the eighteenth entry.** I flagged the
+640 mL as approximate and then built a headline number on it anyway. A figure
+labelled "order-of-magnitude check" must not become "1.64x more than the oxygen
+justifies" one commit later. The flag was correct; carrying on past it was not.
+
 ## Current state — 2026-09-30 (twenty-second entry): NO single change fixes the tilt rows, the shunt is EXONERATED, and the tilt benefit exceeds what the oxygen allows
 
 The fourteenth entry said the lung-volume-to-apnoea-time coupling was about 2x
