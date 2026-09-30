@@ -161,6 +161,12 @@ font-variant-numeric:tabular-nums}
 .stoplab{font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--alarm);
 margin-top:-4px}
 .legend{display:flex;gap:15px;font-size:12px;color:var(--dim);margin-top:14px;flex-wrap:wrap}
+.trend{margin-top:14px;background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:8px 10px}
+.trendbar{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--dim);margin-bottom:4px;flex-wrap:wrap}
+.trendbar select{font-family:'Barlow Condensed',sans-serif;font-size:15px;background:var(--screen);color:var(--ink);border:1px solid var(--rule2);border-radius:3px;padding:3px 6px}
+.tkey{display:flex;align-items:center;gap:5px}
+.trendnow{margin-left:auto;color:var(--ink);font-variant-numeric:tabular-nums}
+#trendc{width:100%;height:220px;display:block}
 .sw{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
 .credit{color:var(--dim);font-size:11px;line-height:1.45;margin-top:10px;max-width:78ch;
  opacity:.85}
@@ -293,6 +299,15 @@ height has about 14% less FRC and 16% less total lung capacity.</p>
 <div class="num"><div class="numlab">SpO&#8322;</div><div class="big" id="sB">--</div>
 <div class="numunit">%<span class="stoplab" id="tB"></span></div></div></div>
 <div class="stage"><canvas id="bB" width="252" height="404"></canvas><div class="rows" id="mB"></div></div></div>
+</div>
+
+<div class="trend">
+<div class="trendbar"><label for="trendsel">Graph</label>
+<select id="trendsel"></select>
+<span class="tkey"><i class="sw" style="background:#6b8494"></i>no buccal oxygen</span>
+<span class="tkey"><i class="sw" style="background:#4fd8e8"></i>buccal oxygen</span>
+<span class="trendnow" id="trendnow"></span></div>
+<canvas id="trendc" width="1160" height="220"></canvas>
 </div>
 
 <div class="legend"><span><i class="sw" style="background:var(--o2)"></i>oxygen in the lung</span>
@@ -928,9 +943,7 @@ const DIALS=[
  ['hb','Haemoglobin',4.0,18.0,0.5,14.0,null],
  ['ccScale','Closing capacity',0.6,1.6,0.01,1.0,null],
  ['maxClosed','Lung collapsibility',0.10,0.65,0.01,0.25,null],
- ['tauMix','Cardiogenic mixing',10,300,5,45,null],
  ['fgBuccal','Pharyngeal O₂ (device arm)',0.21,1.00,0.01,1.00,null],
- ['inflowMechFrac','Absorption atelectasis',0.0,0.55,0.01,0.18,null],
  ['tiltDeg','Bed tilt (head up)',-20,45,1,25,null],
  ['buccalIdx','Buccal switched on',0,4,1,0,null]];
 // The decision points an anaesthetist actually has, not arbitrary seconds.
@@ -940,7 +953,19 @@ const STARTS=[[0,'From induction'],[120,'After mask ventilation fails'],
 
 const BASE={age:45,lmaOpens:true,frcRef:2860,frcDrop:400,tiltDeg:25,
  ccAt20:1800,ccPerYear:20,ccPerBmi:45,ccK:1.5,vo2Ref:250,coRef:5,crs:75,
- vArt:1.0,vVen:2.0,vTisO2:1.5,feo2:0.87,rv:1100,kRvBmi:0.0198,pCollapse:-149.5461,nVq:80};
+ vArt:1.0,vVen:2.0,vTisO2:1.5,feo2:0.87,rv:1100,kRvBmi:0.0198,pCollapse:-149.5461,nVq:80,
+ // HIDDEN DIALS, 2026-09-30. tauMix and inflowMechFrac were sliders
+ // until every dial was swept through model.js and then through
+ // apnoea_core.py. BOTH ARE INERT: across their full published
+ // ranges, in obstructed, patent-air and patent-oxygen runs, time to
+ // SpO2<95%, atelectasis and shunt are identical to the decimal, in
+ // BOTH implementations. They are held here at their former dial
+ // defaults so the model receives exactly what it did before -- the
+ // page's numbers are unchanged by this edit. A control that does
+ // nothing when dragged costs more credibility than it earns, so it
+ // is hidden rather than shown. The inertness itself is a real
+ // finding and is NOT fixed by hiding it: see HANDOVER.
+ tauMix:45,inflowMechFrac:0.18};
 const P=Object.assign({},BASE);
 DIALS.forEach(d=>P[d[0]]=d[5]);
 
@@ -1186,6 +1211,18 @@ let stale=true;
 const busy=document.getElementById('busy');
 const runBtn=document.getElementById('runbtn');
 
+// PLAY IS DISABLED UNTIL A RUN HAS COMPLETED FOR THE CURRENT PARAMETERS.
+// It used to stay live and silently start the run when pressed while
+// stale, so for the several seconds a run takes it read as a dead button.
+// Greying it states the requirement instead of hiding it.
+function setPlayState(){
+ const pb=document.getElementById('play');
+ const ok=!stale&&!!D.A&&!!D.B;
+ pb.disabled=!ok;
+ pb.title=ok?'':'Run the simulation first';
+ if(!ok){playing=false;pb.textContent='Play';}
+}
+
 function labels(){
  document.getElementById('v_weight').textContent=P.weight+' kg';
  document.getElementById('v_tiltDeg').textContent=
@@ -1193,7 +1230,6 @@ function labels(){
    (D.B?' · FRC '+D.B.frc.toFixed(0)+' mL':'');
  document.getElementById('v_height').textContent=
    P.height.toFixed(2)+' m · BMI '+(P.weight/(P.height*P.height)).toFixed(1);
-  document.getElementById('v_tauMix').textContent=P.tauMix.toFixed(0)+' s';
  // Below 7 g/dL the resting cardiac output rises to defend delivery, so say
  // so on the dial: the number on its own does not tell you the circulation
  // has changed underneath it.
@@ -1202,8 +1238,6 @@ function labels(){
   document.getElementById('v_hb').textContent=
     hb.toFixed(1)+' g/dL'+(f>1.005?' · CO ×'+f.toFixed(1):'');}
  document.getElementById('v_fgBuccal').textContent=(P.fgBuccal*100).toFixed(0)+'%';
- if(D.B) document.getElementById('v_inflowMechFrac').textContent=
-   'atelectasis '+(D.B.atel[D.B.atel.length-1]*100).toFixed(0)+'%';
  const st=STARTS[P.buccalIdx], mm=Math.floor(st[0]/60)+':'+
    String(st[0]%60).padStart(2,'0');
  document.getElementById('v_buccalIdx').textContent=mm;
@@ -1221,11 +1255,12 @@ function labels(){
  }
 }
 function dirty(){stale=true;busy.textContent='parameters changed';
- runBtn.textContent='Run simulation';labels();}
+ runBtn.textContent='Run simulation';labels();setPlayState();drawTrend();}
 
 function run(){
  playing=false;document.getElementById('play').textContent='Play';
- runBtn.disabled=true;busy.textContent='computing...';
+ runBtn.disabled=true;document.getElementById('play').disabled=true;
+ busy.textContent='computing...';
  // yield once so the status text paints before we block
  setTimeout(()=>{
   try{
@@ -1242,7 +1277,7 @@ function run(){
   }catch(err){
    busy.textContent='error: '+err.message;
   }
-  runBtn.disabled=false; labels(); render();
+  runBtn.disabled=false; labels(); setPlayState(); render(); drawTrend();
  },30);
 }
 
@@ -1486,6 +1521,88 @@ function panel(k,t){
   r('HPV response',(at(a,'hpv',t)*100).toFixed(0)+'%')+
   '<div class="flat">EtCO&#8322; &mdash; no trace, no ventilation</div>';
 }
+// ---- outcome trends -------------------------------------------------
+// The page showed waveforms and instantaneous numbers but never the SHAPE
+// of an outcome across the whole run, which is the thing a reader wants to
+// compare between the arms. One canvas, one dropdown, both arms overlaid.
+// VIEW CODE ONLY: it reads D.A and D.B and computes no physics.
+// key, label, unit, multiplier onto the displayed unit, fixed y-range.
+const TRENDS=[
+ ['spo2','Arterial saturation SpO₂','%',1,[0,100]],
+ ['pao2','Arterial PO₂','mmHg',1,null],
+ ['paco2','Arterial PCO₂','mmHg',1,null],
+ ['ph','Arterial pH','',1,null],
+ ['pvo2','Mixed venous PO₂','mmHg',1,null],
+ ['fao2','Alveolar oxygen fraction','%',100,[0,100]],
+ ['vol','Lung gas volume','mL',1,null],
+ ['shunt','Shunt fraction','%',100,null],
+ ['atel','Collapsed lung','%',100,null],
+ ['hr','Heart rate','bpm',1,null],
+ ['map','Mean arterial pressure','mmHg',1,null],
+ ['co','Cardiac output','L/min',1,null]];
+const trendSel=document.getElementById('trendsel');
+TRENDS.forEach((tr,i)=>{const o=document.createElement('option');
+ o.value=String(i);o.textContent=tr[1];trendSel.appendChild(o);});
+trendSel.onchange=drawTrend;
+window.addEventListener('resize',drawTrend);
+
+function drawTrend(){
+ const cv=document.getElementById('trendc'); if(!cv) return;
+ const cssW=cv.clientWidth||1160, dpr=window.devicePixelRatio||1;
+ if(cv.width!==Math.round(cssW*dpr)){
+   cv.width=Math.round(cssW*dpr); cv.height=Math.round(220*dpr);}
+ const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0);
+ const W=cssW,H=220,L=54,R=10,TP=10,B=24;
+ g.clearRect(0,0,W,H);
+ const now=document.getElementById('trendnow');
+ const t=TRENDS[+trendSel.value||0], key=t[0], unit=t[2], mul=t[3], fixed=t[4];
+ if(!D.A||!D.B||!D.A[key]){g.fillStyle='#6b8494';
+  g.font='13px Barlow,sans-serif';g.textAlign='left';g.textBaseline='middle';
+  g.fillText('Run the simulation to draw this graph',L,H/2);
+  now.textContent='';return;}
+ const ser=[[D.A,'#6b8494','no buccal'],[D.B,'#4fd8e8','buccal']];
+ const xmax=SCENARIO.end;
+ let lo=Infinity,hi=-Infinity;
+ ser.forEach(function(e){const a=e[0][key]; if(!a) return;
+  for(let i=0;i<a.length;i++){const v=a[i]*mul;
+   if(v<lo)lo=v; if(v>hi)hi=v;}});
+ if(!isFinite(lo)){now.textContent='';return;}
+ if(fixed){lo=fixed[0];hi=fixed[1];}
+ else{const pad=(hi-lo)*0.08||Math.max(Math.abs(hi)*0.05,0.5);lo-=pad;hi+=pad;}
+ const span=hi-lo||1, dp=span<2?2:(span<20?1:0);
+ const X=v=>L+(W-L-R)*(v/xmax), Y=v=>TP+(H-TP-B)*(1-(v-lo)/span);
+ g.lineWidth=1; g.font='11px Barlow,sans-serif';
+ g.strokeStyle='#16242e'; g.fillStyle='#6b8494';
+ g.textAlign='right'; g.textBaseline='middle';
+ for(let i=0;i<=4;i++){const v=lo+span*i/4, y=Y(v);
+  g.beginPath();g.moveTo(L,y);g.lineTo(W-R,y);g.stroke();
+  g.fillText(v.toFixed(dp),L-6,y);}
+ g.textAlign='center'; g.textBaseline='top';
+ const stepX=xmax>600?120:60;
+ for(let x0=0;x0<=xmax;x0+=stepX){const x=X(x0);
+  g.strokeStyle='#16242e';g.beginPath();g.moveTo(x,TP);g.lineTo(x,H-B);g.stroke();
+  g.fillText(Math.floor(x0/60)+':'+String(x0%60).padStart(2,'0'),x,H-B+5);}
+// While the parameters are STALE the curves on screen belong to the
+// previous run. Drawing them at full strength next to a greyed-out Play
+// button invites the reader to take them for the current settings, so
+// they are dimmed and the readout says so.
+ g.globalAlpha=stale?0.28:1;
+ ser.forEach(function(e){const a=e[0][key]; if(!a) return;
+  g.strokeStyle=e[1]; g.lineWidth=2; g.beginPath();
+  for(let i=0;i<a.length;i++){const x=X(e[0].t[i]), y=Y(a[i]*mul);
+   if(i)g.lineTo(x,y); else g.moveTo(x,y);}
+  g.stroke();});
+ g.globalAlpha=1;
+ const xm=X(Math.min(T,xmax));
+ g.strokeStyle='#ecdf49'; g.lineWidth=1; g.setLineDash([4,4]);
+ g.beginPath();g.moveTo(xm,TP);g.lineTo(xm,H-B);g.stroke();g.setLineDash([]);
+ now.textContent=ser.map(function(e){const a=e[0][key];
+  if(!a) return e[2]+' --';
+  const i=Math.min(Math.round(T),a.length-1);
+  return e[2]+' '+(a[i]*mul).toFixed(dp);}).join('  ·  ')
+  +(unit?' '+unit:'')+(stale?'  ·  previous run — re-run to update':'');
+}
+
 function render(){
  if(!D.A||!D.B) return;
  patient('A',T);patient('B',T);panel('A',T);panel('B',T);
@@ -1506,6 +1623,7 @@ function render(){
  const _st=STEPS(); let cur=_st[0];for(const s of _st)if(T>=s[0])cur=s;
  [...stepsEl.children].forEach(el=>
   el.classList.toggle('on',+el.dataset.t===cur[0]));
+ drawTrend();
 }
 function loop(ts){if(!playing)return;if(!last)last=ts;
  const wall=Math.min(0.1,(ts-last)/1000); last=ts;
@@ -1522,6 +1640,7 @@ function loop(ts){if(!playing)return;if(!last)last=ts;
  if(T>=900){playing=false;document.getElementById('play').textContent='Play';return;}
  requestAnimationFrame(loop);}
 runBtn.onclick=run;
+setPlayState(); drawTrend();
 document.getElementById('play').onclick=e=>{
  if(stale||!D.A){run();return;}
  playing=!playing;

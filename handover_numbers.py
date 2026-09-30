@@ -4284,6 +4284,37 @@ print("    +42.3% apnoea for +39.7% volume, about 1.07% per 1%, where Valenza's"
 print("    scaling with Dixon's +32% implies about 0.54% per 1%. A too-weak")
 print("    tilt factor and a too-strong coupling have been masking each other.")
 
+# ---------------------------------------------------------------------------
+# Fifteenth entry: tau_mix and inflow_mech_frac are INERT. Two sliders were
+# hidden from the page on the strength of this, so it must not drift silently.
+# ---------------------------------------------------------------------------
+print()
+print("  INERT LEVERS. tauMix and inflowMechFrac were sliders on the page until")
+print("  every dial was swept. Across their full published ranges NOTHING moves,")
+print("  in model.js AND here. The claim under test is EQUALITY, not a value:")
+print("  the spread across each sweep must be exactly zero.")
+
+for _key, _vals, _lo, _hi in (("tau_mix", [10.0, 45.0, 300.0], 10, 300),
+                              ("inflow_mech_frac", [0.0, 0.18, 0.55], 0.0, 0.55)):
+    for _obst, _lab in ((True, "obstructed"), (False, "patent")):
+        _t, _a = [], []
+        for _v in _vals:
+            _q = Patient(weight=107, height=1.75, age=45, hb=14, tilt_deg=25)
+            setattr(_q, _key, _v)
+            _r = simulate(_q, [AirwayEpoch(600, resistance=(np.inf if _obst else 2),
+                                           fgo2=0.21)],
+                          dt=0.1, feo2_start=0.87, stop_sao2=0.0)
+            _tt = time_to(_r, 'spo2', 95)
+            _t.append(-1.0 if _tt is None else float(_tt))
+            _a.append(at(_r, 'atelectasis', 600) * 100.0)
+        check(f"{_key} {_lo}-{_hi}, {_lab}: spread in time to SpO2<95%",
+              max(_t) - min(_t), 0.0, 1e-9, " s")
+        check(f"{_key} {_lo}-{_hi}, {_lab}: spread in atelectasis at 600 s",
+              max(_a) - min(_a), 0.0, 1e-9, " %")
+print("    ZERO on all four sweeps. These two parameters are connected to")
+print("    nothing that reaches an output. Hiding the sliders does NOT fix")
+print("    that and was not meant to -- see the fifteenth HANDOVER entry.")
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")

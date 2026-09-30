@@ -5,6 +5,75 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-30 (fifteenth entry): every slider was swept, two are INERT and are now hidden, and the page gained a run-gate and an outcome graph
+
+**THE PAGE WAS BEING SHARED, SO EVERY CONTROL ON IT WAS SWEPT.** Each of the
+twelve sliders was driven to its minimum, default and maximum through
+`model.js` itself -- the same code the shared page runs, not the Python -- in
+the page's own CICO preset, and the control arm's time to SpO2<95% recorded
+(default 362 s).
+
+| slider | range | low -> default -> high | verdict |
+|---|---|---|---|
+| Body weight | 45-180 kg | 720 -> 362 -> 225 s | correct, large |
+| Height | 1.45-2.05 m | 249 -> 362 -> 556 s | correct |
+| FRC | 0.55-1.5 x | 213 -> 362 -> 518 s | correct |
+| Metabolic rate | 0.6-1.7 x | 624 -> 362 -> 205 s | correct |
+| Haemoglobin | 4-18 g/dL | 354 -> 362 -> 367 s | direction right, only 13 s; the anaemia signal is in END SpO2, 20.3 -> 32.9% |
+| Closing capacity | 0.6-1.6 x | 367 -> 362 -> 345 s | correct, small |
+| Lung collapsibility | 0.1-0.65 | 365 -> 362 -> 352 s | correct, small |
+| **Cardiogenic mixing** | 10-300 s | 362 -> 362 -> 362 s | **INERT** |
+| Pharyngeal O2 | 0.21-1.0 | device arm 362 s -> never desaturates | correct; control arm correctly untouched |
+| **Absorption atelectasis** | 0-0.55 | 362 -> 362 -> 362 s | **INERT** |
+| Bed tilt | -20-45 deg | 185 -> 362 -> 436 s | correct, large |
+| Buccal switched on | 0-4 | never -> 362 s as it starts later | correct |
+
+**`tauMix` AND `inflowMechFrac` ARE INERT IN BOTH IMPLEMENTATIONS.** Across
+their full ranges, in obstructed, patent-air and patent-oxygen runs, time to
+SpO2<95%, atelectasis and shunt are identical to the decimal -- in `model.js`
+AND in `apnoea_core.py`. So this is NOT a port bug, which is exactly why
+`test_parity.py` passes: the two agree, and they agree on doing nothing. The
+eleventh entry's lever sweep already noted `tau_mix` leaving the Stock slope at
+1.94 and called the inertness undiagnosed; this confirms it and adds
+`inflow_mech_frac`. **Hiding them does not fix it and is not meant to.**
+
+**Both are now hidden from the page** (ruled 2026-09-30) and held in `BASE` at
+their former dial defaults, 45 and 0.18, so the model is handed exactly what it
+was handed before: the page's numbers are unchanged by the edit. A control that
+does nothing when dragged costs more credibility than it earns.
+
+**A MISTAKE OF MINE, RECORDED BECAUSE IT NEARLY BECAME A BUG REPORT.** The
+first sweep showed the device arm doing nothing whatever, and the page was
+within one sentence of being called broken. The fault was in the harness: the
+page defines `STARTS` as time/label PAIRS, so `STARTS[i][0]` is the time, and
+the harness defined it as flat numbers while copying the page's `[0]` indexing.
+`startAt` came out `undefined`, `0 >= undefined` is false, and every device run
+silently fell back to air. **The page was correct throughout.** Fixed, the
+device arm holds SpO2 at 99.9% where the control arm falls to 31.8%.
+
+**TWO PAGE FEATURES, both requested and both VIEW-ONLY -- `model.js` is
+untouched, so parity and the benchmarks are unaffected.**
+
+1. **Play is gated on a completed run.** It used to stay live and silently
+   start the run when pressed while stale, so for the ~5 s a run takes it read
+   as a dead button. It is now disabled whenever the parameters have changed or
+   a run is in flight, with the title "Run the simulation first".
+2. **An outcome graph with a dropdown**: twelve outcomes (SpO2, PaO2, PaCO2,
+   pH, mixed venous PO2, alveolar O2 fraction, lung gas volume, shunt,
+   collapsed lung, heart rate, MAP, cardiac output), both arms overlaid against
+   time, with the playback cursor marked. The page previously had waveforms and
+   instantaneous numbers but no way to see the SHAPE of an outcome over a run.
+   While stale the curves are dimmed to 0.28 and the readout says "previous run
+   -- re-run to update", so last run's curves cannot be mistaken for the
+   current settings.
+
+**Verified in a real browser**, not by inspection: headless Chromium drives the
+built page and asserts Play is disabled during the initial compute and enabled
+at 4.9 s when it finishes, disabled the instant a slider moves, stale-marked on
+the graph, and re-enabled after re-running; that the dropdown has 12 options and
+switching it redraws; that the canvas paints 12521 pixels; that both hidden
+sliders are gone and 10 remain; and that the page raises NO JavaScript errors.
+
 ## Current state — 2026-09-30 (fourteenth entry): the two tilt failures are ONE defect, and it is not the tilt gains
 
 **First, a process failure that has to be recorded.** `./setup-hooks.sh` had
