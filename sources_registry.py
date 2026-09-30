@@ -169,6 +169,33 @@ BENCHMARK_SOURCES = [
      "read in full 2026-09-28. Letter + reply, no data of its own; argues "
      "apnoeic diffusion oxygenation delays desaturation. Cites Benumof 1997 "
      "and Teller 1988 (69:980-2), NEITHER HELD"),
+    ("Stengl et al. 2013, *Crit Care* 17:R303 (PIGS, n=8+8+8)",
+     "whether the cardiovascular response to acidosis is driven by pH or by "
+     "CO2 -- the one design that separates them",
+     "2026-09-30",
+     "READ AT SOURCE from upload, open access. Anaesthetised, ventilated, "
+     "PARALYSED pigs; hypercapnic acidosis (inspired CO2, PaCO2 5.04 -> 15.57 "
+     "kPa = 38 -> 117 mmHg) and metabolic acidosis (2 M HCl infusion, PaCO2 "
+     "held constant) BOTH TITRATED TO pH 7.10. SPECIES IS THE CAVEAT, not the "
+     "state: the preparation matches this model's population. "
+     "IT VINDICATES KEYING THE SYSTEMIC TERMS ON CO2 AND NOT ON pH. SVR fell "
+     "with hypercapnia (x0.76) and did NOT change with metabolic acidosis at "
+     "the same pH (x1.16, ns), so systemic vasodilatation is a CO2 effect. "
+     "IT ALSO SHOWS sv_co2_gain HAS THE WRONG SIGN: stroke volume FELL, x0.73 "
+     "hypercapnic and x0.66 metabolic, while the model raises it x1.35. "
+     "Cardiac output was held up by tachycardia (HR x2.02) instead. The "
+     "model's net CO x1.81 against a measured x1.62 is about right BY TWO "
+     "ERRORS CANCELLING. "
+     "AND PVR IS WHERE A REAL pH TERM IS NEEDED: metabolic acidosis raised "
+     "PVR x2.21 at CONSTANT PaCO2, more than hypercapnia did (x1.37). This "
+     "model's PVR moves only with hypoxic vasoconstriction and has no "
+     "acidosis term at all. "
+     "It refines the co2_response_cap comment too: at pH 7.10 in vivo NO "
+     "ARRHYTHMIA occurred in either group and trabeculae from the acidotic "
+     "animals had NORMAL contraction force -- only acute acidic perfusion in "
+     "vitro depressed force. The depressant limb is real in the dish and was "
+     "compensated in the animal at this pH. NOTHING WAS CHANGED on the "
+     "strength of it; see the seventeenth HANDOVER entry"),
     ("Frumin, Epstein & Cohen 1959, *Anesthesiology* 20(6):789-798 (n=8)",
      "the LONG-WINDOW CO2 rate, and the acid-base trajectory past 15 min",
      "2026-09-29",

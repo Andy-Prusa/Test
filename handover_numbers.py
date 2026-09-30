@@ -4315,6 +4315,55 @@ print("    ZERO on all four sweeps. These two parameters are connected to")
 print("    nothing that reaches an output. Hiding the sliders does NOT fix")
 print("    that and was not meant to -- see the fifteenth HANDOVER entry.")
 
+# ---------------------------------------------------------------------------
+# Seventeenth entry: Stengl 2013 against the cardiovascular block. The model's
+# own multipliers are recomputed from its parameters, so a change to any of
+# them shows up here rather than leaving the HANDOVER table quietly wrong.
+# ---------------------------------------------------------------------------
+print()
+print("  STENGL 2013 (pigs). HCA and MAC both titrated to pH 7.10, so the")
+print("  design separates pH from CO2. Model multipliers below are computed")
+print("  from the parameters, not typed in.")
+
+_KPA = 7.50062
+_pa = 15.57 * _KPA                      # Table 1, HCA PaCO2 at pH 7.10
+_q = Patient(weight=107, height=1.75, age=45, hb=14, tilt_deg=25)
+_arg = max(0.0, min(_pa, _q.co2_response_cap) - 40.0)
+_hr_f = min(_q.co_max_factor, 1.0 + _q.co_co2_gain * _arg)
+_sv_f = 1.0 + _q.sv_co2_gain * _arg
+_svr_f = max(_q.svr_floor, 1.0 + _q.svr_co2_gain * _arg)
+
+check("Stengl: HCA PaCO2 at pH 7.10", _pa, 116.8, 0.5, " mmHg")
+check("model HR multiplier there [HCA measured x2.02]", _hr_f, 1.35, 0.01, "x")
+check("model SV multiplier there [HCA x0.73, MAC x0.66]", _sv_f, 1.35, 0.01, "x")
+check("model CO multiplier there [HCA measured x1.62]", _hr_f * _sv_f, 1.81,
+      0.02, "x")
+check("model SVR multiplier there [HCA x0.76, MAC x1.16 ns]", _svr_f, 0.65,
+      0.01, "x")
+print("    SV IS THE WRONG SIGN: the model raises stroke volume where both")
+print("    acidoses LOWERED it, and holds cardiac output up the wrong way.")
+print("    Net CO is about right only because two errors cancel.")
+print("    PVR: the model has NO acidosis term (hpv only), against a measured")
+print("    x1.37 hypercapnic and x2.21 METABOLIC -- the latter at constant")
+print("    PaCO2, so it cannot be a CO2 effect. Nothing was changed.")
+
+# The correction recorded in the same entry: base excess DOES reach the
+# circulation, indirectly, by lowering CO2 carriage so PaCO2 runs higher.
+_pk = []
+for _be in (0.0, -20.0):
+    _r = simulate(Patient(weight=107, height=1.75, age=45, hb=14,
+                          tilt_deg=25, be=_be),
+                  [AirwayEpoch(900, resistance=np.inf, fgo2=0.21)],
+                  dt=0.05, feo2_start=0.87, stop_sao2=0.0)
+    _pk.append((float(np.max(_r['paco2'])), float(np.max(_r['co']))))
+check("base excess 0: peak PaCO2", _pk[0][0], 59.7, 0.5, " mmHg")
+check("base excess -20: peak PaCO2", _pk[1][0], 69.5, 0.5, " mmHg")
+check("base excess 0: peak cardiac output", _pk[0][1], 5.15, 0.05, " L/min")
+check("base excess -20: peak cardiac output", _pk[1][1], 5.53, 0.05, " L/min")
+print("    So a METABOLIC acidosis does reach the circulation in this model,")
+print("    indirectly, by lowering CO2 carriage so PaCO2 runs higher. An")
+print("    earlier claim of mine that it moved nothing was wrong.")
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")

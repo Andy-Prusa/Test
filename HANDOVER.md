@@ -5,6 +5,68 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-30 (seventeenth entry): acidosis and the circulation — the CO2 keying is VINDICATED, `sv_co2_gain` has the WRONG SIGN, and PVR needs a pH term
+
+Asked whether acidosis should have cardiovascular effects, and handed **Stengl
+et al. 2013, *Crit Care* 17:R303** — anaesthetised, ventilated, paralysed pigs
+in which hypercapnic acidosis (PaCO2 38 → 117 mmHg) and metabolic acidosis
+(HCl, PaCO2 held constant) were **both titrated to pH 7.10**. That is the one
+design that separates pH from CO2, which is exactly the assumption the model's
+cardiovascular block rests on. **Species is the caveat; the preparation is not
+— it matches this model's population.**
+
+| | HCA measured | MAC measured | model (CO2-keyed) |
+|---|---|---|---|
+| HR | x2.02 | x1.73 | x1.35 |
+| **SV** | **x0.73** | **x0.66** | **x1.35** |
+| CO | x1.62 | x1.10 | x1.81 |
+| SVR | x0.76 | x1.16 (ns) | x0.65 |
+| **PVR** | **x1.37** | **x2.21** | **x1.00** |
+
+**1. KEYING THE SYSTEMIC TERMS ON CO2 RATHER THAN pH IS VINDICATED.** SVR fell
+with hypercapnia and did NOT change with metabolic acidosis at the same pH. The
+systemic vasodilatation is a CO2 effect, not an acidosis effect, so
+`svr_co2_gain` is right in kind. Magnitude is somewhat strong, x0.65 against a
+measured x0.76.
+
+**2. `sv_co2_gain` HAS THE WRONG SIGN.** It is +0.0045 per mmHg, raising stroke
+volume x1.35 at this PaCO2. Measured, stroke volume **FELL** — x0.73
+hypercapnic, x0.66 metabolic, in both groups. Cardiac output was held up by
+tachycardia instead (HR x2.02).
+
+**3. NET CARDIAC OUTPUT IS ABOUT RIGHT BY TWO ERRORS CANCELLING**: model x1.81
+against a measured x1.62, reached by raising HR far too little (x1.35 against
+x2.02) and moving SV the wrong way. The same right-answer-wrong-mechanism
+pattern as the tilt coupling in the fourteenth entry.
+
+**4. PVR IS WHERE A GENUINE pH TERM IS NEEDED, AND THERE IS NONE.** Metabolic
+acidosis raised PVR **x2.21 at CONSTANT PaCO2** — that cannot be a CO2 effect —
+and it exceeded the hypercapnic response (x1.37). This model's PVR moves only
+with hypoxic pulmonary vasoconstriction (`hpv_pvr_max`). This is the one place
+where "acidosis should have cardiovascular effects" is unambiguously right and
+the model is silent.
+
+**5. IT REFINES THE `co2_response_cap` COMMENT.** That comment says beyond
+PaCO2 150 "acidotic myocardial depression takes over and all of these reverse."
+At pH 7.10 in vivo it did not: **no arrhythmia in either group**, and
+trabeculae taken from the acidotic animals had **normal contraction force** —
+only acute acidic perfusion in vitro depressed force. The depressant limb is
+real in the dish and was compensated in the animal at this pH. The cap is still
+the right call; the reasoning under it is now better evidenced.
+
+**NOTHING WAS CHANGED.** `sv_co2_gain` is a sign flip on a fitted parameter in
+a validated block and would move benchmarks, so it waits on a ruling. Note also
+that pH 7.10 and PaCO2 117 are far beyond anything the page's own scenarios
+reach — peak PaCO2 there is 60-70 mmHg — so none of this affects what is
+currently shared.
+
+**One earlier prediction of mine was wrong and is corrected here.** I said a
+metabolic acidosis would move nothing cardiovascular in the model, because the
+terms key on PaCO2. It does, indirectly: lowering base excess reduces CO2
+carriage, so PaCO2 runs higher for the same production. Measured in the model,
+base excess 0 → -20 raises peak PaCO2 59.7 → 69.5 mmHg and peak cardiac output
+5.15 → 5.53 L/min.
+
 ## Current state — 2026-09-30 (sixteenth entry): the control arm is recoloured and there is a deployable folder
 
 **The control arm on the graph was `--dim` (#6b8494) and barely separable from
