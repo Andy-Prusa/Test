@@ -28,14 +28,45 @@ folder in. Done; you get a `*.pages.dev` address straight away.
 npx wrangler pages deploy site --project-name apnoea
 ```
 
-**3. Connect the Git repository.** *Workers & Pages* → *Create* → *Pages* →
-*Connect to Git*, pick the repo and branch, then set:
+**3. Connect the Git repository** — the option that redeploys by itself.
+*Workers & Pages* → *Create* → *Pages* → *Connect to Git*, pick the repo, then:
 
 - **Build command:** leave empty
 - **Build output directory:** `site`
+- **Production branch:** read the warning below before choosing
 
 `site/` is committed, so Cloudflare has nothing to build. Every push to the
-chosen branch redeploys.
+production branch redeploys.
+
+### WHICH BRANCH — checked 2026-09-30, and it is not obvious
+
+**`main` DOES NOT CARRY `site/`.** Nor `build_site.py`. Pointing Pages at
+`main` with output directory `site` **fails the build outright**, and the loose
+`airway_scenario.html` that is on `main` is 206 commits behind: no outcome
+graph, no named saves, no recolour, no head fix. The deployable folder lives on
+`claude/obese-shunt`, which is 206 commits ahead of `main` (and `main` is 1
+ahead of it, so they have diverged and a merge commit will be needed).
+
+So either:
+
+1. **Merge the branch to `main` first, then deploy from `main`.** A stable
+   public URL that changes only when something is deliberately merged. This is
+   the right choice if the link is going to other people.
+2. **Set the production branch to `claude/obese-shunt`.** Works immediately with
+   everything current — but **every commit goes live on the public URL within a
+   minute, unreviewed.** Reasonable for a preview you are watching; wrong for a
+   link already handed to colleagues.
+
+### What makes the automatic deploy safe
+
+`site/index.html` is a COPY of the built page, and the pre-commit hook runs
+`build_site.py --check`, so a `site/` that does not match **cannot be
+committed**. Whatever Cloudflare pulls is the page that was tested — the copy
+cannot silently drift behind the model.
+
+Note also that every branch other than the production one gets its own PREVIEW
+deployment at a hash URL. Those are exactly what the *Enable access policy*
+toggle protects, which is the one job that toggle does well.
 
 ## After a change to the model
 
