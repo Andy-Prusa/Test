@@ -5,6 +5,61 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-30 (twenty-fourth entry): the tilt excess is INCOMPLETE DENITROGENATION, and one number in it does not reconcile
+
+Chasing the unexplained step from the twenty-third entry: lung oxygen at t=0
+rising more than FRC does, BMI-dependently.
+
+**1. IT IS ALL CONCENTRATION, NOT VOLUME.** Gas volume rises EXACTLY with FRC —
+`va` at t=0 equals `frc_anaes()` to the digit in all three patients. The entire
+excess is oxygen per unit gas volume: **+8.0% Dixon, +4.5% Heard, +1.6% lean.**
+Monotone in BMI, which is why the obese rows fail and the lean one passes.
+
+**2. THE SUPINE OBESE LUNG STARTS WITH RESIDUAL NITROGEN.**
+
+| | supine PAN2 | tilted PAN2 | supine PAO2 | tilted PAO2 |
+|---|---|---|---|---|
+| Dixon BMI 44 | **61.9** | 52.7 | 611.1 | 620.3 |
+| Heard BMI 34.5 | 52.9 | 52.7 | 620.1 | 620.3 |
+| lean BMI 22.9 | 52.7 | 52.7 | 620.3 | 620.3 |
+
+Nitrogen displaces oxygen one for one: Dixon's 9.2 mmHg of extra N2 is 9.2 mmHg
+of lost PAO2.
+
+**3. THE MECHANISM IS `unwashed_fraction`, AND THE CODE ALREADY NAMES IT.** The
+`vq_distribution` docstring states the model has **NO IMPOSED V/Q DISPERSION AT
+ALL** — `vq_log_sd` is inert, swept over a hundredfold range with every output
+identical to five figures — and that its heterogeneity is entirely derived from
+"per-compartment absorption collapse, and the unwashed fraction from incomplete
+denitrogenation". The arithmetic confirms it: 1.77% of the Dixon supine lung
+holding air at PN2 ~563 plus 98.23% at 52.7 gives **61.7 mmHg against a
+measured 61.9**. Tilt takes that 1.77% to 0.00%.
+
+**THAT IS A THIRD INERT PARAMETER**, after `tau_mix` and `inflow_mech_frac`
+found on the page. `vq_log_sd` is at least documented as inert in its own
+docstring; the other two were not.
+
+**4. AND HERE IS WHAT DOES NOT RECONCILE, RECORDED RATHER THAN RESOLVED.** The
+same oxygen consequence measures three different ways:
+
+- mean alveolar PO2, 611.1 → 620.3: **+1.5%**
+- predicted from the unwashed fraction, 1/(1−0.0177): **+1.8%**
+- lung O2 per unit gas volume, 0.5902 → 0.6372: **+8.0%**
+
+**A factor of five between the first two and the third.** The nitrogen story is
+confirmed to the decimal on partial pressures; its oxygen consequence is not
+pinned down. The likely explanation — NOT verified, and not to be acted on
+until it is — is that `pao2_alv` is perfusion-weighted, being what the blood
+sees, while `lung_o2` is the true volume-weighted sum, and in a heterogeneous
+lung those differ. **Which of the three is the right measure of the STORE
+decides whether the tilt excess is 1.5 points or 8, and therefore whether this
+is the explanation of the Dixon failure or a footnote to it.**
+
+**NO NUMBER FROM THIS ENTRY SHOULD BE CARRIED FORWARD UNTIL THAT IS SETTLED.**
+Two entries in a row have had to be retracted for exactly this — building on a
+figure whose basis was flagged and then forgotten. The flag is here, at the
+top, and the next step is to resolve the weighting before anything else.
+
 ## Current state — 2026-09-30 (twenty-third entry): THE "1.64x AMPLIFIER" OF THE LAST ENTRY IS WRONG AND IS RETRACTED
 
 **The twenty-second entry claimed the model gets "+42.3% more time from +25.8%
