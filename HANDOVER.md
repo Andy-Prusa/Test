@@ -5,6 +5,71 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-30 (twenty-second entry): NO single change fixes the tilt rows, the shunt is EXONERATED, and the tilt benefit exceeds what the oxygen allows
+
+The fourteenth entry said the lung-volume-to-apnoea-time coupling was about 2x
+too strong and named `shunt_base_eff` the prime suspect, on the grounds that it
+is the main thing converting lung volume into arterial oxygenation and is stale
+by construction. **The sweep refutes that.**
+
+**1. `shunt_cc_k` IS NEARLY INERT.** Swept over a twelve-fold range at both the
+current tilt gains and the x1.50 Valenza demands:
+
+| gains | cc_k 10 | 20 | 36.16 (default) | 60 | 120 |
+|---|---|---|---|---|---|
+| x1.00 Dixon | 43.9 | 42.8 | 42.3 | 42.1 | 41.9 |
+| x1.00 lean | 27.7 | 27.6 | 27.5 | 27.5 | 27.4 |
+| x1.00 Heard (s) | 351 | 353 | 354 | 355 | 355 |
+| x1.50 Dixon | 65.3 | 63.7 | 63.0 | 62.7 | 62.4 |
+| x1.50 Heard (s) | 405 | 406 | 407 | 407 | 407 |
+
+Two points on Dixon and four seconds on Heard, across twelve-fold. **The shunt
+law is not the coupling, and the prime suspect I named is wrong.**
+
+**2. NO ROW COMBINATION LANDS.** At x1.00 only the lean row is in band; at x1.50
+Valenza comes in and all three others go out. No value of `shunt_cc_k` rescues
+any of it.
+
+**3. RAISING THE TILT GAINS MAKES HEARD CONTROL WORSE TOO**, 354 -> 407 s
+against a band of 244-314. So the three rows really are one pathway — Heard
+control sits downstream of `tilt_factor` at the same 30 degrees and obesity as
+Valenza — but it is not a pathway the shunt controls.
+
+**4. THE REAL DIAGNOSTIC: THE TILT BENEFIT EXCEEDS WHAT THE OXYGEN ALLOWS.**
+Tilt raises FRC, but the blood and tissue oxygen store does not scale with FRC
+at all, so it DILUTES the gain: the apnoea-time gain must be SUB-proportional
+to the FRC gain. The model is super-proportional against the store.
+
+| patient | FRC gain | total O2 store gain | model time gain | measured |
+|---|---|---|---|---|
+| Dixon BMI 44 @25 | +46.7% | **+25.8%** | **+42.3%** | +32% |
+| Heard BMI 34.5 @30 | +50.5% | +32.0% | — | — |
+| lean BMI 22.9 @20 | +30.2% | +23.0% | +27.5% | +24-36% |
+
+Dixon gets **+42.3% more time from +25.8% more oxygen — 1.64x more than the
+oxygen justifies**. The lean patient gets 1.20x. **The amplifier is
+BMI-dependent**, which is why the obese rows fail and the lean one passes. And
+Dixon's MEASURED +32% sits far closer to the store prediction (+25.8%) than to
+the model (+42.3%), which is independent support for the store argument being
+the right frame.
+
+**CAVEAT ON THE STORE FIGURES.** The blood-plus-tissue term (~640 mL) was
+computed from the pool parameters (`v_art`, `v_ven`, `v_tis_o2`, Hb) as an
+order-of-magnitude check, NOT from the model's internal accounting. The
+conclusion survives that looseness because the term is large and entirely
+FRC-independent, but the exact percentages should be re-derived from the
+simulation's own oxygen balance before any of them is quoted as a result.
+
+**WHERE TO LOOK NEXT, and it is no longer the baseline shunt.** Something makes
+the SUPINE, low-FRC case desaturate faster than its store alone implies, and
+does it more in the obese. The candidate is now the DYNAMIC collapse during
+apnoea rather than the starting shunt — `max_closed` and the `f_eff` term —
+because at low FRC more units fall below closing capacity and shut AS the
+apnoea proceeds, penalising the supine case twice. `shunt_cc_k` only sets the
+shunt at the START, which is why swamping it changed nothing.
+
+**NOTHING WAS CHANGED.**
+
 ## Current state — 2026-09-30 (twenty-first entry): the Kiely full text cannot be got, so the search is CLOSED and the benchmark says what it does and does not rest on
 
 The full text of Kiely 1996 could not be obtained — the author tried and this
