@@ -5,6 +5,63 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-30 (twentieth entry): Kiely 1996 verified — it IS the source, the flip stays retracted, and the PVR gap now has a HUMAN number
+
+The citation record and abstract were supplied, confirming **Kiely DG, Cargill
+RI & Lipworth BJ, *Chest* 1996;109(5):1215-21**, Ninewells Hospital, Dundee.
+Eight healthy male volunteers, AWAKE, Doppler echo, end-tidal CO2 raised to
+7 kPa (52.5 mmHg, **+12.5** over 40) for 30 min. **Registered as
+ABSTRACT-VERIFIED, NOT read** — the full text is still not held, and that
+distinction carries weight below.
+
+**IT IS THE BENCHMARK'S SOURCE.** "Heart rate, stroke volume, cardiac output,
+and mean arterial BP were increased by hypercapnia" is the note verbatim. The
+nineteenth entry's retraction stands: the load is six times smaller than
+Stengl's +76.8, the model works at +10 to +30 which is Kiely's range, and the
+existing **positive `sv_co2_gain` is probably right where it is used**.
+
+**BUT THE BAND IS STILL UNSOURCED.** The abstract gives NO MAGNITUDES for HR,
+SV, CO or MAP — only that they rose. **The benchmark's +5 to +30% band lives in
+the full-text tables and remains unverified.** The row's DIRECTION is now
+defended; its NUMBERS are still inherited. That is a smaller problem than the
+eighteenth entry described, and a real one.
+
+**THE PULMONARY NUMBERS ARE THE USEFUL PART, AND THEY ARE HUMAN, AT THE MODEL'S
+OWN CO2 RANGE:**
+
+| | CO2 load | MPAP | PVR |
+|---|---|---|---|
+| Kiely (awake human) | **+12.5** | 9 → 14 mmHg (x1.56) | 129 → 171 (**x1.33**) |
+| Stengl (pig, HCA) | +76.8 | 24.4 → 40.3 (x1.65) | 259 → 356 (x1.37) |
+| Stengl (pig, MAC, **constant PaCO2**) | 0 | 23.1 → 42.9 | 268 → 591 (**x2.21**) |
+
+**THE RESPONSE SATURATES.** Kiely's implied gain is 0.0260 per mmHg against
+Stengl's 0.0049 — **5.4x steeper** at a sixth of the load. So a linear CO2 gain
+would be the wrong form for PVR, which is worth knowing before anyone writes
+one. And Stengl's MAC arm raised PVR x2.21 at CONSTANT PaCO2, so a CO2 term
+alone cannot carry it either: **the pulmonary response needs pH, and it needs
+to saturate.**
+
+The model has `pvr_base` 1.40 mmHg per L/min and `hpv_pvr_max` 3.15, **both
+driven by hypoxia alone**. No CO2 term, no pH term. This is now the one
+unambiguous gap with numbers from two papers and one of them human.
+
+**TWO THINGS THE ABSTRACT SETTLES IN THE MODEL'S FAVOUR.** Systolic function
+was UNAFFECTED — peak aortic velocity and aortic mean and peak acceleration all
+unchanged — so stroke volume rose by LOADING, not contractility. That is
+consistent with Stengl finding depression only on acute acidic perfusion in
+vitro, and it supports the `co2_response_cap` comment's claim that depression
+belongs to severe acidosis rather than this range. And no effect on renin,
+angiotensin II or aldosterone rules out a RAAS mechanism over 30 minutes.
+
+**A CONTRADICTION RECORDED RATHER THAN RECONCILED: QT.** Kiely found QTc
+LENGTHENED, 411±3 → 428±8 ms, with QT dispersion 33±4 → 48±2, and flags
+dispersion as an arrhythmic substrate though he saw no arrhythmia. Stengl found
+QT and QTc **SHORTENED** in both acidoses, also with no arrhythmia. Frumin 1959
+saw ventricular ectopics that ended two apnoeas. Three papers, three different
+electrophysiological pictures. The model has no QT and needs none; this is
+recorded so nobody later builds one on a single source.
+
 ## Current state — 2026-09-30 (nineteenth entry): the Chest paper is IDENTIFIED, it does not conflict with Stengl, and my proposed sign flip was WRONG
 
 **The eighteenth entry leaned towards flipping `sv_co2_gain`, on the grounds
