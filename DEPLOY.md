@@ -78,6 +78,47 @@ policy in `build_site.py`.
    care." A public URL is publication in the ordinary sense even if the page
    says unpublished, so check that wording says what you want it to say to
    whoever finds it.
-2. **Cloudflare Pages projects are public by default.** If you want it limited
-   to named people, put Cloudflare Access in front of the project (*Settings* →
-   *Access policy*) rather than relying on the URL being hard to guess.
+2. **Cloudflare Pages projects are public by default.** See below.
+
+## Making it private
+
+Checked 2026-09-30. `developers.cloudflare.com` is unreachable from the build
+container, so this came from search results and a third-party write-up rather
+than Cloudflare's own docs: the mechanism is stable but Cloudflare renames
+dashboard menus often, so treat the click-path as a guide and confirm as you go.
+
+**THE TRAP. There is a toggle at *Workers & Pages* → the project → *Settings* →
+*General* → *Enable access policy*, and it is NOT the answer.** It protects
+only the randomly generated PREVIEW deployments — the
+`373f31e2.project.pages.dev` hash URLs. It does **not** protect the
+`*.pages.dev` production URL and does **not** protect a custom domain. Turning
+it on and assuming the site is private leaves the link everyone actually uses
+wide open.
+
+**What does work** is Cloudflare Access (under Zero Trust / Cloudflare One,
+free to 50 users), as a **Self-hosted application** over the hostname being
+served:
+
+1. *Zero Trust* → *Access* → *Applications* → *Add an application* →
+   *Self-hosted*.
+2. Set the domain to the hostname you publish — the custom domain, or the Pages
+   domain with subdomain `*` to cover production and previews at once.
+3. Add a policy: **Allow** / **Include** / `Emails` for a named list, or
+   `Emails ending in` for a whole organisation.
+4. *Zero Trust* → *Settings* → *Authentication* → *Login methods*: make sure
+   **One-time PIN** is enabled, so people get in with an emailed code instead
+   of needing a Cloudflare account.
+
+The most dependable arrangement is to serve the page on a **custom domain
+already in your Cloudflare account** and protect that, rather than trying to
+lock down the bare `pages.dev` hostname: Access applications are built around
+domains you hold.
+
+**A failure mode that wastes an afternoon**: if the policy says "emails ending
+in @yourdomain" and someone signs in with a Gmail address, Access denies them
+SILENTLY and never sends the PIN. It reads as a broken mail system rather than
+a refused login.
+
+**Not discoverable is not the same as private.** An unguessable URL, or a
+`X-Robots-Tag: noindex` header, keeps the page out of search results. Only
+Access stops someone who has the link.
