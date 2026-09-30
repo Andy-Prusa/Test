@@ -5,6 +5,69 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-30 (fourteenth entry): the two tilt failures are ONE defect, and it is not the tilt gains
+
+**First, a process failure that has to be recorded.** `./setup-hooks.sh` had
+never been run in this clone. `core.hooksPath` was unset and
+`.git/hooks/pre-commit` did not exist, so **the pre-commit hook did not fire for
+a single commit in the session that produced the twelfth and thirteenth
+entries.** Every one of those commits went in ungated. The hook is now
+installed. `test_parity.py` passes; `test_validation.py` exits 1 on four
+blocking rows, which is what the hook would have been blocking on.
+
+**The four blocking rows, and where they came from.**
+
+| row | model | band |
+|---|---|---|
+| Heard control, time to SpO2<95% | 354.2 s | 244-314 |
+| Valenza tilt_factor at 30 deg, BMI 42 | 1.466 x | 1.70-2.00 |
+| tilt, BMI 44 at 25 deg | 42.3 % | 15-40 |
+| ICSM jet, PaO2 at cricothyroidotomy | 25.0 mmHg | 25.3-31.3 |
+
+None is new. Heard control is recorded in the twelfth entry as already failing
+at 353.7 s and moving to 354.2 s on the cardiac-output change. The ICSM jet row
+is documented in `test_validation.py`'s own KNOWN_OPEN comment as having failed
+"since the day it was written", four days earlier. **The Valenza row cannot
+have been touched by any of this work at all**: `tilt_factor()` is pure algebra
+over tilt angle and BMI, with no cardiac output and no simulation in it.
+
+**THE TWO TILT ROWS ARE ONE DEFECT, AND THE TILT GAINS ARE NOT IT.** Both are
+driven by the same two parameters — `tilt_gain_lean` 0.013 and `tilt_gain_bmi`
+0.00015, how much end-expiratory lung volume a head-up tilt recovers per degree,
+lean and per BMI point above 25. Valenza is a DIRECT measurement of
+`tilt_factor` itself (closed-circuit helium dilution, 20 anaesthetised
+paralysed patients at BMI 42, 0.46 -> 0.85 L); Dixon is an apnoea-time PROXY
+(+32%). Valenza needs those gains **1.50x larger**. Measured, that is what the
+1.50x does:
+
+| row | at current gains | at 1.50x | band | measured |
+|---|---|---|---|---|
+| Dixon, BMI 44 at 25 deg | 42.3 % | **63.0 %** | 15-40 | +32 % |
+| lean 70 kg at 20 deg | 27.5 % (passes) | **41.2 %** (would newly fail) | 15-40 | Lane +36, Ramkumar +24 |
+
+So satisfying the one direct measurement of the quantity doubles the error on
+the proxy and breaks a row that currently passes. **No value of the two tilt
+gains satisfies all three rows**, which is the signature of a defect somewhere
+else.
+
+**Where it is: the lung-volume to apnoea-time coupling is about 2x too
+strong.** The model returns +42.3% apnoea time for a +39.7% lung-volume gain,
+about 1.07% per 1%. If Valenza's scaling is right, the true volume gain at
+BMI 44 and 25 degrees is about +59.5%, against Dixon's measured +32% — about
+0.54% per 1%. **A too-weak tilt factor and a too-strong coupling have been
+masking each other**, which is why neither row could be fixed from the tilt
+gains and why moving them makes things worse in both directions.
+
+**A hypothesis, flagged as such and NOT claimed.** Heard control fails in the
+same direction — 354.2 s against a 244-314 s band, i.e. the model holds
+saturation too long. An overstated lung-volume to apnoea-time coupling would do
+exactly that, which would make three of the four blocking rows one defect. It
+is a different configuration and has not been tested. It must not be written up
+as established until it is.
+
+**Nothing was tuned and no parameter was moved.** The 1.50x above is a probe,
+not a change.
+
 ## Current state — 2026-09-29 (thirteenth entry): the long-window CO2 gap is NOT the store. Frumin's PaCO2 is a DERIVED number, and the disagreement is in the pH/PCO2 relation
 
 The twelfth entry's sweep ended by calling the Frumin/Kaiser conflict "two eras

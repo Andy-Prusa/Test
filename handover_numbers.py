@@ -4230,6 +4230,60 @@ for _be, _wr, _wp, _wc in ((0.0, 1.18, 78.3, 32.1), (-5.0, 1.35, 85.9, 28.8),
 print("    Content falls 32.1 -> 26.3 as the deficit is applied. THAT is why")
 print("    no base excess reproduces Frumin: he had 32.9 AND pH 6.87.")
 
+# ---------------------------------------------------------------------------
+# Fourteenth entry: the two tilt failures are one defect, and it is NOT the
+# tilt gains. The lung-volume -> apnoea-time coupling is about 2x too strong.
+# ---------------------------------------------------------------------------
+print()
+print("  TILT. Valenza is a DIRECT measurement of tilt_factor (helium dilution,")
+print("  n=20 anaesthetised, BMI 42, 0.46 -> 0.85 L); Dixon is an apnoea-time")
+print("  PROXY (+32%). Both run off tilt_gain_lean and tilt_gain_bmi. Valenza")
+print("  needs them 1.50x larger; this measures what that does to the others.")
+
+
+def _tilt_gain(scale, w, h, hb, tilt, thr):
+    """(tilt_factor, % apnoea-time gain) with both tilt gains scaled."""
+    _out = []
+    for _t in (0, tilt):
+        _q = Patient(weight=w, height=h, age=45, hb=hb, tilt_deg=_t)
+        _q.tilt_gain_lean *= scale
+        _q.tilt_gain_bmi *= scale
+        _r = simulate(_q, [AirwayEpoch(1200, resistance=np.inf, fgo2=0.21)],
+                      dt=0.05, stop_sao2=0.0)
+        _out.append(time_to(_r, 'spo2', thr))
+    _q = Patient(weight=w, height=h, age=45, hb=hb, tilt_deg=tilt)
+    _q.tilt_gain_lean *= scale
+    _q.tilt_gain_bmi *= scale
+    return _q.tilt_factor(), (_out[1] / _out[0] - 1) * 100.0
+
+# The two gains, and the direct measurement they fail.
+_vz = Patient(weight=42 * 1.70 ** 2, height=1.70, age=37, hb=14.0, tilt_deg=30.0)
+check("tilt_gain_lean", _vz.tilt_gain_lean, 0.013, 1e-9)
+check("tilt_gain_bmi", _vz.tilt_gain_bmi, 0.00015, 1e-9)
+check("Valenza tilt_factor at 30 deg, BMI 42 [band 1.70-2.00]",
+      _vz.tilt_factor(), 1.466, 0.01, " x")
+check("the scale-up Valenza demands",
+      ((1.70 - 1.0) / 30.0)
+      / (_vz.tilt_gain_lean + _vz.tilt_gain_bmi * (_vz.bmi() - 25.0)),
+      1.50, 0.02, "x")
+
+for _lab, _scale, _args, _wtf, _wg in (
+        ("Dixon BMI44 at 25 deg", 1.00, (120, 1.65, 14, 25, 92), 1.397, 42.3),
+        ("Dixon BMI44 at 25 deg", 1.50, (120, 1.65, 14, 25, 92), 1.595, 63.0),
+        ("lean 70 kg at 20 deg", 1.00, (70, 1.75, 15, 20, 95), 1.260, 27.5),
+        ("lean 70 kg at 20 deg", 1.50, (70, 1.75, 15, 20, 95), 1.390, 41.2)):
+    _tf, _g = _tilt_gain(_scale, *_args)
+    check(f"{_lab} x{_scale:.2f}: tilt_factor", _tf, _wtf, 0.01, " x")
+    check(f"{_lab} x{_scale:.2f}: apnoea-time gain [band 15-40]", _g, _wg, 0.6,
+          " %")
+print("    NO VALUE OF THE TWO TILT GAINS SATISFIES ALL THREE ROWS. Satisfying")
+print("    Valenza doubles Dixon's error (42.3 -> 63.0 against a measured +32)")
+print("    and breaks the lean row that currently passes (27.5 -> 41.2). The")
+print("    defect is the LUNG-VOLUME TO APNOEA-TIME COUPLING: the model gives")
+print("    +42.3% apnoea for +39.7% volume, about 1.07% per 1%, where Valenza's")
+print("    scaling with Dixon's +32% implies about 0.54% per 1%. A too-weak")
+print("    tilt factor and a too-strong coupling have been masking each other.")
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")
