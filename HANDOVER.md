@@ -5,6 +5,44 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-01 (twenty-eighth entry): the weighting question is SETTLED — `lung_o2` is the store measure — and a 6.4% bookkeeping drift is exposed doing it
+
+The twenty-fourth entry left a factor of five unresolved and said no number from
+it should be carried forward until it was settled. Settled now, by reading how
+each is built rather than by simulation.
+
+**`pao2_alv` IS MOLE-WEIGHTED, NOT PERFUSION-WEIGHTED.** It is
+`(sum of O2 moles / sum of dry moles) * p_dry`, and `lung_o2` is simply the sum
+of O2 moles. **The twenty-fourth entry's guess — that one was perfusion-weighted
+and the other volume-weighted — is WRONG.**
+
+**THE RULING: `lung_o2` IS THE STORE MEASURE.** It is the quantity of oxygen
+actually in the lung, which is what gets consumed. `pao2_alv` is a partial
+pressure — what the blood sees, and the right number for gas exchange, but not
+for "how much is there". **So the tilt excess is +8.0%, not +1.5%**, and the
+twenty-fourth entry's larger figure is the one that stands.
+
+**AND A SMALLER PROBLEM IS EXPOSED, recorded rather than explained away.** At
+equal pressure the two must be proportional, and they are not:
+
+| | va mL | palv cmH2O | pao2_alv | lung_o2 | lung_o2/va |
+|---|---|---|---|---|---|
+| supine | 903 | **0.00** | 611.1 | 533 | 0.5902 |
+| 25 deg | 1325 | **0.00** | 620.3 | 844 | 0.6372 |
+| gain | | | **+1.5%** | | **+8.0%** |
+
+Both sit at exactly atmospheric pressure, and atelectasis is 0% in both, so the
+ratio `lung_o2/va` to `pao2_alv` should be a constant. It drifts **6.4%**. That
+rules out all three explanations offered for it: perfusion weighting (wrong, as
+above), sub-atmospheric pressure (both are 0.00), and collapsed volume holding
+no gas (atelectasis is zero). **`va` is recorded as `v_lung` while the moles
+correspond to `v_a`, and those two are not the same variable** — that is the
+place to look, and it is the only candidate left standing.
+
+**This does not change the twenty-seventh entry's conclusion**, which rests on
+`pao2` — the ARTERIAL tension against Dixon's measured 360 — and not on either
+of these two. The store-versus-tension defect stands as stated.
+
 ## Current state — 2026-10-01 (twenty-seventh entry): `unwashed_fraction` cannot carry it either, and the model cannot match Dixon's TENSION and his TIME at once
 
 Two probes against Dixon, both refutations, nothing changed.
