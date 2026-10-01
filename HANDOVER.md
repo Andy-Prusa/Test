@@ -5,6 +5,141 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-01 (thirty-first entry): the CO2 decay is the SLOW COMPARTMENT, and the model agrees with Kaiser on BOTH readings once the two papers are compared like with like
+
+Nothing changed. Two findings, one of which reframes what the CO2 defect is.
+
+### 1. THE DECAY IS LOCALISED, AND IT IS TWO OPPOSING MECHANISMS
+
+`test_co2_mass_balance` already rules out the easy answers: production is
+`vo2_anaes() * rq`, a constant, and over any window produced equals the rise in
+`lung_co2` plus the rise in `co2_stores` to within 1%. So nothing escapes and
+nothing fails to be made, and by identity
+
+    dPaCO2/dt = VCO2 / C(t),   C = d(CO2 stored)/d(PaCO2)
+
+a decaying rate means **C grows**. Measured, lean patent 100% O2, 45 min:
+
+| window min | PaCO2 | rate | **C store** | C lung |
+|---|---|---|---|---|
+| 0–1 | 50.4 | 10.26 | 16.4 | 2.5 |
+| 1–5 | 57.1 | 1.68 | **108.2** | 2.5 |
+| 10–15 | 74.2 | 1.67 | 108.9 | 2.5 |
+| 20–30 | 96.3 | 1.42 | 128.7 | 2.5 |
+| 30–45 | 114.1 | **1.19** | **153.9** | 2.5 |
+
+**The lung column is FLAT at 2.5 mL/mmHg** and alveolar volume is 2328 mL at
+both ends, so the gas-space cross-check holds and none of it is the lung. All
+of it is blood and tissue.
+
+**IT IS THE SLOW COMPARTMENT RECRUITING — but switching it off does not flatten
+the rate, it REVERSES it.** `v_tis_co2_slow` is 140 against a fast store of 22,
+seven times larger, and it starts at the same content, so as it fills it
+swallows CO2 that would have raised PaCO2:
+
+| `k_co2_slow` | 1–5 | 10–15 | 20–30 | 30–45 | trend |
+|---|---|---|---|---|---|
+| **0.80 shipped** | 1.68 | 1.67 | 1.42 | **1.19** | **−29.2%** |
+| 0.40 | 1.74 | 2.03 | 2.09 | 2.06 | +18.1% |
+| 0 (no slow) | 1.80 | 2.48 | 3.27 | **4.01** | **+122.5%** |
+
+**So there are TWO mechanisms pulling opposite ways**: the slow compartment
+recruiting (capacity grows, rate falls) against the blood CO2 dissociation
+curve flattening at high PCO2 (capacity falls, rate rises). `k_co2_slow` sets
+the balance. At 0.80 the first wins; at 0 the second runs unopposed. **That is
+why the rate decays rather than merely sitting low**, and it is a structural
+statement about the coupling, not about any level.
+
+### 2. AND THE TWO PAPERS HAVE NEVER BEEN COMPARED LIKE WITH LIKE
+
+The store block says it is tuned to "the MODERN measured arterial rate of rise,
+~2.1 mmHg/min (Sci Rep 2024)" against "historical 3.0–3.4 (Frumin 1959)".
+**Those are measured over DIFFERENT WINDOWS and are not the same quantity.**
+
+* **Kaiser 2024**, n=91: Table 1 gives PaCO2 **43 at minute 0 and 73 at minute
+  15**, i.e. 2.00 mmHg/min — an average **across the first fifteen minutes,
+  transient INCLUDED**. Its 15-minute ceiling is a protocol termination rule,
+  so it could not have measured the sustained phase even in principle.
+* **Frumin 1959**, n=8: ~3.0, range 2.7–4.9, over apnoeas of **18–55 minutes** —
+  the SUSTAINED phase, after the transient is over.
+
+The model on each paper's own window:
+
+| window | model | measured | |
+|---|---|---|---|
+| first minute | 10.4 mmHg | Stock ~12 | close |
+| **Kaiser 0–15 min** | **2.28** | **2.00** | **+14%** |
+| **Frumin 15–45 min** | **1.33** | ~3.0 | **−56%** |
+
+**AND WHAT SUSTAINED RATE DOES KAISER IMPLY?** He reports two time points and
+no intermediate, so the split must be assumed. Across the range:
+
+| assumed first-minute jump | Kaiser's implied sustained rate |
+|---|---|
+| 6 mmHg | 1.71 |
+| 10 mmHg | 1.43 |
+| **10.4 — the model's own** | **1.40** |
+| 12 — Stock's | 1.29 |
+
+**The model's sustained rate is 1.33.** It lies inside that range for every
+assumption between 10 and 12 mmHg, which is where Stock's measurement puts the
+transient.
+
+**SO THE MODEL AGREES WITH KAISER ON BOTH READINGS — the 0–15 average and the
+implied sustained rate — AND IT IS FRUMIN THAT STANDS APART.** This is not "the
+model's CO2 is too slow". It is **two measurements disagreeing about the
+sustained rate, with the model matching the larger and more recent one.**
+
+**WHAT THIS DOES NOT ESTABLISH, and must not be read as.** Kaiser's transient
+is NOT measured — the split is an assumption, which is why it is reported
+across a range and not as a point. Frumin is not thereby wrong: he is directly
+measured arterial sampling across 18–55 minutes and **the only source held here
+that reaches past fifteen minutes at all.** A conflict between two papers is
+not resolved by noticing that the model sits on one of them.
+
+### 3. SWEPT FOR FLATNESS, AND THE MINIMUM IS INTERIOR AND SHARP
+
+Scored by the coefficient of variation of the rate across the 5–45 min windows,
+normalised by its own mean, so a flat-but-low curve beats a steep one and the
+score **cannot be improved by moving the level**. The first minute is excluded:
+it is the mixed-venous equilibration transient, a different process, already
+constrained by Stock.
+
+| k | 1–5 | 10–15 | 20–30 | 30–45 | **CV** | mean | 1st min | pH 40m |
+|---|---|---|---|---|---|---|---|---|
+| 0.00 | 1.80 | 2.48 | 3.27 | 4.01 | 21.8% | 2.95 | 10.3 | 6.95 |
+| 0.30 | 1.76 | 2.13 | 2.33 | 2.41 | 6.4% | 2.22 | 10.3 | 7.02 |
+| 0.40 | 1.74 | 2.03 | 2.09 | 2.06 | 2.4% | 2.04 | 10.3 | 7.03 |
+| **0.45** | 1.73 | 1.98 | 1.99 | 1.91 | **1.8%** | **1.96** | 10.3 | 7.04 |
+| 0.60 | 1.71 | 1.84 | 1.71 | 1.54 | 6.6% | 1.75 | 10.3 | 7.06 |
+| **0.80 shipped** | 1.68 | 1.67 | 1.42 | **1.19** | **13.1%** | 1.52 | 10.3 | 7.09 |
+
+**Flattest at k = 0.45: CV 1.8% against the shipped 13.1%**, a sevenfold
+improvement in the one property Frumin actually measured and the model actually
+fails. CV runs 21.8 → 1.8 → 13.1 across the range, so the minimum is **interior
+and sharp** — the two mechanisms genuinely balance there rather than one being
+switched off.
+
+**THE FIRST MINUTE IS UNTOUCHED — 10.3 mmHg at EVERY value**, against Stock's
+~12. The coupling governs the sustained phase only, so this cannot break the one
+CO2 constraint the model currently meets well.
+
+**THE LEVEL IS A CONSEQUENCE AND WAS KEPT OUT OF THE OBJECTIVE.** At the
+flattest point the mean is 1.96 mmHg/min. Kaiser's 2.1 is recorded beside it for
+comparison only; optimising toward that number would have been a fit to a
+benchmark, which this repository has refused four times. pH at 40 min moves
+7.09 → 7.04, toward Frumin's 6.72–6.97 and still outside it.
+
+**NOTHING IS ADOPTED HERE.** The full suite cost at 0.45 against the shipped
+0.80 is in flight, and no ruling is taken until it is measured and recorded —
+including whatever it makes worse.
+
+### WHAT IS OWED
+
+A ruling on which measurement the stores answer to, and whether `k_co2_slow`
+moves. **The decay is wrong on its own terms whichever level is right** — a rate
+that falls 29% over 45 minutes is not what *either* paper describes.
+
 ## Current state — 2026-10-01 (thirtieth entry): the buccal arm is CO2-LIMITED, not oxygen-limited; CO2 returns to the top of the queue; and the three outstanding failures are RULED
 
 Three rulings by A. Heard, one finding, nothing tuned.
