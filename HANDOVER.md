@@ -5,6 +5,88 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-01 (thirtieth entry): the buccal arm is CO2-LIMITED, not oxygen-limited; CO2 returns to the top of the queue; and the three outstanding failures are RULED
+
+Three rulings by A. Heard, one finding, nothing tuned.
+
+### 1. "The O2 will eventually disappear, so 750 doesn't mean infinity"
+
+**That objection was right, and the code comment it lands on was WRONG.**
+`test_validation.py` said of the buccal arm that the model "never desaturates
+at all". **Nobody had run it far enough to find out.** Run to two hours, the
+same Heard control-arm patient (105 kg, BMI 34.7, 30 deg) on buccal oxygen:
+
+| t | SpO2 | PaO2 | PaCO2 | pH |
+|---|---|---|---|---|
+| 12.5 min — *the 750 s cap* | 99.86% | 312 | 74.5 | 7.21 |
+| 30 min | 99.62% | 254 | 105.2 | 7.10 |
+| 60 min | 98.96% | 202 | 143.7 | 7.00 |
+| 90 min | 97.86% | 169 | 172.3 | 6.94 |
+| **120 min** | **95.88%** | **144** | **~198** | **~6.90** |
+
+**Oxygen does disappear.** PaO2 falls monotonically 312 → 144 mmHg, the fall
+accelerates, and SpO2 crosses 95% just past **two hours**. What hid it is the
+oxyhaemoglobin dissociation curve, flat up there: saturation barely moves while
+the tension halves. The band's `1e9` upper bound — thirty-one years — was never
+describing the model. **The model has a number.**
+
+**BUT OXYGEN IS NOT WHAT ENDS THIS PATIENT.** At 60 minutes PaCO2 is 143.7 and
+pH 7.00 while SpO2 is still 98.96%. **The binding constraint is acid-base, and
+it binds an hour before saturation becomes interesting.** An oxygen ceiling
+would have been a tighter band on the wrong channel.
+
+**RULED, third option: the row and its band are left exactly as they are**, and
+what goes in is the finding that a pass here says nothing about oxygen. Changing
+what the row *tests* is a larger ruling and was not taken.
+
+**AND THE CHANNEL THAT BINDS IS ALREADY KNOWN TO BE WRONG, in the direction
+that matters.** Against Frumin 1959, both rows are KNOWN_OPEN: PaCO2 rise
+**1.64 mmHg/min against a measured 2.7–4.9**, and arterial pH at 40 min **7.09
+against a measured 6.72–6.97**. The model accumulates CO2 at about **half** the
+measured rate, so it is too alkaline and **the table above is the OPTIMISTIC
+trajectory** — a real patient reaches any given pH sooner.
+
+### 2. CO2 RETURNS TO THE TOP OF THE QUEUE
+
+Parked earlier today on the condition "as long as the O2 sits ok". **The O2 now
+sits considerably better** — the twenty-ninth entry's re-fit brought Dixon's
+arterial tension inside his measured spread in both postures. And this run shows
+the buccal arm's real limit is the channel that was parked. **The condition is
+met and the parking is lifted.**
+
+### 3. THE THREE OUTSTANDING FAILURES ARE RULED INTO `known-blocking.txt`
+
+**Why a ruling was owed.** Two were deliberately left out on 2026-09-26 with
+"CI stays red until they are ruled on"; the third left the file the same day by
+a separate ruling. **CI has therefore been red on every commit and every pull
+request in this repository since — `main` included.** That is precisely the
+state the file's own header calls a mute button: *"a suite that is permanently
+red says nothing."* Five days of red is not a safety margin, it is a broken
+instrument.
+
+**Nothing is tuned, forgiven or called acceptable.** All three are recorded as
+real disagreements with real measurement, as rule 2 requires. What the ruling
+buys is that a **new** failure turns CI red again and can be seen.
+
+**All three share one cause**, which is why they entered as one ruling: `48ffe03`,
+the Watson & Pride re-solve of `frc_ref` and `k_frc_bmi`, moved the awake lung
+volume they all depend on.
+
+| row | moved | band |
+|---|---|---|
+| Heard control, time to SpO2<95% | 274.4 → **353.7 s** | 244–314 |
+| tilt, BMI 44 at 25 deg | 39.1 → **42.3 %** | 15–40 |
+| Valenza tilt_factor at 30 deg, BMI 42 | **1.466×** | 1.70–2.00 |
+
+**AND THE LAST TWO ARE THE OPEN DEFECT, stated in one line.** Valenza says the
+model takes **too little lung volume** from tilt; Dixon says it gets **too much
+apnoea time** from it. Opposite signs, same posture. With the tension channel
+now correct, that pair is the whole of what remains, and it is a far better
+question than these rows posed while they sat unruled.
+
+Verified rather than assumed: `check_blocking.py` run against the re-fit suite
+output exits **0**, "4 blocking, exactly as ruled".
+
 ## Current state — 2026-10-01 (twenty-ninth entry): the shunt constant was ORPHANED by the September FRC rulings, re-fitted to Pelosi, and the preoxygenation channel the twenty-sixth entry called three times too weak is now RIGHT
 
 **RULED and applied.** `shunt_cc_k` 36.16 → **16.36**, in `apnoea_core.py` and

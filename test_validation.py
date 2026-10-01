@@ -370,6 +370,46 @@ def test_heard_2017():
     # delivery FAILING in an individual. That is a heterogeneity the model does
     # not claim to cover (it predicts a typical patient with working delivery),
     # so it is recorded here rather than treated as a defect.
+    #
+    # THIS ROW IS CO2-LIMITED, NOT OXYGEN-LIMITED. RULED 2026-10-01 by A.
+    # Heard, who put the objection as "the O2 will eventually disappear so 750
+    # doesn't mean infinity". He is right, and the comment above was WRONG to
+    # say the model "never desaturates at all" -- nobody had run it far enough
+    # to find out. Run to two hours, this same patient on buccal oxygen:
+    #
+    #     t          SpO2     PaO2     PaCO2      pH
+    #     12.5 min   99.86%    312      74.5    7.21   <- the 750 s cap
+    #     30   min   99.62%    254     105.2    7.10
+    #     60   min   98.96%    202     143.7    7.00
+    #     90   min   97.86%    169     172.3    6.94
+    #     120  min   95.88%    144    ~198     ~6.90
+    #
+    # OXYGEN DOES DISAPPEAR. PaO2 falls monotonically 312 -> 144 mmHg and the
+    # fall accelerates; SpO2 crosses 95% just past TWO HOURS. What hid that is
+    # the oxyhaemoglobin dissociation curve, which is flat up there: saturation
+    # barely moves while the tension halves. So the band's 1e9 upper bound --
+    # thirty-one years -- is not describing the model. The model has a number.
+    #
+    # BUT OXYGEN IS NOT WHAT ENDS THIS PATIENT, and that is why the band is
+    # left alone rather than given an oxygen ceiling. By 60 minutes PaCO2 is
+    # 143.7 and pH 7.00 while SpO2 is still 98.96%. The binding constraint is
+    # acid-base, and it binds an hour before saturation becomes interesting. A
+    # ceiling drawn from oxygen would be a tighter band on the WRONG CHANNEL.
+    #
+    # AND THE CHANNEL THAT BINDS IS ALREADY KNOWN TO BE WRONG, in the direction
+    # that matters. Against Frumin 1959, both rows below are KNOWN_OPEN:
+    # PaCO2 rise 1.64 mmHg/min against a measured 2.7-4.9, and arterial pH at
+    # 40 min 7.09 against a measured 6.72-6.97. The model accumulates CO2 at
+    # about HALF the measured rate, so it is TOO ALKALINE and the table above
+    # is the OPTIMISTIC trajectory. A real patient reaches any given pH sooner.
+    #
+    # SO WHAT A PASS HERE MEANS, stated so it is not read as more: the model
+    # holds saturation past the censoring cap, which is consistent with "we
+    # would have continued". It says NOTHING about whether the oxygen ceiling
+    # is right, and the row cannot be made to say so while the CO2 channel is
+    # the one that gives way first. Closing this properly needs the Frumin CO2
+    # defect fixed -- returned to the top of the queue by the same ruling --
+    # and then an acid-base endpoint beside this one. See HANDOVER.
     tb = time_to(patent(p, 1.00, feo2=0.80), 'spo2', 95)
     check("Heard buccal, held to 750 s", 9999 if tb is None else tb,
           750, 1e9, " s", "clinical; IQR 389-750, 750 = ethics cap")
