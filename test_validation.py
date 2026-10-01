@@ -150,10 +150,15 @@ KNOWN_OPEN = {
         (7.09, 0.05, "the same defect from the acid-base side -- too "
                      "alkaline at 40 min because too little CO2 has "
                      "accumulated. Rides the PaCO2 row above"),
-    "ICSM rescue, post-rescue PaO2":
-        (51.5, 2.0, "overshoots a MODEL comparator's ceiling by 0.8% since "
-                    "cardiac output was keyed on BSA. Not tuned back; see "
-                    "HANDOVER, twelfth entry, 'what it cost'"),
+    # REMOVED 2026-10-01, BECAUSE IT NOW PASSES. It was opened when cardiac
+    # output was keyed on BSA, overshooting a MODEL comparator's ceiling by
+    # 0.8% at 51.5 kPa against a band of 33.5-51.1. Re-fitting shunt_cc_k to
+    # Pelosi -- 36.16 -> 16.36, the constant having been orphaned when FRC and
+    # closing capacity were rewritten under it on 2026-09-25/26 -- brings it to
+    # 50.57, inside the band. NOT TUNED THERE: the re-fit was to Pelosi alone
+    # and this row was not in the objective, nor known to be affected until
+    # the harness said so. Rule 3 says a row that starts passing comes out, so
+    # it is out and is a live check again. See HANDOVER, twenty-ninth entry.
     # REMOVED 2026-09-28, BECAUSE IT NOW PASSES, one commit after it was
     # added. "cardiac index is body-size independent" was ruled open at 16.01%
     # to measure the defect before fixing it, and closed by re-keying

@@ -621,7 +621,65 @@ class Patient:
     #     law with `collapsed` initialised to its induction value, and that
     #     changes the collapse kinetics and every benchmark. See HANDOVER.
     shunt_anat: float = 0.03225  # bronchial + thebesian: the x = 0 limit
-    shunt_cc_k: float = 36.16    # half-saturation in x; see the note above
+    # RE-FITTED 2026-10-01, 36.16 -> 16.36, BY RULING. THE PARAMETER WAS
+    # ORPHANED AND THIS IS NOT A FIT TO A BENCHMARK.
+    #
+    # 36.16 was fitted to Pelosi on 2026-09-24 (commit 1066677), the day the
+    # shunt was re-keyed off BMI onto lung volume against closing capacity.
+    # BOTH of its drivers were then rewritten over the next two days and it
+    # was never re-fitted:
+    #     2026-09-25  3f42878  anaesthetised FRC took Pelosi's measured shape
+    #     2026-09-26  5b89c07  closing capacity -> Buist & Ross on Quanjer TLC
+    #     2026-09-26  a59b25c  closing capacity stopped depending on BMI
+    #     2026-09-26  bffbbf4 3b3228a e1be19f 48ffe03  FRC re-anchored again
+    # A constant fitted against inputs that no longer exist is wrong whether
+    # or not a benchmark notices. By 2026-10-01 the law had drifted from the
+    # source it was fitted to by 8.29 percentage points at BMI 55, and the
+    # error FANNED OUT with obesity (+0.35 pp at BMI 20) rather than sitting
+    # as an offset -- the signature of exactly that.
+    #
+    # RE-FIT TO PELOSI ALONE, at his cohort's height 1.64 m and age 52, BMI
+    # 20-55 in half-unit steps, as the original fit was. No benchmark and no
+    # other paper entered the objective.
+    #     shipped 36.16   rms 4.145 pp   worst 8.29 pp
+    #     re-fit  16.36   rms 0.861 pp   worst 2.30 pp
+    #
+    # WHAT IT COSTS, measured both ways on the full suite and recorded rather
+    # than compensated. The four BLOCKING rows are unchanged, in both the names
+    # that fail and their values, and the largest movement in 50 rows is 3.2%.
+    # TWO ROWS MOVE VERDICT, ONE EACH WAY:
+    #   FIXED  `ICSM rescue, post-rescue PaO2` 51.5 -> 50.57 kPa against a band
+    #          of 33.5-51.1, so it leaves KNOWN_OPEN by rule 3 of that table.
+    #          NOT TUNED THERE -- the fit was to Pelosi alone, this row was not
+    #          in the objective, and it was not known to be affected until the
+    #          harness printed the instruction to remove it.
+    #   WORSE  `tilt, BMI 44 at 25 deg` 42.3 -> 43.0 against a published 15-40.
+    #          It was failing before and fails further now. No parameter was
+    #          reached for, and nothing was done to offset it.
+    #
+    # WHY THE SUITE BARELY MOVES, which is coherent and not luck: a shunt
+    # costs about 0.017 s of apnoea per mmHg of arterial tension it removes,
+    # against 0.227 s/mmHg for under-preoxygenation. Nearly every row in the
+    # suite measures a TIME. The shunt moves TENSION.
+    #
+    # AND THE CONSEQUENCE, reported as a consequence and never as a target.
+    # Dixon 2005 published both, which is why he sees it. Supine BMI 47.3:
+    # PaO2 479 -> 389 against his measured 360 +- 99, i.e. 119 mmHg out
+    # before and 29 after, now inside his spread; time 158 -> 157 s against
+    # his 155 +- 69, preserved. THE PREOXYGENATION CHANNEL THE TWENTY-SIXTH
+    # ENTRY MEASURED AS THREE TIMES TOO WEAK -- tilt gain in PaO2 +8.4%
+    # against his +22.8% -- NOW READS +21.0%.
+    #
+    # WHAT IS NOT FIXED, so this is not read as more than it is: the tilt
+    # gain in TIME is +51.5% against Dixon's measured +29.7%, marginally
+    # WORSE than the +50.6% before. The volume channel is untouched by this
+    # and remains the open defect.
+    #
+    # STILL WEAK AT THE TOP OF THE RANGE: the law saturates while Pelosi's
+    # implied shunt keeps climbing, so the re-fit still under-predicts by
+    # 0.77 pp at BMI 50 and 2.30 pp at BMI 55. That is a defect in the FORM,
+    # not in this constant, and changing the form is a separate ruling.
+    shunt_cc_k: float = 16.36    # half-saturation in x; see the note above
                                  # on why only its ratio to 1 is identified
     # Ceiling: a numerical guard only. It binds at x = 23 -- a lung at a
     # twenty-fourth of its closing capacity -- which no timeline reaches.

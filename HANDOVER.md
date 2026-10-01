@@ -5,6 +5,126 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-01 (twenty-ninth entry): the shunt constant was ORPHANED by the September FRC rulings, re-fitted to Pelosi, and the preoxygenation channel the twenty-sixth entry called three times too weak is now RIGHT
+
+**RULED and applied.** `shunt_cc_k` 36.16 → **16.36**, in `apnoea_core.py` and
+`model.js` together.
+
+**THIS IS NOT A FIT TO A BENCHMARK, and the distinction is the whole of the
+case.** 36.16 was fitted to Pelosi on 2026-09-24 (`1066677`), the day the shunt
+was re-keyed off BMI onto lung volume against closing capacity. **Both of its
+drivers were then rewritten over the following two days and it was never
+re-fitted:**
+
+| date | commit | what moved under it |
+|---|---|---|
+| 09-25 | `3f42878` | anaesthetised FRC took Pelosi's measured shape |
+| 09-26 | `5b89c07` | closing capacity → Buist & Ross on a Quanjer TLC |
+| 09-26 | `a59b25c` | closing capacity stopped depending on BMI |
+| 09-26 | `bffbbf4` `3b3228a` `e1be19f` `48ffe03` | FRC re-anchored four more times |
+
+A constant fitted against inputs that no longer exist is wrong whether or not a
+benchmark notices. **And the drift had the signature of exactly that**: not an
+offset but a fan, +0.35 percentage points at BMI 20 widening to −8.29 at BMI 55.
+
+**RE-FIT TO PELOSI ALONE**, at his cohort's height 1.64 m and age 52, BMI 20–55
+in half-unit steps, as the original fit was. No benchmark and no other paper
+entered the objective. Regenerable by `handover_numbers.py`.
+
+| | rms residual | worst |
+|---|---|---|
+| shipped 36.16 | 4.145 pp | 8.29 pp |
+| **re-fit 16.36** | **0.861 pp** | **2.30 pp** |
+
+**WHAT IT COSTS, measured both ways on the full suite.** The four BLOCKING rows
+are unchanged, in both the names that fail and their values, and the largest
+movement in 50 rows is 3.2%. **TWO ROWS MOVE VERDICT, ONE EACH WAY:**
+
+| | row | before | after | band |
+|---|---|---|---|---|
+| **FIXED** | ICSM rescue, post-rescue PaO2 | 51.5 | **50.57** | 33.5–51.1 kPa |
+| **WORSE** | tilt, BMI 44 at 25 deg | 42.3 | **43.0** | 15–40 % |
+
+The fixed row leaves `KNOWN_OPEN` by rule 3 of that table. **It was not tuned
+there**: the fit was to Pelosi alone, the row was not in the objective, and it
+was not known to be affected until the harness printed the instruction to
+remove it. The worsened row was failing before and fails further now —
+recorded, not compensated, and no parameter was reached for.
+
+**A CORRECTION TO THIS ENTRY'S OWN FIRST DRAFT, since it was nearly committed
+that way.** It said "no row changes verdict". That was wrong, and it was wrong
+because `variant_cost.py --diff` renders a KNOWN_OPEN row as `?` on both sides,
+which reads as unchanged. The suite's own output says `[OPEN] 51.5` against
+`[FIXED] 50.6`. **The diff tool cannot see a verdict change into or out of
+KNOWN_OPEN; only the suite output can.**
+
+**WHY THE SUITE BARELY MOVES, which is coherent rather than luck.** A shunt
+costs about **0.017 s** of apnoea per mmHg of arterial tension it removes,
+against **0.227 s/mmHg** for under-preoxygenation — thirteen times cheaper, and
+across the whole sweep alveolar PO2 and lung oxygen do not move at four
+figures. Nearly every row in the suite measures a TIME. The shunt moves TENSION.
+
+**AND THE CONSEQUENCE — reported as a consequence, never as a target.** Dixon
+2005 published both, which is why he is where it shows:
+
+| Dixon supine BMI 47.3 | shipped | re-fit | measured |
+|---|---|---|---|
+| PaO2 after preoxygenation | 479 | **389** | **360 ± 99** |
+| time to SpO2 92% | 158 s | 157 s | 155 ± 69 s |
+| **tilt gain in PaO2** | **+8.4%** | **+21.0%** | **+22.8%** |
+| tilt gain in time | +50.6% | +51.5% | +29.7% |
+
+Supine arterial tension was 119 mmHg out and is now 29 — **inside Dixon's own
+spread** — while the time, which was already good, is preserved. **The
+preoxygenation channel the twenty-sixth entry measured as THREE TIMES TOO WEAK
+now reads +21.0% against his +22.8%.**
+
+**WHAT IS NOT FIXED, so this is not read as more than it is.** The tilt gain in
+TIME is +51.5% against a measured +29.7%, **marginally worse** than the +50.6%
+before. The volume channel is untouched and is now the open defect, cleanly
+isolated: **arterial tension is right across both postures and the time gain
+from tilt is still 1.7× too large.**
+
+**AND THE LAW'S FORM IS WEAK AT THE TOP OF THE RANGE.** It saturates while
+Pelosi's implied shunt keeps climbing, so the re-fit still under-predicts by
+0.77 pp at BMI 50 and 2.30 pp at BMI 55. That is a defect in the FORM, not in
+this constant. **KNOWN-OPEN; changing the form is a separate ruling.**
+
+**THE TWENTY-SEVENTH ENTRY'S HEADLINE IS WITHDRAWN.** It said the model cannot
+match Dixon's tension and his time at once. It tested only `feo2_start`, which
+empties the lung and so removes tension and store together. On the shunt channel
+the model straddles both. The entry stands as written below, with this pointer;
+its *refutations* are unaffected.
+
+**TWO THINGS FOUND ON THE WAY, BOTH STILL OPEN.**
+
+1. **`handover_numbers.py` IS FAILING WIDELY — 139 failures and still running
+   when this was written.** The September rulings moved far more than was
+   recorded. It is deliberately outside the pre-commit hook so that it *can*
+   drift, but the point of it is that drift must not be silent, and this was.
+   **Not repaired here; it gets its own commit, because repairing a check and
+   moving a parameter in one change makes it impossible to say which did what.**
+2. **PELOSI 1998 IS NOT IN `sources_registry.py`.** It is read in full at source
+   (2026-09-24, cited and quoted in `SOURCES.md`), and it is load-bearing in
+   three places — the shape of anaesthetised FRC, this constant, and the
+   inversion. But the registry CLAUDE.md names as the only place the read-fact
+   is written has 29 sources and Pelosi is not one of them, so
+   `check_sources.py --check` passes while the most load-bearing source in the
+   oxygen channel has no row. **Not repaired here; its own commit.**
+
+**A HYPOTHESIS REFUTED BY ITS OWN TEST, recorded so it is not re-tried.** Before
+the orphaning was found, the suspect was cardiac output: the shunt block's own
+"what is still weak" list notes the Pelosi inversion runs through this model's
+output, which is above Perilli's measured 4.9 L/min. The argument was that a
+fast circulation would make the fit imply too little shunt. **That is backwards.**
+A slower circulation gives more desaturated venous blood, so the same shunt
+depresses arterial tension further and LESS shunt is needed to explain Pelosi.
+Measured: correcting toward Perilli moves the implied shunt at BMI 50 from 14.89%
+**down** to 13.12%, away from the defect. Also measured, since the block says
+"about 18% above": it is **+15.9%**, and doing it honestly through `co_drop_frac`
+needs 0.353 where Gunnarsson's retained range is 0.15–0.30, so the correction is
+not available anyway.
+
 ## Current state — 2026-10-01 (twenty-eighth entry): the weighting question is SETTLED — `lung_o2` is the store measure — and a 6.4% bookkeeping drift is exposed doing it
 
 The twenty-fourth entry left a factor of five unresolved and said no number from

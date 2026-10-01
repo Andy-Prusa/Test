@@ -535,7 +535,10 @@ function derive(P){
   // for the fit, what it costs against Pelosi's quadratic, and the double
   // count that re-keying exposed.
   const _sanat=P.shuntAnat===undefined?0.03225:P.shuntAnat;
-  const _sck=P.shuntCcK===undefined?36.16:P.shuntCcK;
+  // RE-FITTED 2026-10-01, 36.16 -> 16.36. The constant was orphaned when
+  // FRC and closing capacity were rewritten 2026-09-25/26 and never
+  // re-fitted; re-fit to Pelosi alone. See apnoea_core.py shunt_cc_k.
+  const _sck=P.shuntCcK===undefined?16.36:P.shuntCcK;
   const _scl=P.shuntCeiling===undefined?0.40:P.shuntCeiling;
   const _xs=Math.max(0,cc-frc)/Math.max(frc,100);
   const shuntBaseEff=Math.min(_scl,_sanat+(1-_sanat)*_xs/(_xs+_sck));
