@@ -5,6 +5,53 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-01 (twenty-seventh entry): `unwashed_fraction` cannot carry it either, and the model cannot match Dixon's TENSION and his TIME at once
+
+Two probes against Dixon, both refutations, nothing changed.
+
+**1. `unwashed_fraction` IS DEAD AS A LEVER.** It is `max_closed * x/(x+cc_k)`
+on the AWAKE FRC, so `max_closed` is the handle. Swept 0.25 to 0.65 — 2.6x, and
+past the page slider's own range:
+
+| max_closed | unwashed | PaO2 supine | PaO2 head-up | time gain | benchmark | Heard |
+|---|---|---|---|---|---|---|
+| **0.25** shipped | 2.3% | 479 | 519 | +50.6% | +42.3% | 354 |
+| 0.65 | 6.0% | **455** | 519 | **+54.9%** | +45.3% | 351 |
+
+Target is 360. It moves supine PaO2 by 24 mmHg of the 119 needed, leaves the
+head-up arm completely untouched (its unwashed fraction is already zero), and
+makes EVERY tilt row WORSE. The twenty-sixth entry named it the suspect for the
+weak preoxygenation channel; **that is now refuted.**
+
+**2. AND HERE IS THE SHARPEST STATEMENT OF THE DEFECT SO FAR.** The model gives
+every patient the same preoxygenation endpoint, `feo2_start` 0.87, while Dixon
+MEASURED that the endpoint depends on posture and habitus after 3 minutes.
+Sweeping it on his supine group:
+
+| feo2_start | PaO2 at t=0 | time to SpO2 92% |
+|---|---|---|
+| 0.87 (the model's assumption) | 479 | **158 s** |
+| 0.75 | 396 | 139 |
+| **0.70** | **362** | 131 |
+| Dixon measured | **360 ± 99** | **155 ± 69** |
+
+**THE MODEL CANNOT MATCH BOTH.** At Dixon's oxygen tension it desaturates 15%
+too fast; at Dixon's desaturation time it is 33% over-oxygenated. **For the same
+arterial PaO2, the real patient lasted longer than the model does.**
+
+That is the two-channel error of the twenty-sixth entry stated precisely and
+without reference to tilt at all: **the model's oxygen store is too small for
+the tension it carries.** It is a better target than anything the fourteenth to
+twenty-sixth entries produced — one patient, one posture, two measured numbers
+the model cannot straddle — and it needs no new paper to pursue.
+
+**WHAT IS NOW REFUTED, so nobody re-treads it:** the shunt law (`shunt_cc_k`,
+twenty-second), blood-store truncation (twenty-third), V/Q dispersion
+(`vq_log_sd`, inert, twenty-fourth), and `unwashed_fraction` (here). The
+surviving question is the store-versus-tension relation itself, and the
+`pao2_alv` weighting question from the twenty-fourth entry is now clearly the
+first step: it decides which oxygen number the store should be measured against.
+
 ## Current state — 2026-10-01 (twenty-sixth entry): DIXON READ AT SOURCE. The tilt benefit arrives through the WRONG CHANNEL, and the denitrogenation mechanism is confirmed in humans
 
 The twenty-fifth entry said Dixon was not held and that ordering it was the
