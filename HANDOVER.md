@@ -5,6 +5,60 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-09-30 (twenty-fifth entry): PR #1 read and CLOSED unmerged, and reading it found two things worse than anything in it
+
+`main` is now the trunk (`9d7cb9c`, two roots — see the merge commit).
+Pull requests #2 and #3 were closed as genuinely superseded: their heads are
+ancestors of what is on `main`. **#1 was not, and was read before deciding.**
+
+**IT IS CLOSED UNMERGED, and merging it would have DAMAGED the repository.**
+Its `handover_numbers.py` block asserts FRC 587 mL at 180 kg; the model now
+gives **1104**. All three of its technical findings are fixed:
+
+| PR #1 finding (2026-09-11) | state on `main` |
+|---|---|
+| FRC falls below `rv` above ~131 kg | **fixed** — floor added 2026-09-23, 180 kg now gives 1104 against `rv` 1100 |
+| `js_params()` never sends `k_frc_bmi` | **fixed** — `kFrcBmi` is sent |
+| FRC floor 400 in Python vs 300 in `model.js` | **fixed** — "Both now floor at rv" |
+
+Its benchmark table is stale too (Heard 288 s, now 354.2 and failing; Toner
+sham 402 s, now 510.2). Merging would have added three FAILING checks and
+reinstated fixed bugs as live. **Nothing of value is lost; the two commits stay
+reachable on their branch.**
+
+**WHAT READING IT EXPOSED, and both are worse than anything it reported.**
+
+**1. DIXON IS NOT HELD.** The `tilt, BMI 44 at 25 deg` benchmark cites
+"clinical; Dixon +32%", and `sources_registry.py` has Dixon at `READ=None` —
+never obtained. **The +32% that the fourteenth, twenty-second and twenty-third
+entries all treat as the measurement indicting the model is SECONDHAND**, the
+same category as the Kiely band closed in the twenty-first entry. This does not
+make the model right; it means one side of that comparison is not evidence this
+project holds, and it must stop being written as though it were.
+
+**2. VALENZA WAS NOT IN THE REGISTRY AT ALL**, despite being the ONLY held
+anaesthetised FRC-against-tilt measurement and the sole anchor under
+`tilt_factor()`. Its numbers are quoted in detail in `apnoea_core.py` and
+`test_validation.py` and have been used throughout. **Registered now.** A
+source that load-bearing going unrecorded is precisely what that file exists to
+prevent.
+
+**AND A CORRECTION TO MY OWN FOURTEENTH ENTRY.** It presented the tilt conflict
+as a new finding. **The parameter block already had it**, and in sharper form:
+"Holding `tilt_gain_bmi` and solving `tilt_gain_lean` on [Valenza] gives 0.0257,
+double the present value, which would put the lean 20-degree row near +54%
+against a measured +24 to +36%. So Valenza alone cannot be adopted either, and
+these values stand UNCHANGED and UNSOURCED." I re-derived a documented conflict
+and reported it as a discovery. What was genuinely new is narrower: the measured
+cost of the 1.50x (Dixon 63.0%, lean row 41.2%), the link to Heard control, and
+the denitrogenation mechanism in the twenty-fourth entry.
+
+**`tilt_gain_lean` AND `tilt_gain_bmi` ARE UNSOURCED, and PR #1 said otherwise.**
+It listed them as "calibrated to" Lane, Ramkumar, Altermatt and Dixon. None of
+those is held, Altermatt was retired as an AWAKE measurement, and the code says
+plainly the values stand unchanged and unsourced. That is a third reason not to
+merge it.
+
 ## Current state — 2026-09-30 (twenty-fourth entry): the tilt excess is INCOMPLETE DENITROGENATION, and one number in it does not reconcile
 
 Chasing the unexplained step from the twenty-third entry: lung oxygen at t=0
