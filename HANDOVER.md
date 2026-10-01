@@ -5,7 +5,7 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
-## Current state — 2026-10-01 (thirty-first entry): the CO2 decay is the SLOW COMPARTMENT, and the model agrees with Kaiser on BOTH readings once the two papers are compared like with like
+## Current state — 2026-10-01 (thirty-first entry): the CO2 decay is the slow compartment's COUPLING (not its size), and Kaiser's rate is a transient-inclusive average whose implied sustained rate the model already matches
 
 Nothing changed. Two findings, one of which reframes what the CO2 defect is.
 
@@ -50,7 +50,44 @@ the balance. At 0.80 the first wins; at 0 the second runs unopposed. **That is
 why the rate decays rather than merely sitting low**, and it is a structural
 statement about the coupling, not about any level.
 
-### 2. AND THE TWO PAPERS HAVE NEVER BEEN COMPARED LIKE WITH LIKE
+### 2. THE WINDOWS DIFFER — BUT THE ERA CONFLICT WAS ALREADY HELD, AND THIS ENTRY FIRST OVERSTATED IT
+
+**CORRECTION, SAME DAY.** This section was first written as "the two papers have
+never been compared like with like". **That is wrong, and it is the fourteenth
+entry's mistake repeated**: `handover_numbers.py`'s own
+`THE LONG-WINDOW CO2 DECAY SWEEP` (line 4091) already records the conflict, and
+in SHARPER form — six measurements across two eras, not two papers:
+
+> *"What is really in conflict is two ERAS of measurement. Modern: Kaiser
+> 2.0–2.1, Toner 2.25, Gustafsson 1.8. Historical: Frumin 2.7–4.9, Stock 3.4
+> obstructed, Eger & Severinghaus 3.0. No single store size satisfies both."*
+
+**What is actually new here is narrower: the WINDOW analysis.** That block
+compares the rates as like quantities. It does not record that Kaiser's figure
+is a 0–15 min average **with the transient inside it** while Frumin's is the
+sustained phase, nor that Kaiser's own table implies a sustained rate of
+1.29–1.43. That matters because it suggests **part of the modern/historical gap
+may be a window artefact rather than an era difference** — which is a claim
+about the conflict, not a discovery of it.
+
+**AND THAT BLOCK CARRIES A THIRD CONSTRAINT THIS ENTRY'S SWEEP IGNORED.** It
+holds Frumin 45-min, Kaiser 15-min AND **Stock 1–5 min obstructed, target 3.4**,
+with the warning that *"fixing one alone is not a fix"*. The flatness sweep in
+section 3 below was scored on the sustained rate alone. Its k = 0.2 row gives
+Stock 2.02 against 3.4, so **the coupling may not help Stock at all** and the
+sweep is, as scored, incomplete.
+
+**ONE THING THAT BLOCK GETS WRONG, AND IT IS WHY SECTION 1 IS NOT A DUPLICATE.**
+Its headline is *"the hypothesis that the slow compartment drives the decay is
+REFUTED"*. It swept `v_tis_co2_slow`, the SIZE of the slow store, and that is
+genuinely inert — 1.60 to 1.88 across a quartering and a doubling. It did NOT
+sweep `k_co2_slow`, the COUPLING RATE, which is a different parameter, and **its
+own table shows the coupling is a strong lever: k 0.8→0.2 gives 2.65 and
+0.8→2.0 gives 1.01, a 2.6-fold range.** So "the slow compartment is refuted" is
+true of its size and false of its coupling, and the refutation should not be
+read as covering section 1.
+
+#### The window comparison itself
 
 The store block says it is tuned to "the MODERN measured arterial rate of rise,
 ~2.1 mmHg/min (Sci Rep 2024)" against "historical 3.0–3.4 (Frumin 1959)".
