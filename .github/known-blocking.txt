@@ -74,3 +74,59 @@ ICSM jet, PaO2 at cricothyroidotomy
 # so it constrained tilt_factor nowhere and the row tested nothing. It is
 # replaced by a direct check of tilt_factor at 30 degrees against Valenza's
 # measured 0.46 -> 0.85 L.
+
+
+# ======================================================================
+# ADDED 2026-10-01, RULED BY A. HEARD. Three rows enter together.
+#
+# WHY A RULING WAS OWED. The comment above left two of these deliberately
+# OUT, with "CI stays red until they are ruled on", and the third went out
+# the same day by a separate ruling that replaced the test. CI has therefore
+# been red on EVERY commit and EVERY pull request in this repository since
+# 2026-09-26 -- on main as well as on the working branches. That is the exact
+# state this file's own header calls a mute button: "a suite that is
+# permanently red says nothing". Five days of red is not a safety margin, it
+# is a broken instrument, and the honest fix is to rule rather than to let
+# the signal rot.
+#
+# WHAT IS BEING RULED, AND WHAT IS NOT. These three are recorded as REAL
+# DISAGREEMENTS WITH REAL MEASUREMENT, exactly as rule 2 requires. Nothing is
+# being tuned, forgiven or called acceptable. What the ruling buys is that a
+# NEW failure -- a genuine regression -- turns CI red again and can be seen.
+#
+# ALL THREE SHARE ONE CAUSE, which is why they go in as one ruling and not
+# three. 48ffe03, the Watson & Pride re-solve of frc_ref and k_frc_bmi
+# (2026-09-26), moved the awake lung volume that every one of them depends on.
+#
+#   Heard control, time to SpO2<95%        274.4 -> 353.7 s   band 244-314
+#       Heard 2017 standard-care arm, n=20, BMI 34.5, 30 deg. The model runs
+#       an unobstructed obese patient about 40 s long, +12% past the upper
+#       quartile. It is measured against this project's own trial.
+#
+#   tilt, BMI 44 at 25 deg                  39.1 -> 42.3 %    band 15-40
+#       Dixon 2005, read at source 2026-10-01: measured +29.7%, NOT the "+32%"
+#       this row cited for its whole life, which appears nowhere in the paper.
+#       The model gives too MUCH apnoea time from tilt.
+#
+#   Valenza tilt_factor at 30 deg, BMI 42   1.466x            band 1.70-2.00
+#       Valenza 2007 measured 0.46 -> 0.85 L in anaesthetised paralysed
+#       patients. The model takes too LITTLE lung volume from tilt. Note the
+#       SIGN against the row above: too little volume, too much time.
+#
+# THAT PAIR IS THE OPEN DEFECT, and stating it is the point of ruling them in
+# together rather than filing them away. The twenty-ninth entry closed the
+# other half of it: after the Pelosi shunt re-fit the model matches Dixon's
+# arterial TENSION in both postures (+21.0% against his measured +22.8%,
+# having been +8.4%). What remains is that the tilt gain in TIME is +51.5%
+# against his +29.7% while the volume gain is too small. Tension is right and
+# the volume channel is wrong, which is a far better-posed question than the
+# one these rows represented while they sat unruled.
+#
+# WHAT WOULD TAKE THEM OUT. Rule 3 applies in full: if any of them starts
+# passing it comes out of this file in the same commit, with the value and the
+# reason recorded, exactly as the two 2026-09-26 removals above were.
+# ======================================================================
+
+Heard control, time to SpO2<95%
+tilt, BMI 44 at 25 deg
+Valenza tilt_factor at 30 deg, BMI 42 [ANAESTHETISED]

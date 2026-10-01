@@ -142,18 +142,33 @@ KNOWN_OPEN = {
     # Tolerances 0.30 (18% of 1.64) and 0.05 pH: loose enough to survive
     # ordinary parameter work on the circulation, tight enough that real
     # movement on the CO2 limb reports.
+    # BOTH FRUMIN BASELINES RE-RECORDED 2026-10-01, with k_co2_slow 0.80 ->
+    # 0.45. They moved because the DECAY was fixed, and both moved TOWARD their
+    # published bands: 1.64 -> 2.11 against 2.7-4.9, and 7.09 -> 7.04 against
+    # 6.72-6.97. Neither row passes, and neither is expected to: the sweep shows
+    # Frumin's LEVEL and his SUSTAINEDNESS cannot both be had from this
+    # parameter, and the level is left open. Recording the new values is what
+    # rule 3 of this table requires -- a known-open row that has moved must not
+    # keep a stale baseline, or the next genuine drift is invisible.
     "Frumin, PaCO2 rise over 45 min":
-        (1.64, 0.30, "the long-window CO2 defect: the rate decays where "
-                     "Frumin's is sustained. THE reason the CO2 channel went "
-                     "back in the queue; see HANDOVER, twelfth entry"),
+        (2.11, 0.30, "the long-window CO2 defect, now SHAPE-CORRECTED but not "
+                     "LEVEL-corrected: the rate no longer decays (CV 13.1% -> "
+                     "1.8%) but sits below Frumin's band. Stock's obstructed "
+                     "3.4 is unreachable from this parameter at any value; see "
+                     "HANDOVER, thirty-second entry"),
     "Frumin, arterial pH at 40 min":
-        (7.09, 0.05, "the same defect from the acid-base side -- too "
+        (7.04, 0.05, "the same defect from the acid-base side -- too "
                      "alkaline at 40 min because too little CO2 has "
                      "accumulated. Rides the PaCO2 row above"),
-    "ICSM rescue, post-rescue PaO2":
-        (51.5, 2.0, "overshoots a MODEL comparator's ceiling by 0.8% since "
-                    "cardiac output was keyed on BSA. Not tuned back; see "
-                    "HANDOVER, twelfth entry, 'what it cost'"),
+    # REMOVED 2026-10-01, BECAUSE IT NOW PASSES. It was opened when cardiac
+    # output was keyed on BSA, overshooting a MODEL comparator's ceiling by
+    # 0.8% at 51.5 kPa against a band of 33.5-51.1. Re-fitting shunt_cc_k to
+    # Pelosi -- 36.16 -> 16.36, the constant having been orphaned when FRC and
+    # closing capacity were rewritten under it on 2026-09-25/26 -- brings it to
+    # 50.57, inside the band. NOT TUNED THERE: the re-fit was to Pelosi alone
+    # and this row was not in the objective, nor known to be affected until
+    # the harness said so. Rule 3 says a row that starts passing comes out, so
+    # it is out and is a live check again. See HANDOVER, twenty-ninth entry.
     # REMOVED 2026-09-28, BECAUSE IT NOW PASSES, one commit after it was
     # added. "cardiac index is body-size independent" was ruled open at 16.01%
     # to measure the defect before fixing it, and closed by re-keying
@@ -365,6 +380,46 @@ def test_heard_2017():
     # delivery FAILING in an individual. That is a heterogeneity the model does
     # not claim to cover (it predicts a typical patient with working delivery),
     # so it is recorded here rather than treated as a defect.
+    #
+    # THIS ROW IS CO2-LIMITED, NOT OXYGEN-LIMITED. RULED 2026-10-01 by A.
+    # Heard, who put the objection as "the O2 will eventually disappear so 750
+    # doesn't mean infinity". He is right, and the comment above was WRONG to
+    # say the model "never desaturates at all" -- nobody had run it far enough
+    # to find out. Run to two hours, this same patient on buccal oxygen:
+    #
+    #     t          SpO2     PaO2     PaCO2      pH
+    #     12.5 min   99.86%    312      74.5    7.21   <- the 750 s cap
+    #     30   min   99.62%    254     105.2    7.10
+    #     60   min   98.96%    202     143.7    7.00
+    #     90   min   97.86%    169     172.3    6.94
+    #     120  min   95.88%    144    ~198     ~6.90
+    #
+    # OXYGEN DOES DISAPPEAR. PaO2 falls monotonically 312 -> 144 mmHg and the
+    # fall accelerates; SpO2 crosses 95% just past TWO HOURS. What hid that is
+    # the oxyhaemoglobin dissociation curve, which is flat up there: saturation
+    # barely moves while the tension halves. So the band's 1e9 upper bound --
+    # thirty-one years -- is not describing the model. The model has a number.
+    #
+    # BUT OXYGEN IS NOT WHAT ENDS THIS PATIENT, and that is why the band is
+    # left alone rather than given an oxygen ceiling. By 60 minutes PaCO2 is
+    # 143.7 and pH 7.00 while SpO2 is still 98.96%. The binding constraint is
+    # acid-base, and it binds an hour before saturation becomes interesting. A
+    # ceiling drawn from oxygen would be a tighter band on the WRONG CHANNEL.
+    #
+    # AND THE CHANNEL THAT BINDS IS ALREADY KNOWN TO BE WRONG, in the direction
+    # that matters. Against Frumin 1959, both rows below are KNOWN_OPEN:
+    # PaCO2 rise 1.64 mmHg/min against a measured 2.7-4.9, and arterial pH at
+    # 40 min 7.09 against a measured 6.72-6.97. The model accumulates CO2 at
+    # about HALF the measured rate, so it is TOO ALKALINE and the table above
+    # is the OPTIMISTIC trajectory. A real patient reaches any given pH sooner.
+    #
+    # SO WHAT A PASS HERE MEANS, stated so it is not read as more: the model
+    # holds saturation past the censoring cap, which is consistent with "we
+    # would have continued". It says NOTHING about whether the oxygen ceiling
+    # is right, and the row cannot be made to say so while the CO2 channel is
+    # the one that gives way first. Closing this properly needs the Frumin CO2
+    # defect fixed -- returned to the top of the queue by the same ruling --
+    # and then an acid-base endpoint beside this one. See HANDOVER.
     tb = time_to(patent(p, 1.00, feo2=0.80), 'spo2', 95)
     check("Heard buccal, held to 750 s", 9999 if tb is None else tb,
           750, 1e9, " s", "clinical; IQR 389-750, 750 = ethics cap")
@@ -734,8 +789,32 @@ def test_positioning_trials():
           "patients (0.77): the model predicts a typical patient, so it must "
           "reproduce the group mean, and against the population SD almost "
           "nothing could fail")
+    # DIXON READ AT SOURCE 2026-10-01, and the citation this row carried was
+    # WRONG. It said "clinical; Dixon +32%" from the day it was written. The
+    # number +32% APPEARS NOWHERE IN THE PAPER -- the only "32" in the text are
+    # reference page numbers. Dixon BJ et al., Anesthesiology 2005;102:1110-5,
+    # n=42, BMI>40, randomised: time to SpO2 92% was 201+-55 s head-up against
+    # 155+-69 supine, which is +29.7%.
+    #
+    # THE BAND IS LEFT AT 15-40 AND IS NOT RE-FITTED. 29.7 sits inside it, so
+    # the row still tests what it was meant to test; narrowing a band to a
+    # freshly read number is the kind of change that needs a ruling, not a
+    # tidy-up. What is fixed here is the CITATION, which was unverifiable.
+    #
+    # TWO THINGS THE PAPER SAYS THAT THIS ROW CANNOT SEE, both recorded in the
+    # registry and the twenty-sixth HANDOVER entry:
+    #   1. DIXON'S GROUPS WERE NOT BMI-MATCHED -- supine 47.3, head-up 44.9.
+    #      This row compares ONE patient against itself, which does not
+    #      replicate the trial. Replicating it properly gives +50.6%, i.e. the
+    #      model looks WORSE against the real comparison, not better.
+    #   2. DIXON'S HEADLINE IS PREOXYGENATION, not apnoea time: PaO2 442+-104
+    #      head-up against 360+-99 supine, +22.8%, with r=0.51 between
+    #      induction PaO2 and time to 92%. The model gives only +8.4% there and
+    #      reaches its supine time with a patient preoxygenated far too well
+    #      (488 against 360). The benefit arrives through the wrong channel.
     check("tilt, BMI 44 at 25 deg", gain(120, 1.65, 14, 25, 92), 15, 40, " %",
-          "clinical; Dixon +32%")
+          "clinical; Dixon 2005;102:1110-5, 201 vs 155 s = +29.7% (NOT the "
+          "+32% this row used to cite, which is not in the paper)")
 
 
 def test_cardiac_output():

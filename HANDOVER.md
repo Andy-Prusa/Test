@@ -5,6 +5,609 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-01 (thirty-second entry): `k_co2_slow` adopted at 0.45 for the SHAPE of the CO2 rise — it closes no row, STOCK IS UNREACHABLE from it, and Frumin's level and his sustainedness are MUTUALLY EXCLUSIVE
+
+**RULED and applied.** `k_co2_slow` 0.80 → **0.45**, in `apnoea_core.py` and
+`model.js` together, with both Frumin `KNOWN_OPEN` baselines re-recorded in the
+same commit.
+
+### WHAT IT FIXES: the decay, and only the decay
+
+The rate DECAYED where Frumin measured it sustained — 1.68 mmHg/min over 1–5
+min falling to 1.19 by 30–45. Swept for **flatness**, scored by the coefficient
+of variation of the rate over 5–45 min normalised by its own mean, so **the
+score cannot be improved by moving the level**:
+
+| | CV over 5–45 min |
+|---|---|
+| shipped 0.80 | 13.1% |
+| **adopted 0.45** | **1.8%** |
+
+Sevenfold, and the minimum is **interior and sharp** (21.8 → 1.8 → 13.1 across
+the range), because two terms pull opposite ways and genuinely balance there:
+the slow store recruiting (140 against a fast 22, starting at the SAME content,
+so filling it swallows CO2 — capacity grows, rate falls) against the blood CO2
+dissociation curve flattening at high PCO2 (capacity falls, rate rises).
+
+**The first minute is 10.3 mmHg at EVERY value of this parameter**, so the one
+CO2 constraint the model meets well — Stock's ~12 — cannot be disturbed by it.
+
+### WHAT IT DOES NOT FIX, and this is the substance of the entry
+
+Swept against **all three** CO2 constraints at once, as
+`handover_numbers.py`'s own block warns must be done:
+
+| k | Frumin45 *2.7–4.9* | Kaiser15 *1.8–3.0* | **Stock1-5 *3.4*** |
+|---|---|---|---|
+| 0.00 | **3.28** | **2.72** | 2.06 |
+| 0.10 | **2.94** | **2.66** | 2.04 |
+| **0.45 adopted** | 2.11 | **2.45** | 1.98 |
+| 0.80 shipped | 1.64 | **2.27** | 1.92 |
+| 2.00 | 1.01 | 1.86 | 1.74 |
+
+1. **STOCK IS UNREACHABLE AT ANY VALUE** — 1.74 to 2.06 against 3.4, across a
+   twentyfold range of the parameter. **The obstructed airway is simply not
+   governed by this coupling.**
+2. **FRUMIN'S LEVEL AND FRUMIN'S SHAPE ARE MUTUALLY EXCLUSIVE.** His band needs
+   k ≤ 0.10; flatness needs 0.45. At k = 0 the model sits inside his band at
+   3.28 — **with the rate ACCELERATING 21.8%**, which is not what he measured
+   either. **You can have his number or his shape, never both.**
+3. **KAISER IS SATISFIED AT EVERY VALUE IN THE SWEEP** and therefore
+   discriminates nothing here.
+
+**SO THIS IS ADOPTED FOR THE SHAPE ALONE AND THE LEVEL STAYS OPEN. IT CLOSES NO
+BENCHMARK ROW AND NO TEST WILL SHOW THE GAIN.** That was known before it was
+ruled on, and it is the reason the ruling was put rather than taken.
+
+**NO OTHER LEVER WAS REACHED FOR.** `v_tis_co2_fast` halved does hit Stock
+(3.38) and with `v_tis_co2_slow` 35 also reaches Frumin (2.71) — but overshoots
+Kaiser (3.40 against a 3.0 ceiling), and `apnoea_core.py`'s own block already
+ruled that lever wrong because it buried three gas-exchange bugs.
+
+### COST, measured on the full suite both ways
+
+**46 pass / 4 fail at 0.80 against 45 pass / 4 fail / 1 WORSE at 0.45.** No row
+changes pass to fail; the four blocking rows are untouched.
+
+**The one `[WORSE]` must be read carefully, and the label points the wrong way.**
+It is `Frumin, PaCO2 rise over 45 min`, **1.64 → 2.11 against a published
+2.7–4.9 — it moved TOWARD the measurement.** `KNOWN_OPEN` tracks that row by
+VALUE with a ±0.30 drift tolerance around the 1.64 recorded at its ruling, and
+2.11 trips it. So `[WORSE]` means *"has moved from its recorded baseline"*, not
+*"has got worse against the data"*. The mechanism is working as designed — a
+known-open row must not drift silently in EITHER direction — but the word reads
+backwards here, and it would have been reported wrongly without opening the
+table.
+
+Both Frumin baselines are re-recorded: **1.64 → 2.11** and **7.09 → 7.04**, both
+having moved toward their bands. Rule 3 requires it: a known-open row that has
+moved must not keep a stale baseline, or the next genuine drift is invisible.
+
+### WHAT THE CO2 CHANNEL NOW NEEDS
+
+Not the stores. The twelfth entry's question — why the long-window rate decays —
+**is answered and closed**. What remains is two things this parameter cannot
+touch: **the obstructed slope (Stock 3.4 against ~2.0, inert to the coupling)**
+and **the sustained level**, which the thirty-first entry's window analysis
+suggests may be partly a disagreement between a transient-inclusive 0–15 min
+average and a sustained 18–55 min rate rather than a defect at all.
+
+## Current state — 2026-10-01 (thirty-first entry): the CO2 decay is the slow compartment's COUPLING (not its size), and Kaiser's rate is a transient-inclusive average whose implied sustained rate the model already matches
+
+Nothing changed. Two findings, one of which reframes what the CO2 defect is.
+
+### 1. THE DECAY IS LOCALISED, AND IT IS TWO OPPOSING MECHANISMS
+
+`test_co2_mass_balance` already rules out the easy answers: production is
+`vo2_anaes() * rq`, a constant, and over any window produced equals the rise in
+`lung_co2` plus the rise in `co2_stores` to within 1%. So nothing escapes and
+nothing fails to be made, and by identity
+
+    dPaCO2/dt = VCO2 / C(t),   C = d(CO2 stored)/d(PaCO2)
+
+a decaying rate means **C grows**. Measured, lean patent 100% O2, 45 min:
+
+| window min | PaCO2 | rate | **C store** | C lung |
+|---|---|---|---|---|
+| 0–1 | 50.4 | 10.26 | 16.4 | 2.5 |
+| 1–5 | 57.1 | 1.68 | **108.2** | 2.5 |
+| 10–15 | 74.2 | 1.67 | 108.9 | 2.5 |
+| 20–30 | 96.3 | 1.42 | 128.7 | 2.5 |
+| 30–45 | 114.1 | **1.19** | **153.9** | 2.5 |
+
+**The lung column is FLAT at 2.5 mL/mmHg** and alveolar volume is 2328 mL at
+both ends, so the gas-space cross-check holds and none of it is the lung. All
+of it is blood and tissue.
+
+**IT IS THE SLOW COMPARTMENT RECRUITING — but switching it off does not flatten
+the rate, it REVERSES it.** `v_tis_co2_slow` is 140 against a fast store of 22,
+seven times larger, and it starts at the same content, so as it fills it
+swallows CO2 that would have raised PaCO2:
+
+| `k_co2_slow` | 1–5 | 10–15 | 20–30 | 30–45 | trend |
+|---|---|---|---|---|---|
+| **0.80 shipped** | 1.68 | 1.67 | 1.42 | **1.19** | **−29.2%** |
+| 0.40 | 1.74 | 2.03 | 2.09 | 2.06 | +18.1% |
+| 0 (no slow) | 1.80 | 2.48 | 3.27 | **4.01** | **+122.5%** |
+
+**So there are TWO mechanisms pulling opposite ways**: the slow compartment
+recruiting (capacity grows, rate falls) against the blood CO2 dissociation
+curve flattening at high PCO2 (capacity falls, rate rises). `k_co2_slow` sets
+the balance. At 0.80 the first wins; at 0 the second runs unopposed. **That is
+why the rate decays rather than merely sitting low**, and it is a structural
+statement about the coupling, not about any level.
+
+### 2. THE WINDOWS DIFFER — BUT THE ERA CONFLICT WAS ALREADY HELD, AND THIS ENTRY FIRST OVERSTATED IT
+
+**CORRECTION, SAME DAY.** This section was first written as "the two papers have
+never been compared like with like". **That is wrong, and it is the fourteenth
+entry's mistake repeated**: `handover_numbers.py`'s own
+`THE LONG-WINDOW CO2 DECAY SWEEP` (line 4091) already records the conflict, and
+in SHARPER form — six measurements across two eras, not two papers:
+
+> *"What is really in conflict is two ERAS of measurement. Modern: Kaiser
+> 2.0–2.1, Toner 2.25, Gustafsson 1.8. Historical: Frumin 2.7–4.9, Stock 3.4
+> obstructed, Eger & Severinghaus 3.0. No single store size satisfies both."*
+
+**What is actually new here is narrower: the WINDOW analysis.** That block
+compares the rates as like quantities. It does not record that Kaiser's figure
+is a 0–15 min average **with the transient inside it** while Frumin's is the
+sustained phase, nor that Kaiser's own table implies a sustained rate of
+1.29–1.43. That matters because it suggests **part of the modern/historical gap
+may be a window artefact rather than an era difference** — which is a claim
+about the conflict, not a discovery of it.
+
+**AND THAT BLOCK CARRIES A THIRD CONSTRAINT THIS ENTRY'S SWEEP IGNORED.** It
+holds Frumin 45-min, Kaiser 15-min AND **Stock 1–5 min obstructed, target 3.4**,
+with the warning that *"fixing one alone is not a fix"*. The flatness sweep in
+section 3 below was scored on the sustained rate alone. Its k = 0.2 row gives
+Stock 2.02 against 3.4, so **the coupling may not help Stock at all** and the
+sweep is, as scored, incomplete.
+
+**ONE THING THAT BLOCK GETS WRONG, AND IT IS WHY SECTION 1 IS NOT A DUPLICATE.**
+Its headline is *"the hypothesis that the slow compartment drives the decay is
+REFUTED"*. It swept `v_tis_co2_slow`, the SIZE of the slow store, and that is
+genuinely inert — 1.60 to 1.88 across a quartering and a doubling. It did NOT
+sweep `k_co2_slow`, the COUPLING RATE, which is a different parameter, and **its
+own table shows the coupling is a strong lever: k 0.8→0.2 gives 2.65 and
+0.8→2.0 gives 1.01, a 2.6-fold range.** So "the slow compartment is refuted" is
+true of its size and false of its coupling, and the refutation should not be
+read as covering section 1.
+
+#### The window comparison itself
+
+The store block says it is tuned to "the MODERN measured arterial rate of rise,
+~2.1 mmHg/min (Sci Rep 2024)" against "historical 3.0–3.4 (Frumin 1959)".
+**Those are measured over DIFFERENT WINDOWS and are not the same quantity.**
+
+* **Kaiser 2024**, n=91: Table 1 gives PaCO2 **43 at minute 0 and 73 at minute
+  15**, i.e. 2.00 mmHg/min — an average **across the first fifteen minutes,
+  transient INCLUDED**. Its 15-minute ceiling is a protocol termination rule,
+  so it could not have measured the sustained phase even in principle.
+* **Frumin 1959**, n=8: ~3.0, range 2.7–4.9, over apnoeas of **18–55 minutes** —
+  the SUSTAINED phase, after the transient is over.
+
+The model on each paper's own window:
+
+| window | model | measured | |
+|---|---|---|---|
+| first minute | 10.4 mmHg | Stock ~12 | close |
+| **Kaiser 0–15 min** | **2.28** | **2.00** | **+14%** |
+| **Frumin 15–45 min** | **1.33** | ~3.0 | **−56%** |
+
+**AND WHAT SUSTAINED RATE DOES KAISER IMPLY?** He reports two time points and
+no intermediate, so the split must be assumed. Across the range:
+
+| assumed first-minute jump | Kaiser's implied sustained rate |
+|---|---|
+| 6 mmHg | 1.71 |
+| 10 mmHg | 1.43 |
+| **10.4 — the model's own** | **1.40** |
+| 12 — Stock's | 1.29 |
+
+**The model's sustained rate is 1.33.** It lies inside that range for every
+assumption between 10 and 12 mmHg, which is where Stock's measurement puts the
+transient.
+
+**SO THE MODEL AGREES WITH KAISER ON BOTH READINGS — the 0–15 average and the
+implied sustained rate — AND IT IS FRUMIN THAT STANDS APART.** This is not "the
+model's CO2 is too slow". It is **two measurements disagreeing about the
+sustained rate, with the model matching the larger and more recent one.**
+
+**WHAT THIS DOES NOT ESTABLISH, and must not be read as.** Kaiser's transient
+is NOT measured — the split is an assumption, which is why it is reported
+across a range and not as a point. Frumin is not thereby wrong: he is directly
+measured arterial sampling across 18–55 minutes and **the only source held here
+that reaches past fifteen minutes at all.** A conflict between two papers is
+not resolved by noticing that the model sits on one of them.
+
+### 3. SWEPT FOR FLATNESS, AND THE MINIMUM IS INTERIOR AND SHARP
+
+Scored by the coefficient of variation of the rate across the 5–45 min windows,
+normalised by its own mean, so a flat-but-low curve beats a steep one and the
+score **cannot be improved by moving the level**. The first minute is excluded:
+it is the mixed-venous equilibration transient, a different process, already
+constrained by Stock.
+
+| k | 1–5 | 10–15 | 20–30 | 30–45 | **CV** | mean | 1st min | pH 40m |
+|---|---|---|---|---|---|---|---|---|
+| 0.00 | 1.80 | 2.48 | 3.27 | 4.01 | 21.8% | 2.95 | 10.3 | 6.95 |
+| 0.30 | 1.76 | 2.13 | 2.33 | 2.41 | 6.4% | 2.22 | 10.3 | 7.02 |
+| 0.40 | 1.74 | 2.03 | 2.09 | 2.06 | 2.4% | 2.04 | 10.3 | 7.03 |
+| **0.45** | 1.73 | 1.98 | 1.99 | 1.91 | **1.8%** | **1.96** | 10.3 | 7.04 |
+| 0.60 | 1.71 | 1.84 | 1.71 | 1.54 | 6.6% | 1.75 | 10.3 | 7.06 |
+| **0.80 shipped** | 1.68 | 1.67 | 1.42 | **1.19** | **13.1%** | 1.52 | 10.3 | 7.09 |
+
+**Flattest at k = 0.45: CV 1.8% against the shipped 13.1%**, a sevenfold
+improvement in the one property Frumin actually measured and the model actually
+fails. CV runs 21.8 → 1.8 → 13.1 across the range, so the minimum is **interior
+and sharp** — the two mechanisms genuinely balance there rather than one being
+switched off.
+
+**THE FIRST MINUTE IS UNTOUCHED — 10.3 mmHg at EVERY value**, against Stock's
+~12. The coupling governs the sustained phase only, so this cannot break the one
+CO2 constraint the model currently meets well.
+
+**THE LEVEL IS A CONSEQUENCE AND WAS KEPT OUT OF THE OBJECTIVE.** At the
+flattest point the mean is 1.96 mmHg/min. Kaiser's 2.1 is recorded beside it for
+comparison only; optimising toward that number would have been a fit to a
+benchmark, which this repository has refused four times. pH at 40 min moves
+7.09 → 7.04, toward Frumin's 6.72–6.97 and still outside it.
+
+**NOTHING IS ADOPTED HERE.** The full suite cost at 0.45 against the shipped
+0.80 is in flight, and no ruling is taken until it is measured and recorded —
+including whatever it makes worse.
+
+### WHAT IS OWED
+
+A ruling on which measurement the stores answer to, and whether `k_co2_slow`
+moves. **The decay is wrong on its own terms whichever level is right** — a rate
+that falls 29% over 45 minutes is not what *either* paper describes.
+
+## Current state — 2026-10-01 (thirtieth entry): the buccal arm is CO2-LIMITED, not oxygen-limited; CO2 returns to the top of the queue; and the three outstanding failures are RULED
+
+Three rulings by A. Heard, one finding, nothing tuned.
+
+### 1. "The O2 will eventually disappear, so 750 doesn't mean infinity"
+
+**That objection was right, and the code comment it lands on was WRONG.**
+`test_validation.py` said of the buccal arm that the model "never desaturates
+at all". **Nobody had run it far enough to find out.** Run to two hours, the
+same Heard control-arm patient (105 kg, BMI 34.7, 30 deg) on buccal oxygen:
+
+| t | SpO2 | PaO2 | PaCO2 | pH |
+|---|---|---|---|---|
+| 12.5 min — *the 750 s cap* | 99.86% | 312 | 74.5 | 7.21 |
+| 30 min | 99.62% | 254 | 105.2 | 7.10 |
+| 60 min | 98.96% | 202 | 143.7 | 7.00 |
+| 90 min | 97.86% | 169 | 172.3 | 6.94 |
+| **120 min** | **95.88%** | **144** | **~198** | **~6.90** |
+
+**Oxygen does disappear.** PaO2 falls monotonically 312 → 144 mmHg, the fall
+accelerates, and SpO2 crosses 95% just past **two hours**. What hid it is the
+oxyhaemoglobin dissociation curve, flat up there: saturation barely moves while
+the tension halves. The band's `1e9` upper bound — thirty-one years — was never
+describing the model. **The model has a number.**
+
+**BUT OXYGEN IS NOT WHAT ENDS THIS PATIENT.** At 60 minutes PaCO2 is 143.7 and
+pH 7.00 while SpO2 is still 98.96%. **The binding constraint is acid-base, and
+it binds an hour before saturation becomes interesting.** An oxygen ceiling
+would have been a tighter band on the wrong channel.
+
+**RULED, third option: the row and its band are left exactly as they are**, and
+what goes in is the finding that a pass here says nothing about oxygen. Changing
+what the row *tests* is a larger ruling and was not taken.
+
+**AND THE CHANNEL THAT BINDS IS ALREADY KNOWN TO BE WRONG, in the direction
+that matters.** Against Frumin 1959, both rows are KNOWN_OPEN: PaCO2 rise
+**1.64 mmHg/min against a measured 2.7–4.9**, and arterial pH at 40 min **7.09
+against a measured 6.72–6.97**. The model accumulates CO2 at about **half** the
+measured rate, so it is too alkaline and **the table above is the OPTIMISTIC
+trajectory** — a real patient reaches any given pH sooner.
+
+### 2. CO2 RETURNS TO THE TOP OF THE QUEUE
+
+Parked earlier today on the condition "as long as the O2 sits ok". **The O2 now
+sits considerably better** — the twenty-ninth entry's re-fit brought Dixon's
+arterial tension inside his measured spread in both postures. And this run shows
+the buccal arm's real limit is the channel that was parked. **The condition is
+met and the parking is lifted.**
+
+### 3. THE THREE OUTSTANDING FAILURES ARE RULED INTO `known-blocking.txt`
+
+**Why a ruling was owed.** Two were deliberately left out on 2026-09-26 with
+"CI stays red until they are ruled on"; the third left the file the same day by
+a separate ruling. **CI has therefore been red on every commit and every pull
+request in this repository since — `main` included.** That is precisely the
+state the file's own header calls a mute button: *"a suite that is permanently
+red says nothing."* Five days of red is not a safety margin, it is a broken
+instrument.
+
+**Nothing is tuned, forgiven or called acceptable.** All three are recorded as
+real disagreements with real measurement, as rule 2 requires. What the ruling
+buys is that a **new** failure turns CI red again and can be seen.
+
+**All three share one cause**, which is why they entered as one ruling: `48ffe03`,
+the Watson & Pride re-solve of `frc_ref` and `k_frc_bmi`, moved the awake lung
+volume they all depend on.
+
+| row | moved | band |
+|---|---|---|
+| Heard control, time to SpO2<95% | 274.4 → **353.7 s** | 244–314 |
+| tilt, BMI 44 at 25 deg | 39.1 → **42.3 %** | 15–40 |
+| Valenza tilt_factor at 30 deg, BMI 42 | **1.466×** | 1.70–2.00 |
+
+**AND THE LAST TWO ARE THE OPEN DEFECT, stated in one line.** Valenza says the
+model takes **too little lung volume** from tilt; Dixon says it gets **too much
+apnoea time** from it. Opposite signs, same posture. With the tension channel
+now correct, that pair is the whole of what remains, and it is a far better
+question than these rows posed while they sat unruled.
+
+Verified rather than assumed: `check_blocking.py` run against the re-fit suite
+output exits **0**, "4 blocking, exactly as ruled".
+
+## Current state — 2026-10-01 (twenty-ninth entry): the shunt constant was ORPHANED by the September FRC rulings, re-fitted to Pelosi, and the preoxygenation channel the twenty-sixth entry called three times too weak is now RIGHT
+
+**RULED and applied.** `shunt_cc_k` 36.16 → **16.36**, in `apnoea_core.py` and
+`model.js` together.
+
+**THIS IS NOT A FIT TO A BENCHMARK, and the distinction is the whole of the
+case.** 36.16 was fitted to Pelosi on 2026-09-24 (`1066677`), the day the shunt
+was re-keyed off BMI onto lung volume against closing capacity. **Both of its
+drivers were then rewritten over the following two days and it was never
+re-fitted:**
+
+| date | commit | what moved under it |
+|---|---|---|
+| 09-25 | `3f42878` | anaesthetised FRC took Pelosi's measured shape |
+| 09-26 | `5b89c07` | closing capacity → Buist & Ross on a Quanjer TLC |
+| 09-26 | `a59b25c` | closing capacity stopped depending on BMI |
+| 09-26 | `bffbbf4` `3b3228a` `e1be19f` `48ffe03` | FRC re-anchored four more times |
+
+A constant fitted against inputs that no longer exist is wrong whether or not a
+benchmark notices. **And the drift had the signature of exactly that**: not an
+offset but a fan, +0.35 percentage points at BMI 20 widening to −8.29 at BMI 55.
+
+**RE-FIT TO PELOSI ALONE**, at his cohort's height 1.64 m and age 52, BMI 20–55
+in half-unit steps, as the original fit was. No benchmark and no other paper
+entered the objective. Regenerable by `handover_numbers.py`.
+
+| | rms residual | worst |
+|---|---|---|
+| shipped 36.16 | 4.145 pp | 8.29 pp |
+| **re-fit 16.36** | **0.861 pp** | **2.30 pp** |
+
+**WHAT IT COSTS, measured both ways on the full suite.** The four BLOCKING rows
+are unchanged, in both the names that fail and their values, and the largest
+movement in 50 rows is 3.2%. **TWO ROWS MOVE VERDICT, ONE EACH WAY:**
+
+| | row | before | after | band |
+|---|---|---|---|---|
+| **FIXED** | ICSM rescue, post-rescue PaO2 | 51.5 | **50.57** | 33.5–51.1 kPa |
+| **WORSE** | tilt, BMI 44 at 25 deg | 42.3 | **43.0** | 15–40 % |
+
+The fixed row leaves `KNOWN_OPEN` by rule 3 of that table. **It was not tuned
+there**: the fit was to Pelosi alone, the row was not in the objective, and it
+was not known to be affected until the harness printed the instruction to
+remove it. The worsened row was failing before and fails further now —
+recorded, not compensated, and no parameter was reached for.
+
+**A CORRECTION TO THIS ENTRY'S OWN FIRST DRAFT, since it was nearly committed
+that way.** It said "no row changes verdict". That was wrong, and it was wrong
+because `variant_cost.py --diff` renders a KNOWN_OPEN row as `?` on both sides,
+which reads as unchanged. The suite's own output says `[OPEN] 51.5` against
+`[FIXED] 50.6`. **The diff tool cannot see a verdict change into or out of
+KNOWN_OPEN; only the suite output can.**
+
+**WHY THE SUITE BARELY MOVES, which is coherent rather than luck.** A shunt
+costs about **0.017 s** of apnoea per mmHg of arterial tension it removes,
+against **0.227 s/mmHg** for under-preoxygenation — thirteen times cheaper, and
+across the whole sweep alveolar PO2 and lung oxygen do not move at four
+figures. Nearly every row in the suite measures a TIME. The shunt moves TENSION.
+
+**AND THE CONSEQUENCE — reported as a consequence, never as a target.** Dixon
+2005 published both, which is why he is where it shows:
+
+| Dixon supine BMI 47.3 | shipped | re-fit | measured |
+|---|---|---|---|
+| PaO2 after preoxygenation | 479 | **389** | **360 ± 99** |
+| time to SpO2 92% | 158 s | 157 s | 155 ± 69 s |
+| **tilt gain in PaO2** | **+8.4%** | **+21.0%** | **+22.8%** |
+| tilt gain in time | +50.6% | +51.5% | +29.7% |
+
+Supine arterial tension was 119 mmHg out and is now 29 — **inside Dixon's own
+spread** — while the time, which was already good, is preserved. **The
+preoxygenation channel the twenty-sixth entry measured as THREE TIMES TOO WEAK
+now reads +21.0% against his +22.8%.**
+
+**WHAT IS NOT FIXED, so this is not read as more than it is.** The tilt gain in
+TIME is +51.5% against a measured +29.7%, **marginally worse** than the +50.6%
+before. The volume channel is untouched and is now the open defect, cleanly
+isolated: **arterial tension is right across both postures and the time gain
+from tilt is still 1.7× too large.**
+
+**AND THE LAW'S FORM IS WEAK AT THE TOP OF THE RANGE.** It saturates while
+Pelosi's implied shunt keeps climbing, so the re-fit still under-predicts by
+0.77 pp at BMI 50 and 2.30 pp at BMI 55. That is a defect in the FORM, not in
+this constant. **KNOWN-OPEN; changing the form is a separate ruling.**
+
+**THE TWENTY-SEVENTH ENTRY'S HEADLINE IS WITHDRAWN.** It said the model cannot
+match Dixon's tension and his time at once. It tested only `feo2_start`, which
+empties the lung and so removes tension and store together. On the shunt channel
+the model straddles both. The entry stands as written below, with this pointer;
+its *refutations* are unaffected.
+
+**TWO THINGS FOUND ON THE WAY, BOTH STILL OPEN.**
+
+1. **`handover_numbers.py` IS FAILING WIDELY — 139 failures and still running
+   when this was written.** The September rulings moved far more than was
+   recorded. It is deliberately outside the pre-commit hook so that it *can*
+   drift, but the point of it is that drift must not be silent, and this was.
+   **Not repaired here; it gets its own commit, because repairing a check and
+   moving a parameter in one change makes it impossible to say which did what.**
+2. **PELOSI 1998 IS NOT IN `sources_registry.py`.** It is read in full at source
+   (2026-09-24, cited and quoted in `SOURCES.md`), and it is load-bearing in
+   three places — the shape of anaesthetised FRC, this constant, and the
+   inversion. But the registry CLAUDE.md names as the only place the read-fact
+   is written has 29 sources and Pelosi is not one of them, so
+   `check_sources.py --check` passes while the most load-bearing source in the
+   oxygen channel has no row. **Not repaired here; its own commit.**
+
+**A HYPOTHESIS REFUTED BY ITS OWN TEST, recorded so it is not re-tried.** Before
+the orphaning was found, the suspect was cardiac output: the shunt block's own
+"what is still weak" list notes the Pelosi inversion runs through this model's
+output, which is above Perilli's measured 4.9 L/min. The argument was that a
+fast circulation would make the fit imply too little shunt. **That is backwards.**
+A slower circulation gives more desaturated venous blood, so the same shunt
+depresses arterial tension further and LESS shunt is needed to explain Pelosi.
+Measured: correcting toward Perilli moves the implied shunt at BMI 50 from 14.89%
+**down** to 13.12%, away from the defect. Also measured, since the block says
+"about 18% above": it is **+15.9%**, and doing it honestly through `co_drop_frac`
+needs 0.353 where Gunnarsson's retained range is 0.15–0.30, so the correction is
+not available anyway.
+
+## Current state — 2026-10-01 (twenty-eighth entry): the weighting question is SETTLED — `lung_o2` is the store measure — and a 6.4% bookkeeping drift is exposed doing it
+
+The twenty-fourth entry left a factor of five unresolved and said no number from
+it should be carried forward until it was settled. Settled now, by reading how
+each is built rather than by simulation.
+
+**`pao2_alv` IS MOLE-WEIGHTED, NOT PERFUSION-WEIGHTED.** It is
+`(sum of O2 moles / sum of dry moles) * p_dry`, and `lung_o2` is simply the sum
+of O2 moles. **The twenty-fourth entry's guess — that one was perfusion-weighted
+and the other volume-weighted — is WRONG.**
+
+**THE RULING: `lung_o2` IS THE STORE MEASURE.** It is the quantity of oxygen
+actually in the lung, which is what gets consumed. `pao2_alv` is a partial
+pressure — what the blood sees, and the right number for gas exchange, but not
+for "how much is there". **So the tilt excess is +8.0%, not +1.5%**, and the
+twenty-fourth entry's larger figure is the one that stands.
+
+**AND A SMALLER PROBLEM IS EXPOSED, recorded rather than explained away.** At
+equal pressure the two must be proportional, and they are not:
+
+| | va mL | palv cmH2O | pao2_alv | lung_o2 | lung_o2/va |
+|---|---|---|---|---|---|
+| supine | 903 | **0.00** | 611.1 | 533 | 0.5902 |
+| 25 deg | 1325 | **0.00** | 620.3 | 844 | 0.6372 |
+| gain | | | **+1.5%** | | **+8.0%** |
+
+Both sit at exactly atmospheric pressure, and atelectasis is 0% in both, so the
+ratio `lung_o2/va` to `pao2_alv` should be a constant. It drifts **6.4%**. That
+rules out all three explanations offered for it: perfusion weighting (wrong, as
+above), sub-atmospheric pressure (both are 0.00), and collapsed volume holding
+no gas (atelectasis is zero). **`va` is recorded as `v_lung` while the moles
+correspond to `v_a`, and those two are not the same variable** — that is the
+place to look, and it is the only candidate left standing.
+
+**This does not change the twenty-seventh entry's conclusion**, which rests on
+`pao2` — the ARTERIAL tension against Dixon's measured 360 — and not on either
+of these two. The store-versus-tension defect stands as stated.
+
+## Current state — 2026-10-01 (twenty-seventh entry): `unwashed_fraction` cannot carry it either, and the model cannot match Dixon's TENSION and his TIME at once
+
+Two probes against Dixon, both refutations, nothing changed.
+
+**1. `unwashed_fraction` IS DEAD AS A LEVER.** It is `max_closed * x/(x+cc_k)`
+on the AWAKE FRC, so `max_closed` is the handle. Swept 0.25 to 0.65 — 2.6x, and
+past the page slider's own range:
+
+| max_closed | unwashed | PaO2 supine | PaO2 head-up | time gain | benchmark | Heard |
+|---|---|---|---|---|---|---|
+| **0.25** shipped | 2.3% | 479 | 519 | +50.6% | +42.3% | 354 |
+| 0.65 | 6.0% | **455** | 519 | **+54.9%** | +45.3% | 351 |
+
+Target is 360. It moves supine PaO2 by 24 mmHg of the 119 needed, leaves the
+head-up arm completely untouched (its unwashed fraction is already zero), and
+makes EVERY tilt row WORSE. The twenty-sixth entry named it the suspect for the
+weak preoxygenation channel; **that is now refuted.**
+
+**2. AND HERE IS THE SHARPEST STATEMENT OF THE DEFECT SO FAR.** The model gives
+every patient the same preoxygenation endpoint, `feo2_start` 0.87, while Dixon
+MEASURED that the endpoint depends on posture and habitus after 3 minutes.
+Sweeping it on his supine group:
+
+| feo2_start | PaO2 at t=0 | time to SpO2 92% |
+|---|---|---|
+| 0.87 (the model's assumption) | 479 | **158 s** |
+| 0.75 | 396 | 139 |
+| **0.70** | **362** | 131 |
+| Dixon measured | **360 ± 99** | **155 ± 69** |
+
+**THE MODEL CANNOT MATCH BOTH.** At Dixon's oxygen tension it desaturates 15%
+too fast; at Dixon's desaturation time it is 33% over-oxygenated. **For the same
+arterial PaO2, the real patient lasted longer than the model does.**
+
+That is the two-channel error of the twenty-sixth entry stated precisely and
+without reference to tilt at all: **the model's oxygen store is too small for
+the tension it carries.** It is a better target than anything the fourteenth to
+twenty-sixth entries produced — one patient, one posture, two measured numbers
+the model cannot straddle — and it needs no new paper to pursue.
+
+**WHAT IS NOW REFUTED, so nobody re-treads it:** the shunt law (`shunt_cc_k`,
+twenty-second), blood-store truncation (twenty-third), V/Q dispersion
+(`vq_log_sd`, inert, twenty-fourth), and `unwashed_fraction` (here). The
+surviving question is the store-versus-tension relation itself, and the
+`pao2_alv` weighting question from the twenty-fourth entry is now clearly the
+first step: it decides which oxygen number the store should be measured against.
+
+## Current state — 2026-10-01 (twenty-sixth entry): DIXON READ AT SOURCE. The tilt benefit arrives through the WRONG CHANNEL, and the denitrogenation mechanism is confirmed in humans
+
+The twenty-fifth entry said Dixon was not held and that ordering it was the
+highest-value fetch, because three blocking rows lean on its "+32%". **It
+arrived and was read.** Dixon BJ et al., *Anesthesiology* 2005;102:1110-5:
+42 severely obese patients (BMI>40) for laparoscopic gastric banding,
+randomised supine or 25 degrees head-up, 3 min preoxygenation, ventilation
+delayed until SpO2 92%.
+
+**THE "+32%" THE BENCHMARK CITED IS NOT IN THE PAPER.** The only "32" in the
+text are reference page numbers. Measured: 201±55 s head-up against 155±69
+supine, i.e. **+29.7%**. The citation is corrected in `test_validation.py`; the
+band stays 15-40, which contains 29.7, because re-fitting a band to a freshly
+read number needs a ruling rather than a tidy-up.
+
+| | Dixon measured | model |
+|---|---|---|
+| supine, time to SpO2 92% | 155 ± 69 s | **158 s** |
+| head-up, time to SpO2 92% | 201 ± 55 s | 238 s |
+| **tilt gain, time** | **+29.7%** | **+50.6%** |
+| supine PaO2 after preox | 360 ± 99 mmHg | **488** |
+| head-up PaO2 | 442 ± 104 | 520 |
+| **tilt gain, PaO2** | **+22.8%** | **+8.4%** |
+
+**1. THE GROUPS WERE NOT BMI-MATCHED** — supine 47.3, head-up 44.9 (P=0.18).
+The benchmark compares ONE patient against itself, which does not replicate the
+trial. Replicating it properly, supine at 47.3 against head-up at 44.9, gives
+**+50.6%** against the single-BMI +42.3%: **the model looks WORSE against
+Dixon's real comparison, not better.**
+
+**2. THE DENITROGENATION MECHANISM IS CONFIRMED IN HUMANS.** The twenty-fourth
+entry found the model's tilted lung starting better oxygenated than its larger
+volume alone explains, and could not say whether that was real. **Dixon's
+headline is exactly that**: head-up preoxygenation reaches a 23% higher oxygen
+tension, with r=0.51 between induction PaO2 and time to 92%. It is real, it is
+measured, and it is the published point of the paper.
+
+**3. BUT THE MODEL HAS IT THREE TIMES TOO WEAK, AND THE OTHER CHANNEL TOO
+STRONG.** Dixon's benefit arrives largely through better preoxygenation, +22.8%
+in PaO2. The model gives **+8.4%** there, and reaches its very good supine time
+(158 s against 155) with a patient preoxygenated far too well — **488 mmHg
+against a measured 360**. So the right answer is being got through the wrong
+mechanism: too little from preoxygenation, too much from lung volume.
+
+**THAT REFRAMES THE WHOLE TILT INVESTIGATION.** The fourteenth entry called it a
+coupling 2x too strong; the twenty-second blamed an amplifier and was retracted;
+the twenty-third localised it to concentration rather than volume; the
+twenty-fourth named denitrogenation and could not weigh it. **It is now a
+two-channel error with a sign on each**: the preoxygenation channel is too weak
+by about 3x, the volume channel too strong, and they partly cancel to give a
+supine time that looks excellent. The `unwashed_fraction` of 1.77% is the
+suspect for the first, being far too small to produce a 360 mmHg supine PaO2.
+
+**WHAT THIS DOES NOT DO** is excuse the model. The tilt gain is +50.6% against a
+measured +29.7% on the paper's own comparison. That is a real disagreement with
+a real measurement, now properly sourced for the first time.
+
 ## Current state — 2026-09-30 (twenty-fifth entry): PR #1 read and CLOSED unmerged, and reading it found two things worse than anything in it
 
 `main` is now the trunk (`9d7cb9c`, two roots — see the merge commit).

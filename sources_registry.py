@@ -37,8 +37,66 @@ BENCHMARK_SOURCES = [
      "are read from the page"),
     ("Heard 2017", "apnoeic oxygenation, obstructed", "2026-09-22",
      "moved four things; see SOURCES.md"),
+    ("Pelosi P et al. 1998, *Anesth Analg* 87(3):654-60 (n=24, BMI 20-66)",
+     "anaesthetised FRC against BMI, and `shunt_cc_k`",
+     "2026-09-24",
+     "READ IN FULL FROM THE PAGE. 'The effects of body mass on lung volumes, "
+     "respiratory mechanics, and gas exchange during general anesthesia.' "
+     "ADDED TO THIS REGISTRY ONLY ON 2026-10-01, and the gap is the point: it "
+     "had been read, cited and quoted in SOURCES.md since 2026-09-24 and was "
+     "load-bearing in THREE places -- the shape frc_anaes() carries, the fitted "
+     "constant in the shunt law, and the inversion handover_numbers.py runs -- "
+     "while having no row here at all. check_sources.py --check PASSED "
+     "throughout, because it verifies README against this file and this file "
+     "had nothing to verify. A source can therefore be absent from the one "
+     "place CLAUDE.md says the read-fact is written WITHOUT any check noticing. "
+     "n=24 in three groups of eight, BMI 21.9 (0.5), 33.6 (2.8), 48.2 (8), age "
+     "40-75, 1 man / 7 women per group, height ~1.64 m. Propofol, "
+     "suxamethonium, pancuronium, VT 10 mL/kg IBW, FiO2 0.40, ZEEP, supine, 15 "
+     "min stabilisation, before surgical intervention, FRC by closed-circuit "
+     "helium dilution. THE ONLY SOURCE HELD HERE THAT MEASURES ACROSS THE WHOLE "
+     "BMI RANGE CONTINUOUSLY rather than at one cohort mean, and the only one "
+     "that publishes REGRESSIONS: FRC = 11.97*exp(-0.096*BMI) + 0.46 L (r "
+     "0.86); PaO2/PAO2 = 1.23*exp(-0.037*BMI) + 0.196 (r 0.81); D(A-a)O2 = "
+     "-7.15 + 3.37*BMI mmHg (r 0.84); PaCO2 NOT related to BMI (r 0.06), about "
+     "33. CAVEATS CARRIED: 1 man to 7 women per group against an explicitly "
+     "male model, age 40-75, and FiO2 0.40 where Reinius, Valenza and Perilli "
+     "differ. WHAT IT COST ON 2026-10-01: re-inverting his oxygenation "
+     "regression showed shunt_cc_k had drifted 8.29 percentage points from him "
+     "at BMI 55, because both of its drivers were rewritten on 2026-09-25/26 "
+     "and it was never re-fitted. Re-fitted 36.16 -> 16.36; rms 4.145 -> 0.861 "
+     "pp. See HANDOVER, twenty-ninth entry"),
     ("O'Loughlin 2020", "desaturation timing", "2026-09-21",
      "read in full; caught a load-bearing error in `editorial.md`"),
+    ("Dixon BJ et al. 2005, *Anesthesiology* 102:1110-5 (n=42, BMI>40)",
+     "the `tilt, BMI 44 at 25 deg` benchmark -- READ AT SOURCE at last",
+     "2026-10-01",
+     "READ IN FULL from upload. 'Preoxygenation Is More Effective in the 25 "
+     "Degree Head-up Position Than in the Supine Position in Severely Obese "
+     "Patients: A Randomized Controlled Study.' 42 consecutive severely obese "
+     "patients for laparoscopic gastric banding, randomised supine or 25 "
+     "degrees head-up, 3 min preoxygenation, ventilation delayed until SpO2 "
+     "92%. "
+     "THE BENCHMARK CITED '+32%' AND THAT NUMBER IS NOT IN THE PAPER -- the "
+     "only '32' in the text are reference page numbers. Measured: time to "
+     "SpO2 92% 201+-55 s head-up against 155+-69 supine, which is +29.7%. "
+     "Preinduction PaO2 442+-104 against 360+-99 mmHg, +22.8%, and the "
+     "abstract's own headline figure is '23% higher oxygen tensions'. "
+     "Correlation between induction PaO2 and time to 92%: r=0.51, P<0.001. "
+     "THE GROUPS WERE NOT BMI-MATCHED: supine 47.3, head-up 44.9 (P=0.18). "
+     "The benchmark compares ONE patient against itself, which does not "
+     "replicate the trial. Replicating it properly -- supine at 47.3, head-up "
+     "at 44.9 -- makes the model WORSE, not better. "
+     "WHAT THE MODEL DOES, computed 2026-10-01. Absolute supine time is very "
+     "good: 158 s against a measured 155. But the tilt gain is +50.6% "
+     "replicating Dixon's own groups (+42.3% at a single BMI) against a "
+     "measured +29.7%. AND THE CHANNEL IS WRONG: Dixon's benefit is largely "
+     "BETTER PREOXYGENATION, PaO2 +22.8%, where the model gives only +8.4% "
+     "and reaches its supine time with a patient preoxygenated far too well "
+     "(488 mmHg against a measured 360). So the twenty-fourth entry's "
+     "denitrogenation mechanism is CONFIRMED IN HUMANS and the model has it "
+     "about THREE TIMES TOO WEAK, while its lung-volume channel runs too "
+     "strong"),
     ("Lane / Ramkumar / Altermatt / Dixon", "positioning", None,
      "**ORDERABLE SINCE 2026-09-23, note corrected 2026-09-26.** This row "
      "said they were \"cited by surname and year only, so not retrievable as "
