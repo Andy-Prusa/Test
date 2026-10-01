@@ -734,8 +734,32 @@ def test_positioning_trials():
           "patients (0.77): the model predicts a typical patient, so it must "
           "reproduce the group mean, and against the population SD almost "
           "nothing could fail")
+    # DIXON READ AT SOURCE 2026-10-01, and the citation this row carried was
+    # WRONG. It said "clinical; Dixon +32%" from the day it was written. The
+    # number +32% APPEARS NOWHERE IN THE PAPER -- the only "32" in the text are
+    # reference page numbers. Dixon BJ et al., Anesthesiology 2005;102:1110-5,
+    # n=42, BMI>40, randomised: time to SpO2 92% was 201+-55 s head-up against
+    # 155+-69 supine, which is +29.7%.
+    #
+    # THE BAND IS LEFT AT 15-40 AND IS NOT RE-FITTED. 29.7 sits inside it, so
+    # the row still tests what it was meant to test; narrowing a band to a
+    # freshly read number is the kind of change that needs a ruling, not a
+    # tidy-up. What is fixed here is the CITATION, which was unverifiable.
+    #
+    # TWO THINGS THE PAPER SAYS THAT THIS ROW CANNOT SEE, both recorded in the
+    # registry and the twenty-sixth HANDOVER entry:
+    #   1. DIXON'S GROUPS WERE NOT BMI-MATCHED -- supine 47.3, head-up 44.9.
+    #      This row compares ONE patient against itself, which does not
+    #      replicate the trial. Replicating it properly gives +50.6%, i.e. the
+    #      model looks WORSE against the real comparison, not better.
+    #   2. DIXON'S HEADLINE IS PREOXYGENATION, not apnoea time: PaO2 442+-104
+    #      head-up against 360+-99 supine, +22.8%, with r=0.51 between
+    #      induction PaO2 and time to 92%. The model gives only +8.4% there and
+    #      reaches its supine time with a patient preoxygenated far too well
+    #      (488 against 360). The benefit arrives through the wrong channel.
     check("tilt, BMI 44 at 25 deg", gain(120, 1.65, 14, 25, 92), 15, 40, " %",
-          "clinical; Dixon +32%")
+          "clinical; Dixon 2005;102:1110-5, 201 vs 155 s = +29.7% (NOT the "
+          "+32% this row used to cite, which is not in the paper)")
 
 
 def test_cardiac_output():

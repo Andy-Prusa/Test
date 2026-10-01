@@ -39,6 +39,35 @@ BENCHMARK_SOURCES = [
      "moved four things; see SOURCES.md"),
     ("O'Loughlin 2020", "desaturation timing", "2026-09-21",
      "read in full; caught a load-bearing error in `editorial.md`"),
+    ("Dixon BJ et al. 2005, *Anesthesiology* 102:1110-5 (n=42, BMI>40)",
+     "the `tilt, BMI 44 at 25 deg` benchmark -- READ AT SOURCE at last",
+     "2026-10-01",
+     "READ IN FULL from upload. 'Preoxygenation Is More Effective in the 25 "
+     "Degree Head-up Position Than in the Supine Position in Severely Obese "
+     "Patients: A Randomized Controlled Study.' 42 consecutive severely obese "
+     "patients for laparoscopic gastric banding, randomised supine or 25 "
+     "degrees head-up, 3 min preoxygenation, ventilation delayed until SpO2 "
+     "92%. "
+     "THE BENCHMARK CITED '+32%' AND THAT NUMBER IS NOT IN THE PAPER -- the "
+     "only '32' in the text are reference page numbers. Measured: time to "
+     "SpO2 92% 201+-55 s head-up against 155+-69 supine, which is +29.7%. "
+     "Preinduction PaO2 442+-104 against 360+-99 mmHg, +22.8%, and the "
+     "abstract's own headline figure is '23% higher oxygen tensions'. "
+     "Correlation between induction PaO2 and time to 92%: r=0.51, P<0.001. "
+     "THE GROUPS WERE NOT BMI-MATCHED: supine 47.3, head-up 44.9 (P=0.18). "
+     "The benchmark compares ONE patient against itself, which does not "
+     "replicate the trial. Replicating it properly -- supine at 47.3, head-up "
+     "at 44.9 -- makes the model WORSE, not better. "
+     "WHAT THE MODEL DOES, computed 2026-10-01. Absolute supine time is very "
+     "good: 158 s against a measured 155. But the tilt gain is +50.6% "
+     "replicating Dixon's own groups (+42.3% at a single BMI) against a "
+     "measured +29.7%. AND THE CHANNEL IS WRONG: Dixon's benefit is largely "
+     "BETTER PREOXYGENATION, PaO2 +22.8%, where the model gives only +8.4% "
+     "and reaches its supine time with a patient preoxygenated far too well "
+     "(488 mmHg against a measured 360). So the twenty-fourth entry's "
+     "denitrogenation mechanism is CONFIRMED IN HUMANS and the model has it "
+     "about THREE TIMES TOO WEAK, while its lung-volume channel runs too "
+     "strong"),
     ("Lane / Ramkumar / Altermatt / Dixon", "positioning", None,
      "**ORDERABLE SINCE 2026-09-23, note corrected 2026-09-26.** This row "
      "said they were \"cited by surname and year only, so not retrievable as "

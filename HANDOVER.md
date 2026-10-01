@@ -5,6 +5,63 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-01 (twenty-sixth entry): DIXON READ AT SOURCE. The tilt benefit arrives through the WRONG CHANNEL, and the denitrogenation mechanism is confirmed in humans
+
+The twenty-fifth entry said Dixon was not held and that ordering it was the
+highest-value fetch, because three blocking rows lean on its "+32%". **It
+arrived and was read.** Dixon BJ et al., *Anesthesiology* 2005;102:1110-5:
+42 severely obese patients (BMI>40) for laparoscopic gastric banding,
+randomised supine or 25 degrees head-up, 3 min preoxygenation, ventilation
+delayed until SpO2 92%.
+
+**THE "+32%" THE BENCHMARK CITED IS NOT IN THE PAPER.** The only "32" in the
+text are reference page numbers. Measured: 201±55 s head-up against 155±69
+supine, i.e. **+29.7%**. The citation is corrected in `test_validation.py`; the
+band stays 15-40, which contains 29.7, because re-fitting a band to a freshly
+read number needs a ruling rather than a tidy-up.
+
+| | Dixon measured | model |
+|---|---|---|
+| supine, time to SpO2 92% | 155 ± 69 s | **158 s** |
+| head-up, time to SpO2 92% | 201 ± 55 s | 238 s |
+| **tilt gain, time** | **+29.7%** | **+50.6%** |
+| supine PaO2 after preox | 360 ± 99 mmHg | **488** |
+| head-up PaO2 | 442 ± 104 | 520 |
+| **tilt gain, PaO2** | **+22.8%** | **+8.4%** |
+
+**1. THE GROUPS WERE NOT BMI-MATCHED** — supine 47.3, head-up 44.9 (P=0.18).
+The benchmark compares ONE patient against itself, which does not replicate the
+trial. Replicating it properly, supine at 47.3 against head-up at 44.9, gives
+**+50.6%** against the single-BMI +42.3%: **the model looks WORSE against
+Dixon's real comparison, not better.**
+
+**2. THE DENITROGENATION MECHANISM IS CONFIRMED IN HUMANS.** The twenty-fourth
+entry found the model's tilted lung starting better oxygenated than its larger
+volume alone explains, and could not say whether that was real. **Dixon's
+headline is exactly that**: head-up preoxygenation reaches a 23% higher oxygen
+tension, with r=0.51 between induction PaO2 and time to 92%. It is real, it is
+measured, and it is the published point of the paper.
+
+**3. BUT THE MODEL HAS IT THREE TIMES TOO WEAK, AND THE OTHER CHANNEL TOO
+STRONG.** Dixon's benefit arrives largely through better preoxygenation, +22.8%
+in PaO2. The model gives **+8.4%** there, and reaches its very good supine time
+(158 s against 155) with a patient preoxygenated far too well — **488 mmHg
+against a measured 360**. So the right answer is being got through the wrong
+mechanism: too little from preoxygenation, too much from lung volume.
+
+**THAT REFRAMES THE WHOLE TILT INVESTIGATION.** The fourteenth entry called it a
+coupling 2x too strong; the twenty-second blamed an amplifier and was retracted;
+the twenty-third localised it to concentration rather than volume; the
+twenty-fourth named denitrogenation and could not weigh it. **It is now a
+two-channel error with a sign on each**: the preoxygenation channel is too weak
+by about 3x, the volume channel too strong, and they partly cancel to give a
+supine time that looks excellent. The `unwashed_fraction` of 1.77% is the
+suspect for the first, being far too small to produce a 360 mmHg supine PaO2.
+
+**WHAT THIS DOES NOT DO** is excuse the model. The tilt gain is +50.6% against a
+measured +29.7% on the paper's own comparison. That is a real disagreement with
+a real measurement, now properly sourced for the first time.
+
 ## Current state — 2026-09-30 (twenty-fifth entry): PR #1 read and CLOSED unmerged, and reading it found two things worse than anything in it
 
 `main` is now the trunk (`9d7cb9c`, two roots — see the merge commit).
