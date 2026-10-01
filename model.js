@@ -508,7 +508,11 @@ function simulate(P, epochs, dt=0.1){
     // Store sizes are physiological, not fitted to a 15-minute average:
     // fast = blood + vessel-rich group, slow = muscle + fat, conductance =
     // their share of cardiac output. See apnoea_core.py's store note.
-    const kSlow=P.kCo2Slow===undefined?0.8:P.kCo2Slow;
+    // RE-FITTED 2026-10-01, 0.80 -> 0.45, for the SHAPE of the CO2 rise.
+    // The coupling balances the slow store recruiting against the CO2
+    // dissociation curve flattening; at 0.80 the rate decayed 29% over
+    // 45 min. See apnoea_core.py k_co2_slow for the sweep and its cost.
+    const kSlow=P.kCo2Slow===undefined?0.45:P.kCo2Slow;
     const fs=kSlow*(tC-sC)*10;
     tC+=((coNow*(aC[NP-1]-tC)*10+vco2m-fs)/((P.vTisCo2Fast||22)*10))*dtm;
     sC+=(fs/((P.vTisCo2Slow||140)*10))*dtm;

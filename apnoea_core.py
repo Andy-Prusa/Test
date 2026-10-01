@@ -1063,7 +1063,68 @@ class Patient:
     # its name says.
     v_tis_co2_fast: float = 22.0
     v_tis_co2_slow: float = 140.0
-    k_co2_slow: float = 0.80
+    # k_co2_slow RE-FITTED 2026-10-01, 0.80 -> 0.45, BY RULING. FOR THE SHAPE
+    # OF THE CO2 RISE, NOT ITS LEVEL, AND IT CLOSES NO BENCHMARK ROW.
+    #
+    # WHAT IT FIXES. The PaCO2 rate DECAYED where Frumin measured it sustained:
+    # 1.68 mmHg/min over 1-5 min falling to 1.19 by 30-45. test_co2_mass_balance
+    # already rules out the easy answers -- production is constant and nothing
+    # escapes -- so by identity dPaCO2/dt = VCO2/C a decaying rate is a GROWING
+    # capacity. Measured: C_store 108 -> 154 mL/mmHg over 45 min while C_lung
+    # stays FLAT at 2.5 and alveolar volume is 2328 mL at both ends. All of it
+    # is blood and tissue.
+    #
+    # THE MECHANISM IS TWO TERMS PULLING OPPOSITE WAYS, which is why the decay
+    # exists at all rather than the rate merely sitting low:
+    #   * the slow store recruiting -- 140 against a fast 22, starting at the
+    #     SAME content -- so as it fills it swallows CO2: capacity grows, rate
+    #     falls
+    #   * the blood CO2 dissociation curve flattening at high PCO2: capacity
+    #     falls, rate rises
+    # k_co2_slow sets the balance. At 0.80 the first wins (-29.2% over 45 min);
+    # at 0 the second runs unopposed (+122.5%); the minimum is INTERIOR.
+    #
+    # SWEPT FOR FLATNESS, NOT FOR A LEVEL -- coefficient of variation of the
+    # rate over 5-45 min normalised by its own mean, so the score cannot be
+    # improved by moving the level. The first minute is excluded: it is the
+    # mixed-venous transient, a different process, and it is 10.3 mmHg at EVERY
+    # value of this parameter, so this cannot disturb the one CO2 constraint
+    # the model meets well (Stock ~12).
+    #     shipped 0.80   CV 13.1%
+    #     adopted 0.45   CV  1.8%      <- sevenfold, and the minimum is sharp
+    #
+    # NOT A FIT TO THE LEVEL. At 0.45 the 45-min rate is 2.11 mmHg/min, which
+    # is still OUTSIDE Frumin's 2.7-4.9. Kaiser's 1.8-3.0 is satisfied at EVERY
+    # value in the sweep and so discriminates nothing. The level was kept out
+    # of the objective deliberately.
+    #
+    # AND HERE IS WHAT IT DOES NOT DO, swept against all three CO2 constraints
+    # at once, as handover_numbers.py's own block warns must be done:
+    #     k      Frumin45 (2.7-4.9)   Kaiser15 (1.8-3.0)   Stock1-5 (3.4)
+    #     0.00        3.28  inside         2.72  inside        2.06
+    #     0.10        2.94  inside         2.66  inside        2.04
+    #     0.45        2.11                 2.45  inside        1.98
+    #     0.80        1.64                 2.27  inside        1.92
+    #     2.00        1.01                 1.86  inside        1.74
+    #   1. STOCK IS UNREACHABLE AT ANY VALUE -- 1.74 to 2.06 against 3.4 across
+    #      a twentyfold range. The OBSTRUCTED airway is not governed by this
+    #      parameter at all.
+    #   2. FRUMIN'S LEVEL AND FRUMIN'S SHAPE ARE MUTUALLY EXCLUSIVE. His band
+    #      needs k <= 0.10; flatness needs 0.45. At k = 0 the model sits inside
+    #      his band at 3.28 with the rate ACCELERATING 21.8%, which is not what
+    #      he measured either. You can have his number or his shape, never both.
+    # So this is adopted for the shape alone and the level stays open. No other
+    # lever was reached for: v_tis_co2_fast would hit Stock but is already ruled
+    # wrong in the comment above, because it buried three gas-exchange bugs.
+    #
+    # COST, measured on the full suite both ways: 46 pass / 4 fail at 0.80
+    # against 45 pass / 4 fail / 1 WORSE at 0.45. No row changes pass to fail
+    # and the four blocking rows are untouched. The one [WORSE] is
+    # `Frumin, PaCO2 rise over 45 min`, 1.64 -> 2.11 against a published
+    # 2.7-4.9 -- i.e. it moved TOWARD the measurement and tripped KNOWN_OPEN's
+    # +-0.30 drift tolerance on the 1.64 recorded at its ruling. Both Frumin
+    # baselines are re-recorded in test_validation.py in this same commit.
+    k_co2_slow: float = 0.45
 
     # --- nitrogen: three perfusion-limited compartments --------------------
     # With no expiration, nitrogen returning from tissue accumulates in the

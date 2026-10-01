@@ -5,6 +5,93 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-01 (thirty-second entry): `k_co2_slow` adopted at 0.45 for the SHAPE of the CO2 rise — it closes no row, STOCK IS UNREACHABLE from it, and Frumin's level and his sustainedness are MUTUALLY EXCLUSIVE
+
+**RULED and applied.** `k_co2_slow` 0.80 → **0.45**, in `apnoea_core.py` and
+`model.js` together, with both Frumin `KNOWN_OPEN` baselines re-recorded in the
+same commit.
+
+### WHAT IT FIXES: the decay, and only the decay
+
+The rate DECAYED where Frumin measured it sustained — 1.68 mmHg/min over 1–5
+min falling to 1.19 by 30–45. Swept for **flatness**, scored by the coefficient
+of variation of the rate over 5–45 min normalised by its own mean, so **the
+score cannot be improved by moving the level**:
+
+| | CV over 5–45 min |
+|---|---|
+| shipped 0.80 | 13.1% |
+| **adopted 0.45** | **1.8%** |
+
+Sevenfold, and the minimum is **interior and sharp** (21.8 → 1.8 → 13.1 across
+the range), because two terms pull opposite ways and genuinely balance there:
+the slow store recruiting (140 against a fast 22, starting at the SAME content,
+so filling it swallows CO2 — capacity grows, rate falls) against the blood CO2
+dissociation curve flattening at high PCO2 (capacity falls, rate rises).
+
+**The first minute is 10.3 mmHg at EVERY value of this parameter**, so the one
+CO2 constraint the model meets well — Stock's ~12 — cannot be disturbed by it.
+
+### WHAT IT DOES NOT FIX, and this is the substance of the entry
+
+Swept against **all three** CO2 constraints at once, as
+`handover_numbers.py`'s own block warns must be done:
+
+| k | Frumin45 *2.7–4.9* | Kaiser15 *1.8–3.0* | **Stock1-5 *3.4*** |
+|---|---|---|---|
+| 0.00 | **3.28** | **2.72** | 2.06 |
+| 0.10 | **2.94** | **2.66** | 2.04 |
+| **0.45 adopted** | 2.11 | **2.45** | 1.98 |
+| 0.80 shipped | 1.64 | **2.27** | 1.92 |
+| 2.00 | 1.01 | 1.86 | 1.74 |
+
+1. **STOCK IS UNREACHABLE AT ANY VALUE** — 1.74 to 2.06 against 3.4, across a
+   twentyfold range of the parameter. **The obstructed airway is simply not
+   governed by this coupling.**
+2. **FRUMIN'S LEVEL AND FRUMIN'S SHAPE ARE MUTUALLY EXCLUSIVE.** His band needs
+   k ≤ 0.10; flatness needs 0.45. At k = 0 the model sits inside his band at
+   3.28 — **with the rate ACCELERATING 21.8%**, which is not what he measured
+   either. **You can have his number or his shape, never both.**
+3. **KAISER IS SATISFIED AT EVERY VALUE IN THE SWEEP** and therefore
+   discriminates nothing here.
+
+**SO THIS IS ADOPTED FOR THE SHAPE ALONE AND THE LEVEL STAYS OPEN. IT CLOSES NO
+BENCHMARK ROW AND NO TEST WILL SHOW THE GAIN.** That was known before it was
+ruled on, and it is the reason the ruling was put rather than taken.
+
+**NO OTHER LEVER WAS REACHED FOR.** `v_tis_co2_fast` halved does hit Stock
+(3.38) and with `v_tis_co2_slow` 35 also reaches Frumin (2.71) — but overshoots
+Kaiser (3.40 against a 3.0 ceiling), and `apnoea_core.py`'s own block already
+ruled that lever wrong because it buried three gas-exchange bugs.
+
+### COST, measured on the full suite both ways
+
+**46 pass / 4 fail at 0.80 against 45 pass / 4 fail / 1 WORSE at 0.45.** No row
+changes pass to fail; the four blocking rows are untouched.
+
+**The one `[WORSE]` must be read carefully, and the label points the wrong way.**
+It is `Frumin, PaCO2 rise over 45 min`, **1.64 → 2.11 against a published
+2.7–4.9 — it moved TOWARD the measurement.** `KNOWN_OPEN` tracks that row by
+VALUE with a ±0.30 drift tolerance around the 1.64 recorded at its ruling, and
+2.11 trips it. So `[WORSE]` means *"has moved from its recorded baseline"*, not
+*"has got worse against the data"*. The mechanism is working as designed — a
+known-open row must not drift silently in EITHER direction — but the word reads
+backwards here, and it would have been reported wrongly without opening the
+table.
+
+Both Frumin baselines are re-recorded: **1.64 → 2.11** and **7.09 → 7.04**, both
+having moved toward their bands. Rule 3 requires it: a known-open row that has
+moved must not keep a stale baseline, or the next genuine drift is invisible.
+
+### WHAT THE CO2 CHANNEL NOW NEEDS
+
+Not the stores. The twelfth entry's question — why the long-window rate decays —
+**is answered and closed**. What remains is two things this parameter cannot
+touch: **the obstructed slope (Stock 3.4 against ~2.0, inert to the coupling)**
+and **the sustained level**, which the thirty-first entry's window analysis
+suggests may be partly a disagreement between a transient-inclusive 0–15 min
+average and a sustained 18–55 min rate rather than a defect at all.
+
 ## Current state — 2026-10-01 (thirty-first entry): the CO2 decay is the slow compartment's COUPLING (not its size), and Kaiser's rate is a transient-inclusive average whose implied sustained rate the model already matches
 
 Nothing changed. Two findings, one of which reframes what the CO2 defect is.

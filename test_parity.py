@@ -535,7 +535,11 @@ def test_hardcoded_constants():
         ("n2_pt_init", pt.n2_pt_init, 573.0, "model.js:111 n2p=[573,573,573]"),
         ("v_tis_co2_fast", pt.v_tis_co2_fast, 22.0, "model.js P.vTisCo2Fast, default 22"),
         ("v_tis_co2_slow", pt.v_tis_co2_slow, 140.0, "model.js P.vTisCo2Slow, default 140"),
-        ("k_co2_slow", pt.k_co2_slow, 0.80, "model.js P.kCo2Slow, default 0.8"),
+        # Updated 2026-10-01 with the coupling ruling, 0.80 -> 0.45. THIS CHECK
+        # EARNED ITS KEEP AGAIN: model.js had already been changed in the same
+        # commit, so a run-and-compare saw nothing, and THIS table was the one
+        # stale copy of the constant. It is a THIRD place the value lives.
+        ("k_co2_slow", pt.k_co2_slow, 0.45, "model.js P.kCo2Slow, default 0.45"),
         ("vd_anat", pt.vd_anat, 150.0, "model.js:79 frc-150, vseg=15"),
         ("vd_segments", pt.vd_segments, 10, "model.js:94 NS=10"),
         ("stiff_below_rv", pt.stiff_below_rv, 0.15, "model.js:131 stiff=0.15"),

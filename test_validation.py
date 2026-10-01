@@ -142,12 +142,22 @@ KNOWN_OPEN = {
     # Tolerances 0.30 (18% of 1.64) and 0.05 pH: loose enough to survive
     # ordinary parameter work on the circulation, tight enough that real
     # movement on the CO2 limb reports.
+    # BOTH FRUMIN BASELINES RE-RECORDED 2026-10-01, with k_co2_slow 0.80 ->
+    # 0.45. They moved because the DECAY was fixed, and both moved TOWARD their
+    # published bands: 1.64 -> 2.11 against 2.7-4.9, and 7.09 -> 7.04 against
+    # 6.72-6.97. Neither row passes, and neither is expected to: the sweep shows
+    # Frumin's LEVEL and his SUSTAINEDNESS cannot both be had from this
+    # parameter, and the level is left open. Recording the new values is what
+    # rule 3 of this table requires -- a known-open row that has moved must not
+    # keep a stale baseline, or the next genuine drift is invisible.
     "Frumin, PaCO2 rise over 45 min":
-        (1.64, 0.30, "the long-window CO2 defect: the rate decays where "
-                     "Frumin's is sustained. THE reason the CO2 channel went "
-                     "back in the queue; see HANDOVER, twelfth entry"),
+        (2.11, 0.30, "the long-window CO2 defect, now SHAPE-CORRECTED but not "
+                     "LEVEL-corrected: the rate no longer decays (CV 13.1% -> "
+                     "1.8%) but sits below Frumin's band. Stock's obstructed "
+                     "3.4 is unreachable from this parameter at any value; see "
+                     "HANDOVER, thirty-second entry"),
     "Frumin, arterial pH at 40 min":
-        (7.09, 0.05, "the same defect from the acid-base side -- too "
+        (7.04, 0.05, "the same defect from the acid-base side -- too "
                      "alkaline at 40 min because too little CO2 has "
                      "accumulated. Rides the PaCO2 row above"),
     # REMOVED 2026-10-01, BECAUSE IT NOW PASSES. It was opened when cardiac
