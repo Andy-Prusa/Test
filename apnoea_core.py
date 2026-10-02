@@ -286,13 +286,42 @@ class Patient:
     frc_drop: float = 400.0      # mL lost at induction (ICSM 300-500)
     # Bed tilt, degrees. Positive is head-up / reverse Trendelenburg. Head-up
     # lifts the abdominal contents off the diaphragm, so it raises FRC and the
-    # gain is larger the more abdomen there is to lift. Calibrated against
-    # four randomised trials, all of which found roughly +30% safe apnoea time
-    # for 20-25 degrees:
-    #   Lane 2005, non-obese, 20 deg:      283 -> 386 s to SpO2 95%
-    #   Ramkumar 2011, non-obese, 20 deg:  364 -> 452 s
-    #   Altermatt 2005, BMI >35, sitting:  162 -> 214 s to SpO2 90%
-    #   Dixon 2005, BMI >40, 25 deg:       +45 s, and 23% higher oxygen tension
+    # gain is larger the more abdomen there is to lift.
+    #
+    # "CALIBRATED AGAINST FOUR RANDOMISED TRIALS" -- CORRECTED 2026-10-02. The
+    # four were read at source over 2026-09-26 to 10-02 and TWO OF THEM DO NOT
+    # MEASURE WHAT THIS PARAMETER REPRESENTS. The published numbers below were
+    # all correct; the ATTRIBUTION was not. tilt_factor() acts on the lung
+    # DURING the apnoea, so a trial that flattens the patient before the
+    # apnoea begins measures DENITROGENATION WHILE TILTED, not a larger store
+    # while apnoeic -- a different quantity that this parameter cannot carry.
+    #
+    #   Lane 2005, non-obese, 20 deg:      283 -> 386 s to SpO2 95%   USABLE
+    #       Tilt MAINTAINED: he chose 20 deg because it allows "airway
+    #       manoeuvres and intubation without needing an alteration in
+    #       position". And his FE'O2 after preoxygenation was IDENTICAL
+    #       between arms, 0.89 (0.03) vs 0.90 (0.03), so his benefit cannot be
+    #       denitrogenation and must be volume -- which is this parameter.
+    #   Dixon 2005, BMI >40, 25 deg:       155 -> 201 s to SpO2 92%   USABLE
+    #       Tilt MAINTAINED: his anaesthetists intubated IN the 25 deg
+    #       position, "required a small footstool", and reported no increased
+    #       difficulty. The patients were never flattened.
+    #   Ramkumar 2011, non-obese, 20 deg:  364 -> 452 s            NOT USABLE
+    #       "Immediately following intubation, the patients in the head-up
+    #       group were RETURNED TO SUPINE POSITION", and all groups were "left
+    #       apneic in SUPINE position". Preoxygenation-only tilt.
+    #   Altermatt 2005, BMI >35, sitting:  162 -> 214 s to SpO2 90% NOT USABLE
+    #       An AWAKE tilt; his Methods return the patient supine before
+    #       induction. Retired from test_validation.py on 2026-09-26.
+    #
+    # SO THE EVIDENCE BASE IS TWO TRIALS, NOT FOUR, and both measure apnoea
+    # time rather than volume. Valenza 2007 is the only anaesthetised FRC
+    # measurement held. Two parameters against two apnoea anchors is EXACTLY
+    # DETERMINED -- it fits both with zero residual and leaves nothing to test
+    # the LINEAR form with. That is a property of the evidence and no further
+    # reading changes it: every paper this project has named was checked on
+    # 2026-10-02, and Watson & Pride 2005, Couture 2018 (awake volunteers) and
+    # Couture 2023 (no untilted arm) are all excluded as well.
     tilt_deg: float = 0.0        # 0 supine, 25 typical ramped, negative = head down
     # REVERTED 2026-09-26 to 0.0130 and +0.00015, THE SAME DAY THEY WERE
     # CHANGED. Both the change and the reversal are recorded because what was
@@ -333,19 +362,61 @@ class Patient:
     # measured 0.95-1.04 anaesthetised), and it is what Rothen's Table II
     # avoids by having no awake column for Crs at all.
     #
-    # SO BOTH VALUES ARE WRONG. These are wrong at 90 degrees by a factor of
-    # two and wrong in the sign of their BMI term. The measured ones are wrong
-    # in the state they were measured in, and are contradicted by every
-    # clinical trial of the thing the model actually predicts.
+    # THAT VERDICT IS STRUCK, 2026-10-02, BY RULING. It read: "SO BOTH VALUES
+    # ARE WRONG. These are wrong at 90 degrees by a factor of two and wrong in
+    # the sign of their BMI term." BOTH HALVES REST ON THE SAME SOURCE, and
+    # that source is ruled inadmissible four paragraphs below:
+    #
+    #   * "wrong at 90 degrees" grades the parameter at an angle THIS MODEL
+    #     DOES NOT CLAIM. Ruled 2026-09-26: validated only to the highest tilt
+    #     studied in ANAESTHETISED patients, which is 30 degrees. A. Heard,
+    #     2026-10-02: "90 degrees is not applicable to anaesthesia."
+    #   * "wrong in the sign of their BMI term" is Watson & Pride's 1.275
+    #     against 1.032 -- AWAKE, and "AWAKE TILT DATA IS EXCLUDED FROM THIS
+    #     PARAMETER" by the ruling below.
+    #
+    # So the verdict survived in this comment while its only evidence had been
+    # ruled out from under it, and a reader on 2026-10-02 took it as settled
+    # fact and nearly built an entry on it. A conclusion must not outlive the
+    # ruling that disqualified its evidence. The MEASUREMENTS above are kept,
+    # because the reverted attempt is worth having on record; the VERDICT is
+    # not, because it was never admissible under the rules this block sets.
+    #
+    # WHAT IS ADMISSIBLE, AND IT POINTS THE SAME WAY. Two ANAESTHETISED
+    # positioning trials are now read at source, both with the tilt maintained
+    # through the apnoea -- the question Altermatt failed:
+    #     Lane 2005    BMI ~27, 20 deg:  measured +36.4%, model +28.5%  LOW
+    #     Dixon 2005   BMI ~46, 25 deg:  measured +29.7%, model +42.3%  HIGH
+    # The model's tilt benefit RISES with BMI where these two measure it
+    # FALLING. That is the same direction Watson & Pride indicated, established
+    # on evidence this parameter is allowed to use. NOT YET ACTED ON.
     #
     # WHAT WOULD SETTLE IT: Lane 2005, Ramkumar 2011 and Dixon 2005 are the
     # ANAESTHETISED tilt measurements and this parameter should be solved
-    # against them, not against an awake volume study. All three are orderable
-    # -- citations in SOURCES.md -- and none is held. A saturating angle law
-    # is needed as well: the form here is LINEAR, and Altermatt's own
-    # discussion says "most of the change in FRC takes place between supine
-    # and 60 degrees head-up position", so no linear law can be right at both
-    # 20 and 90 degrees.
+    # against them, not against an awake volume study.
+    #
+    # UPDATED 2026-10-02: TWO OF THE THREE ARE NOW HELD AND READ AT SOURCE.
+    # Dixon 2005 was read 2026-10-01, Lane 2005 on 2026-10-02. With Valenza
+    # 2007 at 30 degrees that is THREE ANAESTHETISED ANGLES -- 20, 25, 30 --
+    # where this block was written with one. Lane answers the Altermatt
+    # question in his own introduction: 20 degrees was chosen because it allows
+    # "airway manoeuvres and intubation WITHOUT NEEDING AN ALTERATION IN
+    # POSITION", in explicit contrast to the 45-degree study he cites.
+    #
+    # RAMKUMAR 2011 IS STILL NOT HELD, and it is not a luxury. Two parameters
+    # solved on two points is EXACTLY DETERMINED: it fits both with zero
+    # residual and nothing is left over to test the form with. Ramkumar is a
+    # second 20-degree point in non-obese adults, which over-determines the
+    # system and is the only way to find out whether the LINEAR form survives.
+    # A search on 2026-10-02 returned 452 (71) s against 364 (83), P = 0.030,
+    # i.e. +24.2% -- UNVERIFIED, from a search result and not from the page,
+    # which is exactly what Dixon's "+32%" was before it turned out not to be
+    # in the paper at all. It must not be used until read.
+    #
+    # A saturating angle law may be needed as well: the form here is LINEAR,
+    # and Altermatt's own discussion says "most of the change in FRC takes
+    # place between supine and 60 degrees head-up position". Three angles
+    # spanning 20-30 degrees cannot settle that on their own.
     # AWAKE TILT DATA IS EXCLUDED FROM THIS PARAMETER. RULED 2026-09-26:
     # "ignoring awake changes unless we have a conversion or 2 branches."
     # We have NEITHER, so Watson & Pride is not used here -- see the reverted
@@ -366,8 +437,72 @@ class Patient:
     # angles and determine both parameters. None is held; all three are
     # orderable, with identifiers in SOURCES.md. Ask of each the question
     # Altermatt failed: WAS THE TILT MAINTAINED THROUGH THE APNOEA?
-    tilt_gain_lean: float = 0.0130   # FRC fraction per degree at BMI 25
-    tilt_gain_bmi: float = 0.00015   # extra per degree per BMI unit above 25
+    # SOLVED 2026-10-02 ON LANE 2005 AND DIXON 2005, BY RULING, and the BMI
+    # term CHANGES SIGN. These values were "UNCHANGED and UNSOURCED" from the
+    # day they were written until now.
+    #     tilt_gain_lean   0.0130   ->  0.011388
+    #     tilt_gain_bmi   +0.00015  -> -0.0001579   <- SIGN FLIP
+    # Head-up now helps LESS as BMI rises, not more: an obese chest has already
+    # lost the expiratory reserve there is to recover.
+    #
+    # WHAT IT IS SOLVED AGAINST, and it is everything admissible that exists.
+    # Both trials are ANAESTHETISED, both kept the tilt THROUGH THE APNOEA, and
+    # both were read at source. Each is replicated AS RUN, including that
+    # neither was BMI-matched -- the head-up group was lighter in both, so part
+    # of each measured gain is habitus and solving on the single-BMI
+    # idealisation would mis-attribute it.
+    #     Lane 2005   20 deg, BMI 27.9 supine vs 26.3 head-up, SpO2 95%, +36.4%
+    #     Dixon 2005  25 deg, BMI 47.3 supine vs 44.9 head-up, SpO2 92%, +29.7%
+    # At the solution the model reproduces both to 0.1 percentage points.
+    #
+    # THIS IS EXACTLY DETERMINED AND THEREFORE UNTESTED. Two parameters on two
+    # points fit with ZERO RESIDUAL and leave nothing to check the LINEAR form
+    # with. That is a property of the evidence, not of the method, and no
+    # further reading changes it -- every paper this project has named was
+    # checked on 2026-10-02 and the exclusions are listed above and below.
+    #
+    # VALENZA 2007 IS EXCLUDED AS AN ANCHOR. RULED 2026-10-02 by A. Heard, and
+    # NOT because it disagrees -- that would be the fit grading its own target.
+    # HIS "BEACH CHAIR" IS A DIFFERENT MANOEUVRE: reverse Trendelenburg 30 deg
+    # head-up WITH THE LEGS LIFTED TO THE ABDOMEN, and his own table shows what
+    # that does -- intra-abdominal pressure 17.87 (5.45) supine rising to
+    # 23.92 (4.35) cmH2O in the beach chair, a 34% INCREASE. The mechanism this
+    # parameter is built on, stated at the top of this block, is that head-up
+    # "lifts the abdominal contents off the diaphragm". Lifting the legs onto
+    # the abdomen pushes them back on. His +84.8% volume gain arrives instead
+    # through chest-wall geometry (elastance 21.71 -> 18.05), which is a
+    # different route to the same direction. Lane and Dixon both used a
+    # STRAIGHT head-up tilt with no leg lift, and Couture 2023 treats beach
+    # chair and reverse Trendelenburg as distinct interventions -- a
+    # distinction THIS MODEL CANNOT EXPRESS, carrying one tilt_deg and no
+    # notion of how the patient got there.
+    #
+    # THE COST OF THAT EXCLUSION, stated because it is real: Valenza was the
+    # ONLY INDEPENDENT CHECK on this solve, and it is now ruled out of scope
+    # rather than answered. At the adopted values tilt_factor() gives 1.261 at
+    # BMI 42 and 30 deg against his measured 1.848, where the shipped values
+    # gave 1.480. The benchmark row `Valenza tilt_factor at 30 deg, BMI 42`
+    # therefore gets WORSE, 1.5 -> 1.3 against a band of 1.70-2.00, and it
+    # STAYS BLOCKING. Whether a row testing this parameter against a beach
+    # chair should exist at all is a SEPARATE RULING and is not taken here.
+    #
+    # WHAT IT COSTS ELSEWHERE, measured on the full suite both ways:
+    # 46 pass / 4 fail shipped against 47 pass / 3 fail solved. ONE BLOCKING
+    # ROW CLOSES -- `tilt, BMI 44 at 25 deg` 43.0 -> 23.0 against a published
+    # 15-40 -- and none opens. `Heard control` improves 352.5 -> 318.5 s
+    # against a band of 244-314 and still fails. `tilt, non-obese 20 deg`
+    # 27.6 -> 24.2, still passing. Everything else moves 0.4% or less.
+    #
+    # AND IT VINDICATES THE REVERTED ATTEMPT OF 2026-09-26 IN PART. Solving on
+    # Watson & Pride's AWAKE data gave 0.003057 and -0.000147, and was reverted
+    # because it made the model clinically false. Against this anaesthetised
+    # solve, its BMI SLOPE was right to within 7% (-0.000147 vs -0.0001579) and
+    # its LEVEL was wrong by 3.7x. The level is what broke it: once the volume
+    # benefit collapsed, Perilli's cardiac-output cost dominated and sitting a
+    # morbidly obese patient up made them desaturate FASTER. Keeping the level
+    # and taking the slope is what this solve does.
+    tilt_gain_lean: float = 0.011388   # FRC fraction per degree at BMI 25
+    tilt_gain_bmi: float = -0.0001579  # per degree per BMI unit above 25
     vd_anat: float = 150.0
     vd_segments: int = 10
     # --- ventilation-perfusion distribution --------------------------------

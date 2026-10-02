@@ -90,8 +90,12 @@ function derive(P){
   // AWAKE subjects and this acts on the ANAESTHETISED lung. Solving on them
   // made the model say head-up tilt HARMS obese patients, against four
   // clinical trials. See apnoea_core.tilt_gain_lean for the full account.
-  const tg=(P.tiltGainLean===undefined?0.0130:P.tiltGainLean)
-          +(P.tiltGainBmi===undefined?0.00015:P.tiltGainBmi)*Math.max(0,bmi-25);
+  // SOLVED 2026-10-02 on Lane 2005 (20 deg) and Dixon 2005 (25 deg), the two
+  // anaesthetised trials that kept the tilt through the apnoea. The BMI term
+  // CHANGES SIGN: head-up helps LESS as BMI rises. See apnoea_core.py
+  // tilt_gain_lean for the solve, the exclusions and the cost.
+  const tg=(P.tiltGainLean===undefined?0.011388:P.tiltGainLean)
+          +(P.tiltGainBmi===undefined?-0.0001579:P.tiltGainBmi)*Math.max(0,bmi-25);
   const tiltF=Math.max(0.45,1+(P.tiltDeg||0)*tg);
   // FRC CANNOT BE LESS THAN RESIDUAL VOLUME. Floor added 2026-09-23 and it
   // is `rv`, not a constant. This line used to floor at 300 while

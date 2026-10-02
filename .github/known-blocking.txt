@@ -128,5 +128,28 @@ ICSM jet, PaO2 at cricothyroidotomy
 # ======================================================================
 
 Heard control, time to SpO2<95%
-tilt, BMI 44 at 25 deg
-Valenza tilt_factor at 30 deg, BMI 42 [ANAESTHETISED]
+
+# REMOVED 2026-10-02, BECAUSE THEY NO LONGER BLOCK. Rule 3 above requires it,
+# and both go out in a commit of their own so that it stays separable from the
+# parameter change that caused the first.
+#
+#   tilt, BMI 44 at 25 deg
+#       NOW PASSES at 23.0% against its published 15-40, having been 43.0%.
+#       Closed by solving tilt_gain_lean and tilt_gain_bmi on Lane 2005 and
+#       Dixon 2005 in bcbd37c -- the two anaesthetised positioning trials that
+#       kept the tilt THROUGH the apnoea. The BMI term changed sign in that
+#       solve: head-up now helps LESS as BMI rises.
+#
+#   Valenza tilt_factor at 30 deg, BMI 42 [ANAESTHETISED]
+#       THE ROW ITSELF IS RETIRED, not passed. Valenza's "beach chair" is
+#       reverse Trendelenburg WITH THE LEGS LIFTED TO THE ABDOMEN, and his own
+#       table shows intra-abdominal pressure rising 17.87 -> 23.92 cmH2O, a 34%
+#       INCREASE, where this parameter's stated mechanism is that head-up lifts
+#       the abdominal contents OFF the diaphragm. Right state, wrong manoeuvre
+#       -- the mirror of the Altermatt retirement, which was right number,
+#       wrong state. See test_validation.py for the full reasoning.
+#
+# THAT LEAVES TWO BLOCKING ROWS, down from four this morning. It also leaves
+# tilt_gain_lean and tilt_gain_bmi with NO INDEPENDENT CHECK: Valenza was the
+# only anaesthetised FRC-against-tilt measurement held, and the two gains are
+# now solved on two apnoea-time trials, exactly determined.
