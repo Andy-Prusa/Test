@@ -291,13 +291,42 @@ airway there, the device arm keeps it. Times are seconds from induction.</p>
 <p class="foot">Modelled, not measured. Saturation carries a pulse oximeter delay. There is no
 end-tidal CO&#8322; because there is no ventilation; the CO&#8322; and pH shown are arterial model
 values you would not have at the bedside. Each arm stops where the model's fixed cardiac
-output stops being defensible. The FRC relation's height and age basis is
+output stops being defensible. The FRC relation's height basis is
 Quanjer 1993's ECSC reference equation, read at source; its BMI term is
 parameterised and agrees with, but was not fitted to, Pelosi 1998's measured
-helium regression. Closing capacity's values are placeholders that disagree
-with their own source (Buist &amp; Ross 1973). <strong>The model uses Quanjer's
-MALE equations for every patient</strong>, by ruling: a woman of the same
-height has about 14% less FRC and 16% less total lung capacity.</p>
+helium regression. Closing capacity is Buist &amp; Ross 1973's published
+regression &mdash; 0.525% of total lung capacity per year of age &mdash; applied
+to a predicted total lung capacity.</p>
+
+<p class="foot"><strong>This patient is a 45-year-old man.</strong> Both are
+deliberate, and neither is a slider on this page. What that costs is set out
+here rather than left to be discovered.
+
+<br><br><strong>Sex.</strong> Quanjer's MALE reference equations are used for
+every patient, by ruling. A woman of the same height has about 14% less FRC and
+16% less total lung capacity, and <strong>the error runs in the unsafe
+direction</strong>: at this page's default patient the timeline shows 285 s to
+SpO&#8322; 95% where her own lung volume gives 243 s, so the page promises about
+42 s &mdash; a sixth of the margin &mdash; that she does not have. Scale the
+times down accordingly, and do not read the absolute numbers for a woman at
+all. The cohorts this model is anchored to are themselves female-majority
+(Pelosi 1998 ran seven women to one man per group), so a male model is being
+fitted through female-majority data. That is a known limitation, recorded, and
+not an oversight.
+
+<br><br><strong>Age.</strong> Age is fixed at 45 and acts on <strong>one thing
+only</strong>: the lung volume at which small airways begin to close. Lung
+capacity and FRC carry no age term at all &mdash; two reference sets disagree
+about whether they should, and this model follows the one that says no. The
+consequence is that age bites hardest in the patient who is already near
+closure: in this 107 kg default it moves the shunt from 3.5% at age 20 to 10.7%
+at 80, while in a slim patient it does nothing whatever below about 40, because
+nothing is closing yet. Two published measurements that the FRC lost at
+induction <em>also</em> grows with age &mdash; Hewlett 1974 and Laws 1968, both
+about 0.43 to 0.45 percentage points per year &mdash; are <strong>not
+represented here</strong>, by ruling, because age is not modelled in the other
+systems either and carrying it in one place alone would be a fit rather than a
+mechanism. So an older patient's margin is, if anything, flattered.</p>
 </div>
 
 <div class="main">
