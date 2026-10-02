@@ -818,14 +818,49 @@ def test_positioning_trials():
     # litres, P < 0.001. That is tilt_factor itself, in the right state, at an
     # angle the model is meant to cover -- a far better test than any
     # apnoea-time proxy, and it needs no simulation at all.
-    _vz = dict(weight=42 * 1.70 ** 2, height=1.70, age=37, hb=14.0)
-    check("Valenza tilt_factor at 30 deg, BMI 42 [ANAESTHETISED]",
-          Patient(**_vz, tilt_deg=30.0).tilt_factor(), 1.70, 2.00, " x",
-          "clinical; 0.46 (0.1) -> 0.85 (0.3) L, helium dilution, n=20, "
-          "= 1.848. Band is +-1 SE OF THE MEAN (0.17), not +-1 SD across "
-          "patients (0.77): the model predicts a typical patient, so it must "
-          "reproduce the group mean, and against the population SD almost "
-          "nothing could fail")
+    # AND THIS ROW IS NOW RETIRED TOO, 2026-10-02, RULED -- for the SAME CLASS
+    # OF REASON it was written to fix. Altermatt was struck because he tilted
+    # the patient AWAKE: the right number, the wrong STATE. Valenza measures
+    # the right state and THE WRONG MANOEUVRE.
+    #
+    # HIS "BEACH CHAIR" IS REVERSE TRENDELENBURG 30 DEG WITH THE LEGS LIFTED
+    # TO THE ABDOMEN, and his own table shows what that does:
+    #     intra-abdominal pressure   17.87 (5.45) supine
+    #                             -> 23.92 (4.35) beach chair, a 34% INCREASE
+    # The mechanism tilt_factor() is built on, stated in apnoea_core.py, is
+    # that head-up "lifts the abdominal contents off the diaphragm". Lifting
+    # the legs onto the abdomen pushes them back on. His +84.8% volume gain is
+    # real but arrives by another route -- chest-wall geometry, elastance
+    # 21.71 -> 18.05 -- and tilt_factor() has no term for it.
+    #
+    # LANE AND DIXON BOTH USED A STRAIGHT HEAD-UP TILT, no leg lift, and they
+    # are what tilt_gain_lean and tilt_gain_bmi were solved on today. Couture
+    # 2023 treats beach chair and reverse Trendelenburg as DISTINCT
+    # INTERVENTIONS, putting one group in each at the same 25 degrees -- a
+    # distinction this model cannot express, carrying one tilt_deg and no
+    # notion of how the patient got there.
+    #
+    # SO THE ROW GRADED THE PARAMETER AGAINST A MANOEUVRE THE MODEL DOES NOT
+    # REPRESENT, which is what the Altermatt removal above establishes is not
+    # a benchmark. It goes rather than being re-banded, for the same reason.
+    #
+    # WHAT IS LOST, AND IT IS NOT SMALL. This was the ONLY anaesthetised
+    # FRC-against-tilt measurement held, and the only check on tilt_factor()
+    # that needed no simulation. Removing it leaves the two gains solved on
+    # two apnoea-time trials with NOTHING INDEPENDENT TO TEST THEM. That is
+    # recorded here, in apnoea_core.py and in HANDOVER rather than left to be
+    # rediscovered. WHAT WOULD RESTORE A CHECK: an anaesthetised,
+    # straight-tilt FRC measurement at any angle. None is held, and every
+    # paper this project has named was searched on 2026-10-02.
+    #
+    # _vz = dict(weight=42 * 1.70 ** 2, height=1.70, age=37, hb=14.0)
+    # check("Valenza tilt_factor at 30 deg, BMI 42 [ANAESTHETISED]",
+    #       Patient(**_vz, tilt_deg=30.0).tilt_factor(), 1.70, 2.00, " x",
+    #       "clinical; 0.46 (0.1) -> 0.85 (0.3) L, helium dilution, n=20, "
+    #       "= 1.848. Band is +-1 SE OF THE MEAN (0.17), not +-1 SD across "
+    #       "patients (0.77): the model predicts a typical patient, so it must "
+    #       "reproduce the group mean, and against the population SD almost "
+    #       "nothing could fail")
     # DIXON READ AT SOURCE 2026-10-01, and the citation this row carried was
     # WRONG. It said "clinical; Dixon +32%" from the day it was written. The
     # number +32% APPEARS NOWHERE IN THE PAPER -- the only "32" in the text are
