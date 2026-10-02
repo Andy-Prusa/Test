@@ -5,6 +5,97 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-02 (thirty-third entry): RETRACTION of the "volume-to-time elasticity" defect — an elasticity near 1 is what the physics REQUIRES, and what is really there is a 2.6x disagreement between Valenza and Dixon with the model BETWEEN them
+
+**Caught by A. Heard before it was committed, with one sentence: "double the
+volume should double the apnoea."** He is right, and the finding this entry was
+drafted to announce was wrong.
+
+### WHAT WAS NEARLY WRITTEN
+
+That the model's apnoea time is too sensitive to lung volume — elasticity
+d(log time)/d(log FRC) of **0.91 obese / 0.94 lean**, measured supine with no
+tilt, against a "measured 0.30–0.42" — and that this superseded the tilt framing
+of the fourteenth through twenty-sixth entries.
+
+**The elasticity numbers are right. The comparison was not a comparison.**
+
+### WHY AN ELASTICITY NEAR 1 IS CORRECT
+
+Where the oxygen actually comes from, BMI 44 supine, over the 169 s to SpO2 92%:
+
+| | mL |
+|---|---|
+| total consumed (VO2 256 mL/min) | **722** |
+| supplied by the LUNG | **526 (73%)** |
+| supplied by blood + tissue | 196 (27%) |
+
+**The lung supplies nearly three quarters of it and consumption is constant, so
+time MUST be close to proportional to lung volume.** After preoxygenation the
+haemoglobin store can only contribute the slice between full saturation and the
+threshold, which is small. An elasticity near 0.9 is what the physics demands;
+it is not a defect and there is nothing there to fix.
+
+### THE ERROR, NAMED
+
+**"Measured 0.30–0.42" was Valenza's VOLUME gain divided by Dixon's TIME gain.**
+Two studies, two cohorts, two tilt angles — 30 degrees and 25. That quotient has
+the units of an elasticity and none of the meaning: no patient in it was
+measured twice, and nothing links the denominator to the numerator. It was then
+compared against a quantity measured properly within one model, and the
+mismatch read as a defect.
+
+**This is the fourteenth entry's failure in a new costume** — not reusing a
+stale claim this time, but manufacturing a comparator out of two unrelated
+measurements. The tell was available and ignored: a ratio of 0.35 implies the
+lung supplies about a third of the oxygen, and one line of accounting says 73%.
+
+### WHAT THE CORRECTION ACTUALLY SHOWS, AND IT IS MORE USEFUL
+
+Accept elasticity ~0.91 and ask what VOLUME GAIN each measurement implies:
+
+| | volume gain at tilt |
+|---|---|
+| **Dixon's +29.7% time implies** | **+33%** |
+| **model gives** (25 deg, BMI 44, 903 → 1325 mL) | **+47%** |
+| **Valenza MEASURED** (30 deg, BMI 42, 0.46 → 0.85 L) | **+85%** |
+
+**Valenza implies 2.6x the volume gain that Dixon's time implies, and THE MODEL
+SITS BETWEEN THEM.**
+
+So the model is NOT "too little volume AND too much time". That reading
+double-counted ONE disagreement — between two papers — as TWO faults in the
+model, and it is why the twenty-sixth entry found that fixing either made the
+other worse. **Of course it did: they pull in opposite directions because the
+sources do.**
+
+Part of the 2.6x is the angle, Valenza at 30 degrees against Dixon at 25. **Not
+a factor of 2.6 of it**, and how much is not yet measured.
+
+### WHAT SURVIVES FROM THE PROBE
+
+The decomposition stands and is worth keeping. Of the model's +51.5% tilt time
+gain at Dixon's groups:
+
+* **91% is lung volume.** Pin FRC supine and it collapses to +4.6% — and even
+  that is the BMI mismatch between his groups (47.3 against 44.9), not posture.
+* **The cardiac-output cost is worth 0.9 percentage points.** Perilli's -18.4%
+  at 30 degrees barely registers against the store.
+
+So tilt does ONE thing in this model: it makes the lung bigger. That is sound,
+and it is why the volume disagreement above is the whole of the question.
+
+### WHAT THIS DOES TO THE TILT FRAMING
+
+**The reason for retiring entries fourteen to twenty-six has evaporated.** They
+treated this as unresolved tilt behaviour, and that may be right. What has
+changed is where to look: not at a coupling, an amplifier, V/Q dispersion or
+denitrogenation — all refuted — but at **whether Valenza's +85% and Dixon's
+implied +33% can be reconciled at all**, and if not, which one the model should
+answer to. That is a question about the two papers, not about a parameter.
+
+**NOTHING IS CHANGED IN THE MODEL BY THIS ENTRY.**
+
 ## Current state — 2026-10-01 (thirty-second entry): `k_co2_slow` adopted at 0.45 for the SHAPE of the CO2 rise — it closes no row, STOCK IS UNREACHABLE from it, and Frumin's level and his sustainedness are MUTUALLY EXCLUSIVE
 
 **RULED and applied.** `k_co2_slow` 0.80 → **0.45**, in `apnoea_core.py` and
