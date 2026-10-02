@@ -333,19 +333,61 @@ class Patient:
     # measured 0.95-1.04 anaesthetised), and it is what Rothen's Table II
     # avoids by having no awake column for Crs at all.
     #
-    # SO BOTH VALUES ARE WRONG. These are wrong at 90 degrees by a factor of
-    # two and wrong in the sign of their BMI term. The measured ones are wrong
-    # in the state they were measured in, and are contradicted by every
-    # clinical trial of the thing the model actually predicts.
+    # THAT VERDICT IS STRUCK, 2026-10-02, BY RULING. It read: "SO BOTH VALUES
+    # ARE WRONG. These are wrong at 90 degrees by a factor of two and wrong in
+    # the sign of their BMI term." BOTH HALVES REST ON THE SAME SOURCE, and
+    # that source is ruled inadmissible four paragraphs below:
+    #
+    #   * "wrong at 90 degrees" grades the parameter at an angle THIS MODEL
+    #     DOES NOT CLAIM. Ruled 2026-09-26: validated only to the highest tilt
+    #     studied in ANAESTHETISED patients, which is 30 degrees. A. Heard,
+    #     2026-10-02: "90 degrees is not applicable to anaesthesia."
+    #   * "wrong in the sign of their BMI term" is Watson & Pride's 1.275
+    #     against 1.032 -- AWAKE, and "AWAKE TILT DATA IS EXCLUDED FROM THIS
+    #     PARAMETER" by the ruling below.
+    #
+    # So the verdict survived in this comment while its only evidence had been
+    # ruled out from under it, and a reader on 2026-10-02 took it as settled
+    # fact and nearly built an entry on it. A conclusion must not outlive the
+    # ruling that disqualified its evidence. The MEASUREMENTS above are kept,
+    # because the reverted attempt is worth having on record; the VERDICT is
+    # not, because it was never admissible under the rules this block sets.
+    #
+    # WHAT IS ADMISSIBLE, AND IT POINTS THE SAME WAY. Two ANAESTHETISED
+    # positioning trials are now read at source, both with the tilt maintained
+    # through the apnoea -- the question Altermatt failed:
+    #     Lane 2005    BMI ~27, 20 deg:  measured +36.4%, model +28.5%  LOW
+    #     Dixon 2005   BMI ~46, 25 deg:  measured +29.7%, model +42.3%  HIGH
+    # The model's tilt benefit RISES with BMI where these two measure it
+    # FALLING. That is the same direction Watson & Pride indicated, established
+    # on evidence this parameter is allowed to use. NOT YET ACTED ON.
     #
     # WHAT WOULD SETTLE IT: Lane 2005, Ramkumar 2011 and Dixon 2005 are the
     # ANAESTHETISED tilt measurements and this parameter should be solved
-    # against them, not against an awake volume study. All three are orderable
-    # -- citations in SOURCES.md -- and none is held. A saturating angle law
-    # is needed as well: the form here is LINEAR, and Altermatt's own
-    # discussion says "most of the change in FRC takes place between supine
-    # and 60 degrees head-up position", so no linear law can be right at both
-    # 20 and 90 degrees.
+    # against them, not against an awake volume study.
+    #
+    # UPDATED 2026-10-02: TWO OF THE THREE ARE NOW HELD AND READ AT SOURCE.
+    # Dixon 2005 was read 2026-10-01, Lane 2005 on 2026-10-02. With Valenza
+    # 2007 at 30 degrees that is THREE ANAESTHETISED ANGLES -- 20, 25, 30 --
+    # where this block was written with one. Lane answers the Altermatt
+    # question in his own introduction: 20 degrees was chosen because it allows
+    # "airway manoeuvres and intubation WITHOUT NEEDING AN ALTERATION IN
+    # POSITION", in explicit contrast to the 45-degree study he cites.
+    #
+    # RAMKUMAR 2011 IS STILL NOT HELD, and it is not a luxury. Two parameters
+    # solved on two points is EXACTLY DETERMINED: it fits both with zero
+    # residual and nothing is left over to test the form with. Ramkumar is a
+    # second 20-degree point in non-obese adults, which over-determines the
+    # system and is the only way to find out whether the LINEAR form survives.
+    # A search on 2026-10-02 returned 452 (71) s against 364 (83), P = 0.030,
+    # i.e. +24.2% -- UNVERIFIED, from a search result and not from the page,
+    # which is exactly what Dixon's "+32%" was before it turned out not to be
+    # in the paper at all. It must not be used until read.
+    #
+    # A saturating angle law may be needed as well: the form here is LINEAR,
+    # and Altermatt's own discussion says "most of the change in FRC takes
+    # place between supine and 60 degrees head-up position". Three angles
+    # spanning 20-30 degrees cannot settle that on their own.
     # AWAKE TILT DATA IS EXCLUDED FROM THIS PARAMETER. RULED 2026-09-26:
     # "ignoring awake changes unless we have a conversion or 2 branches."
     # We have NEITHER, so Watson & Pride is not used here -- see the reverted
