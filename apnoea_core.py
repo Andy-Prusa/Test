@@ -286,13 +286,42 @@ class Patient:
     frc_drop: float = 400.0      # mL lost at induction (ICSM 300-500)
     # Bed tilt, degrees. Positive is head-up / reverse Trendelenburg. Head-up
     # lifts the abdominal contents off the diaphragm, so it raises FRC and the
-    # gain is larger the more abdomen there is to lift. Calibrated against
-    # four randomised trials, all of which found roughly +30% safe apnoea time
-    # for 20-25 degrees:
-    #   Lane 2005, non-obese, 20 deg:      283 -> 386 s to SpO2 95%
-    #   Ramkumar 2011, non-obese, 20 deg:  364 -> 452 s
-    #   Altermatt 2005, BMI >35, sitting:  162 -> 214 s to SpO2 90%
-    #   Dixon 2005, BMI >40, 25 deg:       +45 s, and 23% higher oxygen tension
+    # gain is larger the more abdomen there is to lift.
+    #
+    # "CALIBRATED AGAINST FOUR RANDOMISED TRIALS" -- CORRECTED 2026-10-02. The
+    # four were read at source over 2026-09-26 to 10-02 and TWO OF THEM DO NOT
+    # MEASURE WHAT THIS PARAMETER REPRESENTS. The published numbers below were
+    # all correct; the ATTRIBUTION was not. tilt_factor() acts on the lung
+    # DURING the apnoea, so a trial that flattens the patient before the
+    # apnoea begins measures DENITROGENATION WHILE TILTED, not a larger store
+    # while apnoeic -- a different quantity that this parameter cannot carry.
+    #
+    #   Lane 2005, non-obese, 20 deg:      283 -> 386 s to SpO2 95%   USABLE
+    #       Tilt MAINTAINED: he chose 20 deg because it allows "airway
+    #       manoeuvres and intubation without needing an alteration in
+    #       position". And his FE'O2 after preoxygenation was IDENTICAL
+    #       between arms, 0.89 (0.03) vs 0.90 (0.03), so his benefit cannot be
+    #       denitrogenation and must be volume -- which is this parameter.
+    #   Dixon 2005, BMI >40, 25 deg:       155 -> 201 s to SpO2 92%   USABLE
+    #       Tilt MAINTAINED: his anaesthetists intubated IN the 25 deg
+    #       position, "required a small footstool", and reported no increased
+    #       difficulty. The patients were never flattened.
+    #   Ramkumar 2011, non-obese, 20 deg:  364 -> 452 s            NOT USABLE
+    #       "Immediately following intubation, the patients in the head-up
+    #       group were RETURNED TO SUPINE POSITION", and all groups were "left
+    #       apneic in SUPINE position". Preoxygenation-only tilt.
+    #   Altermatt 2005, BMI >35, sitting:  162 -> 214 s to SpO2 90% NOT USABLE
+    #       An AWAKE tilt; his Methods return the patient supine before
+    #       induction. Retired from test_validation.py on 2026-09-26.
+    #
+    # SO THE EVIDENCE BASE IS TWO TRIALS, NOT FOUR, and both measure apnoea
+    # time rather than volume. Valenza 2007 is the only anaesthetised FRC
+    # measurement held. Two parameters against two apnoea anchors is EXACTLY
+    # DETERMINED -- it fits both with zero residual and leaves nothing to test
+    # the LINEAR form with. That is a property of the evidence and no further
+    # reading changes it: every paper this project has named was checked on
+    # 2026-10-02, and Watson & Pride 2005, Couture 2018 (awake volunteers) and
+    # Couture 2023 (no untilted arm) are all excluded as well.
     tilt_deg: float = 0.0        # 0 supine, 25 typical ramped, negative = head down
     # REVERTED 2026-09-26 to 0.0130 and +0.00015, THE SAME DAY THEY WERE
     # CHANGED. Both the change and the reversal are recorded because what was
