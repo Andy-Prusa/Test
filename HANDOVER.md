@@ -5,6 +5,121 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-02 (thirty-fourth entry): HALF the positioning evidence measures something else — the tilt gains are solved on the two trials that survive, the BMI term CHANGES SIGN, and the only independent check is retired with it
+
+Four papers read at source, one parameter pair solved, two benchmark rows gone,
+and the evidence base for tilt turns out to be half what the code claimed.
+
+### 1. THE AUDIT. Every positioning paper this project has named, checked
+
+The question `apnoea_core.py` says to ask of each — **was the tilt MAINTAINED
+through the apnoea?** — plus the one this project keeps failing: **was the
+patient ANAESTHETISED?**
+
+| | angle | state | tilt held? | verdict |
+|---|---|---|---|---|
+| **Lane 2005** | 20° | anaesthetised | **yes** | **USABLE** |
+| **Dixon 2005** | 25° | anaesthetised | **yes** | **USABLE** |
+| Ramkumar 2011 | 20° | anaesthetised | **no** | struck |
+| Altermatt 2005 | 90° | **awake** tilt | no | retired 09-26 |
+| Watson & Pride 2005 | 90° | **awake** | — | excluded |
+| Couture 2018 | — | **awake volunteers** | — | excluded |
+| Couture 2023 | 25° | anaesthetised | — | **no untilted arm** |
+| Valenza 2007 | 30° | anaesthetised | — | **wrong manoeuvre** (§4) |
+
+**`apnoea_core.py` said these parameters were "calibrated against four
+randomised trials". TWO OF THE FOUR MEASURE SOMETHING ELSE.** The published
+numbers were all correct; the attribution was not. Ramkumar's Methods: *"the
+patients in the head-up group were RETURNED TO SUPINE POSITION"*, and all groups
+*"left apneic in SUPINE position"* — the tilt existed during **preoxygenation
+only**, which is the Altermatt failure exactly.
+
+**AND LANE SETTLES WHAT HIS OWN TRIAL MEASURED.** His end-tidal oxygen after
+preoxygenation was **0.89 (0.03) head-up against 0.90 (0.03) supine —
+identical** — so his +36.4% cannot be better denitrogenation and must be lung
+volume, which is what this parameter represents. He also answers the Altermatt
+question in his introduction: 20° was chosen because it allows *"airway
+manoeuvres and intubation WITHOUT NEEDING AN ALTERATION IN POSITION"*. Dixon is
+clean too: his anaesthetists intubated **in** the 25° position and *"required a
+small footstool"*.
+
+### 2. THE SOLVE, and the BMI term changes sign
+
+| | shipped | solved |
+|---|---|---|
+| `tilt_gain_lean` | 0.0130 | **0.011388** |
+| `tilt_gain_bmi` | **+0.00015** | **−0.0001579** |
+
+**Head-up now helps LESS as BMI rises**, not more: an obese chest has already
+lost the expiratory reserve there is to recover. Both trials are replicated **as
+run**, including that neither was BMI-matched — the head-up group was lighter in
+both — and the model reproduces both to 0.1 percentage points.
+
+**EXACTLY DETERMINED AND THEREFORE UNTESTED.** Two parameters on two points fit
+with zero residual and leave nothing to check the LINEAR form with. That is a
+property of the evidence and no further reading changes it.
+
+### 3. AND IT PARTLY VINDICATES THE REVERTED ATTEMPT OF 2026-09-26
+
+That fit, on Watson & Pride's **awake** data, gave 0.003057 and −0.000147 and was
+reverted for making the model clinically false — the obese row went to −3.5%,
+sitting a morbidly obese patient up making them desaturate FASTER. Against this
+anaesthetised solve:
+
+| | awake fit | anaesthetised solve | |
+|---|---|---|---|
+| BMI slope | −0.000147 | **−0.0001579** | right to **7%** |
+| lean level | 0.003057 | **0.011388** | wrong by **3.7×** |
+
+**The slope was right and the level was wrong, and the level is what broke it**:
+once the volume benefit collapsed, Perilli's cardiac-output cost dominated. This
+solve keeps the level and takes the slope. Four months of this parameter being
+called "wrong in sign" rested on evidence that was right about the slope, wrong
+about the level, and later ruled inadmissible anyway.
+
+### 4. VALENZA IS EXCLUDED — right state, WRONG MANOEUVRE
+
+**Not because it disagrees.** That would be a fit grading its own target, which
+this repository has refused four times.
+
+His "beach chair" is reverse Trendelenburg 30° **with the legs lifted to the
+abdomen**, and his own table shows what that does:
+
+| | supine | beach chair |
+|---|---|---|
+| **intra-abdominal pressure** | 17.87 (5.45) | **23.92 (4.35) cmH2O** |
+
+**A 34% INCREASE.** The mechanism this parameter is built on is that head-up
+*"lifts the abdominal contents off the diaphragm"*. Lifting the legs onto the
+abdomen pushes them back on. His +84.8% volume gain is real but arrives by
+another route — chest-wall geometry, elastance 21.71 → 18.05 — and
+`tilt_factor()` has no term for it. Lane and Dixon used a **straight** head-up
+tilt. Couture 2023 treats the two as distinct interventions, putting one group
+in each at the same 25° — **a distinction this model cannot express**, carrying
+one `tilt_deg` and no notion of how the patient got there.
+
+**This is the MIRROR of the Altermatt retirement.** Altermatt: right number,
+wrong state. Valenza: right state, wrong manoeuvre.
+
+### 5. WHAT IT COSTS, and the cost is real
+
+**The benchmark suite: 46 pass / 4 fail → 47 pass / 3 fail.**
+`tilt, BMI 44 at 25 deg` closes, 43.0 → 23.0 against a published 15–40, and
+**none opens**. `Heard control` improves 352.5 → 318.5 s against 244–314 and
+still fails. Everything else moves 0.4% or less.
+
+**But Valenza was the ONLY independent check**, and retiring the row leaves the
+two gains solved on two apnoea-time trials with **nothing to test them against**.
+The disagreement is ruled out of scope rather than answered. At the adopted
+values `tilt_factor()` gives 1.261 at BMI 42 and 30° against his measured 1.848.
+
+**WHAT WOULD RESTORE A CHECK:** an anaesthetised, **straight-tilt** FRC
+measurement at any angle. None is held, and every paper this project has named
+was searched on 2026-10-02.
+
+**TWO BLOCKING ROWS REMAIN**, down from four: `Heard control, time to SpO2<95%`
+and `ICSM jet, PaO2 at cricothyroidotomy`.
+
 ## Current state — 2026-10-02 (thirty-third entry): RETRACTION of the "volume-to-time elasticity" defect — an elasticity near 1 is what the physics REQUIRES, and what is really there is a 2.6x disagreement between Valenza and Dixon with the model BETWEEN them
 
 **Caught by A. Heard before it was committed, with one sentence: "double the
