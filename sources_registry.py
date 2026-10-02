@@ -37,6 +37,63 @@ BENCHMARK_SOURCES = [
      "are read from the page"),
     ("Heard 2017", "apnoeic oxygenation, obstructed", "2026-09-22",
      "moved four things; see SOURCES.md"),
+    ("Lane S et al. 2005, *Anaesthesia* 60(11):1064-7 (n=35 analysed)",
+     "the `tilt, non-obese 20 deg` benchmark -- the ONLY clean lean anchor",
+     "2026-10-02",
+     "READ IN FULL from upload. 20 deg head-up vs supine, 3 min "
+     "preoxygenation, 40 females for cholecystectomy, BMI 26.3 (4.7) vs 27.9 "
+     "(4.9), age 51.8/56.3, Hb 13.7/13.5. Apnoea to SpO2 95%: 386 (343-429) s "
+     "head-up vs 283 (243-322) supine, P = 0.002, i.e. +36.4%. THE TILT WAS "
+     "MAINTAINED -- 20 deg was chosen because it allows 'airway manoeuvres "
+     "and intubation WITHOUT NEEDING AN ALTERATION IN POSITION', in explicit "
+     "contrast to the 45 deg study he cites. That is the question Altermatt "
+     "failed and Ramkumar also fails, and it makes Lane the only clean lean "
+     "anchor for tilt_factor(). NOTE ALSO: FE'O2 at the end of preoxygenation "
+     "was 0.89 (0.03) head-up against 0.90 (0.03) supine -- IDENTICAL -- so "
+     "his benefit cannot be better denitrogenation and must be lung volume. "
+     "TWO CAVEATS: he timed from ROCURONIUM, not apnoea onset, so a fixed "
+     "offset inside both arms COMPRESSES the ratio and his true gain is "
+     "LARGER than +36.4%; and the apnoea ran with the trachea OPEN TO AIR"),
+    ("Ramkumar V, Umesh G, Philip FA 2011, *J Anesth* 25(2):189-94 (n=45)",
+     "NOTHING -- struck from the lean tilt row on reading",
+     "2026-10-02",
+     "READ IN FULL from upload, AND IT DISQUALIFIES ITSELF for this model's "
+     "tilt parameter. Three groups of 15: conventional, 20 deg head-up, and 5 "
+     "cmH2O PEEP. Non-hypoxic apnoea 452 (71) s head-up vs 364 (83) "
+     "conventional, P = 0.030 (+24.2%); PEEP 413 (86), not significant. BUT "
+     "THE TILT WAS NOT MAINTAINED: 'Immediately following intubation, the "
+     "patients in the head-up group were RETURNED TO SUPINE POSITION', and "
+     "all groups were 'left apneic in SUPINE position with the tracheal tube "
+     "exposed to atmosphere'. The tilt existed during PREOXYGENATION ONLY, "
+     "which is the Altermatt failure exactly. tilt_factor() acts on the lung "
+     "DURING apnoea, so this measures denitrogenation and not store. It had "
+     "been cited in test_validation.py as a co-anchor with Lane since the row "
+     "was written; the two are not the same experiment. Threshold SpO2 93%, 5 "
+     "min preoxygenation, thiopentone and suxamethonium"),
+    ("Couture EJ et al. 2023, *BMC Anesthesiol* 23:198 (n=48 analysed)",
+     "nothing yet -- position and pressure support are CONFOUNDED",
+     "2026-10-02",
+     "READ IN FULL from upload. Morbidly obese, BMI 47.9 (6.3) vs 47.3 (5.2), "
+     "well matched unlike Dixon. Safe non-hypoxic apnoea to SpO2 92%: 258.2 "
+     "(55.1) vs 216.7 (42.3) s, P = 0.005. CANNOT ANCHOR THE TILT PARAMETER: "
+     "the comparator is the RAMP position, not supine, and the intervention "
+     "combines reverse Trendelenburg WITH pressure support 8 cmH2O and PEEP "
+     "10 cmH2O -- two variables, one comparison. NO TILT ANGLE IS STATED "
+     "anywhere in the paper. ITS VALUE IS ITS REFERENCE LIST: it cites "
+     "Couture EJ et al., Can J Anaesth 2018;65(5):522-8, the same group "
+     "measuring FRC across six position/ventilation combinations in the same "
+     "population -- the volume-and-time pair this project has never held. "
+     "Also Boyce JR et al., Obes Surg 2003;13(1):4-9"),
+    ("McKechnie A et al. 2025, *Anaesthesia* 80:1103-14 (SOBA guideline)",
+     "context only -- no measurement",
+     "2026-10-02",
+     "READ IN FULL from upload. Best-practice recommendations from the "
+     "Society for Obesity and Bariatric Anaesthesia, endorsed by the All "
+     "Wales Airway Group, Scottish Airway Group and Difficult Airway Society. "
+     "Recommends pre-oxygenation in a ramped, >= 30 degree head-up position "
+     "(Grade A, strong). A GUIDELINE, NOT DATA: it contributes no measurement "
+     "and must not be used to anchor anything. Held for its reference list "
+     "and as evidence of current practice"),
     ("Pelosi P et al. 1998, *Anesth Analg* 87(3):654-60 (n=24, BMI 20-66)",
      "anaesthetised FRC against BMI, and `shunt_cc_k`",
      "2026-09-24",

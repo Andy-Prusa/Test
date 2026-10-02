@@ -752,8 +752,45 @@ def test_positioning_trials():
                          dt=DT, stop_sao2=0.0)
             out.append(time_to(r, 'spo2', thr))
         return (out[1] / out[0] - 1) * 100
+    # RAMKUMAR 2011 STRUCK FROM THIS ROW 2026-10-02, READ AT SOURCE. It
+    # measured a DIFFERENT EXPERIMENT. His Methods: "Immediately following
+    # intubation, the patients in the head-up group were RETURNED TO SUPINE
+    # POSITION", and "post-induction, patients in all groups were left apneic
+    # in SUPINE position with the tracheal tube exposed to atmosphere". The
+    # tilt existed during PREOXYGENATION ONLY. That is the Altermatt failure
+    # exactly, and Altermatt was retired from this file on 2026-09-26 for it.
+    # tilt_factor() acts on the lung DURING the apnoea, so a trial that
+    # flattens the patient before the apnoea begins cannot anchor it: his
+    # +24.2% (452 (71) vs 364 (83) s, P = 0.030, n = 15 per group, threshold
+    # SpO2 93%, 5 min preoxygenation) measures better DENITROGENATION while
+    # tilted, not a larger lung while apnoeic.
+    #
+    # LANE 2005 IS CLEAN ON THE SAME QUESTION, read at source 2026-10-02. He
+    # chose 20 degrees precisely so that it allows "airway manoeuvres and
+    # intubation WITHOUT NEEDING AN ALTERATION IN POSITION", in explicit
+    # contrast to the 45-degree study he cites where "repositioning the
+    # patient after induction is necessary". Measured 386 (343-429) s head-up
+    # against 283 (243-322) supine = +36.4%, n = 17/18, BMI 26.3/27.9, all
+    # female, threshold SpO2 95%, 3 min preoxygenation.
+    #
+    # TWO CAVEATS ON LANE'S NUMBER, both recorded rather than adjusted for.
+    # He timed from ROCURONIUM, not from the onset of apnoea, so a fixed
+    # offset sits inside both arms and COMPRESSES the ratio -- his true gain
+    # is LARGER than +36.4% (about +43% at a 45 s offset). And his patients
+    # were intubated and disconnected, so the apnoea ran with the trachea OPEN
+    # TO AIR, where this row models a sealed airway. The second makes almost
+    # no difference to the GAIN -- measured 2026-10-02 at +27.6% obstructed
+    # against +26.6% patent -- because the tilt benefit is set before the
+    # obstruction, so it is left alone.
+    #
+    # THE BAND IS LEFT AT 15-40 PENDING A RULING. It was set to span Lane's
+    # +36% and Ramkumar's +24% as equals. With Ramkumar struck it spans one
+    # usable measurement, and Lane's clock correction puts his true value at
+    # or past the upper edge. Re-fitting a band in the same edit that strikes
+    # its second anchor would be two changes at once.
     check("tilt, non-obese 20 deg", gain(70, 1.75, 15, 20, 95), 15, 40, " %",
-          "clinical; Lane +36%, Ramkumar +24%")
+          "clinical; Lane 2005 +36.4% (tilt MAINTAINED). Ramkumar struck: "
+          "his tilt was preoxygenation-only -- see the note above")
     # RETIRED 2026-09-26, RULED: "we only need up to the highest tilt studied
     # and only if anaesthetised". This row tested 90 degrees against Altermatt
     # 2005. IT IS NOT AN ANAESTHETISED TILT AT ALL, which the paper says in
