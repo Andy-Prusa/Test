@@ -4418,6 +4418,164 @@ print("    gap is the one unexplained step. unwashed_fraction is NOT it --")
 print("    it is 1.77% supine and 0.00% tilted in Dixon, ~3 of 12 points.")
 
 print()
+import inspect  # noqa: E402
+import re  # noqa: E402
+from scipy import stats as _st  # noqa: E402
+
+print("=" * 72)
+print("ENTRY 35: frc_drop TESTED AGAINST THE PARALYSED MEASUREMENT AND LEFT")
+print("ALONE, and the age question ruled across the whole model")
+print("=" * 72)
+print("  THE POINT OF THIS SECTION IS A NEGATIVE RESULT. frc_drop is sourced")
+print("  to a SIMULATOR ('ICSM 300-500'). Two measurements were read at source")
+print("  on 2026-10-02 and NEITHER MOVES IT. Nothing below was fitted.")
+
+_LB = 0.45359237
+# Laws 1968 Table III: FRC before premedication -> FRC after induction+paralysis
+# (age, weight_lb, FRC_baseline, FRC_paralysed), transcribed from the page
+_LAWS3 = [(16, 130, 1551, 1502), (34, 185, 2550, 2130), (45, 143, 1662, 1354),
+          (46, 105, 1829, 1872), (59, 128, 2992, 2377), (22, 125, 1947, 1992),
+          (48, 172, 1655, 1271), (36, 155, 2444, 2218)]
+# Table II: premedicated baseline -> after induction + paralysis
+_LAWS2 = [(16, 1559, 1502), (34, 2617, 2130), (45, 1603, 1354), (46, 1873, 1872),
+          (59, 2649, 2377), (22, 2092, 1992), (48, 1330, 1271), (36, 2602, 2218)]
+
+_l3_pct = [(b - a) / b * 100 for _ag, _w, b, a in _LAWS3]
+_l3_abs = [b - a for _ag, _w, b, a in _LAWS3]
+_l2_pct = [(b - a) / b * 100 for _ag, b, a in _LAWS2]
+
+print("  LAWS 1968, Can Anaes Soc J 15:325 -- PARALYSED, the model's own state.")
+print("  His paper reports PERCENTAGES only; the absolute fall is computed here.")
+print("  That the recomputed percentages reproduce his stated 9.0 and 10.8")
+print("  VERIFIES THE TRANSCRIPTION rather than assuming it.")
+check("Laws Table II, mean % fall [his stated 9.0]",
+      float(np.mean(_l2_pct)), 9.01, 0.02, "%")
+check("Laws Table III, mean % fall [his stated 10.8]",
+      float(np.mean(_l3_pct)), 10.81, 0.02, "%")
+check("Laws Table III, mean ABSOLUTE fall",
+      float(np.mean(_l3_abs)), 239.2, 0.5, " mL")
+check("Laws Table III, SD of absolute fall",
+      float(np.std(_l3_abs, ddof=1)), 238.0, 1.0, " mL")
+check("Laws cohort mean weight", float(np.mean([w * _LB for _a, w, _b, _c in _LAWS3])),
+      64.8, 0.1, " kg")
+
+print("  AND THE MODEL'S OWN DROP, which is the quantity to compare. frc_drop")
+print("  is NOT a cohort-mean absolute fall: frc_anaes() applies it at the")
+print("  BMI 22 reference only and Pelosi's shape scales everything above.")
+_p22 = Patient(weight=22 * 1.70 ** 2, height=1.70, age=40, hb=14.0)
+_drop22 = (_p22.frc_awake() - _p22.frc_anaes()) / _p22.frc_awake() * 100
+check("model induction drop at BMI 22, h 1.70", _drop22, 14.55, 0.02, "%")
+check("  ... and frc_drop itself is UNCHANGED", _p22.frc_drop, 400.0, 0.0, " mL")
+
+print("  WHY NEITHER PAPER MOVES IT: the shipped value is inside BOTH 95%")
+print("  confidence intervals, and the two papers do not differ from each")
+print("  other. Hewlett's 16.1% (SD 13.4, n=26) is as published.")
+_nl, _ml, _sl = len(_l3_pct), float(np.mean(_l3_pct)), float(np.std(_l3_pct, ddof=1))
+_nh, _mh, _sh = 26, 16.1, 13.4
+_tl = _st.t.ppf(0.975, _nl - 1)
+_th = _st.t.ppf(0.975, _nh - 1)
+check("Laws 95% CI, lower", _ml - _tl * _sl / _nl ** 0.5, 2.18, 0.02, "%")
+check("Laws 95% CI, upper", _ml + _tl * _sl / _nl ** 0.5, 19.45, 0.02, "%")
+check("Hewlett 95% CI, lower", _mh - _th * _sh / _nh ** 0.5, 10.69, 0.02, "%")
+check("Hewlett 95% CI, upper", _mh + _th * _sh / _nh ** 0.5, 21.51, 0.02, "%")
+_se = (_sl ** 2 / _nl + _sh ** 2 / _nh) ** 0.5
+_tstat = (_mh - _ml) / _se
+_df = _se ** 4 / ((_sl ** 2 / _nl) ** 2 / (_nl - 1)
+                  + (_sh ** 2 / _nh) ** 2 / (_nh - 1))
+check("Welch t, Hewlett vs Laws", float(_tstat), 1.175, 0.005, "")
+check("Welch p, Hewlett vs Laws", float(2 * _st.t.sf(abs(_tstat), _df)),
+      0.258, 0.002, "")
+print("    p = 0.26. SO THE SPONTANEOUS-VERSUS-PARALYSED OBJECTION NEVER")
+print("    BITES: neither cohort is precise enough for the state difference")
+print("    to show. That is a limit of the evidence, not a licence.")
+
+print("  THE AGE SLOPES AGREE ACROSS THE STATE DIFFERENCE, AND ARE NOT TAKEN.")
+_lr = _st.linregress([a for a, _w, _b, _c in _LAWS3], _l3_pct)
+check("Laws age slope, PARALYSED", float(_lr.slope), 0.450, 0.002, " %/yr")
+check("  ... its p value (n=8, underpowered)", float(_lr.pvalue), 0.102, 0.002, "")
+check("  ... slope 95% CI lower", float(_lr.slope - 2.447 * _lr.stderr),
+      -0.120, 0.002, " %/yr")
+check("  ... slope 95% CI upper", float(_lr.slope + 2.447 * _lr.stderr),
+      1.020, 0.002, " %/yr")
+print("    Hewlett's is 0.430 %/yr (n=26, r=0.41, p<0.005) in SPONTANEOUS")
+print("    patients. Point estimates 5% apart, two states, six years apart.")
+print("    Laws's CI contains Hewlett's value AND zero, so he cannot confirm")
+print("    it alone and is not evidence against it.")
+
+print("  AND THE TWO CANDIDATE AGE TERMS OPPOSE EACH OTHER, which is what made")
+print("  the ruling easy. Quanjer's awake term makes the drop PERCENTAGE")
+print("  shrink with age; both measurements have it growing.")
+_qf = lambda a: 2.34 * 1.75 + 0.009 * a - 1.09
+for _a, _w_lo, _w_hi in ((20, 17.13, 12.60), (45, 16.00, 23.35), (70, 15.01, 34.10)):
+    check(f"drop% at {_a} y, awake FRC carrying Quanjer's age term",
+          400.0 / (2500.0 * _qf(_a) / _qf(45.0)) * 100, _w_lo, 0.02, "%")
+    check(f"  ... what Hewlett measured at {_a} y", 4.0 + 0.43 * _a, _w_hi, 0.02, "%")
+print("    OPPOSITE SIGNS. So the coherent version of an age term moves the")
+print("    one quantity two papers agree on IN THE WRONG DIRECTION.")
+
+print("  WHERE AGE ENTERS THE MODEL AT ALL -- one place out of nine.")
+_aged = []
+for _nm in ('quanjer_tlc', 'frc_awake', 'frc_anaes', 'rv_eff', 'vo2_anaes',
+            'co_anaes', 'closing_capacity', 'n2_capacities', 'vq_distribution'):
+    _src = inspect.getsource(getattr(Patient, _nm))
+    _body = re.sub(r'""".*?"""', '', _src, flags=re.S)
+    if 'self.age' in _body:
+        _aged.append(_nm)
+check("methods of nine carrying an age term", float(len(_aged)), 1.0, 0.0, "")
+print(f"    the one is: {', '.join(_aged)}  (cc_buist_slope, 0.525 %TLC/yr)")
+print("    TLC and awake FRC are age-flat BY RULING. residual volume, oxygen")
+print("    consumption, cardiac output, the V/Q spread and the nitrogen stores")
+print("    are age-flat BY NO RULING AT ALL -- that is the open question, and")
+print("    RULED 2026-10-02: age is NOT PURSUED in any of them.")
+
+print()
+print("  THE SIMULATOR'S OWN SEX-AND-AGE STATEMENT, added 2026-10-02. These are")
+print("  quoted to a clinician in airway_scenario.html, which makes them worse")
+print("  to let rot than anything in HANDOVER -- the statement replaced TWO")
+print("  claims that had already rotted there (an 'age basis' that FRC does not")
+print("  have, and Buist placeholders retired on 2026-09-26).")
+print("  Page default patient: 107 kg, 1.75 m, age 45, 25 deg, frc_ref 2860.")
+
+
+def _pgp(age=45, scale=1.0):
+    return Patient(weight=107.0, height=1.75, age=age, hb=15.0,
+                   tilt_deg=25.0, frc_ref=2860.0 * scale)
+
+
+def _pgt(scale):
+    _r = simulate(_pgp(scale=scale), [AirwayEpoch(900, resistance=OBS, fgo2=0.21)],
+                  dt=0.05, feo2_start=0.87, stop_sao2=0.0)
+    return time_to(_r, 'spo2', 95)
+
+
+check("page default: BMI", _pgp().bmi(), 34.94, 0.01, "")
+_tm, _tf = _pgt(1.0), _pgt(0.86)
+check("page says: t95 on MALE equations", _tm, 285.40, 0.50, " s")
+check("page says: t95 at a woman's FRC (-14%)", _tf, 243.05, 0.50, " s")
+check("page says: the over-estimate", _tm - _tf, 42.35, 0.50, " s")
+check("  ... as a fraction", (_tm / _tf - 1) * 100, 17.4, 0.2, "%")
+print("    THE ERROR RUNS IN THE UNSAFE DIRECTION FOR A WOMAN: the page")
+print("    promises margin her lung volume does not support. Stated on the")
+print("    page in those terms, not as a neutral 'limitation'.")
+
+print("  AND WHAT AGE DOES, which the page also quotes. Age acts on ONE thing,")
+print("  the volume at which airways close, so it bites only once closure is")
+print("  reached -- continuously in the obese default, not at all in a slim")
+print("  patient below about 40.")
+check("page says: shunt at age 20, 107 kg",
+      _pgp(age=20).shunt_base_eff() * 100, 3.50, 0.02, "%")
+check("page says: shunt at age 80, 107 kg",
+      _pgp(age=80).shunt_base_eff() * 100, 10.73, 0.02, "%")
+_sl = lambda a: Patient(weight=22 * 1.70 ** 2, height=1.70, age=a, hb=14.0)
+check("slim patient, shunt at age 20", _sl(20).shunt_base_eff() * 100,
+      3.23, 0.02, "%")
+check("  ... and at age 40, UNCHANGED", _sl(40).shunt_base_eff() * 100,
+      3.23, 0.02, "%")
+print("    Identical at 20 and 40 in the slim patient: closing capacity is")
+print("    still BELOW the anaesthetised lung volume, so nothing closes and")
+print("    age has no route to act. That is why the page says 'below about 40'.")
+
+print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")
     for f in _fails:
