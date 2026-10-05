@@ -5,6 +5,96 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-05 (thirty-sixth entry): the method's own validation paper says WHY Laws cannot move `frc_drop` — between a quarter and half of his scatter is the instrument, and nothing changes but the confidence in a ruling already made
+
+One paper read at source, **no parameter moved, no benchmark row moved**. This
+entry exists because the obvious next question about entry 35 — *why is the only
+admissible measurement so imprecise?* — now has a measured answer instead of
+"n = 8".
+
+### 1. HEWLETT I IS THE METHODOLOGY COMPANION, and it validates against a known volume
+
+**Hewlett AM, Hulands GH, Nunn JF, Minty KB (1974).** *Functional residual
+capacity during anaesthesia. I: Methodology.* **Br J Anaesth 46:479-485.** The
+companion to the Hewlett II of entry 35. **No FRC measurement in patients** — it
+tests the helium-dilution technique against a model lung of known volume,
+**4.528 L by water displacement**.
+
+**THE METHOD IS UNBIASED.** Four series, mean error **+35, +31, −17 and +1 mL**
+on 4.5 L — all under 0.8%, and the authors report no significant systematic
+error in either ventilation mode.
+
+**BUT ARTIFICIAL VENTILATION COSTS PRECISION:**
+
+| mode | SD of a single measurement |
+|---|---|
+| spontaneous | **46 – 60 mL** |
+| **artificial ventilation** | **107 – 159 mL** |
+
+**1.8 to 3.5× worse**, and they give the mechanism rather than leaving it a
+mystery: the artificial mode adds about **1.5 L of apparatus volume** to the
+circuit.
+
+### 2. WHICH IS WHY LAWS SCATTERS AND HEWLETT II DOES NOT
+
+**Laws measured his baseline awake and spontaneous, and his post-induction value
+paralysed.** So his before-after difference carries **one error of each kind**.
+Hewlett II was spontaneous throughout.
+
+| | method SD of the difference | observed per-patient SD | **variance that IS the method** |
+|---|---|---|---|
+| **Laws 1968** | 116 – 170 mL | 238 mL | **24 – 51%** |
+| **Hewlett II 1974** | 65 – 85 mL | 325 mL | **4 – 7%** |
+
+**Between a quarter and half of Laws's scatter is the instrument, not the
+patient.** Hewlett II sits in the low-error mode and its spread is about 95%
+biological.
+
+**AND LAWS'S OWN PRECISION CLAIM IS OPTIMISTIC BY HIS OWN ACCOUNT.** He quotes
+CV 0.7% on a lung analogue — about **32 mL** on a 4.5 L volume — against
+Hewlett's **107–159 mL** in the same ventilated mode, a **3 to 5×** difference.
+Laws says why himself: *"No parallel for oxygen consumption could be designed
+with this set-up without loss of helium at the same time."* His analogue could
+not simulate the dominant error path. Hewlett's humidified, circuit-ventilated
+model could.
+
+### 3. WHAT IT DOES AND DOES NOT DO
+
+**`frc_drop` stays at 400 mL and the entry-35 ruling stands.** What changes is
+the *standing* of that ruling: Laws's wide confidence interval, **2.18–19.45%**,
+which is what let the shipped 14.55% survive, is now known to be
+**substantially measurement noise for an identified and quantified reason**
+rather than merely small n. The same noise is part of why his age slope
+(0.450 %/yr, CI −0.12 to +1.02) cannot confirm Hewlett's 0.430.
+
+**This is the better kind of negative result**: entry 35 established that the
+admissible measurement does not move the parameter; this establishes *why it
+could not have*, which is a different and more durable claim.
+
+**THE CAVEAT, AND IT IS REAL.** These are **Hewlett's** apparatus and model.
+Laws used a Godart helium meter with a 9 L Collins spirometer and a different
+circuit. So this bounds the error of **the technique class under artificial
+ventilation**, not Laws's specific instrument — and it is recorded as that, not
+as a correction to his published figure.
+
+### 4. WHAT CHANGED, AND IT IS ONLY PROSE
+
+No parameter, no benchmark row, no model file logic. `sources_registry.py` goes
+to **37 sources / 33 read**. All of §1–§2 above is regenerable by
+`handover_numbers.py`.
+
+**THE HEWLETT/LAWS CLUSTER IS NOW CLOSED**: Hewlett I, Hewlett II and Laws are
+all read at source. Three further paralysed-FRC measurements are named in
+Hewlett II's reference list and **none is held** — Westbrook 1973
+(*J Appl Physiol* 34:81), Rehder 1972 (*Anesthesiology* 37:395, paralysed but
+**sitting**, so a posture mismatch) and Don 1970. Any of them would be a second
+paralysed anchor; Westbrook is the closest match in state and posture.
+
+**THE OUTSTANDING ACQUISITION IS UNCHANGED** and is not this one: an
+anaesthetised, **straight-tilt** FRC measurement at any angle, still the only
+independent check on `tilt_gain_lean` and `tilt_gain_bmi` after the Valenza
+retirement of entry 34.
+
 ## Current state — 2026-10-02 (thirty-fifth entry): the paralysed FRC measurement was acquired and it LEAVES `frc_drop` ALONE — a negative result, a ruling that age is NOT PURSUED IN ANY SYSTEM, and a justification found rotted inside the parameter that rested on it
 
 Two papers read at source, **no parameter moved**, and the age question settled

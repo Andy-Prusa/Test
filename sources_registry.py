@@ -529,6 +529,32 @@ BENCHMARK_SOURCES = [
      "1968 for the paralysed case but quotes no paralysed value. Its age "
      "regression (% reduction = 4.0 + 0.43 x age, r=0.41, p<0.005) is NOT "
      "implemented; see apnoea_core.py frc_drop and height_factor()"),
+    ("Hewlett, Hulands, Nunn & Minty 1974, *Br J Anaesth* 46:479-485",
+     "nothing -- it bounds the MEASUREMENT ERROR behind Laws and Hewlett II",
+     "2026-10-05",
+     "read at source from upload. 'FRC during anaesthesia I: METHODOLOGY', the "
+     "companion to Hewlett II. No FRC measurement in patients; it VALIDATES "
+     "the helium-dilution technique against a model lung of known volume "
+     "(4.528 L by water displacement). THE METHOD IS UNBIASED -- four series, "
+     "mean error +35, +31, -17 and +1 mL on 4.5 L, no significant systematic "
+     "error in either mode. BUT ARTIFICIAL VENTILATION COSTS PRECISION: SD of "
+     "a single measurement 46-60 mL spontaneous against 107-159 mL "
+     "ARTIFICIAL, 1.8-3.5x worse, mechanism given (the artificial mode adds "
+     "~1.5 L of apparatus volume to the circuit). WHY THAT MATTERS: Laws 1968 "
+     "measured his baseline awake-spontaneous and his post-induction value "
+     "PARALYSED, so his difference carries one error of each kind -- 116-170 "
+     "mL, which is 24-51% of the 238 mL per-patient scatter he reported. "
+     "Hewlett II, spontaneous throughout, carries only 65-85 mL, 4-7% of its "
+     "325 mL scatter, so its spread is ~95% biological. It also shows LAWS'S "
+     "OWN PRECISION CLAIM IS OPTIMISTIC BY HIS OWN ACCOUNT: his CV 0.7% on a "
+     "lung analogue is ~32 mL, 3-5x smaller, and he states the reason -- 'no "
+     "parallel for oxygen consumption could be designed with this set-up "
+     "without loss of helium at the same time'. NOTHING IN THE MODEL WAS SET "
+     "FROM IT: frc_drop stays at 400 mL and the 2026-10-02 ruling stands; this "
+     "only explains WHY Laws is too imprecise to move it. CAVEAT: these are "
+     "HEWLETT'S apparatus and model, and Laws used a Godart meter with a 9 L "
+     "Collins spirometer, so it bounds the error of the TECHNIQUE CLASS under "
+     "artificial ventilation, not Laws's specific instrument"),
 ]
 
 

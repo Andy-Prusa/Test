@@ -365,6 +365,57 @@ class Patient:
     # RULED 2026-10-02: age is not pursued in ANY system. See the
     # height_factor() block above for why, including that Quanjer's awake age
     # term moves this very percentage THE WRONG WAY. HANDOVER entry 35.
+    #
+    # WHY LAWS IS SO IMPRECISE, ANSWERED 2026-10-05 BY HIS OWN METHOD'S
+    # VALIDATION PAPER, and it does not change the ruling above -- it explains
+    # it. HEWLETT, HULANDS, NUNN & MINTY 1974, "FRC during anaesthesia I:
+    # METHODOLOGY", Br J Anaesth 46:479, read at source. It is the companion to
+    # the Hewlett II cited above and it validates the helium-dilution technique
+    # against a model lung of KNOWN volume, 4.528 L by water displacement.
+    #
+    # THE METHOD IS UNBIASED. Four series, mean error +35, +31, -17 and +1 mL
+    # on 4.5 L -- all under 0.8%, and the authors report no significant
+    # systematic error in either ventilation mode.
+    #
+    # BUT ARTIFICIAL VENTILATION COSTS PRECISION, by a measured factor:
+    #     SD of a single measurement, spontaneous mode     46 - 60 mL
+    #     SD of a single measurement, ARTIFICIAL mode     107 - 159 mL
+    # i.e. 1.8 to 3.5x worse, and they give the MECHANISM rather than leaving
+    # it a mystery: the artificial mode adds about 1.5 L of apparatus volume to
+    # the circuit.
+    #
+    # LAWS MEASURED HIS BASELINE AWAKE AND SPONTANEOUS AND HIS POST-INDUCTION
+    # VALUE PARALYSED, so his before-after difference carries ONE ERROR OF EACH
+    # KIND. Propagated, and set against the scatter each paper actually
+    # reported:
+    #                      method SD of   observed      variance that
+    #                      the difference  per-pt SD    IS THE METHOD
+    #     Laws 1968         116 - 170 mL    238 mL        24 - 51%
+    #     Hewlett II 1974    65 -  85 mL    325 mL         4 -  7%
+    # So BETWEEN A QUARTER AND HALF of Laws's scatter is the instrument, not
+    # the patient. Hewlett II, measuring spontaneous-to-spontaneous throughout,
+    # sits in the low-error mode and its spread is about 95% biological.
+    #
+    # AND LAWS'S OWN PRECISION CLAIM IS OPTIMISTIC BY HIS OWN ACCOUNT. He
+    # quotes CV 0.7% on a lung analogue, about 32 mL on a 4.5 L volume, against
+    # Hewlett's 107-159 mL in the same ventilated mode -- a 3 to 5x difference.
+    # Laws says why himself: "No parallel for oxygen consumption could be
+    # designed with this set-up without loss of helium at the same time." His
+    # analogue could not simulate the dominant error path; Hewlett's humidified,
+    # circuit-ventilated model could.
+    #
+    # WHAT THIS DOES AND DOES NOT DO. It does NOT move frc_drop and it does NOT
+    # reopen the ruling. It makes the negative result BETTER FOUNDED: Laws's
+    # wide confidence interval, 2.18-19.45%, which is what let the shipped
+    # 14.55% survive, is now known to be SUBSTANTIALLY MEASUREMENT NOISE for an
+    # identified and quantified reason rather than merely small n. The same
+    # noise is part of why his age slope cannot confirm Hewlett's.
+    #
+    # THE CAVEAT, AND IT IS REAL: these are HEWLETT'S apparatus and model. Laws
+    # used a Godart helium meter with a 9 L Collins spirometer and a different
+    # circuit. So this bounds the error of THE TECHNIQUE CLASS UNDER ARTIFICIAL
+    # VENTILATION, not Laws's specific instrument, and it is recorded as that
+    # and not as a correction to his stated figure. HANDOVER entry 36.
     frc_drop: float = 400.0      # mL lost at induction; see the block above
     # Bed tilt, degrees. Positive is head-up / reverse Trendelenburg. Head-up
     # lifts the abdominal contents off the diaphragm, so it raises FRC and the

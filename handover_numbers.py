@@ -4576,6 +4576,81 @@ print("    still BELOW the anaesthetised lung volume, so nothing closes and")
 print("    age has no route to act. That is why the page says 'below about 40'.")
 
 print()
+print("=" * 72)
+print("ENTRY 36: HEWLETT I BOUNDS THE MEASUREMENT ERROR, which explains why")
+print("Laws cannot move frc_drop and changes no parameter")
+print("=" * 72)
+print("  Hewlett, Hulands, Nunn & Minty 1974, Br J Anaesth 46:479, read at")
+print("  source 2026-10-05. Model lung of KNOWN volume 4.528 L by water")
+print("  displacement. Figures below are transcribed from its Table I; the")
+print("  propagation is computed here.")
+
+_H1_TRUE = 4.528
+_H1_MEANS = (("spont S1", 4.563), ("spont S2", 4.559),
+             ("artif S1", 4.511), ("artif S2", 4.529))
+_H1_SP = (0.046, 0.060)     # L, SD of individual measurements, spontaneous
+_H1_AR = (0.107, 0.159)     # L, SD of individual measurements, artificial
+
+print("  THE METHOD IS UNBIASED -- no significant systematic error, either mode:")
+for _lab, _m in _H1_MEANS:
+    check(f"Hewlett I bias, {_lab}", (_m - _H1_TRUE) * 1000.0,
+          round((_m - _H1_TRUE) * 1000.0), 0.6, " mL")
+check("  ... largest bias as a fraction of the model volume",
+      max(abs(_m - _H1_TRUE) for _l, _m in _H1_MEANS) / _H1_TRUE * 100.0,
+      0.77, 0.01, "%")
+
+print("  BUT ARTIFICIAL VENTILATION COSTS PRECISION. Their mechanism: the")
+print("  artificial mode adds ~1.5 L of apparatus volume to the circuit.")
+check("artificial/spontaneous SD ratio, low end", _H1_AR[0] / _H1_SP[1],
+      1.78, 0.01, "x")
+check("artificial/spontaneous SD ratio, high end", _H1_AR[1] / _H1_SP[0],
+      3.46, 0.01, "x")
+
+_dsd = lambda a, b: (a * a + b * b) ** 0.5 * 1000.0
+print("  PROPAGATED TO A BEFORE-AFTER DIFFERENCE. Laws measured his baseline")
+print("  awake-SPONTANEOUS and his post-induction value PARALYSED, so his")
+print("  difference carries ONE ERROR OF EACH KIND. Hewlett II was")
+print("  spontaneous throughout.")
+_l_lo, _l_hi = _dsd(_H1_SP[0], _H1_AR[0]), _dsd(_H1_SP[1], _H1_AR[1])
+_h_lo, _h_hi = _dsd(_H1_SP[0], _H1_SP[0]), _dsd(_H1_SP[1], _H1_SP[1])
+check("Laws, method SD of the difference, low", _l_lo, 116.0, 1.0, " mL")
+check("Laws, method SD of the difference, high", _l_hi, 170.0, 1.0, " mL")
+check("Hewlett II, method SD of the difference, low", _h_lo, 65.0, 1.0, " mL")
+check("Hewlett II, method SD of the difference, high", _h_hi, 85.0, 1.0, " mL")
+
+# observed scatter: Laws from his Table III (transcribed above), Hewlett II as
+# published -- 390 mL = 16.1%, SD 13.4% of the implied baseline
+_laws_sd = float(np.std([b - a for _ag, _w, b, a in _LAWS3], ddof=1))
+_h2_sd = 0.134 * (390.0 / 0.161)
+print("  AND AGAINST THE SCATTER EACH PAPER ACTUALLY REPORTED:")
+check("Laws, observed per-patient SD", _laws_sd, 238.0, 1.0, " mL")
+check("Hewlett II, observed per-patient SD", _h2_sd, 324.6, 1.0, " mL")
+check("Laws, variance that IS THE METHOD, low",
+      (_l_lo / _laws_sd) ** 2 * 100.0, 24.0, 0.5, "%")
+check("Laws, variance that IS THE METHOD, high",
+      (_l_hi / _laws_sd) ** 2 * 100.0, 51.0, 0.5, "%")
+check("Hewlett II, variance that IS THE METHOD, low",
+      (_h_lo / _h2_sd) ** 2 * 100.0, 4.0, 0.5, "%")
+check("Hewlett II, variance that IS THE METHOD, high",
+      (_h_hi / _h2_sd) ** 2 * 100.0, 6.8, 0.5, "%")
+print("    SO BETWEEN A QUARTER AND HALF of Laws's scatter is the INSTRUMENT.")
+print("    Hewlett II's is ~95% biological. That is why Laws's CI is wide")
+print("    enough to contain the shipped value, and it is a limit of the")
+print("    EVIDENCE, not a licence to move the parameter.")
+
+print("  LAWS'S OWN PRECISION CLAIM IS OPTIMISTIC BY HIS OWN ACCOUNT:")
+check("Laws's quoted CV 0.7% on a lung analogue, in mL",
+      0.007 * _H1_TRUE * 1000.0, 31.7, 0.2, " mL")
+check("  ... how much smaller than Hewlett I's artificial-mode SD, low",
+      _H1_AR[0] / (0.007 * _H1_TRUE), 3.38, 0.02, "x")
+check("  ... high", _H1_AR[1] / (0.007 * _H1_TRUE), 5.02, 0.02, "x")
+print("    He states the reason: 'No parallel for oxygen consumption could be")
+print("    designed with this set-up without loss of helium at the same time.'")
+print("  NOTHING MOVED. frc_drop is still 400 mL and the 2026-10-02 ruling")
+print("  stands; this only says WHY Laws is too imprecise to disturb it.")
+check("frc_drop UNCHANGED", Patient().frc_drop, 400.0, 0.0, " mL")
+
+print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")
     for f in _fails:
