@@ -241,7 +241,66 @@ body.zen .stage canvas:not(.ecg){height:clamp(110px,32vh,330px);width:auto}
 body.zen .row{font-size:clamp(10px,1.65vh,15px);padding:clamp(1px,0.35vh,5px) 0}
 body.zen .row b{font-size:clamp(12px,2vh,19px)}
 body.zen .flat{font-size:clamp(9px,1.3vh,12px);padding:2px 0}
-</style></head><body><div class="wrap">
+/* ---- STARTUP DEMOGRAPHICS NOTICE ------------------------------------------
+   Shown once per browser unless dismissed with the box ticked. It is a
+   STATEMENT, not a consent gate: dismissing it changes nothing about the
+   model, and the same text stays in the footer for anyone who ticked the box
+   and later wants it back. */
+#demogwrap{position:fixed;inset:0;z-index:60;display:none;
+ background:rgba(4,10,14,0.78);backdrop-filter:blur(2px);
+ align-items:center;justify-content:center;padding:16px}
+#demogwrap.on{display:flex}
+#demog{max-width:620px;width:100%;max-height:88vh;overflow:auto;
+ background:#0f1a22;border:1px solid #27414f;border-radius:10px;
+ padding:20px 22px;box-shadow:0 18px 50px rgba(0,0,0,0.55)}
+#demog h2{margin:0 0 10px;font-size:1.12rem;color:#e8f3f7;
+ font-family:'Barlow Condensed',Barlow,system-ui,sans-serif;
+ letter-spacing:0.01em}
+#demog p{margin:0 0 10px;font-size:0.88rem;line-height:1.5;color:#b9ccd6}
+#demog .warn{color:#ff9f43;font-weight:600}
+#demog .foot{margin-top:14px;display:flex;flex-wrap:wrap;gap:12px;
+ align-items:center;justify-content:space-between}
+#demog label{font-size:0.82rem;color:#9fb4c0;display:flex;gap:7px;
+ align-items:center;cursor:pointer}
+#demog label input{cursor:pointer}
+#demogok{background:#1d7f8c;color:#eaf7fa;border:0;border-radius:6px;
+ padding:8px 18px;font-size:0.9rem;cursor:pointer;font-weight:600}
+#demogok:hover{background:#249aa9}
+#demognote{font-size:0.76rem;color:#7d93a0;margin:8px 0 0}
+@media(max-width:620px){#demog{padding:16px}}
+</style></head><body>
+<div id="demogwrap" role="dialog" aria-modal="true"
+     aria-labelledby="demogh" aria-describedby="demogb">
+<div id="demog">
+<h2 id="demogh">Who this patient is</h2>
+<div id="demogb">
+<p><b>This patient is a 45-year-old man.</b> Both are fixed &mdash; neither is a
+slider on this page.</p>
+<p><b>Sex.</b> The model uses Quanjer's <b>male</b> reference equations for every
+patient, by ruling. A woman of the same height has about 14% less FRC and 16%
+less total lung capacity, and <span class="warn">the error runs in the unsafe
+direction</span>: at this page's default patient the timeline shows 285 s to
+SpO&#8322; 95% where her own lung volume gives 243 s. <b>The page promises about
+42 s &mdash; a sixth of the margin &mdash; that she does not have.</b> Scale the
+times down for a woman, and do not read the absolute numbers.</p>
+<p><b>Age.</b> Fixed at 45, and it acts on <b>one thing only</b>: the lung volume
+at which small airways begin to close. Lung capacity and FRC carry no age term
+at all. So age bites hardest in a patient already near closure &mdash; in this
+107 kg default it moves the shunt from 3.5% at 20 to 10.7% at 80 &mdash; and does
+nothing whatever below about 40 in a slim patient. Published measurements that
+the FRC lost at induction <i>also</i> grows with age are not represented, so an
+older patient's margin is if anything flattered.</p>
+<p>Modelled, not measured. Unpublished research model &mdash; not a medical
+device, not for patient care.</p>
+</div>
+<div class="foot">
+<label><input type="checkbox" id="demogsupp"> Don't show this again</label>
+<button type="button" id="demogok">Continue</button>
+</div>
+<p id="demognote"></p>
+</div>
+</div>
+<div class="wrap">
 <div class="side" id="side">
 <h1>An apnoea simulator</h1>
 <p class="sub"><b>What this is.</b> A computational model of gas exchange during apnoea, run
@@ -567,6 +626,54 @@ function loadSaved(){if(!CANSAVE)return{};
 function putSaved(o){if(!CANSAVE)return false;
  try{localStorage.setItem(SAVEKEY,JSON.stringify(o));return true;}
  catch(e){return false;}}
+
+// ---- the startup demographics notice ---------------------------------------
+// Its own key, so clearing the saved-simulation list does not silently bring
+// the notice back and vice versa. EVERY access is guarded exactly as above:
+// localStorage throws outright in a private window and is commonly absent
+// from a file:// page, and this notice must not be the thing that breaks the
+// page when it is. With no storage the box disables itself, says why, and the
+// notice simply appears every time -- which is the SAFE failure, because the
+// statement is about reading the numbers wrongly.
+const DEMOGKEY='apnoea.demog.v1';
+function demogSuppressed(){if(!CANSAVE)return false;
+ try{return localStorage.getItem(DEMOGKEY)==='1';}catch(e){return false;}}
+function demogSuppress(){if(!CANSAVE)return false;
+ try{localStorage.setItem(DEMOGKEY,'1');return true;}catch(e){return false;}}
+
+const demogWrap=document.getElementById('demogwrap');
+const demogSupp=document.getElementById('demogsupp');
+const demogNote=document.getElementById('demognote');
+const demogOk=document.getElementById('demogok');
+
+function closeDemog(){
+ if(demogSupp && demogSupp.checked && !demogSuppress()){
+  // Ticked but could not be stored: say so rather than pretending.
+  demogNote.textContent='This browser will not let the page remember that, '
+   +'so the notice will appear again.';
+  return;
+ }
+ demogWrap.classList.remove('on');
+ document.removeEventListener('keydown',demogKey);
+}
+function demogKey(e){ if(e.key==='Escape'){e.preventDefault();closeDemog();} }
+
+function openDemog(){
+ if(!CANSAVE && demogSupp){
+  demogSupp.disabled=true;
+  demogNote.textContent='Storage is unavailable in this browser, so this '
+   +'notice cannot be suppressed. The same statement is in the footer.';
+ }
+ demogWrap.classList.add('on');
+ document.addEventListener('keydown',demogKey);
+ if(demogOk) demogOk.focus();
+}
+
+if(demogOk) demogOk.addEventListener('click',closeDemog);
+// Clicking the backdrop dismisses, but NOT a click inside the dialog.
+if(demogWrap) demogWrap.addEventListener('click',e=>{
+ if(e.target===demogWrap) closeDemog();});
+if(!demogSuppressed()) openDemog();
 
 function refreshPresets(sel){
  sbPre.innerHTML='';

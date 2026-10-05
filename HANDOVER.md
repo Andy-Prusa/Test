@@ -5,6 +5,81 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-05 (thirty-seventh entry): the demographics statement is now a STARTUP NOTICE, not a footer nobody reached — and the page is checked in a real browser again
+
+**View code only. No model change, no parameter, no benchmark row.** `model.js`,
+`apnoea_core.py` and `bloodgas.py` are untouched, so `test_parity.py` is
+unaffected by construction.
+
+### 1. WHY IT MOVED, and it is not decoration
+
+Entry 35 put the sex-and-age statement in the page footer. **The footer is below
+the sliders, after four paragraphs.** The thing a clinician must know *before*
+reading a number off this page — that the patient is a 45-year-old **man**, and
+that the male equations **over-estimate a woman's time** — has to arrive before
+the numbers do, not after them.
+
+It is now a modal on load, with a **"Don't show this again"** box. It is a
+STATEMENT, not a consent gate: dismissing it changes nothing in the model, and
+the same text stays in the footer for anyone who ticked the box and later wants
+it back.
+
+### 2. THE STORAGE IS GUARDED, AND THE FAILURE MODE IS THE SAFE ONE
+
+Its own key, `apnoea.demog.v1`, separate from `apnoea.sim.v1` so clearing saved
+simulations does not silently bring the notice back or vice versa. Every access
+sits in try/catch, exactly as `storeOK`/`loadSaved`/`putSaved` already do —
+`localStorage` **throws outright** in a private window and is commonly absent
+from a `file://` page, which is precisely how this page is meant to open from a
+USB stick.
+
+**With no storage the box disables itself, says why, and the notice appears
+every time.** That is the safe direction: the statement is about reading the
+numbers wrongly, so failing toward showing it is correct. And a tick that cannot
+be persisted says so rather than pretending — the dialog stays open with a line
+explaining it.
+
+### 3. THE PAGE IS CHECKED IN A REAL BROWSER AGAIN
+
+The self-contained claim in `DEPLOY.md` says it is *"checked, not assumed"*, but
+**no browser check is committed** — the 2026-09-30 one was done ad hoc in a
+session and left with it. It was redone here, in headless Chromium, serving
+`site/` over HTTP with the real `_headers` Content-Security-Policy applied:
+
+| | |
+|---|---|
+| notice visible on first load | yes |
+| closes on Continue | yes |
+| tick survives a reload | yes |
+| appears again in a fresh browser | yes |
+| **external requests** | **0** |
+| page errors | **0** |
+
+**THE CHECK ITSELF IS STILL NOT COMMITTED** and that is the open item, not a
+finding: it needs `playwright` as a dev dependency, which this repo has
+deliberately never had. Until it is, the zero-request property is re-verified by
+hand each time somebody remembers to.
+
+### 4. WHAT IS NOT HERE
+
+**The per-slider sweep graphs are NOT in this entry.** Ruled 2026-10-05: one
+page of graph per slider, computed ONCE and regenerated only when the engine
+changes. Sizing was done first and it is the reason they are not here yet —
+**one simulation costs 4.1 s in `model.js` and 37 s in `apnoea_core.py`**, so a
+10-slider × 11-point × 2-arm sweep is 220 simulations: about 15 minutes through
+Node, about 2¼ hours through Python.
+
+So the generator will be **Node against `model.js`** — not only for the 9x, but
+because the page runs `model.js`, so the baked curves and the live Run button
+cannot disagree. Parity keeps `model.js` honest against the reference.
+
+**Staleness will be keyed on the AST of `apnoea_core.py` + `bloodgas.py`, not
+their bytes.** That distinction was earned the same day: the `simulate()` disk
+cache keys on raw bytes, and when it was examined it turned out to be stale for
+a REAL reason (it predated the tilt solve of entry 34) — but the same keying
+would also have thrown 501 MB away for a comment edit. A comment must not
+trigger a 15-minute rebuild; a parameter change must.
+
 ## Current state — 2026-10-05 (thirty-sixth entry): the method's own validation paper says WHY Laws cannot move `frc_drop` — between a quarter and half of his scatter is the instrument, and nothing changes but the confidence in a ruling already made
 
 One paper read at source, **no parameter moved, no benchmark row moved**. This
