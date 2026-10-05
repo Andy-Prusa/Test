@@ -16,3 +16,9 @@ vq_comparison.html
 # committed by accident on 2026-09-26 (632b669) because `git add -A` ran
 # while the test still held the file open.
 _g[0-9].py
+
+# build_sweeps.js writes this after EVERY slider so a killed run resumes
+# instead of losing an hour. It is a transient, is deleted when the real
+# sweeps.json is written, and is NOT the deployable artifact -- committing
+# it would ship a half-finished sweep that looks complete.
+/sweeps.partial.json

@@ -167,13 +167,45 @@ function linspace(lo, hi, n) {
 
 const SMOKE = process.argv.includes('--smoke');
 
+// ---- checkpointing, because two 70-minute runs were lost -----------------
+// Each completed slider is written to sweeps.partial.json, and a run that finds
+// a partial built against the SAME engine hash resumes from it. The hash guard
+// is the point: resuming onto a changed engine would silently mix results from
+// two different models, which is worse than losing the time.
+//
+// This exists because of an operational mistake, not a model problem: the first
+// two attempts were launched with `nohup ... &` behind a harness background
+// call whose wrapper exited immediately, and the detached child was reaped with
+// it. Memory was never the cause -- 15.6 GB free, no cgroup limit, zero OOM
+// events. The job must run AS the backgrounded command, not detached behind it.
+const PART = path.join(__dirname, 'sweeps.partial.json');
+
+function loadPartial(hash) {
+  if (!fs.existsSync(PART)) return [];
+  try {
+    const p = JSON.parse(fs.readFileSync(PART, 'utf8'));
+    if (p.engineHash !== hash) {
+      process.stderr.write('  partial was built against a different engine; '
+        + 'discarding it rather than mixing two models\n');
+      return [];
+    }
+    process.stderr.write(`  resuming: ${p.dials.length} slider(s) already done\n`);
+    return p.dials;
+  } catch (e) {
+    process.stderr.write(`  partial unreadable (${e.message}); starting over\n`);
+    return [];
+  }
+}
+
 function build() {
   const hash = engineHash();
-  const dials = [];
+  const dials = SMOKE ? [] : loadPartial(hash);
+  const done = new Set(dials.map(d => d.key));
   const t0 = Date.now();
   let sims = 0;
   const dialList = SMOKE ? [DIALS[4]] : DIALS;   // --smoke: haemoglobin only
   for (const [key, label, lo, hi, step, def, unit] of dialList) {
+    if (done.has(key)) continue;          // already in the partial
     let xs = linspace(lo, hi, SMOKE ? 3 : POINTS);
     if (key === 'buccalIdx') xs = [0, 1, 2, 3, 4];          // it is an index
     if (step >= 1) xs = xs.map(v => Math.round(v));
@@ -200,6 +232,10 @@ function build() {
                  control, device, derived, moved,
                  deviceOnly: (key === 'fgBuccal' || key === 'buccalIdx'),
                  xlabels: key === 'buccalIdx' ? STARTS.map(s => s[1]) : null });
+    if (!SMOKE) {
+      // written after EVERY slider, so at most one slider's work is ever lost
+      fs.writeFileSync(PART, JSON.stringify({ engineHash: hash, dials }));
+    }
   }
   return {
     generated: new Date().toISOString().slice(0, 10),
@@ -238,5 +274,6 @@ if (SMOKE) {
   process.exit(0);
 }
 fs.writeFileSync(OUT, JSON.stringify(data));
+if (fs.existsSync(PART)) fs.unlinkSync(PART);   // the real file supersedes it
 console.log(`built ${OUT}: ${data.dials.length} sliders, ${data.sims} simulations, `
   + `${data.minutes} min, engine ${data.engineHash}`);
