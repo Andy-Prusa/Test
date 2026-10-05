@@ -257,22 +257,26 @@ body.zen .flat{font-size:clamp(9px,1.3vh,12px);padding:2px 0}
 <div id="demog">
 <h2 id="demogh">Who this patient is</h2>
 <div id="demogb">
-<p><b>This patient is a 45-year-old man.</b> Both are fixed &mdash; neither is a
-slider on this page.</p>
+<p><b>This patient is a 45-year-old man of BMI 25.</b> The age and the sex
+are fixed &mdash; neither is a slider on this page. The body weight is a slider,
+and its default puts him at 76.5 kg for a height of 1.75 m.</p>
 <p><b>Sex.</b> The model uses Quanjer's <b>male</b> reference equations for every
 patient, by ruling. A woman of the same height has about 14% less FRC and 16%
 less total lung capacity, and <span class="warn">the error runs in the unsafe
-direction</span>: at this page's default patient the timeline shows 285 s to
-SpO&#8322; 95% where her own lung volume gives 243 s. <b>The page promises about
-42 s &mdash; a sixth of the margin &mdash; that she does not have.</b> Scale the
-times down for a woman, and do not read the absolute numbers.</p>
+direction</span>: on this page's own timeline the control patient reaches
+SpO&#8322; 95% at <b>562 s</b> and loses cardiac output at <b>12.4 min</b>,
+where her own lung volume gives <b>485 s</b> and <b>11.1 min</b>. <b>The page
+promises about 77 s of margin to desaturation that she does not have.</b> Scale the times
+down for a woman, and do not read the absolute numbers.</p>
 <p><b>Age.</b> Fixed at 45, and it acts on <b>one thing only</b>: the lung volume
 at which small airways begin to close. Lung capacity and FRC carry no age term
-at all. So age bites hardest in a patient already near closure &mdash; in this
-107 kg default it moves the shunt from 3.5% at 20 to 10.7% at 80 &mdash; and does
-nothing whatever below about 40 in a slim patient. Published measurements that
-the FRC lost at induction <i>also</i> grows with age are not represented, so an
-older patient's margin is if anything flattered.</p>
+at all. In this standard BMI 25 patient <b>age does nothing at all up to about
+40</b> &mdash; the closing capacity is still below the anaesthetised lung volume,
+so no part of the lung is shutting &mdash; and only then begins to bite: the
+shunt is 3.2% at both 20 and 40, and 5.7% at 80. Move the weight slider up and
+it bites from the start instead. Published measurements that the FRC lost at
+induction <i>also</i> grows with age are not represented, so an older patient's
+margin is if anything flattered.</p>
 <p>Modelled, not measured. Unpublished research model &mdash; not a medical
 device, not for patient care.</p>
 </div>
@@ -340,35 +344,41 @@ helium regression. Closing capacity is Buist &amp; Ross 1973's published
 regression &mdash; 0.525% of total lung capacity per year of age &mdash; applied
 to a predicted total lung capacity.</p>
 
-<p class="foot"><strong>This patient is a 45-year-old man.</strong> Both are
-deliberate, and neither is a slider on this page. What that costs is set out
-here rather than left to be discovered.
+<p class="foot"><strong>This patient is a 45-year-old man of BMI 25
+(76.5 kg at 1.75 m).</strong> The age and the sex are deliberate and neither is a
+slider; the weight is a slider, and its default puts him there. What that costs
+is set out here rather than left to be discovered, and the same statement
+appears as a notice when the page opens.
 
 <br><br><strong>Sex.</strong> Quanjer's MALE reference equations are used for
 every patient, by ruling. A woman of the same height has about 14% less FRC and
 16% less total lung capacity, and <strong>the error runs in the unsafe
-direction</strong>: at this page's default patient the timeline shows 285 s to
-SpO&#8322; 95% where her own lung volume gives 243 s, so the page promises about
-42 s &mdash; a sixth of the margin &mdash; that she does not have. Scale the
-times down accordingly, and do not read the absolute numbers for a woman at
-all. The cohorts this model is anchored to are themselves female-majority
-(Pelosi 1998 ran seven women to one man per group), so a male model is being
-fitted through female-majority data. That is a known limitation, recorded, and
-not an oversight.
+direction</strong>: on this page's own timeline the control patient reaches
+SpO&#8322; 95% at 562 s and loses cardiac output at 12.4 min, where her own
+lung volume gives 485 s and 11.1 min &mdash; so the page promises about
+77 s of margin to desaturation that she does not have. Scale the times down
+accordingly, and do not read the absolute numbers for a woman at all. The
+cohorts this model is anchored to are themselves female-majority (Pelosi 1998
+ran seven women to one man per group), so a male model is being fitted through
+female-majority data. That is a known limitation, recorded, and not an
+oversight.
 
 <br><br><strong>Age.</strong> Age is fixed at 45 and acts on <strong>one thing
 only</strong>: the lung volume at which small airways begin to close. Lung
 capacity and FRC carry no age term at all &mdash; two reference sets disagree
-about whether they should, and this model follows the one that says no. The
-consequence is that age bites hardest in the patient who is already near
-closure: in this 107 kg default it moves the shunt from 3.5% at age 20 to 10.7%
-at 80, while in a slim patient it does nothing whatever below about 40, because
-nothing is closing yet. Two published measurements that the FRC lost at
-induction <em>also</em> grows with age &mdash; Hewlett 1974 and Laws 1968, both
-about 0.43 to 0.45 percentage points per year &mdash; are <strong>not
-represented here</strong>, by ruling, because age is not modelled in the other
-systems either and carrying it in one place alone would be a fit rather than a
-mechanism. So an older patient's margin is, if anything, flattered.</p>
+about whether they should, and this model follows the one that says no. In this
+standard BMI 25 patient the consequence is that <strong>age does nothing at
+all up to about 40</strong>: the closing capacity is still below the
+anaesthetised lung volume, so no part of the lung is shutting and age has no
+route to act. The shunt is 3.2% at age 20 and still 3.2% at 40, reaching
+5.7% only by 80. Move the weight slider up and it bites from the start
+instead, because an obese lung starts nearer closure. Two published measurements
+that the FRC lost at induction <em>also</em> grows with age &mdash; Hewlett 1974
+and Laws 1968, both about 0.43 to 0.45 percentage points per year &mdash; are
+<strong>not represented here</strong>, by ruling, because age is not modelled in
+the other systems either and carrying it in one place alone would be a fit
+rather than a mechanism. So an older patient's margin is, if anything,
+flattered.</p>
 </div>
 
 <div class="main">
@@ -1052,7 +1062,11 @@ const STEPS=()=>SCENARIO.segs.map(s=>[s.t,s.icon,s.label]);
 const EVENTS=()=>SCENARIO.segs.map(s=>[s.t,s.note]);
 
 const DIALS=[
- ['weight','Body weight',45,180,1,107,null],
+ // THE STANDARD PATIENT IS BMI 25 AT 1.75 m, ruled 2026-10-05.
+ // 76.5 kg / 1.75 m = BMI 24.98, which reads 25.0. The step is 0.5
+ // rather than 1 so the default lands there exactly: at step 1 the
+ // nearest values are 76 kg (BMI 24.8) and 77 kg (BMI 25.1).
+ ['weight','Body weight',45,180,0.5,76.5,null],
  ['height','Height',1.45,2.05,0.01,1.75,null],
  ['frcScale','FRC',0.55,1.5,0.01,1.0,null],
  ['bmrScale','Metabolic rate',0.6,1.7,0.01,1.0,null],

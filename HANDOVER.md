@@ -5,6 +5,91 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-05 (thirty-eighth entry): the STANDARD PATIENT becomes BMI 25 — and the figures that describe him now have ONE definition, because they had already rotted apart
+
+**RULED 2026-10-05 by A. Heard: the standard patient is BMI 25 at 1.75 m.**
+View code only. `model.js`, `apnoea_core.py` and `bloodgas.py` are untouched, so
+`test_parity.py` is unaffected and no benchmark row moves.
+
+### 1. THE CHANGE, and why 76.5 kg
+
+76.5 kg at 1.75 m is **BMI 24.98**, which reads 25.0. The weight dial's step
+goes **1 → 0.5** so the default lands exactly there; at step 1 the neighbours
+are 76 kg (BMI 24.8) and 77 kg (BMI 25.1).
+
+### 2. IT MOVED EVERY NUMBER THE PAGE QUOTES ABOUT ITSELF, and the old ones were WRONG TWICE
+
+The notice added in entry 37 quoted **285 s / 243 s / 42 s / 107 kg**. Those
+were computed at the old obese default **and on a single permanently-obstructed
+epoch**, while the text claimed to describe *"the timeline"* — the page's real
+cico scenario, which holds the airway **patent from 280 to 430 s**. Recomputed
+on the real timeline at the new standard patient:
+
+| | control (no buccal) | with a woman's FRC, −14% |
+|---|---|---|
+| reaches SpO₂ 95% | **562 s** | **485 s** |
+| loses cardiac output | **12.4 min** | **11.1 min** |
+
+**The over-estimate for a woman is 77 s, not 42 s** — the correction made the
+warning *worse*, which is the direction that matters.
+
+And age now reads differently, because the standard patient is no longer obese:
+the shunt is **3.2% at age 20 and still 3.2% at 40**, reaching **5.7% by 80**.
+Age does nothing at all up to about 40 in this patient — closing capacity is
+below the anaesthetised lung volume, so nothing is shutting and age has no route
+to act. In an obese patient it bites from the start.
+
+### 3. THE REAL DEFECT: THE SAME FACT IN TWO PLACES
+
+Entry 37 put the statement in a startup notice **while leaving the full version
+in the footer**. When the standard patient changed, the notice was updated and
+**the footer went on saying 107 kg, 285 s and 243 s.** That is not carelessness,
+it is the structural failure `sources_registry.py` exists to prevent, reproduced
+inside one file within a day of being created.
+
+**So the figures now have ONE definition.** `STD_FIGURES` in `build_page.py`
+holds them, `build_page.py` substitutes them into both texts, and **an
+unsubstituted token is a build error, not a warning** — shipping `@@T95M@@` to a
+clinician is worse than a stale number, and the same guard catches a key renamed
+in the dict while the old token is left in the prose. The *prose* still differs
+between the two (the notice is the short form, the footer the long one); only
+the figures are shared, which is the part that rots.
+
+### 4. AND THEY ARE CHECKED AGAINST THE ENGINE THE PAGE RUNS
+
+`handover_numbers.py`'s page block was replaced, and is now **split by engine**:
+
+* what `derive()` gives — BMI, FRC, closing capacity, shunt at 20/40/80 — is
+  checked in **Python**, verified first to agree with `model.js` to every digit
+  printed
+* the four **timeline** numbers go through **`parity_driver.js`**, so they are
+  checked against `model.js`, which is what the page actually runs. Recomputing
+  them in Python would turn a 1% parity difference into a false drift in a
+  number a clinician reads.
+
+`OBS` is **1e9 and finite** in the page, so the check sends 1e9 rather than
+`null`: `model.js` branches on `isFinite(R)`, so the wire form for a sealed
+airway would take a different path from the one the page uses.
+
+All of §2 is regenerable, and the driver call now **fails loudly on empty
+stdout** rather than through a bare `JSONDecodeError`, which is the failure mode
+`parity_driver.js`'s own header warns about.
+
+### 5. WHAT THE 60-MINUTE HORIZON SHOWED, recorded because it is a MODEL LIMIT
+
+Measured on the real timeline to 3600 s: the control arm loses cardiac output at
+**12.4 min**, and **the device arm does not die within the hour at any slider
+extreme** — not at haemoglobin 4.0, not at BMI 58.8, not at 1.7× metabolic rate,
+not at FRC 0.55×. At 60 min it is at SpO₂ 100%, **PaCO₂ 167, pH 6.95**, with
+cardiac output *rising*.
+
+**THE MODEL HAS NO DEATH-FROM-ACIDOSIS MECHANISM**, so "time to loss of cardiac
+output" means **time to hypoxic death only**, and buccal oxygen abolishes that.
+This is entry 30's CO₂-limited finding showing up as an axis that cannot
+terminate, and it is the open question for the per-slider sweep graphs: plot
+death as asked with the device arm censored at ">60 min", or add the pH limb the
+model can see alongside it.
+
 ## Current state — 2026-10-05 (thirty-seventh entry): the demographics statement is now a STARTUP NOTICE, not a footer nobody reached — and the page is checked in a real browser again
 
 **View code only. No model change, no parameter, no benchmark row.** `model.js`,
