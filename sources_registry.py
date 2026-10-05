@@ -489,6 +489,46 @@ BENCHMARK_SOURCES = [
      "READ (an abstract does not count as read -- see the file header). 12 "
      "dogs, CFAV open vs closed chest; no human cardiac output or "
      "desaturation data, set aside as a non-benchmark source"),
+    ("Laws 1968, *Can Anaes Soc J* 15(4):325-331 (n=8 analysed)",
+     "frc_drop -- TESTED IT AND LEFT IT UNCHANGED",
+     "2026-10-02",
+     "read at source from upload. THE ONLY PARALYSED FRC MEASUREMENT HELD, "
+     "and therefore the only one in the state frc_anaes() represents: helium "
+     "dilution, supine, thiopentone + suxamethonium, intubated, measured 6-7 "
+     "min into paralysis. Premedication alone did NOTHING (-2.9%, NS, n=11). "
+     "Induction + paralysis fell 9.0% from the premedicated baseline (p<0.01) "
+     "and 10.8% from the unmedicated ward baseline (p<0.05); recomputed from "
+     "his per-patient table that is 239 mL (SD 238) and 10.81%, reproducing "
+     "his stated 10.8% and so verifying the transcription. NOTHING IN THE "
+     "MODEL WAS SET FROM IT, RULED 2026-10-02 -- the shipped 14.55% drop at "
+     "BMI 22 sits inside Laws's 95% CI (2.18-19.45%) and inside Hewlett's "
+     "(10.69-21.51%), and the two papers do not differ from each other "
+     "(Welch p = 0.26). A NEGATIVE RESULT: the simulator-sourced value was "
+     "tested against the admissible measurement and survived. His age slope, "
+     "0.450 %/yr, independently matches Hewlett's 0.430 in a different state "
+     "-- NOT IMPLEMENTED, because age is not pursued in any system. Caveats: "
+     "n=8, 6F/2M against an explicitly male model, mean 64.8 kg so a light "
+     "cohort, and his slope CI (-0.12 to +1.02) contains both Hewlett's "
+     "value AND zero"),
+    ("Hewlett, Hulands, Nunn & Heath 1974, *Br J Anaesth* 46:486-494 (n=26)",
+     "nothing -- corroborates frc_drop's magnitude, wrong state to anchor it",
+     "2026-10-02",
+     "read at source from upload. 'FRC during anaesthesia II: SPONTANEOUS "
+     "RESPIRATION' -- helium dilution, 26 males, supine, thiopentone + "
+     "halothane, before and immediately after induction. Mean reduction 390 "
+     "mL BTPS, 16.1% (SD 13.4), p<0.001; complete within ~10 min with no "
+     "change 6->20 min. TWO OF ITS ROWS KILL MECHANISMS RATHER THAN SUPPORT "
+     "THEM: inspired oxygen does not drive the drop (21% at 100% O2 against "
+     "20% at 30-35%, pooled with Don), so it is not absorption collapse; and "
+     "expiratory muscle activity does not either (13.6% in the 10 patients "
+     "with none detectable). The paper states outright that no explanation "
+     "is known. NOT USED TO ANCHOR frc_drop, and the reason is recorded "
+     "because it was nearly got wrong: THESE PATIENTS WERE BREATHING "
+     "SPONTANEOUSLY and frc_anaes() is the paralysed lung -- the same state "
+     "trap that disqualified Watson & Pride and Couture 2018. It cites Laws "
+     "1968 for the paralysed case but quotes no paralysed value. Its age "
+     "regression (% reduction = 4.0 + 0.43 x age, r=0.41, p<0.005) is NOT "
+     "implemented; see apnoea_core.py frc_drop and height_factor()"),
 ]
 
 

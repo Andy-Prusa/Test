@@ -5,6 +5,189 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-02 (thirty-fifth entry): the paralysed FRC measurement was acquired and it LEAVES `frc_drop` ALONE — a negative result, a ruling that age is NOT PURSUED IN ANY SYSTEM, and a justification found rotted inside the parameter that rested on it
+
+Two papers read at source, **no parameter moved**, and the age question settled
+across the whole model instead of one subsystem at a time.
+
+### 1. THE NEGATIVE RESULT. `frc_drop` was sourced to a SIMULATOR, tested, and survives
+
+`frc_drop` — the millilitres of lung volume lost at induction — carried the
+comment `(ICSM 300-500)`. **A simulator, not a measurement.** Two measurements
+were read at source and neither dislodges it.
+
+| | n | state | drop | 95% CI |
+|---|---|---|---|---|
+| **Laws 1968** | 8 | **paralysed** | **10.81%** (239 mL) | **2.18 – 19.45%** |
+| Hewlett 1974 | 26 | spontaneous | 16.10% (390 mL) | 10.69 – 21.51% |
+| **model at BMI 22** | | paralysed | **14.55%** (400 mL) | **inside both** |
+
+**Laws is the one that counts** — helium dilution, supine, thiopentone +
+suxamethonium, intubated, measured 6-7 minutes into paralysis. That is exactly
+the state `frc_anaes()` represents, and it is the only paralysed FRC measurement
+this project holds. His premedication alone did nothing (−2.9%, NS, n=11).
+
+**And the two papers do not disagree with each other: Welch t = 1.18, p = 0.26.**
+So the spontaneous-versus-paralysed objection that would have disqualified
+Hewlett never bites — neither cohort is precise enough for the state difference
+to show. That is a limit of the evidence, not a licence.
+
+**WHAT WAS NEARLY GOT WRONG.** The first reading of Hewlett reported the model
+as "within 2.5% of a real measurement it was never anchored to" — 400 mL against
+his 390 mL. **That comparison was false in kind.** `frc_drop` is not a
+cohort-mean absolute fall; `frc_anaes()` applies it at the BMI 22 reference only
+and Pelosi's shape scales everything above. Laws's lighter, female-majority
+cohort falls 239 mL. The percentage comparison above is the valid one, and the
+shipped value survives it — **a simulator-derived number that two measurements
+decline to move.**
+
+Laws reports percentages only. The absolute falls are computed in
+`handover_numbers.py`; that the recomputed percentages reproduce his stated 9.0
+and 10.8 **verifies the transcription** rather than assuming it.
+
+### 2. AGE IS NOT PURSUED IN ANY SYSTEM — RULED, and it is a structural ruling
+
+Both papers measured the induction drop **growing with age**, and they agree
+across the state difference:
+
+| | n | state | slope |
+|---|---|---|---|
+| Hewlett 1974 | 26 | spontaneous | **0.430 %/yr** (r = 0.41, p < 0.005) |
+| Laws 1968 | 8 | **paralysed** | **0.450 %/yr** (r = 0.62, p = 0.10) |
+
+Point estimates **5% apart**, two states, six years apart. Laws's slope CI is
+−0.12 to +1.02, which contains Hewlett's value *and* zero — so he cannot confirm
+it alone and is not evidence against it.
+
+**IT IS NOT IMPLEMENTED, and the reason is the whole model rather than this
+parameter.** `closing_capacity()` carries the model's **only** age term
+(`cc_buist_slope`, 0.525% of TLC per year, Buist). Total lung capacity and awake
+FRC are age-flat **by ruling**. Residual volume, oxygen consumption, cardiac
+output, the V/Q spread and the nitrogen stores are age-flat **by no ruling at
+all**. Adding age here would make the model age-dependent in two places out of
+nine, chosen by which paper happened to arrive — **which is a fit, not a
+mechanism.**
+
+**AND THE TWO CANDIDATE AGE TERMS OPPOSE EACH OTHER.** This is what made the
+ruling easy rather than reluctant:
+
+| age | drop %, awake FRC age-flat | drop %, awake + Quanjer's own age term | Hewlett measured |
+|---|---|---|---|
+| 20 | 16.00 | **17.13** | 12.60 |
+| 45 | 16.00 | 16.00 | 23.35 |
+| 70 | 16.00 | **15.01** | 34.10 |
+
+Quanjer's awake age term makes the induction drop, as a percentage, **shrink**
+with age. Both measurements have it **growing**. So the coherent version of the
+change — giving back the age term whose own primary source carries it — moves
+the one quantity two papers agree on **in the wrong direction**.
+
+### 3. AND A JUSTIFICATION HAD ROTTED INSIDE THE PARAMETER IT SUPPORTED
+
+The 2026-09-25 ruling that keeps awake FRC age-flat listed **three** supports in
+`apnoea_core.py`. The second read:
+
+> *implementing it moves the CC=FRC crossover 55.0 → 59.9 years, FURTHER from
+> the literature's ~44*
+
+**That was computed on the RETIRED closing-capacity curve**, the one carrying
+`cc_per_bmi`. On the adopted curve the same term gives **41.66 → 40.91 years**,
+which is **better**, not worse, against a literature ~44 (Milic-Emili 2007; BJA
+Education 2022).
+
+**`handover_numbers.py` has recorded both figures since the curve was replaced** —
+*"Giving the term back USED to make the crossover worse (55.0 → 59.9 y). On the
+adopted curve it makes it BETTER, 41.7 → 40.9 y"* — **and the parameter block
+was never updated to match.** The script caught it; the prose did not.
+
+**This is the orphaned `shunt_cc_k` pattern again**, four entries after it: a
+justification outliving the drivers it was computed against. The argument is now
+**withdrawn**, and the ruling stands on **one leg, not three** — Gutierrez 2004's
+age-free FRC equation, with its own recorded caveat that r² = 0.17. Re-affirmed
+anyway, on the structural grounds in §2, with the independent test leaning the
+other way and **recorded rather than compensated for**.
+
+### 4. THE SIMULATOR NOW STATES THE PATIENT'S SEX AND AGE — and writing it found TWO MORE ROTTED CLAIMS, both user-facing
+
+**RULED 2026-10-02 by A. Heard:** the page must say who it is modelling. It now
+does, and the two facts are that **the patient is a 45-year-old man** and that
+neither is adjustable.
+
+**SEX, and the error runs in the UNSAFE DIRECTION.** The page already said
+Quanjer's male equations are used for every patient. It did not say which way
+that errs. Computed, not inferred:
+
+| | FRC (anaesthetised) | time to SpO₂ 95% |
+|---|---|---|
+| male equations, as shipped | 1638 mL | **285.4 s** |
+| a woman's FRC, 14% less | 1379 mL | **243.1 s** |
+
+**The page promises 42 s — a sixth of the margin — that she does not have.**
+That is now stated on the page in those terms rather than as a neutral
+"limitation", together with the fact that the anchoring cohorts are themselves
+female-majority (Pelosi ran seven women to one man per group).
+
+**AGE, and it acts on exactly one thing.** The page now says age is fixed at 45
+and reaches only the volume at which airways close — so it bites hardest in the
+patient already near closure, and not at all in one who is not:
+
+| | shunt at 20 | shunt at 80 |
+|---|---|---|
+| the page's 107 kg default | 3.50% | **10.73%** |
+| a slim patient (BMI 22) | 3.23% | 3.23% **at 40** — unchanged |
+
+And it says outright that Hewlett's and Laws's age effect on the induction drop
+is **not represented**, so an older patient's margin is if anything flattered.
+
+**THE TWO CLAIMS THAT HAD ROTTED IN THE SHIPPED PAGE**, found while writing the
+above and both corrected:
+
+1. *"The FRC relation's height **and age** basis is Quanjer 1993"* — **there is
+   no age basis.** `height_factor()` is height-only and Quanjer's 0.009/yr term
+   was deliberately not implemented. The page told a clinician that FRC carries
+   an age term when it does not.
+2. *"Closing capacity's values are **placeholders that disagree** with their own
+   source (Buist & Ross 1973)"* — **not since 2026-09-26.** They are now Buist's
+   published regression, 0.525% of total lung capacity per year, on a Quanjer
+   predicted capacity. The placeholders it named were retired that day.
+
+**This is the third rotted justification found today**, after the crossover
+argument in §3 and the "four randomised trials" attribution in entry 34 — and
+the first two were in comments, where only a maintainer reads them. **These were
+in the page a clinician reads.** All the numbers now quoted there are checked by
+`handover_numbers.py`.
+
+**NOT TRACKED, RULED 2026-10-02:** the slope discontinuity at BMI 22 in the
+induction drop. Noticed, put to the reader, and left out deliberately.
+
+### 5. WHAT CHANGED, AND IT IS ONLY PROSE
+
+**No parameter moved. No benchmark row moved.** Both suites were run on the
+final tree rather than inferred from the diff: `test_parity.py` passes
+(*"model.js tracks apnoea_core.py"*), and `test_validation.py` returns **the
+same 2 blocking rows and the same 4 known-open rows, by name**, as the run
+before the change —
+
+* blocking: `Heard control, time to SpO2<95%`, `ICSM jet, PaO2 at cricothyroidotomy`
+* known open: Stock obstructed 1-5 min slope, `ICSM jet, PaCO2 at cricothyroidotomy`, Frumin PaCO2 rise over 45 min, Frumin arterial pH at 40 min
+
+A total pass/fail count is deliberately NOT quoted here. Entry 34's "47 pass /
+3 fail" was carried forward from that entry rather than recomputed, and a
+number this file quotes should be one that was measured — the row names and
+counts above are what this run actually printed.
+
+What changed: the stale crossover argument is withdrawn in `apnoea_core.py`, the
+negative result is recorded at `frc_drop`, Laws 1968 and Hewlett 1974 are
+registered as read in `sources_registry.py` (36 sources, 32 read), and all 30
+numbers above are regenerable by `handover_numbers.py`.
+
+**WHAT WOULD REOPEN §2:** a primary source for the age dependence of cardiac
+index under anaesthesia, and one for oxygen consumption. Direction is not in
+doubt but neither paper is held, so both are unverified and no number is put to
+them here. **The outstanding acquisition from entry 34 is unchanged**: an
+anaesthetised, straight-tilt FRC measurement, still the only independent check
+on `tilt_gain_lean` and `tilt_gain_bmi`.
+
 ## Current state — 2026-10-02 (thirty-fourth entry): HALF the positioning evidence measures something else — the tilt gains are solved on the two trials that survive, the BMI term CHANGES SIGN, and the only independent check is retired with it
 
 Four papers read at source, one parameter pair solved, two benchmark rows gone,

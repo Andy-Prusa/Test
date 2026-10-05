@@ -161,21 +161,56 @@ class Patient:
     #   * the age term (0.009*age) is DELIBERATELY NOT IMPLEMENTED --
     #     RULED 2026-09-25, and it is a decision now, not an omission.
     #     height_factor() is height-only, so FRC is AGE-FLAT.
-    #     Three things support leaving it out:
+    #     THE RULING STANDS, RE-AFFIRMED 2026-10-02 -- BUT IT NOW RESTS ON
+    #     ONE LEG, NOT THREE, AND THE SECOND LEG HAS REVERSED SIGN.
     #       - GUTIERREZ 2004, a second reference set read at source (n = 300
     #         men, six Canadian centres), has NO AGE TERM AT ALL in its
     #         men's FRC equation. It agrees with Quanjer to 0.2% at age 45
     #         and disagrees by +7.3% at 20 and -6.0% at 70, precisely
     #         because Quanjer's rises 14.1% across that span and its own is
-    #         flat.
-    #       - implementing it moves the CC=FRC crossover 55.0 -> 59.9 years,
-    #         FURTHER from the literature's ~44.
-    #       - so age-flat is what a second primary source predicts, not a
-    #         convenience.
-    #     THE CAVEAT IS KEPT: Gutierrez's FRC model is weak, r2 = 0.17, and a
-    #     term can be absent from a regression because it is small OR because
-    #     the data cannot see it. The two reference sets genuinely disagree
-    #     and this ruling picks one. See SOURCES.md and handover_numbers.py.
+    #         flat. THIS IS THE LEG THAT STILL CARRIES THE RULING.
+    #       - THE CROSSOVER ARGUMENT IS WITHDRAWN. It read: "implementing it
+    #         moves the CC=FRC crossover 55.0 -> 59.9 years, FURTHER from the
+    #         literature's ~44." THAT WAS COMPUTED ON THE RETIRED
+    #         closing-capacity curve, which carried cc_per_bmi. On the
+    #         ADOPTED curve the same term gives 41.66 -> 40.91 years, which
+    #         is BETTER, not worse, against a literature ~44 (Milic-Emili
+    #         2007; BJA Education 2022). handover_numbers.py has recorded
+    #         both figures since the curve was replaced -- "Giving the term
+    #         back USED to make the crossover worse (55.0 -> 59.9 y). On the
+    #         adopted curve it makes it BETTER, 41.7 -> 40.9 y" -- and THIS
+    #         BLOCK WAS NEVER UPDATED TO MATCH. The script caught it; the
+    #         prose did not. Same class as the orphaned shunt_cc_k of
+    #         2026-10-02: a justification outliving the drivers it was
+    #         computed against.
+    #       - so age-flat is what a second primary source predicts. It is NO
+    #         LONGER what the crossover test prefers, and that is recorded
+    #         rather than compensated for.
+    #     THE CAVEAT IS KEPT AND IS NOW HEAVIER: Gutierrez's FRC model is
+    #     weak, r2 = 0.17, and a term can be absent from a regression because
+    #     it is small OR because the data cannot see it. The two reference
+    #     sets genuinely disagree and this ruling picks one -- now on a single
+    #     weak support, with the independent test leaning the other way.
+    #     See SOURCES.md and handover_numbers.py.
+    #
+    #     WHY IT WAS RE-AFFIRMED ANYWAY, RULED 2026-10-02 by A. Heard: AGE IS
+    #     NOT PURSUED IN ANY SYSTEM. The decision is structural, not about
+    #     this parameter. closing_capacity() carries the model's ONLY age
+    #     term; TLC, awake FRC, the induction drop, residual volume, oxygen
+    #     consumption, cardiac output, the V/Q spread and the nitrogen stores
+    #     are all age-flat, and only the first two of those are age-flat by
+    #     any recorded ruling. Giving the term back HERE would make the model
+    #     age-dependent in two places out of nine, chosen by which paper
+    #     happened to arrive -- which is a fit, not a mechanism.
+    #
+    #     AND THE TWO CANDIDATE AGE TERMS OPPOSE EACH OTHER, which is what
+    #     made the ruling easy. Hewlett 1974 and Laws 1968 both measured the
+    #     INDUCTION DROP growing with age (0.430 and 0.450 percentage points
+    #     per year, two states, six years apart). Quanjer's awake term makes
+    #     that same drop, as a percentage, SHRINK with age -- 17.13% at 20 to
+    #     15.01% at 70, against Hewlett's measured 12.60% to 34.10%. So the
+    #     coherent version of this change moves the quantity two measurements
+    #     agree on IN THE WRONG DIRECTION. See HANDOVER entry 35.
     #   * THE EQUATIONS HAVE A RANGE AND WE LEAVE IT. Table 6 applies to ages
     #     18-70 ("between 18 and 25 yr substitute 25 yr") and was derived from
     #     heights 1.55-1.95 m in men, 1.45-1.80 m in women.
@@ -283,7 +318,54 @@ class Patient:
     # honour both and is the right next change; it is not taken here because
     # it is a structural change and needs its own ruling.
     k_frc_bmi: float = 0.01074   # exponential decline of FRC per BMI unit
-    frc_drop: float = 400.0      # mL lost at induction (ICSM 300-500)
+    # mL of lung volume lost at induction. SOURCED TO A SIMULATOR ("ICSM
+    # 300-500") AND TESTED AGAINST TWO MEASUREMENTS 2026-10-02. IT STAYS AT
+    # 400 -- RULED 2026-10-02 by A. Heard, as a NEGATIVE RESULT.
+    #
+    # WHAT THIS CONSTANT ACTUALLY SETS, because it is easy to misread: it is
+    # NOT a cohort-mean absolute drop. frc_anaes() applies it at the BMI 22
+    # reference only (`at22`), and Pelosi's measured shape scales everything
+    # above that. So the quantity to compare against a paper is the
+    # PERCENTAGE drop at BMI 22, which is 14.55% at height 1.70 m.
+    #
+    # THE TWO MEASUREMENTS, both read at source 2026-10-02:
+    #   LAWS 1968, Can Anaes Soc J 15:325 -- helium dilution, supine,
+    #     thiopentone + suxamethonium, INTUBATED AND PARALYSED, measured 6-7
+    #     min in. n=8 (6F/2M, age 16-59, mean 64.8 kg). Premedication alone
+    #     did nothing (-2.9%, NS, n=11). Induction + paralysis fell 9.0% from
+    #     the premedicated baseline (p<0.01) and 10.8% from the unmedicated
+    #     ward baseline (p<0.05). Recomputed from his per-patient table: 239
+    #     mL (SD 238) absolute, 10.81% -- which reproduces his stated 10.8%
+    #     and so verifies the transcription.
+    #     THIS IS THE ONE IN THE MODEL'S OWN STATE. frc_anaes() is the
+    #     paralysed lung, and Laws is the only paralysed FRC measurement held.
+    #   HEWLETT 1974, Br J Anaesth 46:486 -- same method, SPONTANEOUS
+    #     RESPIRATION, n=26 males, thiopentone + halothane. 390 mL, 16.1%
+    #     (SD 13.4), p<0.001. Inspired oxygen made NO difference (21% at 100%
+    #     O2 against 20% at 30%, pooled with Don), and expiratory muscle
+    #     activity made none either (13.6% in the 10 patients with none
+    #     detectable) -- so neither absorption collapse nor muscle tone is
+    #     the cause, and the paper says outright that no explanation is known.
+    #
+    # WHY NEITHER MOVES IT. The shipped 14.55% sits INSIDE BOTH CONFIDENCE
+    # INTERVALS, and the two papers do not disagree with each other:
+    #     Laws    n= 8   10.81%   95% CI  2.18 - 19.45%
+    #     Hewlett n=26   16.10%   95% CI 10.69 - 21.51%
+    #     Welch t = 1.18, p = 0.26  -- NO significant difference
+    # The spontaneous-versus-paralysed objection that would have disqualified
+    # Hewlett therefore never bites: neither cohort is precise enough for the
+    # state difference to show. A SIMULATOR-DERIVED NUMBER THAT TWO
+    # MEASUREMENTS DECLINE TO DISLODGE. Recorded rather than improved.
+    #
+    # AND THE AGE TERM IS NOT TAKEN. Both papers measured the drop growing
+    # with age -- Hewlett 0.430 %/yr (n=26, r=0.41, p<0.005), Laws 0.450 %/yr
+    # (n=8, r=0.62, p=0.10, slope 95% CI -0.12 to +1.02, so he CANNOT confirm
+    # it alone and is not evidence against it). Two states, six years apart,
+    # point estimates 5% apart. THE MODEL HAS NO AGE TERM HERE AND KEEPS NONE,
+    # RULED 2026-10-02: age is not pursued in ANY system. See the
+    # height_factor() block above for why, including that Quanjer's awake age
+    # term moves this very percentage THE WRONG WAY. HANDOVER entry 35.
+    frc_drop: float = 400.0      # mL lost at induction; see the block above
     # Bed tilt, degrees. Positive is head-up / reverse Trendelenburg. Head-up
     # lifts the abdominal contents off the diaphragm, so it raises FRC and the
     # gain is larger the more abdomen there is to lift.
