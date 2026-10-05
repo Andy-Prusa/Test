@@ -16,6 +16,17 @@ OUT_HTML = os.path.join(HERE, 'airway_scenario.html')
 
 model = open(MODEL_JS).read().split("if(typeof module")[0]
 
+# The sweep data, inlined. The page must make ZERO external requests -- it is
+# meant to open from a USB stick -- so this cannot be fetched at runtime any
+# more than model.js can. Built by `node build_sweeps.js`, which also has a
+# --check for staleness; this build fails loudly rather than shipping a page
+# whose Sweeps view is silently empty.
+SWEEPS_JSON = os.path.join(HERE, 'sweeps.json')
+if not os.path.exists(SWEEPS_JSON):
+    sys.exit("build_page.py: sweeps.json is missing, so the Sweeps view would "
+             "ship empty. Run: node build_sweeps.js")
+sweeps = open(SWEEPS_JSON).read().strip()
+
 # ---- THE STANDARD PATIENT'S FIGURES, ONE DEFINITION ------------------------
 # These are quoted in TWO places on the page -- the startup notice and the
 # footer -- and on 2026-10-05 they ROTTED APART: the standard patient became
@@ -224,6 +235,13 @@ body.graphon .main .stage canvas:not(.ecg){height:clamp(110px,21vh,300px)}
 .trendnow{margin-left:auto;color:var(--ink);font-variant-numeric:tabular-nums}
 #trendc{width:100%;height:220px;display:block}
 .sw{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+.swdash{display:inline-block;width:14px;height:0;border-top:2px dashed #4fd8e8;
+ margin-right:5px;vertical-align:2px}
+.swnav{font-size:14px;padding:2px 9px;line-height:1.1}
+#swc{width:100%;height:420px;display:block}
+.swnote{font-size:12px;color:var(--dim);margin:6px 2px 0;line-height:1.5}
+.swnote b{color:var(--ink)}
+@media(max-width:620px){#swc{height:300px}}
 .credit{color:var(--dim);font-size:11px;line-height:1.45;margin-top:10px;max-width:78ch;
  opacity:.85}
 .foot{color:var(--dim);font-size:12px;line-height:1.5;margin-top:16px;max-width:78ch;
@@ -364,9 +382,9 @@ The two arms differ only after the re-obstruction time: the control arm loses th
 airway there, the device arm keeps it. Times are seconds from induction.</p>
 <div class="sbrow"><label for="sbpre">Preset</label>
 <select id="sbpre"></select>
-<label for="sbend">Run length</label><input type="number" id="sbend" min="120" max="1800" step="30">
+<label for="sbend">Run length</label><input type="number" id="sbend" min="120" max="3600" step="30">
 <label for="sbre">Control arm re-obstructs at</label>
-<input type="number" id="sbre" min="0" max="1800" step="10" placeholder="never">
+<input type="number" id="sbre" min="0" max="3600" step="10" placeholder="never">
 <button type="button" id="sbclear">never</button></div>
 <table class="sbt" id="sbt"><thead><tr><th>Time (s)</th><th>Label</th>
 <th>Airway</th><th>Icon</th><th></th></tr></thead><tbody></tbody></table>
@@ -432,6 +450,7 @@ flattered.</p>
 <button id="runbtn">Run simulation</button>
 <button id="play">Play</button><button id="rew">Restart</button>
 <button id="graphbtn" aria-expanded="false" aria-controls="trend">Graph</button>
+<button id="swbtn" aria-expanded="false" aria-controls="sweeps">Sweeps</button>
 <button id="fs">Expand</button>
 <button id="snd">Sound off</button><button id="spd">4&times;</button>
 <span class="clock" id="clock">0:00</span>
@@ -468,6 +487,23 @@ flattered.</p>
 <span class="tkey"><i class="sw" style="background:#4fd8e8"></i>buccal oxygen</span>
 <span class="trendnow" id="trendnow"></span></div>
 <canvas id="trendc" width="1160" height="220"></canvas>
+</div>
+
+<!-- THE SWEEPS VIEW. One page of graph per slider: that slider from end to end
+     on x, time to death on y over 0 to 60 minutes, the two arms together.
+     Precomputed by build_sweeps.js because a live sweep is 208 simulations and
+     over an hour of compute -- see that file for the measurements. -->
+<div class="trend" id="sweeps" hidden>
+<div class="trendbar">
+<button type="button" id="swprev" class="swnav">&larr;</button>
+<select id="swsel"></select>
+<button type="button" id="swnext" class="swnav">&rarr;</button>
+<span class="tkey"><i class="sw" style="background:#ff9f43"></i>no buccal oxygen</span>
+<span class="tkey"><i class="sw" style="background:#4fd8e8"></i>buccal oxygen</span>
+<span class="tkey"><i class="swdash"></i>pH 7.0 reached</span>
+<span class="trendnow" id="swnow"></span></div>
+<canvas id="swc" width="1160" height="420"></canvas>
+<p class="swnote" id="swnote"></p>
 </div>
 
 <div class="legend"><span><i class="sw" style="background:var(--o2)"></i>oxygen in the lung</span>
@@ -1400,6 +1436,152 @@ setPlayState();
 // pushed the patient drawing -- the head -- below the fold. The head is
 // the point of the page, so the graph is opt-in and the default view is
 // exactly what it was before the graph existed.
+// ---- THE SWEEPS VIEW -------------------------------------------------------
+// SWEEPS is baked in at build time by build_sweeps.js. Nothing here simulates:
+// one simulation costs about 4 s when the patient dies early and about 33 s
+// when they survive the hour, so the 208 runs behind these ten pages are an
+// hour of compute and cannot happen in a browser.
+//
+// WHAT THE LINES MEAN, and the dashed one is not decoration. Solid is TIME TO
+// LOSS OF CARDIAC OUTPUT -- death. The control arm dies on every page. THE
+// DEVICE ARM DOES NOT DIE WITHIN THE HOUR ON NINE OF THE TEN PAGES, at any
+// value of any slider, because THE MODEL HAS NO DEATH-FROM-ACIDOSIS
+// MECHANISM: "time to death" here is time to HYPOXIC death, and buccal oxygen
+// abolishes it. Those points are drawn as open markers along the top rule and
+// read ">60 min", NOT as 60: the model cannot say when that patient dies and
+// plotting 60 would assert something it does not know. The DASHED line is when
+// arterial pH reaches 7.0, which is the limit the model CAN see -- without it
+// the device arm would be blank almost everywhere. See HANDOVER entry 30 (the
+// buccal arm is CO2-limited, not oxygen-limited).
+const SWEEPS=__SWEEPS__;
+const swEl=document.getElementById('sweeps');
+const swSel=document.getElementById('swsel');
+const swNote=document.getElementById('swnote');
+const swNow=document.getElementById('swnow');
+let swIdx=0;
+
+SWEEPS.dials.forEach((d,i)=>{const o=document.createElement('option');
+ o.value=i;o.textContent=d.label;swSel.appendChild(o);});
+
+const DERIV_LABEL={bmi:'BMI',frc:'FRC at induction',cc:'closing capacity',
+ vo2:'oxygen consumption',co:'cardiac output'};
+const DERIV_UNIT={bmi:'',frc:' mL',cc:' mL',vo2:' mL/min',co:' L/min'};
+
+function drawSweep(){
+ const cv=document.getElementById('swc'); if(!cv) return;
+ const d=SWEEPS.dials[swIdx];
+ // Lay the backing store out at device resolution, or the text is soft and
+ // the hairlines land between pixels.
+ const dpr=window.devicePixelRatio||1, W=cv.clientWidth||1160, H=cv.clientHeight||420;
+ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+ const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0);
+ g.clearRect(0,0,W,H);
+ const L=62,R=18,T=18,B=52, pw=W-L-R, ph=H-T-B;
+ const ymax=SWEEPS.horizon/60;                       // 60 minutes
+ const xs=d.x, n=xs.length;
+ const xlo=Math.min(...xs), xhi=Math.max(...xs);
+ const px=i=>L+(n===1?pw/2:pw*(xs[i]-xlo)/(xhi-xlo||1));
+ const py=m=>T+ph*(1-m/ymax);
+
+ // grid and y axis, every ten minutes
+ g.font='12px Barlow, system-ui, sans-serif'; g.textBaseline='middle';
+ for(let m=0;m<=ymax;m+=10){
+  const y=py(m);
+  g.strokeStyle=(m===0?'#3a5663':'#22343d'); g.lineWidth=1;
+  g.beginPath(); g.moveTo(L,y+0.5); g.lineTo(W-R,y+0.5); g.stroke();
+  g.fillStyle='#7d93a0'; g.textAlign='right'; g.fillText(m+' min',L-8,y);
+ }
+ // x axis ticks: the ends always, plus the default, plus evenly spaced labels
+ g.textBaseline='top'; g.textAlign='center';
+ const fmtx=v=>d.xlabels?d.xlabels[v]:(Math.abs(v)>=100?v.toFixed(0):
+   (Number.isInteger(v)?String(v):v.toFixed(2).replace(/0$/,'')));
+ const every=Math.max(1,Math.round(n/6));
+ for(let i=0;i<n;i++){
+  if(i!==0&&i!==n-1&&i%every!==0) continue;
+  const x=px(i);
+  g.strokeStyle='#22343d'; g.beginPath(); g.moveTo(x+0.5,T); g.lineTo(x+0.5,T+ph); g.stroke();
+  g.fillStyle='#7d93a0';
+  const lab=String(fmtx(xs[i]));
+  if(d.xlabels){ // the buccal-start page has prose labels; stack them short
+   g.save(); g.translate(x,T+ph+8); g.rotate(-Math.PI/9);
+   g.textAlign='right'; g.fillText(lab.length>22?lab.slice(0,21)+'\u2026':lab,0,0);
+   g.restore();
+  } else g.fillText(lab,x,T+ph+8);
+ }
+ g.fillStyle='#9fb4c0'; g.textAlign='center';
+ g.fillText(d.label+(d.unit?' ('+d.unit+')':''),L+pw/2,H-16);
+
+ // one series: nulls break the line, and are marked along the top instead
+ function series(vals,colour,dash){
+  g.strokeStyle=colour; g.lineWidth=dash?1.6:2.4;
+  g.setLineDash(dash?[6,5]:[]);
+  g.beginPath(); let open=false;
+  for(let i=0;i<n;i++){
+   const v=vals[i];
+   if(v===null){open=false;continue;}
+   const x=px(i), y=py(Math.min(v/60,ymax));
+   if(open) g.lineTo(x,y); else {g.moveTo(x,y); open=true;}
+  }
+  g.stroke(); g.setLineDash([]);
+  for(let i=0;i<n;i++){
+   const v=vals[i]; if(v===null) continue;
+   g.fillStyle=colour; g.beginPath();
+   g.arc(px(i),py(Math.min(v/60,ymax)),dash?2.2:3.2,0,6.284); g.fill();
+  }
+  // ">60 min": an OPEN marker on the top rule, never a point at 60
+  for(let i=0;i<n;i++){
+   if(vals[i]!==null) continue;
+   const x=px(i), y=py(ymax);
+   g.strokeStyle=colour; g.lineWidth=1.6; g.beginPath();
+   g.arc(x,y+5,3.4,0,6.284); g.stroke();
+   g.beginPath(); g.moveTo(x,y+1); g.lineTo(x-3,y+5); g.lineTo(x+3,y+5);
+   g.closePath(); g.fillStyle=colour; g.fill();
+  }
+ }
+ series(d.control.death,'#ff9f43',false);
+ series(d.device.death,'#4fd8e8',false);
+ series(d.device.ph,'#4fd8e8',true);
+
+ // the note: what the page is, and what ELSE this slider changed
+ const censored=d.device.death.filter(v=>v===null).length;
+ let note='<b>Solid</b> is time to loss of cardiac output. <b>Dashed</b> is when '
+  +'arterial pH reaches '+SWEEPS.phDead+'. Every other slider is at the standard '
+  +'patient. Scenario: '+SWEEPS.scenario+'.';
+ if(censored) note+=' <b>'+censored+' of '+n+' buccal points did not arrest within '
+  +'the hour</b> and are marked on the top rule as &gt;60 min &mdash; the model has '
+  +'no death-from-acidosis mechanism, so it cannot say when they die.';
+ if(d.deviceOnly) note+=' This slider only affects the buccal arm, so the no-buccal '
+  +'line is flat by construction.';
+ if(d.moved.length){
+  const bits=d.moved.map(k=>{
+   const v=d.derived[k], a=v[0], b=v[v.length-1];
+   const f=x=>k==='bmi'?x.toFixed(1):(k==='co'?x.toFixed(2):x.toFixed(0));
+   return '<b>'+(DERIV_LABEL[k]||k)+'</b> '+f(a)+(DERIV_UNIT[k]||'')+' \u2192 '
+    +f(b)+(DERIV_UNIT[k]||'');
+  });
+  note+=' Moving this slider also changes: '+bits.join(', ')+'.';
+ } else note+=' It changes no other derived quantity.';
+ swNote.innerHTML=note;
+ swNow.textContent='page '+(swIdx+1)+' of '+SWEEPS.dials.length;
+}
+
+swSel.onchange=()=>{swIdx=+swSel.value; drawSweep();};
+document.getElementById('swprev').onclick=()=>{
+ swIdx=(swIdx-1+SWEEPS.dials.length)%SWEEPS.dials.length;
+ swSel.value=swIdx; drawSweep();};
+document.getElementById('swnext').onclick=()=>{
+ swIdx=(swIdx+1)%SWEEPS.dials.length; swSel.value=swIdx; drawSweep();};
+
+const swBtn=document.getElementById('swbtn');
+swBtn.onclick=()=>{
+ const open=swEl.hasAttribute('hidden');
+ if(open) swEl.removeAttribute('hidden'); else swEl.setAttribute('hidden','');
+ swBtn.setAttribute('aria-expanded',open?'true':'false');
+ swBtn.textContent=open?'Hide sweeps':'Sweeps';
+ if(open) drawSweep();            // clientWidth is 0 while hidden
+};
+window.addEventListener('resize',()=>{if(!swEl.hasAttribute('hidden')) drawSweep();});
+
 const graphBtn=document.getElementById('graphbtn');
 const trendEl=document.getElementById('trend');
 graphBtn.onclick=()=>{
@@ -1480,6 +1662,8 @@ page = HTML.replace('__MODEL__', model)
 # The standard patient's figures, substituted from their ONE definition into
 # both the startup notice and the footer. Done here rather than with format()
 # because the template is full of CSS and JS braces.
+page = page.replace('__SWEEPS__', sweeps)
+
 for _k, _v in STD_FIGURES.items():
     page = page.replace('@@' + _k + '@@', _v)
 

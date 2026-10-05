@@ -110,6 +110,16 @@ jobs=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
 # forget: airway_scenario.html embeds its own copy of model.js, so editing the
 # model without rebuilding leaves the page running different physics from the
 # file beside it, and nothing else in the repo would notice.
+# sweeps.json is the SAME CLASS OF ARTIFACT as the embedded model and site/:
+# generated, committed, and silently wrong if the engine moves without it.
+# It is checked FIRST because it is the cheapest of the three and because
+# build_page.py now refuses to build without it -- a missing sweeps.json would
+# otherwise surface as a confusing page-freshness failure.
+if [ -f build_sweeps.js ] && command -v node >/dev/null 2>&1; then
+    echo "pre-commit: sweep freshness (build_sweeps.js --check) ..."
+    node build_sweeps.js --check || status=1
+fi
+
 if [ -f build_page.py ]; then
     echo "pre-commit: page freshness (build_page.py --check) ..."
     python3 build_page.py --check || status=1

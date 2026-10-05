@@ -151,11 +151,43 @@ function runOne(P, keep) {
 // there is no JS parser in this repo's toolchain, and inventing a regex
 // comment-stripper would be a silent-wrong-answer risk for a saving that does
 // not matter here.
+// WHAT COUNTS AS "THE ENGINE CHANGED" -- and the first version of this was
+// WRONG, in the direction that wastes an hour. It hashed build_page.py whole,
+// so editing the Sweeps view's own CSS invalidated the sweep that view exists
+// to draw. The hash must cover what the sweep DEPENDS ON, not the file the
+// dependency happens to live in. Same lesson as the simulate() cache: key on
+// what matters.
+//
+// So: model.js in full, because it IS the engine, plus only the three
+// declarations this file COPIES from build_page.py. If any of them is missing
+// the page has changed shape and that is itself a reason to fail rather than
+// to hash nothing.
+const COPIED_FROM_PAGE = [
+  ['const DIALS=[', '];'],      // the sliders, their ranges and defaults
+  ['const STARTS=[', '];'],     // when buccal oxygen can be switched on
+  ['const BASE={', '};'],       // the standard patient
+];
+
+function pageInputs() {
+  const src = fs.readFileSync(path.join(__dirname, 'build_page.py'), 'utf8');
+  let out = '';
+  for (const [open, close] of COPIED_FROM_PAGE) {
+    const a = src.indexOf(open);
+    if (a < 0) throw new Error(`build_page.py no longer contains "${open}" -- `
+      + 'build_sweeps.js copies it, so the copy cannot be checked. Fix the '
+      + 'marker rather than dropping the check.');
+    const b = src.indexOf(close, a);
+    if (b < 0) throw new Error(`build_page.py: "${open}" is not terminated by `
+      + `"${close}"`);
+    out += src.slice(a, b + close.length) + '\n';
+  }
+  return out;
+}
+
 function engineHash() {
   const h = crypto.createHash('sha256');
-  for (const f of ['model.js', 'build_page.py']) {
-    h.update(fs.readFileSync(path.join(__dirname, f)));
-  }
+  h.update(fs.readFileSync(path.join(__dirname, 'model.js')));
+  h.update(pageInputs());
   return h.digest('hex').slice(0, 16);
 }
 
@@ -247,6 +279,82 @@ function build() {
             + 'blade in', dials,
     sims, minutes: +((Date.now() - t0) / 60000).toFixed(1),
   };
+}
+
+// ---- --verify / --restamp -------------------------------------------------
+// WHY THESE EXIST. The engine hash answers "might this be stale?", which is the
+// right question for a build gate but the wrong one when you need to know
+// whether the DATA is actually still right. A hash can move for reasons that
+// cannot change a number -- it did, the first time this file was written.
+//
+// --verify RE-RUNS sample points and compares them to the stored file EXACTLY.
+// --restamp updates the stored hash, but ONLY after --verify passes on every
+// sampled point, so a re-stamp can never launder a genuinely stale sweep into
+// looking fresh. If anything differs by so much as a float bit, it refuses and
+// says regenerate.
+function verify(data, nPoints) {
+  const picks = [];
+  for (let i = 0; i < data.dials.length; i++) {
+    const d = data.dials[i];
+    // ends and middle: where a copied range or default would show up first
+    for (const j of [0, Math.floor(d.x.length / 2), d.x.length - 1]) picks.push([i, j]);
+  }
+  // evenly thin to nPoints so the cost stays bounded
+  const stride = Math.max(1, Math.floor(picks.length / nPoints));
+  const chosen = picks.filter((_, k) => k % stride === 0).slice(0, nPoints);
+  let bad = 0;
+  for (const [i, j] of chosen) {
+    const d = data.dials[i];
+    const P = Object.assign({}, BASE); P[d.key] = d.x[j];
+    for (const [arm, keep] of [['control', false], ['device', true]]) {
+      const r = runOne(P, keep);
+      for (const k of ['death', 'ph', 'spo2']) {
+        const was = d[arm][k][j], now = r[k];
+        const same = (was === null && now === null)
+          || (was !== null && now !== null && was === now);
+        if (!same) {
+          console.error(`  DIFFERS ${d.key}=${d.x[j]} ${arm}.${k}: `
+            + `stored ${was}, recomputed ${now}`);
+          bad++;
+        }
+      }
+    }
+    process.stderr.write(`  ok ${d.key}=${d.x[j]} reproduces exactly\n`);
+  }
+  return bad;
+}
+
+if (process.argv.includes('--verify') || process.argv.includes('--restamp')) {
+  if (!fs.existsSync(OUT)) {
+    console.error(`${path.basename(OUT)} does not exist; nothing to verify.`);
+    process.exit(1);
+  }
+  const data = JSON.parse(fs.readFileSync(OUT, 'utf8'));
+  const want = engineHash();
+  console.error(`verifying ${path.basename(OUT)} (stored engine `
+    + `${data.engineHash}, tree ${want}) by RE-RUNNING sample points...`);
+  const bad = verify(data, 6);
+  if (bad) {
+    console.error(`\n${bad} value(s) do not reproduce. The data IS stale -- `
+      + 'regenerate it: node build_sweeps.js');
+    process.exit(1);
+  }
+  console.log('every sampled point reproduces EXACTLY, so the stored sweep is '
+    + 'valid under the current engine.');
+  if (process.argv.includes('--restamp')) {
+    if (data.engineHash === want) {
+      console.log('hash already matches; nothing to re-stamp.');
+    } else {
+      data.engineHash = want;
+      data.restamped = new Date().toISOString().slice(0, 10);
+      data.restampNote = 'engine hash recomputed after the hash FUNCTION was '
+        + 'narrowed to the real inputs; the data itself was re-verified '
+        + 'point-by-point and unchanged';
+      fs.writeFileSync(OUT, JSON.stringify(data));
+      console.log(`re-stamped ${data.engineHash} (data untouched)`);
+    }
+  }
+  process.exit(0);
 }
 
 if (process.argv.includes('--check')) {
