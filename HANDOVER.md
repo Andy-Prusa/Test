@@ -163,6 +163,40 @@ Closed: the horizon, point count and all three thresholds are now compared
 explicitly and named individually when they differ. Verified by running it
 against the then-current `sweeps.json`, which it correctly refused.
 
+### 8. WHAT 6.8 COST THE GRAPH, MEASURED AFTER THE RULING AND NOT COMPENSATED
+
+The sweep was regenerated at 6.8 — 208 simulations, 40 minutes, engine hash
+unchanged because no model file moved, only the reading threshold. **The result
+is not the one the ruling expected, and it is recorded rather than fixed.**
+
+Entry 39 found the dashed pH line was *load-bearing*: the device arm does not
+arrest within the hour at any slider extreme, so without the pH limb those pages
+would be blank. **At 7.0 that limb was populated at 90 of 104 device points. At
+6.8 it is populated at 3** — all three on `bmrScale`, the raised metabolic rate.
+
+| device arm, across all 10 sliders | points |
+|---|---|
+| loses cardiac output within 60 min | 9 / 104 (all `fgBuccal`) |
+| reaches pH 7.0 | **90 / 104** |
+| reaches pH 6.8 | **3 / 104** |
+
+Where both crossings exist, the device arm reaches 6.8 a **median of 26.9
+minutes after 7.0** (range 23.7–31.0). That is the whole explanation: 60 minutes
+is not long enough to contain the 6.8 crossing for this patient on this device.
+
+**So the device arm now has no death line and effectively no pH line on nine of
+the ten pages.** The 6.8 ruling stands on the evidence — Frumin gives no
+threshold, 6.72 is a survived floor, and sections 4–6 set that out — but its
+consequence *for this graph at this horizon* is that the limb goes nearly empty.
+
+**Nothing was moved back to make a line reappear.** No threshold was restored,
+no horizon was stretched. Per CLAUDE.md, a change that makes something worse is
+information, and the compensating move is the one that is refused.
+
+**Both crossings are stored** (`phDead` 6.8, `phAlso` 7.0) off the same runs, so
+drawing the 7.0 limb alongside 6.8 is a page change with **no recompute**. Not
+done: it is a presentation decision and it is open.
+
 ## Current state — 2026-10-05 (thirty-ninth entry): the Sweeps view — one page of graph per slider, 208 precomputed simulations, and the device arm's death line is EMPTY on nine of ten pages
 
 **RULED 2026-10-05 by A. Heard.** View code and a generated artifact. `model.js`,
