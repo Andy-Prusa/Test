@@ -5,6 +5,164 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-06 (fortieth entry): HANDOVER's numbers are stale by a known amount from a known date, Frumin's arrhythmias do not track pH, and the sweep's pH line becomes 6.8
+
+**RULED 2026-10-06 by A. Heard.** Four rulings: mark the three superseded
+families rather than silently refresh them; the pH line moves to 6.8 as a
+declared marker; Frumin's vagal caveat is **not** recorded as a model
+limitation; PR #8 merges.
+
+### 1. THE RE-MEASUREMENT: 516 OF 863 RECORDED NUMBERS HAVE MOVED
+
+`handover_numbers.py` — the script that recomputes every number quoted in this
+document and fails if one has drifted — was run to completion for the first time
+since 2026-09-25. It is deliberately **not** in the pre-commit hook, because it
+checks claims about the world rather than invariants of the code; the point is
+that those claims must not move *silently*. They have moved, and this entry is
+the un-silencing.
+
+| | |
+|---|---|
+| checks | **863** |
+| pass | **347** |
+| moved | **516** |
+| median drift (of the 511 carrying a comparable value) | **18.6%** |
+| largest | **1655%** |
+| run cost | 31 min, 798 cache hits to 28 misses |
+
+| drift band | count | |
+|---|---|---|
+| under 5% | 110 | 22% |
+| 5–25% | 189 | 37% |
+| over 25% | 212 | **41%** |
+
+**The failures are not an artefact of the script's preserved-wrong blocks.**
+This file deliberately keeps superseded blocks so past errors stay visible, and
+those pin their historical model through the `_Retired` class, so they still
+reproduce. Only **9 of 511** failing rows name a retired or struck pin. The
+drift is live.
+
+### 2. IT IS NOT RANDOM ROT. IT HAS A DATE LINE
+
+The failures cluster into three families rather than scattering, and each family
+has a ruling behind it that was taken deliberately and recorded at the time.
+**This document's numbers were current as of roughly 2026-09-25. Three rulings
+since then moved the engine underneath them, and the document was never
+regenerated.**
+
+| family | the ruling that moved it | date | attribution |
+|---|---|---|---|
+| **BMI and lung volume** | the RV floor goes (`3b3228a`) | 2026-09-26 | **established** |
+| **tilt** | tilt gains solved on Lane and Dixon, the BMI term changing sign (`bcbd37c`) | 2026-10-02 | candidate |
+| **CO₂ rates** | `k_co2_slow` 0.45 adopted (`ecba80b`), `shunt_cc_k` re-fit to Pelosi (`2ebfd72`) | 2026-10-01 | candidate |
+
+**The distinction in that last column is not decoration.** Family 1 is
+*established*: the ERV figure was written on 2026-09-25 and the RV floor was
+removed the next day in a commit whose own message reads *"removing it makes the
+obese end WORSE, which is the most useful thing that happened today."* The
+worsening was predicted, accepted and recorded. Families 2 and 3 are attributed
+**by date and topic only** — the right ruling is in the right window and touches
+the right quantities — and have **not** been individually traced the way family 1
+was. They are candidates, and should be treated as candidates until someone runs
+the per-row attribution.
+
+Worked examples, all recomputed on 2026-10-06 against the live
+`apnoea_core.py` (model hash `998db3fcdfa56bbe`, provenance printed by the run):
+
+| row | recorded | now |
+|---|---|---|
+| ERV vs Jones, mean abs error as shipped | 3.62 pp | **52.15 pp** |
+| BMI 40: `frc_anaes` change on Jones's `k_rv_bmi` | 10.9% | **79.08%** |
+| Frumin 45-min rate, base excess 0 | 1.18 mmHg/min | **1.55 mmHg/min** |
+| `v_tis_co2_slow` 140→280: Frumin45 | 1.6 mmHg/min | **2.09 mmHg/min** |
+
+**None of this is evidence of a model defect.** Every one of these movements is
+downstream of a ruling already taken. What it is evidence of is that this
+document rots exactly the way CLAUDE.md says markdown rots, and that the only
+defence is the script.
+
+### 3. A SUSPICION I RAISED AND THEN DISPROVED
+
+I recommended holding PR #8 on the grounds that the ERV drift sat in territory
+the obese-shunt branch touched. **That was wrong, and the hold was withdrawn
+before the merge.** The branch changes no model file; the cause predates it by
+over a week. Recorded because the reasoning was visible to the reader at the
+time and the correction should be too.
+
+### 4. FRUMIN RE-READ: THE ECTOPY DOES NOT TRACK pH
+
+Frumin was read in full on 2026-09-29 for the CO₂ and acid-base trajectory. The
+**arrhythmias and the potassium** were left, and were re-read at source on
+2026-10-06 because the sweep's pH line was about to be justified on them.
+
+**The two subjects who threw ventricular extrasystoles were at opposite ends of
+the pH range.** Subject 5 did so **within 7 minutes of the onset of apnoea**,
+when his pH was still near normal — his lowest, 6.97, came later, at
+termination around 18 minutes. Subject 7 did so **at the last minute of 53**, at
+pH **6.72** with an estimated PaCO₂ of **250**. The other six had no irregularity
+at all, one of them through **55 minutes** with *"virtually no change in the
+shape of the complex from control"* (p.791).
+
+**So no pH in this series is an arrhythmia threshold**, and the secondhand
+reading that reached this project — "Frumin saw ventricular ectopics that ended
+two apnoeas" — is true but carries none of that.
+
+**The ventricular tachycardia was a reoxygenation event, not an apnoea one.**
+p.791: after a few premature contractions at 53 minutes the apnoea was stopped,
+and *"the institution of artificial respiration with oxygen was accompanied
+within 15 seconds by ventricular tachycardia, lasting less than one minute. The
+rhythm became normal spontaneously."* All eight recovered. **What this paper
+establishes is a survived floor of pH 6.72, not a lethal one.**
+
+### 5. POTASSIUM IS RULED OUT, BY THE AUTHORS THEMSELVES
+
+Asked whether acute hypercapnia reaches an arrhythmogenic potassium, this paper
+answers directly and in the negative. p.792: the maximum rise from control
+during apnoea was **0.4 mEq/l**, with a further 0.6 or less immediately after.
+Table 2, subject 6: 3.8 control → 4.0 at 10 min → 4.0 at 30 → **4.3 at 40 min
+(pH 6.87)** → 4.8 post-apnoea.
+
+And the decisive sentence, p.794: *"The potassium changes in subject 7 in whom
+the ventricular tachycardia was demonstrated were **similar** to those in
+subjects 6 and 8 who had normal rhythms when respirations were resumed."*
+
+**The arrhythmic subject's potassium was indistinguishable from the
+non-arrhythmic ones.** Respiratory acidosis does not produce an arrhythmogenic
+potassium in this territory — not even at pH 6.72. The hyperkalaemia route is a
+chronic and metabolic story, and this is direct evidence against importing it
+here.
+
+### 6. THE pH LINE BECOMES 6.8, AND IS LABELLED AS A MARKER
+
+**RULED: 6.8, declared, not predicted.** Section 4 is the reason it cannot be
+anything else — Frumin gives no threshold to anchor it to. 6.8 is a line drawn
+to mark severe acidaemia, chosen to sit just above **6.72**, the lowest pH a
+human is documented to have survived.
+
+The 7.0 crossing the sweep used until today is **kept alongside it** (`PH_ALSO`)
+off the same runs at no extra cost, so the change of line can be seen rather
+than taken on trust. Death on the graph remains **hypoxia only**: the model
+still has no death-from-acidosis mechanism (entry 38), and the pH line asserts
+no more than it did before.
+
+**RULED NOT TO RECORD** Frumin's own caveat (p.795) as a model limitation: his
+subjects were undisturbed paralysed volunteers with no endobronchial
+manipulation, dural traction or other vagal stimulus, and he cites Bohr and
+Helmendach that vagally-induced asystole in dogs lengthened once pH fell 0.4 or
+more. It is in `sources_registry.py` against the paper, and it stops there.
+
+### 7. A STALENESS HOLE FOUND WHILE MAKING THE CHANGE
+
+`build_sweeps.js --check` compared only the **engine hash**, which covers
+`model.js` and the page's dials. It does **not** cover the reading thresholds.
+So moving `PH_DEAD` from 7.0 to 6.8 — which changes a whole stored column —
+would have left `--check` reporting *"up to date"* on data computed against the
+old line, and the pre-commit hook and CI both call `--check`.
+
+Closed: the horizon, point count and all three thresholds are now compared
+explicitly and named individually when they differ. Verified by running it
+against the then-current `sweeps.json`, which it correctly refused.
+
 ## Current state — 2026-10-05 (thirty-ninth entry): the Sweeps view — one page of graph per slider, 208 precomputed simulations, and the device arm's death line is EMPTY on nine of ten pages
 
 **RULED 2026-10-05 by A. Heard.** View code and a generated artifact. `model.js`,
@@ -5800,6 +5958,11 @@ compared against". That is a question for the person who measured them.
 
 ## Start here
 
+> **READ ENTRY 40 FIRST (2026-10-06).** 516 of the 863 numbers quoted in this
+> document have moved since 2026-09-25, for three recorded reasons, none of them
+> a model defect. Entry 40 names the ruling behind each family. Recompute before
+> quoting: `python3 handover_numbers.py`.
+
 ```
 pip install -r requirements.txt   # numpy, scipy, matplotlib (+ node for the port)
 ./setup-hooks.sh                  # once per clone: gate commits on the benchmarks
@@ -5852,6 +6015,16 @@ forgot, and the hook runs it first — the page embeds its own copy of the model
 so a stale HTML runs different physics from the file next to it.
 
 ## What is validated, and against what
+
+> **⚠ NUMBERS BELOW MAY BE SUPERSEDED — see entry 40 (2026-10-06).**
+> `handover_numbers.py` reports **516 of 863** recorded values moved. They are
+> stale by a known amount from a known date: this document was current as of
+> **2026-09-25**, and three rulings since then moved the engine underneath it —
+> **BMI and lung volume** (RV floor removed, 2026-09-26, *established*),
+> **tilt** (gains re-solved, 2026-10-02, *candidate*) and **CO₂ rates**
+> (`k_co2_slow` and `shunt_cc_k`, 2026-10-01, *candidate*).
+> **Before quoting any number in this section, recompute it:**
+> `python3 handover_numbers.py`. The script is the source; this is the copy.
 
 Two classes of target, and they are not equal. Clinical studies are
 measurements in patients and are the arbiters. ICSM/Nottingham results are
@@ -6694,6 +6867,16 @@ be compared with Heard's.
 
 ## Parameter provenance — read before quoting any obese result
 
+> **⚠ NUMBERS BELOW MAY BE SUPERSEDED — see entry 40 (2026-10-06).**
+> `handover_numbers.py` reports **516 of 863** recorded values moved. They are
+> stale by a known amount from a known date: this document was current as of
+> **2026-09-25**, and three rulings since then moved the engine underneath it —
+> **BMI and lung volume** (RV floor removed, 2026-09-26, *established*),
+> **tilt** (gains re-solved, 2026-10-02, *candidate*) and **CO₂ rates**
+> (`k_co2_slow` and `shunt_cc_k`, 2026-10-01, *candidate*).
+> **Before quoting any number in this section, recompute it:**
+> `python3 handover_numbers.py`. The script is the source; this is the copy.
+
 ### Anchored in measurement
 - O2 dissociation: Severinghaus with Kelman Bohr correction. Exact.
 - HPV: Marshall BE, Clarke WR, et al. Respir Physiol 1994;96:231-47. PSO2 =
@@ -6732,6 +6915,16 @@ be compared with Heard's.
   seconds each) are illustrative. Anything below SaO2 ~70% is not predictive.
 
 ## Numerical notes
+
+> **⚠ NUMBERS BELOW MAY BE SUPERSEDED — see entry 40 (2026-10-06).**
+> `handover_numbers.py` reports **516 of 863** recorded values moved. They are
+> stale by a known amount from a known date: this document was current as of
+> **2026-09-25**, and three rulings since then moved the engine underneath it —
+> **BMI and lung volume** (RV floor removed, 2026-09-26, *established*),
+> **tilt** (gains re-solved, 2026-10-02, *candidate*) and **CO₂ rates**
+> (`k_co2_slow` and `shunt_cc_k`, 2026-10-01, *candidate*).
+> **Before quoting any number in this section, recompute it:**
+> `python3 handover_numbers.py`. The script is the source; this is the copy.
 
 - The inflow-compliance loop has tau = R x Crs. At R=2 that is 0.17 s, so
   **dt must stay well under 0.1**. dt=0.2 is unstable and gives PaCO2 168
@@ -7172,6 +7365,16 @@ and which is not what Tokics measured.
    patients and would convert the central claim from plausible to shown.
 
 ## Findings worth keeping
+
+> **⚠ NUMBERS BELOW MAY BE SUPERSEDED — see entry 40 (2026-10-06).**
+> `handover_numbers.py` reports **516 of 863** recorded values moved. They are
+> stale by a known amount from a known date: this document was current as of
+> **2026-09-25**, and three rulings since then moved the engine underneath it —
+> **BMI and lung volume** (RV floor removed, 2026-09-26, *established*),
+> **tilt** (gains re-solved, 2026-10-02, *candidate*) and **CO₂ rates**
+> (`k_co2_slow` and `shunt_cc_k`, 2026-10-01, *candidate*).
+> **Before quoting any number in this section, recompute it:**
+> `python3 handover_numbers.py`. The script is the source; this is the copy.
 
 - **The plateau.** Substituting Fick into the shunt equation gives
   CaO2 = Cc'O2 - [f/(1-f)] x VO2/(10Q). A stable fixed point that exists only

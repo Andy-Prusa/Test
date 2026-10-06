@@ -2,6 +2,7 @@
 # Unpublished research software. See LICENSE: use in any publication
 # requires prior written permission. Cite as in CITATION.cff.
 import os
+import json
 import re
 import sys
 
@@ -500,7 +501,7 @@ flattered.</p>
 <button type="button" id="swnext" class="swnav">&rarr;</button>
 <span class="tkey"><i class="sw" style="background:#ff9f43"></i>no buccal oxygen</span>
 <span class="tkey"><i class="sw" style="background:#4fd8e8"></i>buccal oxygen</span>
-<span class="tkey"><i class="swdash"></i>pH 7.0 reached</span>
+<span class="tkey"><i class="swdash"></i>pH @@PHDEAD@@ reached</span>
 <span class="trendnow" id="swnow"></span></div>
 <canvas id="swc" width="1160" height="420"></canvas>
 <p class="swnote" id="swnote"></p>
@@ -1450,9 +1451,15 @@ setPlayState();
 // abolishes it. Those points are drawn as open markers along the top rule and
 // read ">60 min", NOT as 60: the model cannot say when that patient dies and
 // plotting 60 would assert something it does not know. The DASHED line is when
-// arterial pH reaches 7.0, which is the limit the model CAN see -- without it
-// the device arm would be blank almost everywhere. See HANDOVER entry 30 (the
-// buccal arm is CO2-limited, not oxygen-limited).
+// arterial pH reaches SWEEPS.phDead -- 6.8 since 2026-10-06, 7.0 before it --
+// which is the limit the model CAN see; without it the device arm would be
+// blank almost everywhere. THE LINE IS A DECLARED MARKER, NOT A PREDICTED
+// DEATH: Frumin's two subjects who threw ventricular ectopics did so at
+// OPPOSITE ends of the pH range, so no pH in the evidence is a threshold, and
+// his subject 7 recovered fully from 6.72. The legend's label is substituted
+// from sweeps.json rather than typed, so it cannot disagree with the curve.
+// See HANDOVER entry 40, and entry 30 (the buccal arm is CO2-limited, not
+// oxygen-limited).
 const SWEEPS=__SWEEPS__;
 const swEl=document.getElementById('sweeps');
 const swSel=document.getElementById('swsel');
@@ -1663,6 +1670,18 @@ page = HTML.replace('__MODEL__', model)
 # both the startup notice and the footer. Done here rather than with format()
 # because the template is full of CSS and JS braces.
 page = page.replace('__SWEEPS__', sweeps)
+
+# PHDEAD IS NOT A TYPED CONSTANT. It is read out of sweeps.json, because the
+# legend and the curve it labels must not be able to rot apart -- the notice and
+# the footer already did exactly that once (entry 39), and a legend reading
+# "pH 7.0" over a 6.8 curve is the same failure with a clinical edge on it.
+# Ruled 2026-10-06 with the move to 6.8; see HANDOVER entry 40.
+_sw = json.loads(sweeps)
+if 'phDead' not in _sw:
+    sys.exit("build_page.py: sweeps.json has no phDead, so the Sweeps legend "
+             "cannot be labelled from the data it describes. Regenerate it: "
+             "node build_sweeps.js")
+STD_FIGURES['PHDEAD'] = ('%g' % _sw['phDead'])
 
 for _k, _v in STD_FIGURES.items():
     page = page.replace('@@' + _k + '@@', _v)

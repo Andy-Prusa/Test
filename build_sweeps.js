@@ -35,6 +35,26 @@
 // same runs at no extra cost and is drawn dashed, so the graph shows both why
 // the device arm survives and what would really kill it. See HANDOVER entry 30
 // (the buccal arm is CO2-limited) and entry 38.
+//
+// THE pH LINE IS 6.8, AND IT IS A DECLARED MARKER, NOT A PREDICTED DEATH.
+// Ruled 2026-10-06 after Frumin 1959 was read at source. It is NOT an
+// arrhythmia threshold, and the paper is the reason it cannot be one: Frumin's
+// two subjects who threw ventricular ectopics did so at OPPOSITE ends of the
+// pH range -- one within 7 minutes of the onset of apnoea, when his pH was
+// still near normal, the other at 53 minutes at pH 6.72 -- while the other six
+// had no irregularity at all, one of them through 55 minutes of apnoea. Ectopy
+// in that series does not track pH, so no pH value in it is a threshold.
+//
+// What Frumin does establish is a SURVIVED FLOOR: his subject 7 reached pH 6.72
+// with an estimated PaCO2 of 250 and recovered fully, as did all eight. The
+// ventricular tachycardia in that subject came within 15 seconds of RESTARTING
+// ventilation, not during the apnoea -- a CO2-washout event, which is why it
+// cannot be read as the acidosis killing him.
+//
+// So 6.8 is a line drawn to mark severe acidaemia, chosen to sit just above the
+// lowest pH a human is documented to have survived. The 7.0 crossing this file
+// used until today is kept alongside it (PH_ALSO) off the same runs, so the
+// change of line can be seen rather than taken on trust.
 
 'use strict';
 const fs = require('fs');
@@ -45,7 +65,8 @@ const model = require(path.join(__dirname, 'model.js'));
 const OUT = path.join(__dirname, 'sweeps.json');
 const HORIZON = 3600;          // s -- the 60-minute axis
 const POINTS = 11;             // both ends exactly, nine interior
-const PH_DEAD = 7.0;           // the acidosis limb, ruled
+const PH_DEAD = 6.8;           // the acidosis limb, ruled 2026-10-06
+const PH_ALSO = 7.0;           // the previous line, kept so the move is visible
 const SPO2_DEAD = 90;          // the hypoxia limb, for reference
 
 // ---- the page's own dials and base, kept in step with build_page.py --------
@@ -133,6 +154,7 @@ function runOne(P, keep) {
   return {
     death: deathAt(out),
     ph: firstDown(out, 'ph', PH_DEAD),
+    ph7: firstDown(out, 'ph', PH_ALSO),
     spo2: firstDown(out, 'spo2', SPO2_DEAD),
     derived: { bmi: out.bmi, frc: out.frc, cc: out.cc, vo2: out.vo2,
                co: out.coBase },
@@ -241,14 +263,14 @@ function build() {
     let xs = linspace(lo, hi, SMOKE ? 3 : POINTS);
     if (key === 'buccalIdx') xs = [0, 1, 2, 3, 4];          // it is an index
     if (step >= 1) xs = xs.map(v => Math.round(v));
-    const control = { death: [], ph: [], spo2: [] };
-    const device = { death: [], ph: [], spo2: [] };
+    const control = { death: [], ph: [], ph7: [], spo2: [] };
+    const device = { death: [], ph: [], ph7: [], spo2: [] };
     const derived = { bmi: [], frc: [], cc: [], vo2: [], co: [] };
     for (const x of xs) {
       const P = Object.assign({}, BASE); P[key] = x;
       const c = runOne(P, false), d = runOne(P, true);
       sims += 2;
-      for (const k of ['death', 'ph', 'spo2']) { control[k].push(c[k]); device[k].push(d[k]); }
+      for (const k of ['death', 'ph', 'ph7', 'spo2']) { control[k].push(c[k]); device[k].push(d[k]); }
       for (const k of Object.keys(derived)) derived[k].push(c.derived[k]);
       process.stderr.write(`  ${key}=${x}  control ${c.death === null ? '>60m' :
         (c.death / 60).toFixed(1) + 'm'}  device ${d.death === null ? '>60m' :
@@ -272,7 +294,10 @@ function build() {
   return {
     generated: new Date().toISOString().slice(0, 10),
     engineHash: hash, horizon: HORIZON, points: POINTS,
-    phDead: PH_DEAD, spo2Dead: SPO2_DEAD,
+    phDead: PH_DEAD, phAlso: PH_ALSO, spo2Dead: SPO2_DEAD,
+    phDeadNote: 'a declared severe-acidaemia marker, NOT a predicted death and '
+              + 'NOT an arrhythmia threshold -- see the header of '
+              + 'build_sweeps.js and HANDOVER entry 40',
     endpoint: 'loss of cardiac output (co<=0 or hr<=0); null means it did not '
             + 'arrest within the horizon',
     scenario: 'cico preset: control re-obstructs at 430 s, device keeps the '
@@ -308,7 +333,7 @@ function verify(data, nPoints) {
     const P = Object.assign({}, BASE); P[d.key] = d.x[j];
     for (const [arm, keep] of [['control', false], ['device', true]]) {
       const r = runOne(P, keep);
-      for (const k of ['death', 'ph', 'spo2']) {
+      for (const k of ['death', 'ph', 'ph7', 'spo2']) {
         const was = d[arm][k][j], now = r[k];
         const same = (was === null && now === null)
           || (was !== null && now !== null && was === now);
@@ -369,7 +394,26 @@ if (process.argv.includes('--check')) {
       + `${have.engineHash}, the tree is now ${want}. Run: node build_sweeps.js`);
     process.exit(1);
   }
-  console.log(`up to date: ${path.basename(OUT)} matches the engine (${want})`);
+  // THE HASH CANNOT SEE THE THRESHOLDS, and that is a real hole: the engine
+  // hash covers model.js and the page's dials, so moving PH_DEAD from 7.0 to
+  // 6.8 -- which changes a whole stored column -- left --check reporting "up to
+  // date" on data computed against the old line. Found 2026-10-06 while making
+  // exactly that change. The readings are therefore compared explicitly.
+  const wantCfg = { horizon: HORIZON, points: POINTS, phDead: PH_DEAD,
+                    phAlso: PH_ALSO, spo2Dead: SPO2_DEAD };
+  const drifted = Object.keys(wantCfg).filter(k => have[k] !== wantCfg[k]);
+  if (drifted.length) {
+    for (const k of drifted) {
+      console.error(`STALE: ${path.basename(OUT)} stores ${k}=${have[k]}, `
+        + `this file now says ${wantCfg[k]}.`);
+    }
+    console.error('A reading threshold moved, so a stored column no longer '
+      + 'means what it says. Run: node build_sweeps.js');
+    process.exit(1);
+  }
+  console.log(`up to date: ${path.basename(OUT)} matches the engine (${want}) `
+    + `and the readings (pH ${PH_DEAD}/${PH_ALSO}, SpO2 ${SPO2_DEAD}, `
+    + `${HORIZON}s, ${POINTS} points)`);
   process.exit(0);
 }
 

@@ -4658,6 +4658,63 @@ else:
     print("    BMI 25 standard patient it is LARGER than the old 107 kg figure")
     print("    the notice used to quote: about 77 s, not 42 s.")
 
+# ---------------------------------------------------------------------------
+print("\nENTRY 40: FRUMIN'S ARRHYTHMIAS AND POTASSIUM -- the paper's own")
+print("numbers, pinned so the PROSE cannot rot away from them")
+print("  These are MEASURED VALUES FROM A PAPER, not model outputs, so there is")
+print("  nothing for the engine to drift against. What they CAN do is rot in")
+print("  markdown -- which is exactly what entry 40 is about. So each one is")
+print("  written here ONCE and this block asserts HANDOVER.md still says it.")
+print("  Frumin, Epstein & Cohen 1959, Anesthesiology 20(6):789-798, read in")
+print("  full 2026-09-29 (CO2 and acid-base) and re-read 2026-10-06 for the")
+print("  cardiac findings. Page numbers are the paper's own.")
+
+_FRUMIN = [
+    ("6.72",  "subject 7's lowest arterial pH, Table 1 p.790"),
+    ("250",   "subject 7's highest PaCO2, ESTIMATED not measured, Table 1"),
+    ("53",    "subject 7's apnoea duration in minutes, Table 1"),
+    ("6.97",  "subject 5's lowest arterial pH, Table 1"),
+    ("55",    "the longest apnoea in the series, no irregularity, p.791"),
+    ("15 seconds", "delay from restarting ventilation to the VT, p.791"),
+    ("0.4",   "max rise in plasma potassium during apnoea, mEq/l, p.792"),
+    ("4.3",   "subject 6's potassium at 40 min, Table 2"),
+    ("6.87",  "subject 6's pH at 40 min, Table 2"),
+    ("3.8",   "subject 6's control potassium, Table 2"),
+]
+_hpath = os.path.join(os.path.dirname(os.path.abspath(ac.__file__)),
+                      'HANDOVER.md')
+try:
+    _htext = open(_hpath, encoding='utf-8').read()
+except OSError as _e:
+    _htext = None
+    print(f"    HANDOVER.md unreadable ({_e}); NOT silently skipped:")
+    _fails.append("Frumin paper values (HANDOVER.md unreadable)")
+if _htext is not None:
+    _e40 = _htext.split("(fortieth entry)")
+    if len(_e40) < 2:
+        print("    entry 40 is GONE from HANDOVER.md.")
+        _fails.append("Frumin paper values (entry 40 missing)")
+    else:
+        # the entry runs until the next '## Current state' heading
+        _body = _e40[1].split("\n## Current state")[0]
+        for _v, _what in _FRUMIN:
+            _ok = _v in _body
+            print(f"    {'ok  ' if _ok else 'FAIL'} {_v:<12} {_what}")
+            if not _ok:
+                _fails.append(f"Frumin {_v} ({_what}) no longer in entry 40")
+        print("    THE ECTOPY DOES NOT TRACK pH: subject 5 threw extrasystoles")
+        print("    WITHIN 7 MINUTES at a near-normal pH, subject 7 at the last")
+        print("    minute of 53 at 6.72, and the other six had none at all. No")
+        print("    pH here is a threshold, so the 6.8 line on the sweep is a")
+        print("    DECLARED MARKER and entry 40 says so.")
+        print("    THE VT WAS A REOXYGENATION EVENT, within 15 s of restarting")
+        print("    ventilation, and every subject recovered -- so 6.72 is a")
+        print("    SURVIVED FLOOR, not a lethal one.")
+        print("    POTASSIUM IS RULED OUT BY THE AUTHORS: the VT subject's")
+        print("    changes were 'similar to those in subjects 6 and 8 who had")
+        print("    normal rhythms' (p.794).")
+
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")
