@@ -133,6 +133,14 @@ KNOWN_OPEN = {
     # DECAYS, 2.27 at 15 min and 1.64 by 45, so it is roughly half. The pH row
     # is the same defect from the acid-base side: too little CO2 accumulated,
     # so too alkaline.
+    #   ^ SUPERSEDED BY THE 2026-10-01 BLOCK TWELVE LINES BELOW, and left in
+    #   place per this file's habit of keeping the superseded text visible.
+    #   Both the decay and the "roughly half" are gone: k_co2_slow 0.45 fixed
+    #   the decay (CV 13.1% -> 1.8%) and the 45-min rate is 2.11, not 1.64.
+    #   Matched per subject over each man's OWN duration the model is 0.66x
+    #   Frumin, range 0.48-0.80 -- see the table in test_frumin_1959. Quoted
+    #   as live on 2026-10-06 before the block below was read; that is what
+    #   superseded-but-visible text costs if the supersession is not marked.
     #
     # These rows are the MEASUREMENT of a defect now scheduled for work. They
     # are not tuned toward, and nothing compensating may be added to pass them
@@ -591,20 +599,25 @@ def test_frumin_1959():
     model's 7.40, reaching 6.87 at 40 minutes.
 
     BOTH ROWS FAIL AND ARE RULED OPEN, 2026-09-29, on the ruling that put the
-    CO2 channel back in the queue. The model's rate DECAYS -- 2.45 mmHg/min at
-    15 min, 2.11 by 45 -- where Frumin's is sustained near 3 for the whole
-    apnoea. They measure the defect that work is meant to close. Nothing is
-    tuned toward them.
+    CO2 channel back in the queue. The model sits BELOW Frumin's level --
+    2.11 mmHg/min over 45 min against his band of 2.7-4.9 -- where his is
+    sustained near 3 for the whole apnoea. They measure the defect that work
+    is meant to close. Nothing is tuned toward them.
 
-    THOSE TWO FIGURES WERE 2.27 AND 1.64 WHEN THIS DOCSTRING WAS WRITTEN on
-    2026-09-29, and were corrected 2026-10-06 after they were quoted and found
-    stale. The 45-minute rate has moved +29%. THE VERDICT DID NOT CHANGE --
-    1.64 and 2.11 both fail a 2.7 floor -- so nothing this file DOES was ever
-    wrong; what rotted is the magnitude a reader takes away, which is the
-    failure mode HANDOVER entry 40 is about. The date and direction fit that
-    entry's CO2 family, k_co2_slow 0.45 adopted 2026-10-01 in ecba80b, two
-    days after this text. THAT ATTRIBUTION IS A CANDIDATE, NOT ESTABLISHED:
-    right ruling, right window, right quantity, but not traced per row.
+    THE RATE NO LONGER DECAYS, and this docstring said it did until
+    2026-10-06. k_co2_slow 0.80 -> 0.45 on 2026-10-01 (ecba80b) fixed the
+    SHAPE -- CV across the window 13.1% -> 1.8% -- and moved both rows toward
+    their bands, 1.64 -> 2.11 and 7.09 -> 7.04. That is recorded in the
+    KNOWN_OPEN table above, which re-recorded both baselines the same day
+    under its rule 3. SHAPE-CORRECTED, NOT LEVEL-CORRECTED is the accurate
+    description, and the figures quoted here were the pre-correction ones for
+    five days.
+
+    WHAT THAT COST, recorded because it is the point of rule 3: the KNOWN_OPEN
+    table caught the move, attributed it to the parameter, and re-recorded the
+    baselines -- the mechanism worked exactly as designed. The PROSE in this
+    file did not follow, in two places, and on 2026-10-06 both were quoted as
+    live. Numbers in the table did not rot. Numbers in the comments did.
 
     MATCHED PER SUBJECT, each over HIS OWN duration -- the comparison the
     2026-09-27 retraction demands, since a long-window mean of a decaying

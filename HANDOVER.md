@@ -158,22 +158,42 @@ attempt gave, and not "half". Both benchmark rows still fail (2.11 against a
 2.7 floor; pH 7.041 against a 6.97 ceiling), so **no verdict changes** — only
 the magnitude, and who found it.
 
-### 8. THE BENCHMARK'S OWN DOCSTRING HAS DRIFTED, AND IT IS THE CO₂ FAMILY AGAIN
+### 8. THE PROSE IN THE ARBITER HAD ROTTED, AND THE TABLE HAD NOT — WHICH IS THE WHOLE ARGUMENT FOR RULE 3
 
-`test_frumin_1959` records in prose that the model gives **"2.27 mmHg/min at 15
-min, 1.64 by 45"**. The live engine gives **2.45 and 2.11**. The 45-minute
-figure has moved **+29%** since that docstring was written on 2026-09-29.
+Two passages in `test_validation.py` say the model gives **"2.27 mmHg/min at 15
+min, 1.64 by 45"** and that it is **"roughly half"** Frumin. Both were quoted as
+live on 2026-10-06, including by me. Both were five days stale.
 
-**The pass/fail verdict is unchanged** — 1.64 and 2.11 both fail a 2.7 floor —
-so nothing in the arbiter's behaviour was wrong. But the quoted magnitudes were,
-and they are the numbers a reader would take away. The date and direction fit
-entry 40's **CO₂ family**: `k_co2_slow` 0.45 adopted 2026-10-01 (`ecba80b`),
-two days after the docstring. **That attribution is a candidate, not
-established** — it is the right ruling in the right window touching the right
-quantity, and it has not been traced per-row.
+**`KNOWN_OPEN` had it right the whole time.** Twelve lines below the first of
+those comments sits a block dated **2026-10-01**: `k_co2_slow` 0.80 → 0.45 fixed
+the *shape* of the rise — **CV across the window 13.1% → 1.8%** — and moved both
+rows toward their bands, **1.64 → 2.11** and **7.09 → 7.04**. Both baselines were
+re-recorded the same day, under the table's own rule 3: *"a known-open row that
+has moved must not keep a stale baseline, or the next genuine drift is
+invisible."*
 
-The docstring is corrected to the live values with the drift named. **The band
-is untouched**: 2.7–4.9 is Frumin's own range and no part of it is ours to move.
+**So this is not a drift that escaped.** The table caught the move, named the
+parameter, and re-recorded. The mechanism worked exactly as designed. **The prose
+beside it did not follow.** `test_frumin_1959` passes on the current engine
+because the recorded baseline is 2.11 ± 0.30 and the model gives 2.11.
+
+**Two corrections to section 7 and to my own first fix, both from reading
+further:**
+
+- **"The rate decays" is no longer true.** It was fixed on 2026-10-01. The
+  accurate description is the table's own: **shape-corrected, not
+  level-corrected**. My first fix kept the word "DECAYS" and merely updated the
+  numbers under it.
+- **The `k_co2_slow` attribution is established, not a candidate.** I labelled it
+  a candidate on the grounds that it had not been traced per row. It had been —
+  in the same file, twelve lines below the stale comment, with the parameter
+  named and both before-and-after values given. Entry 40's CO₂ family can be
+  promoted from *candidate* to *established* on this evidence; the **tilt** family
+  cannot, and stays a candidate.
+
+**The band is untouched**: 2.7–4.9 is Frumin's own range and no part of it is
+ours to move. Both stale passages are corrected in place, with the supersession
+marked rather than the old text deleted.
 
 ## Current state — 2026-10-06 (forty-first entry): pure hypercapnic acidosis is not the danger, Potkin's man survived pH 6.60 at PaCO₂ 375, and the Sweeps pH limbs become a teaching point instead of a death line
 
@@ -319,9 +339,13 @@ regenerated.**
 |---|---|---|---|
 | **BMI and lung volume** | the RV floor goes (`3b3228a`) | 2026-09-26 | **established** |
 | **tilt** | tilt gains solved on Lane and Dixon, the BMI term changing sign (`bcbd37c`) | 2026-10-02 | candidate |
-| **CO₂ rates** | `k_co2_slow` 0.45 adopted (`ecba80b`), `shunt_cc_k` re-fit to Pelosi (`2ebfd72`) | 2026-10-01 | candidate |
+| **CO₂ rates** | `k_co2_slow` 0.45 adopted (`ecba80b`), `shunt_cc_k` re-fit to Pelosi (`2ebfd72`) | 2026-10-01 | **established 2026-10-06** — see entry 42 §8 |
 
-**The distinction in that last column is not decoration.** Family 1 is
+**The distinction in that last column is not decoration.** Family 3 was promoted
+from *candidate* to *established* on 2026-10-06: `test_validation.py`'s own
+`KNOWN_OPEN` block names `k_co2_slow` 0.80 → 0.45 and gives both before-and-after
+values (1.64 → 2.11, 7.09 → 7.04), which is the per-row trace this column was
+waiting for. **Family 2, tilt, remains a candidate.** Family 1 is
 *established*: the ERV figure was written on 2026-09-25 and the RV floor was
 removed the next day in a commit whose own message reads *"removing it makes the
 obese end WORSE, which is the most useful thing that happened today."* The
