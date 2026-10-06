@@ -591,10 +591,34 @@ def test_frumin_1959():
     model's 7.40, reaching 6.87 at 40 minutes.
 
     BOTH ROWS FAIL AND ARE RULED OPEN, 2026-09-29, on the ruling that put the
-    CO2 channel back in the queue. The model's rate DECAYS -- 2.27 mmHg/min at
-    15 min, 1.64 by 45 -- where Frumin's is sustained near 3 for the whole
+    CO2 channel back in the queue. The model's rate DECAYS -- 2.45 mmHg/min at
+    15 min, 2.11 by 45 -- where Frumin's is sustained near 3 for the whole
     apnoea. They measure the defect that work is meant to close. Nothing is
     tuned toward them.
+
+    THOSE TWO FIGURES WERE 2.27 AND 1.64 WHEN THIS DOCSTRING WAS WRITTEN on
+    2026-09-29, and were corrected 2026-10-06 after they were quoted and found
+    stale. The 45-minute rate has moved +29%. THE VERDICT DID NOT CHANGE --
+    1.64 and 2.11 both fail a 2.7 floor -- so nothing this file DOES was ever
+    wrong; what rotted is the magnitude a reader takes away, which is the
+    failure mode HANDOVER entry 40 is about. The date and direction fit that
+    entry's CO2 family, k_co2_slow 0.45 adopted 2026-10-01 in ecba80b, two
+    days after this text. THAT ATTRIBUTION IS A CANDIDATE, NOT ESTABLISHED:
+    right ruling, right window, right quantity, but not traced per row.
+
+    MATCHED PER SUBJECT, each over HIS OWN duration -- the comparison the
+    2026-09-27 retraction demands, since a long-window mean of a decaying
+    quantity is not the same measurement as a short-window rate:
+
+        subject   min   his mmHg/min   model   ratio
+              4    45           3.00    2.11    0.70
+              5    18           4.90    2.37    0.48
+              6    45           3.00    2.11    0.70
+              7    53           3.50    2.07    0.59
+              8    38           2.70    2.16    0.80
+
+    Mean 0.66x, range 0.48-0.80. THE BAND BELOW IS UNTOUCHED: 2.7-4.9 is
+    Frumin's own range and no part of it is ours to move.
 
     Weight and height are NOT stated by the paper, so this uses the project's
     lean configuration and says so rather than inventing a body.

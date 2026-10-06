@@ -36,11 +36,17 @@ bicarbonate:
 **One per cent at pH 6.60 and PaCO₂ 375** — the most extreme arterial gas
 reported in a surviving human.
 
-**So the Frumin disagreement is not an acid-base failure.** It is a CO₂
-*accumulation rate* failure — the model rises at 1.55 mmHg/min against his ~3.
-That is what the base-excess block already concluded from the other side ("the
-CO₂ store was never the defect"); this confirms it from the end that was
-untested, with a measurement rather than an argument.
+**So the Frumin disagreement is not an acid-base failure.** That is what the
+base-excess block already concluded from the other side ("the CO₂ store was
+never the defect"); this confirms it from the end that had never been tested,
+with a measurement rather than an argument.
+
+**What it does NOT do is discover a CO₂ rate defect, and this entry said it did
+until it was corrected — see section 7.** `test_validation.py::test_frumin_1959`
+has carried both Frumin rows as **ruled open since 2026-09-29**, and the
+2026-09-27 retraction (`19781b8`) withdrew three successive "too slow" claims,
+including one against Frumin by name. Eliminating acid-base **removes an excuse
+for an already-known open row. It does not find it.**
 
 ### 3. THE BASE-EXCESS LEAD: SUGGESTIVE, NOT ESTABLISHED, AND NOTHING TUNED
 
@@ -114,6 +120,60 @@ a 215 as the model's target.
 No parameter, no threshold, no benchmark band, no `KNOWN_OPEN` row. The seventeen
 numbers above are pinned in `handover_numbers.py` and recompute from the live
 engine, so this entry cannot rot the way the ones above it did.
+
+### 7. CORRECTION, SAME DAY: THIS ENTRY OVERSTATED, AND THE MATCHED NUMBERS
+
+**Corrected on A. Heard's "we just did that."** As first written, section 2
+ended by calling the residue a CO₂ *accumulation rate failure*. Three things
+were wrong with that.
+
+**It restated a withdrawn claim without citing the withdrawal.** `19781b8`
+(2026-09-27) retracted "2.5× too slow", "5×" and **"3.3× against Frumin"**
+together, because they compared the model's long-window mean against
+measurements taken over 1–15 minutes. Its surviving ruling is that the decay
+past 15 minutes is **"tested by NOTHING. Untested, not wrong."** That ruling
+still governs every window past Frumin's 55 minutes.
+
+**It presented a known open row as a discovery.** `test_frumin_1959` already
+bands the 45-minute rate at Frumin's own 2.7–4.9 and the 40-minute pH at
+6.72–6.97, and already rules both open with the words *"they measure the defect
+that work is meant to close. Nothing is tuned toward them."*
+
+**And the number was computed on the wrong patient.** The 1.55 mmHg/min came
+from the base-excess block's configuration, which sets `paco2_start=25.0`.
+`test_frumin_1959` does not set it, and starts at 40.1. On the benchmark's own
+configuration, per subject and each over **his own duration** — the matched test
+the retraction demands:
+
+| subject | min | his mmHg/min | model | ratio |
+|---|---|---|---|---|
+| 4 | 45 | 3.00 | 2.11 | 0.70 |
+| 5 | 18 | 4.90 | 2.37 | 0.48 |
+| 6 | 45 | 3.00 | 2.11 | 0.70 |
+| 7 | 53 | 3.50 | 2.07 | 0.59 |
+| 8 | 38 | 2.70 | 2.16 | 0.80 |
+
+**Matched mean 0.66×, range 0.48–0.80** — not the 0.48× a first misconfigured
+attempt gave, and not "half". Both benchmark rows still fail (2.11 against a
+2.7 floor; pH 7.041 against a 6.97 ceiling), so **no verdict changes** — only
+the magnitude, and who found it.
+
+### 8. THE BENCHMARK'S OWN DOCSTRING HAS DRIFTED, AND IT IS THE CO₂ FAMILY AGAIN
+
+`test_frumin_1959` records in prose that the model gives **"2.27 mmHg/min at 15
+min, 1.64 by 45"**. The live engine gives **2.45 and 2.11**. The 45-minute
+figure has moved **+29%** since that docstring was written on 2026-09-29.
+
+**The pass/fail verdict is unchanged** — 1.64 and 2.11 both fail a 2.7 floor —
+so nothing in the arbiter's behaviour was wrong. But the quoted magnitudes were,
+and they are the numbers a reader would take away. The date and direction fit
+entry 40's **CO₂ family**: `k_co2_slow` 0.45 adopted 2026-10-01 (`ecba80b`),
+two days after the docstring. **That attribution is a candidate, not
+established** — it is the right ruling in the right window touching the right
+quantity, and it has not been traced per-row.
+
+The docstring is corrected to the live values with the drift named. **The band
+is untouched**: 2.7–4.9 is Frumin's own range and no part of it is ours to move.
 
 ## Current state — 2026-10-06 (forty-first entry): pure hypercapnic acidosis is not the danger, Potkin's man survived pH 6.60 at PaCO₂ 375, and the Sweeps pH limbs become a teaching point instead of a death line
 
