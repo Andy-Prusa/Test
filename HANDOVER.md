@@ -5,6 +5,116 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-06 (forty-second entry): Potkin tests the acid-base relation where it had never been tested and it holds to 1% at PaCO₂ 375 — so the Frumin disagreement is a CO₂ rate defect, not an acid-base one, and the base-excess route stays refused
+
+**Investigated on A. Heard's instruction**, following the lead recorded in entry
+41 section 5. The lead does not go where I suggested it might, and the result is
+better than the one I was looking for.
+
+### 1. THE OPEN QUESTION THAT HAS STOOD SINCE 2026-09-29
+
+`sources_registry.py` has carried this against Frumin since the day he was read:
+the open question is *"the pH/PCO₂ relation above PaCO₂ ~100, where his estimate
+is an extrapolation off the end of a 1959 nomogram and **the model has never
+been tested**."*
+
+Potkin & Swenson is a **modern electrode in exactly that regime**. It closes the
+question, and the answer is that the model is right.
+
+### 2. THE RESULT
+
+The model's apparent pK′ is Kelman 1967. Given Potkin's own measured pH and
+PaCO₂ — **no base excess involved anywhere** — it predicts his reported
+bicarbonate:
+
+| row | pH | PaCO₂ | HCO₃⁻ his | HCO₃⁻ model | error |
+|---|---|---|---|---|---|
+| admission | 6.60 | 375 | 34 | **34.3** | **+1.0%** |
+| 5 min mask | 6.91 | 151 | 29 | **29.1** | **+0.4%** |
+| 90 min | 7.19 | 58 | 21 | 21.9 | +4.4% |
+
+**One per cent at pH 6.60 and PaCO₂ 375** — the most extreme arterial gas
+reported in a surviving human.
+
+**So the Frumin disagreement is not an acid-base failure.** It is a CO₂
+*accumulation rate* failure — the model rises at 1.55 mmHg/min against his ~3.
+That is what the base-excess block already concluded from the other side ("the
+CO₂ store was never the defect"); this confirms it from the end that was
+untested, with a measurement rather than an argument.
+
+### 3. THE BASE-EXCESS LEAD: SUGGESTIVE, NOT ESTABLISHED, AND NOTHING TUNED
+
+Entry 41 recorded Potkin's claim that a base excess in extreme hypercapnia may
+not be a metabolic quantity. Quantified against his own table:
+
+| row | BE printed | Siggaard-Andersen from his pH + HCO₃⁻ |
+|---|---|---|
+| admission | **−16** | **−9.1** |
+| 5 min mask | −9 | −6.8 |
+| 90 min | −5 | −7.8 |
+
+At admission he printed −16 where the formula gives **−9.1 from his own
+numbers** — a 6.9-unit gap, in the direction he describes. **But the 90-min row
+goes the other way**, and he was 32.2 °C and warming throughout, so temperature
+correction confounds the entire column.
+
+**Suggestive, not established — and nothing was tuned on it.** That is the
+point rather than a disappointment: the `be` sweep was already refused on
+mechanism (it trades CO₂ content against pH, and Frumin had both high content
+*and* low pH), and Potkin independently says the quantity it would have been
+fitted to is not reliably metabolic. **Fitting `be` to chase Frumin's pH would
+have been fitting a parameter to an artefact.** The refusal now has a sourced
+mechanism behind it, not only an empirical one.
+
+### 4. ROW 3 OF HIS TABLE IS INTERNALLY INCONSISTENT, AND IT IS THE PaCO₂
+
+Each row ties four numbers with two equations, so any three predict the fourth.
+Three rows agree with themselves. One does not:
+
+| row | PaCO₂ implied by his pH + HCO₃⁻ | PaCO₂ printed |
+|---|---|---|
+| admission | 371.3 | 375 |
+| 5 min mask | 150.4 | 151 |
+| **25 min mech vent** | **86.2** | **68** |
+| 90 min | 55.6 | 58 |
+
+At **PaCO₂ 87** his HCO₃⁻ (25.2 against a printed 25) *and* his base excess
+(−6.5 against a printed −7) both fall out. At 68 neither does — HCO₃⁻ would be
+19.7. **87 → 68 is a digit transposition.**
+
+**This is an inference about the paper, not a finding about the model**, and it
+is recorded as one. It is not an artefact of Kelman's pK′ either: classic
+Henderson-Hasselbalch at pK 6.1 gives 19.6 at 68 as well. The row is excluded
+from the validation above for that reason, and excluding it is stated rather
+than silent.
+
+### 5. FRUMIN'S NOMOGRAM, CHECKED THE SAME WAY
+
+At his measured plasma CO₂ content of 32.9 mmol/L:
+
+| his pH | H-H PaCO₂ | he reported | |
+|---|---|---|---|
+| 6.88 | 156.6 | 160 | −2.1% |
+| 6.87 | 159.8 | 160 | **−0.1%** |
+| 6.97 | 129.8 | 130 | **−0.1%** |
+| 6.72 | 215.2 | **250** | **−13.9%** |
+
+Three of four are exact. The one that is not is the **250** the registry already
+flags as an extrapolation off the end of the nomogram — and the direction is
+what that flag predicts, the nomogram over-reading as it leaves its range.
+
+**CAVEAT THAT MATTERS AND IS NOT A FOOTNOTE:** 32.9 is **subject 6's** content
+at 40 min, and the 6.72 row is **subject 7**, whose content was never reported.
+So 215 is what subject 6's content would imply at subject 7's pH. **It bounds
+the nomogram, not the patient**, and it does not license rewriting the 250 into
+a 215 as the model's target.
+
+### 6. WHAT WAS NOT CHANGED
+
+No parameter, no threshold, no benchmark band, no `KNOWN_OPEN` row. The seventeen
+numbers above are pinned in `handover_numbers.py` and recompute from the live
+engine, so this entry cannot rot the way the ones above it did.
+
 ## Current state — 2026-10-06 (forty-first entry): pure hypercapnic acidosis is not the danger, Potkin's man survived pH 6.60 at PaCO₂ 375, and the Sweeps pH limbs become a teaching point instead of a death line
 
 **RULED 2026-10-06 by A. Heard:** *"purely hypercapnoeic acidosis is nowhere near

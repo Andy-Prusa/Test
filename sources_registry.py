@@ -486,7 +486,23 @@ BENCHMARK_SOURCES = [
      "endobronchial manipulation, dural traction or other vagal stimulus, "
      "and Frumin cites Bohr and Helmendach that vagally-induced asystole "
      "in dogs lengthened once pH fell 0.4 or more. RULED 2026-10-06 NOT to "
-     "record that as a model limitation"),
+     "record that as a model limitation. "
+     "THE OPEN QUESTION ABOVE IS NOW CLOSED, 2026-10-06. It stood from "
+     "2026-09-29: the pH/PCO2 relation above PaCO2 ~100 had never been "
+     "tested, because the only data were his own nomogram extrapolations. "
+     "Potkin & Swenson 1992 is a MODERN electrode in that regime and the "
+     "model's Kelman 1967 pK' reproduces his bicarbonate to 1.0 per cent at "
+     "pH 6.60 and PaCO2 375. So the disagreement with Frumin is NOT an "
+     "acid-base defect; it is a CO2 ACCUMULATION RATE defect, 1.55 mmHg/min "
+     "against his ~3. Checked the other way too: at his measured content of "
+     "32.9 mmol/L, Henderson-Hasselbalch reproduces his reported tension to "
+     "0.1 per cent at pH 6.87 and 6.97 and to 2.1 per cent at 6.88, and "
+     "misses only at 6.72 (215 against his 250) -- the row this entry "
+     "already flags as off the end of the nomogram, missing in the direction "
+     "that flag predicts. CAVEAT: 32.9 is SUBJECT 6's content and the 6.72 "
+     "row is SUBJECT 7, whose content was never reported, so that bounds the "
+     "NOMOGRAM and not the patient, and does not license rewriting 250 as "
+     "the model's target. See HANDOVER entry 42"),
     ("Stelfox 2006, *Crit Care Med* 34(4):1243-1246 (n=700)",
      "cardiac output against BMI -- the INDEPENDENT test of the BSA law",
      "2026-09-29",
@@ -651,7 +667,30 @@ BENCHMARK_SOURCES = [
      "above a PCO2 of 270 mm Hg'; and the tolerance is for NONHYPOXIC "
      "acidosis -- his PaO2 was 40 on admission, so the oximetry that reported "
      "above 90 per cent through the operation is the weakest link in the "
-     "account"),
+     "account. "
+     "IT ALSO CLOSES THE ACID-BASE OPEN QUESTION ON FRUMIN, 2026-10-06. The "
+     "model's Kelman 1967 pK' predicts his reported bicarbonate from his own "
+     "measured pH and PaCO2, with no base excess involved: 34.3 against 34 at "
+     "pH 6.60 and PaCO2 375 (1.0 per cent), 29.1 against 29 at 6.91 and 151 "
+     "(0.4 per cent), 21.9 against 21 at 7.19 and 58. The relation is right "
+     "in the regime where it had never been tested, so the Frumin "
+     "disagreement is a CO2 RATE defect and not an acid-base one. "
+     "HIS ROW 3 IS INTERNALLY INCONSISTENT AND IT IS THE PaCO2 -- an "
+     "inference about the PAPER, not a finding about the model. Each row ties "
+     "four numbers with two equations; the other three agree with themselves "
+     "to within 4 mmHg, while row 3's pH 7.08 and HCO3 25 imply 86.2 mmHg "
+     "against a printed 68. At 87 both his HCO3 (25.2) and his base excess "
+     "(-6.5) fall out; at 68 neither does. 87 -> 68 is a digit transposition, "
+     "and classic Henderson-Hasselbalch at pK 6.1 gives the same 19.6 at 68, "
+     "so it is not an artefact of Kelman. That row is EXCLUDED from the "
+     "validation above and the exclusion is stated rather than silent. "
+     "THE BASE-EXCESS COLUMN DOES NOT REPRODUCE from his own pH and HCO3: "
+     "-16 printed against -9.1 computed at admission, a 6.9-unit gap in the "
+     "direction he describes -- but the 90-min row goes the OTHER way (-5 "
+     "printed, -7.8 computed) and he was 32.2 C and warming, so temperature "
+     "correction confounds the column. SUGGESTIVE, NOT ESTABLISHED. NOTHING "
+     "WAS TUNED ON IT, and that is the point: fitting the model's be to chase "
+     "Frumin's pH would have been fitting a parameter to an artefact"),
 ]
 
 

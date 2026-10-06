@@ -4759,6 +4759,90 @@ else:
         print("    lead; NOTHING was changed on the strength of it.")
 
 
+# ---------------------------------------------------------------------------
+print("\nENTRY 42: POTKIN TESTS THE ACID-BASE RELATION WHERE IT HAD NEVER BEEN")
+print("TESTED, and it holds to 1 per cent at PaCO2 375")
+print("  sources_registry.py has recorded since 2026-09-29 that the open")
+print("  question against Frumin is 'the pH/PCO2 relation above PaCO2 ~100,")
+print("  where his estimate is an extrapolation off the end of a 1959 nomogram")
+print("  and THE MODEL HAS NEVER BEEN TESTED'. Potkin & Swenson 1992 is a")
+print("  MODERN electrode in exactly that regime, so it closes the question.")
+print("  Table 1 is the paper's; HCO3 model is Kelman 1967 pK' from the")
+print("  paper's OWN measured pH and PaCO2, with no base excess involved.")
+
+_S = _bg._co2_solubility(37.0)
+def _hco3_m(pco2, ph):
+    return _S * pco2 * 10.0 ** (ph - _bg._pk_prime(ph, 37.0))
+def _be_sa(hco3, ph, hb=15.0):
+    _m = hb * 0.6206
+    return (1 - 0.0143 * _m) * ((hco3 - 24.8) + (9.5 + 1.63 * _m) * (ph - 7.4))
+
+#  label                 pH    PaCO2  HCO3(his)  model HCO3 expected
+for _nm, _ph, _pc, _h, _w in (("admission",  6.60, 375.0, 34, 34.3),
+                              ("5 min mask", 6.91, 151.0, 29, 29.1),
+                              ("90 min",     7.19,  58.0, 21, 21.9)):
+    check(f"Potkin {_nm}: HCO3 from pH+PaCO2 (he reported {_h})",
+          _hco3_m(_pc, _ph), _w, 0.15, " mmol/L")
+print("    1.0 PER CENT AT pH 6.60 AND PaCO2 375 -- the most extreme arterial")
+print("    gas reported in a surviving human. The relation is RIGHT there, so")
+print("    the Frumin disagreement is NOT an acid-base defect. It is a CO2")
+print("    ACCUMULATION RATE defect, which is what the block above already")
+print("    concluded from the other side ('the CO2 store was never it').")
+
+print()
+print("  ROW 3 OF HIS TABLE IS INTERNALLY INCONSISTENT, and it is the PaCO2.")
+print("  Each row ties four numbers with two equations, so any three predict")
+print("  the fourth. For the other three rows the paper agrees with itself.")
+for _nm, _ph, _pc, _h, _w in (("admission",  6.60, 375.0, 34, 371.3),
+                              ("5 min mask", 6.91, 151.0, 29, 150.4),
+                              ("25 min",     7.08,  68.0, 25,  86.2),
+                              ("90 min",     7.19,  58.0, 21,  55.6)):
+    check(f"Potkin {_nm}: PaCO2 implied by his pH+HCO3 (he printed {_pc:g})",
+          _h / (_S * 10.0 ** (_ph - _bg._pk_prime(_ph, 37.0))), _w, 0.5, " mmHg")
+check("Potkin row 3 at PaCO2 87: HCO3 (he printed 25)",
+      _hco3_m(87.0, 7.08), 25.2, 0.1, " mmol/L")
+check("Potkin row 3 at PaCO2 87: base excess (he printed -7)",
+      _be_sa(_hco3_m(87.0, 7.08), 7.08), -6.5, 0.1, " mEq/L")
+check("Potkin row 3 at PaCO2 68: HCO3 (he printed 25)",
+      _hco3_m(68.0, 7.08), 19.7, 0.1, " mmol/L")
+print("    At 87 his HCO3 and his base excess BOTH fall out; at 68 neither")
+print("    does. 87 -> 68 is a digit transposition. THIS IS AN INFERENCE ABOUT")
+print("    THE PAPER, not a finding about the model, and it is recorded as one.")
+print("    Classic Henderson-Hasselbalch at pK 6.1 gives 19.6 at 68 too, so it")
+print("    is not an artefact of Kelman's pK'.")
+
+print()
+print("  THE BASE-EXCESS COLUMN DOES NOT REPRODUCE FROM HIS OWN pH AND HCO3,")
+print("  and that is the lead entry 41 recorded, now quantified:")
+for _nm, _ph, _h, _rep, _w in (("admission",  6.60, 34, -16, -9.1),
+                               ("5 min mask", 6.91, 29,  -9, -6.8),
+                               ("90 min",     7.19, 21,  -5, -7.8)):
+    check(f"Potkin {_nm}: Siggaard-Andersen BE from pH+HCO3 (he printed {_rep})",
+          _be_sa(_h, _ph), _w, 0.15, " mEq/L")
+print("    At admission he printed -16 where the formula gives -9.1 from his")
+print("    own numbers: a 6.9-unit gap, in the direction he describes. BUT the")
+print("    90-min row goes the OTHER way (-5 printed, -7.8 computed), and he")
+print("    was 32.2 C and warming throughout, so temperature correction")
+print("    confounds the whole column. SUGGESTIVE, NOT ESTABLISHED, and")
+print("    NOTHING WAS TUNED ON IT -- which is the point: the be sweep above")
+print("    was already refused on mechanism, and Potkin says the quantity it")
+print("    would have been fitted to is not reliably a metabolic one.")
+
+print()
+print("  FRUMIN'S NOMOGRAM, CHECKED AGAINST HENDERSON-HASSELBALCH at his own")
+print("  measured content of 32.9 mmol/L. Three of four agree; the one that")
+print("  does not is the 250 the registry already flags as off the end.")
+for _ph, _rep, _w in ((6.88, 160, 156.6), (6.87, 160, 159.8),
+                      (6.97, 130, 129.8), (6.72, 250, 215.2)):
+    check(f"Frumin pH {_ph} at content 32.9: H-H PaCO2 (he reported {_rep})",
+          32.9 / (_S * (1.0 + 10.0 ** (_ph - _bg._pk_prime(_ph, 37.0)))),
+          _w, 0.5, " mmHg")
+print("    CAVEAT THAT MATTERS: 32.9 is SUBJECT 6's content at 40 min, and the")
+print("    6.72 row is SUBJECT 7, whose content was not reported. So the 215 is")
+print("    what subject 6's content would imply at subject 7's pH, NOT a")
+print("    measurement of subject 7. It bounds the nomogram, not the patient.")
+
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")
