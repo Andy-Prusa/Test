@@ -27,14 +27,25 @@ The model's apparent pK′ is Kelman 1967. Given Potkin's own measured pH and
 PaCO₂ — **no base excess involved anywhere** — it predicts his reported
 bicarbonate:
 
-| row | pH | PaCO₂ | HCO₃⁻ his | HCO₃⁻ model | error |
+| row | pH | PaCO₂ | HCO₃⁻ his | model @37 °C | model @32.2 °C |
 |---|---|---|---|---|---|
-| admission | 6.60 | 375 | 34 | **34.3** | **+1.0%** |
-| 5 min mask | 6.91 | 151 | 29 | **29.1** | **+0.4%** |
-| 90 min | 7.19 | 58 | 21 | 21.9 | +4.4% |
+| admission | 6.60 | 375 | 34 | 34.3 (+1.0%) | **35.5 (+4.5%)** |
+| 5 min mask | 6.91 | 151 | 29 | 29.1 (+0.4%) | **30.3 (+4.4%)** |
+| 90 min | 7.19 | 58 | 21 | 21.9 (+4.4%) | 22.9 (+9.0%) |
 
-**One per cent at pH 6.60 and PaCO₂ 375** — the most extreme arterial gas
-reported in a surviving human.
+**THE FIGURE TO QUOTE IS 4.5%, NOT 1.0%, AND THIS ENTRY SAID 1.0% UNQUALIFIED
+UNTIL A. HEARD POINTED AT THE HYPOTHERMIA.** The paper calls these
+*"temperature-corrected values"* and the man was at **32.2 °C**, so the triple
+most likely belongs at his temperature rather than at 37. `bloodgas.py` carries
+temperature in *both* terms — solubility 0.0307 → 0.0339, pK′ 6.1254 → 6.1534 at
+pH 6.60 — so it is not a rounding matter. The paper does not say which
+temperature its *derived* HCO₃⁻ column was computed at, so both are pinned and
+the less flattering one is the headline.
+
+**The relation still holds at pH 6.60 and PaCO₂ 375** — 4.5% at the most extreme
+arterial gas reported in a surviving human is a pass by any reading, and the
+conclusion that the Frumin disagreement is not an acid-base one is unaffected.
+What changed is the size of the claim.
 
 **So the Frumin disagreement is not an acid-base failure.** That is what the
 base-excess block already concluded from the other side ("the CO₂ store was
@@ -194,6 +205,40 @@ further:**
 **The band is untouched**: 2.7–4.9 is Frumin's own range and no part of it is
 ours to move. Both stale passages are corrected in place, with the supersession
 marked rather than the old text deleted.
+
+### 9. A POTKIN-AGAINST-FRUMIN RATE COMPARISON, PROPOSED AND WITHDRAWN BEFORE USE
+
+**RULED 2026-10-06 by A. Heard: "the hypothermic patient can't be used as a
+comparison for our scenario."** Withdrawn, and recorded because the reasoning
+was visible and the refusal should be too.
+
+Asked whether Frumin is an outlier against Potkin, I proposed a one-sided test:
+apnoea eliminates no CO₂ while Potkin's man was partly ventilated, so the
+apnoeic model should reach at least his tension on the same clock. A six-hour
+run was started and **stopped unfinished** on the ruling.
+
+**The ruling is right and the test was not sound.** The two are not the same
+measurement, which is the error `19781b8` exists to prevent:
+
+| | regime | window | mmHg/min |
+|---|---|---|---|
+| Stock 1989 | obstructed | 1–5 min | 3.40 |
+| **Frumin 1959** | **apnoeic**, patent, O₂ reservoir | 18–55 min | **2.7–4.9** |
+| Kaiser 2024 | apnoeic, patent 100% O₂ | 15 min | 2.10 |
+| **Potkin 1992** | **mask-ventilated, inadequately** | 4–6 h | **0.72–1.40** |
+
+Potkin's rise is production *minus* elimination; Frumin's is production alone.
+And he was **hypothermic**, which lowers production by an amount nobody
+measured, on a 4–6 h clock that is the surgeon's estimate rather than a
+measurement. Three confounds, none quantifiable.
+
+**So: Frumin is not an outlier against Potkin, because Potkin cannot test him.**
+He remains an outlier only against **Kaiser** — 2.7–4.9 against 2.10 — and even
+that is 18–55 min against 15 min, which is why `test_frumin_1959` exists as its
+own ruled-open row instead of being folded into Kaiser's band.
+
+**Nothing from the withdrawn test is recorded as a result.** The six-hour run's
+output is not quoted here and was not committed.
 
 ## Current state — 2026-10-06 (forty-first entry): pure hypercapnic acidosis is not the danger, Potkin's man survived pH 6.60 at PaCO₂ 375, and the Sweeps pH limbs become a teaching point instead of a death line
 

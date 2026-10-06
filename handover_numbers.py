@@ -4777,14 +4777,30 @@ def _be_sa(hco3, ph, hb=15.0):
     _m = hb * 0.6206
     return (1 - 0.0143 * _m) * ((hco3 - 24.8) + (9.5 + 1.63 * _m) * (ph - 7.4))
 
-#  label                 pH    PaCO2  HCO3(his)  model HCO3 expected
-for _nm, _ph, _pc, _h, _w in (("admission",  6.60, 375.0, 34, 34.3),
-                              ("5 min mask", 6.91, 151.0, 29, 29.1),
-                              ("90 min",     7.19,  58.0, 21, 21.9)):
-    check(f"Potkin {_nm}: HCO3 from pH+PaCO2 (he reported {_h})",
-          _hco3_m(_pc, _ph), _w, 0.15, " mmol/L")
-print("    1.0 PER CENT AT pH 6.60 AND PaCO2 375 -- the most extreme arterial")
-print("    gas reported in a surviving human. The relation is RIGHT there, so")
+# TEMPERATURE MATTERS AND THE FIRST VERSION OF THIS BLOCK IGNORED IT.
+# The paper says these are "temperature-corrected values" and the man was at
+# 32.2 C, so the triple most likely belongs at HIS temperature, not at 37.
+# bloodgas carries temperature in BOTH terms -- solubility 0.0307 -> 0.0339 and
+# pK' 6.1254 -> 6.1534 at pH 6.60 -- so it is not a rounding matter. Both are
+# computed and both are pinned, because the paper does not say which
+# temperature its derived HCO3 column was computed at, and picking the
+# flattering one is how "1.0 per cent" got quoted unqualified on 2026-10-06.
+#  label                 pH    PaCO2  HCO3(his)  @37C   @32.2C
+for _nm, _ph, _pc, _h, _w37, _w32 in (
+        ("admission",  6.60, 375.0, 34, 34.3, 35.5),
+        ("5 min mask", 6.91, 151.0, 29, 29.1, 30.3),
+        ("90 min",     7.19,  58.0, 21, 21.9, 22.9)):
+    check(f"Potkin {_nm}: HCO3 at 37 C (he reported {_h})",
+          _hco3_m(_pc, _ph), _w37, 0.15, " mmol/L")
+    check(f"Potkin {_nm}: HCO3 at his 32.2 C (he reported {_h})",
+          _bg._co2_solubility(32.2) * _pc
+          * 10.0 ** (_ph - _bg._pk_prime(_ph, 32.2)), _w32, 0.15, " mmol/L")
+print("    4.5 PER CENT AT HIS OWN TEMPERATURE, 1.0 PER CENT AT 37 C. The 4.5")
+print("    is the one to quote, because the paper calls these values")
+print("    TEMPERATURE-CORRECTED and he was 32.2 C; entry 42 quoted the 1.0")
+print("    unqualified until A. Heard pointed at the hypothermia on")
+print("    2026-10-06. Either way the relation holds at pH 6.60 and PaCO2 375,")
+print("    the most extreme gas reported in a surviving human, so")
 print("    the Frumin disagreement is NOT an acid-base defect, which is what")
 print("    the block above already concluded from the other side ('the CO2")
 print("    store was never it').")
