@@ -147,7 +147,9 @@ KNOWN_OPEN = {
     # -- a compensating term would break Stock's obstructed slope further, as
     # the eleventh entry warned.
     #
-    # Tolerances 0.30 (18% of 1.64) and 0.05 pH: loose enough to survive
+    # Tolerances 0.30 (14% of the 2.11 baseline; it was 18% of 1.64 when
+    # written, and the rationale was not updated with the baseline on
+    # 2026-10-01 -- corrected 2026-10-06) and 0.05 pH: loose enough to survive
     # ordinary parameter work on the circulation, tight enough that real
     # movement on the CO2 limb reports.
     # BOTH FRUMIN BASELINES RE-RECORDED 2026-10-01, with k_co2_slow 0.80 ->
