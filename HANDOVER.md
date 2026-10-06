@@ -383,8 +383,54 @@ regenerated.**
 | family | the ruling that moved it | date | attribution |
 |---|---|---|---|
 | **BMI and lung volume** | the RV floor goes (`3b3228a`) | 2026-09-26 | **established** |
-| **tilt** | tilt gains solved on Lane and Dixon, the BMI term changing sign (`bcbd37c`) | 2026-10-02 | candidate |
+| **tilt** | tilt gains solved on Lane and Dixon, the BMI term changing sign (`bcbd37c`) | 2026-10-02 | **established 2026-10-06, but NOT the sole cause** — see entry 40 §4 |
 | **CO₂ rates** | `k_co2_slow` 0.45 adopted (`ecba80b`), `shunt_cc_k` re-fit to Pelosi (`2ebfd72`) | 2026-10-01 | **established 2026-10-06** — see entry 42 §8 |
+
+### 4. TILT ATTRIBUTED PER ROW, AND THE FAMILIES TURN OUT NOT TO SEPARATE
+
+**Added 2026-10-06.** The tilt family is promoted to *established* — `bcbd37c`
+is unambiguously its dominant cause — but the per-row work shows the "one ruling
+per family" framing of the table above is itself an approximation, and the table
+now says so.
+
+Two things settle the cause. First, **the parameters themselves are in the
+drifted list**: `handover_numbers.py` checks `tilt_gain_lean` against 0.013 and
+`tilt_gain_bmi` against +0.00015, which are exactly the pre-`bcbd37c` values.
+Second, recomputing the drifted rows with the **old gains restored on the current
+engine** — the `_Retired` idiom — and asking how much of the HANDOVER-to-live gap
+comes back:
+
+| row | HANDOVER | live | old gains | gap recovered |
+|---|---|---|---|---|
+| lean 20° | 28.6 | 24.16 | 27.58 | **77%** |
+| BMI 35 at 30° | 45.4 | 30.63 | 45.44 | **100%** |
+| BMI 44 at 25° | 33.4 | 21.35 | 41.03 | **163%** |
+
+**They do not agree, and they disagree monotonically in BMI.** That is not noise.
+`bcbd37c` flipped the *sign* of the BMI term, so the size of the change grows
+with BMI:
+
+| | old gain | new gain | ratio |
+|---|---|---|---|
+| lean (BMI 22.9) | 0.013000 | 0.011388 | 1.14× |
+| BMI 35 | 0.014500 | 0.009809 | 1.48× |
+| BMI 44 | 0.015850 | 0.008388 | **1.89×** |
+
+So at the lean end the tilt change **under-explains** the row (77%) and something
+else supplies the rest; at BMI 44 it **over-explains** it (163%), meaning another
+ruling moved that row the *opposite* way and partly cancelled it. The obvious
+candidate is family 1 — the RV floor went on 2026-09-26 and its own commit
+message says *"removing it makes the obese end WORSE"*, which is the right sign
+and the right BMI dependence to be the offsetting term.
+
+**The honest statement is therefore:** tilt is established as the dominant cause
+of this family, it is the sole cause on exactly one of the three rows tested, and
+at the obese end **families 1 and 2 are not separable row-by-row** because they
+act on the same quantity in opposite directions. Anyone refreshing these values
+must not attribute a tilt row wholly to `bcbd37c`.
+
+**Nothing was changed on the strength of this.** No parameter, no band. It is an
+attribution, not a correction.
 
 **The distinction in that last column is not decoration.** Family 3 was promoted
 from *candidate* to *established* on 2026-10-06: `test_validation.py`'s own
