@@ -404,24 +404,51 @@ def test_heard_2017():
     #     90   min   97.86%    169     172.3    6.94
     #     120  min   95.88%    144    ~198     ~6.90
     #
-    # OXYGEN DOES DISAPPEAR. PaO2 falls monotonically 312 -> 144 mmHg and the
-    # fall accelerates; SpO2 crosses 95% just past TWO HOURS. What hid that is
-    # the oxyhaemoglobin dissociation curve, which is flat up there: saturation
-    # barely moves while the tension halves. So the band's 1e9 upper bound --
-    # thirty-one years -- is not describing the model. The model has a number.
+    #   ^ THE TABLE ABOVE IS SUPERSEDED. It is kept because the argument below
+    #   was built on it. RE-RUN 2026-10-06 ON THE SAME PATIENT, EPOCH AND
+    #   TIMESTEP, every cell has moved and the drift GROWS with time:
     #
-    # BUT OXYGEN IS NOT WHAT ENDS THIS PATIENT, and that is why the band is
-    # left alone rather than given an oxygen ceiling. By 60 minutes PaCO2 is
-    # 143.7 and pH 7.00 while SpO2 is still 98.96%. The binding constraint is
-    # acid-base, and it binds an hour before saturation becomes interesting. A
-    # ceiling drawn from oxygen would be a tighter band on the WRONG CHANNEL.
+    #     t          SpO2     PaO2     PaCO2      pH
+    #     12.5 min   99.78%  270.8      76.6    7.199
+    #     30   min   99.33%  217.1     117.7    7.063
+    #     60   min   97.39%  160.4     182.2    6.923
+    #     90   min   90.59%  110.0     232.1    6.846
+    #     120  min   75.30%   77.5     267.2    6.806
+    #
+    #   TWO FAMILIES MOVED IT AT ONCE, which is why no single ruling is named:
+    #   PaCO2 and pH by k_co2_slow 0.80 -> 0.45 (ecba80b, 2026-10-01, the same
+    #   day this table was written), PaO2 and SpO2 by the oxygenation rulings
+    #   of that week. PaCO2 at 60 min is +26.8% and PaO2 -20.6%.
+    #
+    # OXYGEN DOES DISAPPEAR. PaO2 falls monotonically and the fall accelerates.
+    # The 2026-10-01 text read "SpO2 crosses 95% just past TWO HOURS"; ON THE
+    # CURRENT ENGINE IT CROSSES AT 4555 s = 75.9 MINUTES, and 92% at 86.5 min.
+    # What hid it originally is the oxyhaemoglobin dissociation curve, which is
+    # flat up there: saturation barely moves while the tension halves. Either
+    # way the band's 1e9 upper bound -- thirty-one years -- is not describing
+    # the model. The model has a number, and it is now a much earlier one.
+    #
+    # THE ARGUMENT FOR LEAVING THE BAND ONE-SIDED IS WEAKER THAN IT WAS, AND
+    # THAT IS FLAGGED RATHER THAN QUIETLY REPAIRED. The 2026-10-01 reasoning
+    # was that acid-base "binds an hour before saturation becomes interesting",
+    # so an oxygen ceiling would be "a tighter band on the WRONG CHANNEL". On
+    # the current engine pH is already 6.923 at 60 min while SpO2 crosses 95%
+    # at 75.9 min, so the two limbs are no longer an hour apart -- they are
+    # close together. The band is NOT changed here: 750-1e9 is what the
+    # right-censored data support, and the row still passes (SpO2 99.78% at the
+    # 750 s cap). But WHETHER THIS ROW SHOULD KEEP A ONE-SIDED BAND IS NOW A
+    # LIVE QUESTION for A. Heard, not a settled one, and it is recorded as open
+    # rather than answered by whoever next reads this file.
     #
     # AND THE CHANNEL THAT BINDS IS ALREADY KNOWN TO BE WRONG, in the direction
-    # that matters. Against Frumin 1959, both rows below are KNOWN_OPEN:
-    # PaCO2 rise 1.64 mmHg/min against a measured 2.7-4.9, and arterial pH at
-    # 40 min 7.09 against a measured 6.72-6.97. The model accumulates CO2 at
-    # about HALF the measured rate, so it is TOO ALKALINE and the table above
-    # is the OPTIMISTIC trajectory. A real patient reaches any given pH sooner.
+    # that matters. Against Frumin 1959, both rows below are KNOWN_OPEN: PaCO2
+    # rise 2.11 mmHg/min against a measured 2.7-4.9, and arterial pH at 40 min
+    # 7.04 against a measured 6.72-6.97. (Those were 1.64 and 7.09 in the
+    # 2026-10-01 text here, pre-k_co2_slow; corrected 2026-10-06.) Matched per
+    # subject over each man's own duration the model runs at 0.66x Frumin's
+    # rate, range 0.48-0.80 -- NOT the "about HALF" this block used to say. It
+    # is still TOO ALKALINE and the table above is still the OPTIMISTIC
+    # trajectory: a real patient reaches any given pH sooner.
     #
     # SO WHAT A PASS HERE MEANS, stated so it is not read as more: the model
     # holds saturation past the censoring cap, which is consistent with "we
