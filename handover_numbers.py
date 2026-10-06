@@ -4715,6 +4715,50 @@ if _htext is not None:
         print("    normal rhythms' (p.794).")
 
 
+# ---------------------------------------------------------------------------
+print("\nENTRY 41: POTKIN & SWENSON 1992 -- the survivability ceiling, pinned")
+print("  Same discipline as the Frumin block: measured values from a paper, so")
+print("  nothing for the engine to drift against, but they CAN rot in markdown.")
+print("  Potkin & Swenson, Chest 1992;102(6):1742-1745, read at source")
+print("  2026-10-06. Table 1 is arterial; the man recovered completely.")
+
+_POTKIN = [
+    ("6.60", "arterial pH on admission, Table 1 -- SURVIVED, full recovery"),
+    ("375",  "PaCO2 on admission, mmHg; the authors call it an over-read"),
+    ("300",  "what they put the true PaCO2 above, on Prys-Roberts's data"),
+    ("6.91", "pH at 5 min of mask ventilation, Table 1"),
+    ("151",  "PaCO2 at 5 min, mmHg, Table 1"),
+    ("7.19", "pH at 90 min, Table 1"),
+    ("5.1",  "serum K+ mmol/L at pH ~6.6-6.9 -- NOT arrhythmogenic"),
+    ("32.2", "core temperature, degrees C -- the stated caveat"),
+    ("130",  "lower end of earlier complete recoveries, mmHg"),
+    ("270",  "upper end, and the limit of human data they acknowledge"),
+]
+if _htext is None:
+    _fails.append("Potkin paper values (HANDOVER.md unreadable)")
+else:
+    _e41 = _htext.split("(forty-first entry)")
+    if len(_e41) < 2:
+        print("    entry 41 is GONE from HANDOVER.md.")
+        _fails.append("Potkin paper values (entry 41 missing)")
+    else:
+        _b41 = _e41[1].split("\n## Current state")[0]
+        for _v, _what in _POTKIN:
+            _ok = _v in _b41
+            print(f"    {'ok  ' if _ok else 'FAIL'} {_v:<8} {_what}")
+            if not _ok:
+                _fails.append(f"Potkin {_v} ({_what}) no longer in entry 41")
+        print("    THE PROVISO IS THE FINDING: tolerated 'WHEN OXYGENATION AND")
+        print("    TISSUE PERFUSION ARE MAINTAINED'. Intracellular pH defence")
+        print("    runs on Na+/H+ exchange and H+-ATPases, both energy using, so")
+        print("    it fails exactly when the cell is hypoxic. The buccal arm sits")
+        print("    INSIDE that regime at SpO2 100; the control arm does not.")
+        print("    BASE EXCESS -16 WITH A NORMAL ANION GAP OF 9: not a metabolic")
+        print("    acidosis. Bears on the base-excess sweep above, which cannot")
+        print("    reproduce Frumin's pH and CO2 content together. Recorded as a")
+        print("    lead; NOTHING was changed on the strength of it.")
+
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")

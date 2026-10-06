@@ -5,6 +5,101 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-06 (forty-first entry): pure hypercapnic acidosis is not the danger, Potkin's man survived pH 6.60 at PaCO₂ 375, and the Sweeps pH limbs become a teaching point instead of a death line
+
+**RULED 2026-10-06 by A. Heard:** *"purely hypercapnoeic acidosis is nowhere near
+as dangerous as hypoxia or metabolic acidosis… have this as a teaching
+opportunity. Don't worry too much about hypercapnoeic acidosis."*
+
+### 1. THE UPPER ANCHOR, READ AT SOURCE
+
+Potkin & Swenson 1992, *Chest* 102(6):1742–45, uploaded and read in full. A
+46-year-old healthy man could not be intubated for elective cosmetic facial
+surgery, so he was **mask-ventilated for 4–6 hours** on supplemental oxygen with
+oximetry as the only monitor. He did not wake.
+
+| | pH | PaCO₂ | PaO₂ | HCO₃⁻ | base excess |
+|---|---|---|---|---|---|
+| admission | **6.60** | **375** | 40 | 34 | −16 |
+| 5 min mask | 6.91 | 151 | 244 | 29 | −9 |
+| 25 min mechanical | 7.08 | 68 | 56 | 25 | −7 |
+| 90 min | 7.19 | 58 | 65 | 21 | −5 |
+
+Comatose, 70 systolic, apnoeic, 32.2 °C. **He recovered completely** — conscious
+on the second hospital day, and at discharge his gases, chest film and
+neurological examination were all normal, with no memory or attention deficits
+at follow-up.
+
+The authors call 375 *"the highest reported value in a surviving human"* while
+saying plainly it is an over-read — the PCO₂ electrode was past its calibration
+range — and putting the true figure **"over 300 mm Hg"**. Earlier complete
+recoveries span **130–270 mmHg**.
+
+### 2. THE PROVISO IS THE WHOLE FINDING
+
+*"even profound hypercapnia with PCO₂ exceeding 150 mm Hg and severe respiratory
+acidosis for many hours can be tolerated and are associated with no long-term
+morbidity **when oxygenation and tissue perfusion are maintained**."*
+
+That condition is not decoration, and the mechanism says why. Intracellular pH
+defence runs on **Na⁺/H⁺ exchange and H⁺-translocating ATPases — both energy
+consuming**, so it fails precisely when the cell is hypoxic or underperfused.
+Hypercapnia is tolerable *because* the cell can spend energy defending itself;
+take the oxygen away and the tolerance goes with it.
+
+**Which is exactly this model's situation.** The buccal arm holds SpO₂ at 100%
+while PaCO₂ climbs, so it is in Potkin's tolerated regime. The control arm is
+not — it dies hypoxic, and that is the real endpoint on the Sweeps pages.
+
+### 3. WHAT CHANGED ON THE PAGE
+
+**Both pH limbs are now drawn, and labelled as markers rather than death.**
+Entry 40 section 8 recorded that 6.8 is reached at only 3 of 104 device points
+where 7.0 is reached at 90 — so drawing 6.8 alone left nine of ten pages blank
+for the device arm and taught nothing. 7.0 is dashed, 6.8 dotted, both off the
+same stored runs with **no recompute**.
+
+The legend now says in as many words that **neither dashed line is a death
+line**, and a standing teaching block under the graph gives Potkin and Frumin
+with the oxygenation proviso quoted. The per-page note says the solid line is
+death and that it is always hypoxic in this model.
+
+**No threshold was moved and no parameter was touched to achieve this.** 6.8
+stands as ruled in entry 40; it simply stopped being presented as a danger.
+
+### 4. POTASSIUM: A SECOND INDEPENDENT HUMAN SOURCE
+
+The serum drawn with the second gas gave **K⁺ 5.1 mmol/L** at an arterial pH of
+roughly 6.6–6.9. Mildly raised, nowhere near arrhythmogenic. With Frumin's
+maximum rise of **0.4 mEq/l** (entry 40 section 5), two independent human
+sources now say acute respiratory acidosis does not produce a dangerous
+potassium. The question asked on 2026-10-05 is answered and can be closed.
+
+### 5. A BASE-EXCESS ARTEFACT THAT BEARS ON OUR OWN FRUMIN COMPARISON
+
+**The base excess of −16 did not mean a metabolic acidosis.** The venous anion
+gap was **9 — normal**. The authors attribute the apparent deficit to the
+difference between whole blood *in vitro* and the whole body: intracellular pH
+regulation moves HCO₃⁻ into cells at the expense of the extracellular space,
+which reads as lost bicarbonate. They state there are **no data to quantitate
+the error of standard base-excess calculations in extreme hypercapnia**.
+
+That lands on a live problem here. `handover_numbers.py` records that **no base
+excess reproduces Frumin** — he had CO₂ content 32.9 *and* pH 6.87, and the
+sweep over base excess cannot hit both. Potkin offers an explanation that is not
+a model defect: **a measured base excess at PaCO₂ above 100 may not be a
+metabolic quantity at all.** Recorded as a lead, not acted on — nothing was
+changed on the strength of it, and the sweep rows stay as they are.
+
+### 6. CAVEATS KEPT WITH THE FINDING
+
+n = 1. He was **hypothermic at 32.2 °C**, which the authors say may have been
+crucial and which they cannot test, since *"there are no human data above a
+PCO₂ of 270 mm Hg"*. And the tolerance is for **nonhypoxic** acidosis: his PaO₂
+was 40 on admission, so the intraoperative oximetry reporting above 90% is the
+weakest link in the account. None of that disturbs the direction of the finding,
+and all of it is in `sources_registry.py` against the paper.
+
 ## Current state — 2026-10-06 (fortieth entry): HANDOVER's numbers are stale by a known amount from a known date, Frumin's arrhythmias do not track pH, and the sweep's pH line becomes 6.8
 
 **RULED 2026-10-06 by A. Heard.** Four rulings: mark the three superseded
