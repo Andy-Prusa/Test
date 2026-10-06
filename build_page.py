@@ -2,6 +2,7 @@
 # Unpublished research software. See LICENSE: use in any publication
 # requires prior written permission. Cite as in CITATION.cff.
 import os
+import re
 import sys
 
 # Paths are relative to this file, not to the shell's working directory, so
@@ -14,6 +15,44 @@ MODEL_JS = os.path.join(HERE, 'model.js')
 OUT_HTML = os.path.join(HERE, 'airway_scenario.html')
 
 model = open(MODEL_JS).read().split("if(typeof module")[0]
+
+# The sweep data, inlined. The page must make ZERO external requests -- it is
+# meant to open from a USB stick -- so this cannot be fetched at runtime any
+# more than model.js can. Built by `node build_sweeps.js`, which also has a
+# --check for staleness; this build fails loudly rather than shipping a page
+# whose Sweeps view is silently empty.
+SWEEPS_JSON = os.path.join(HERE, 'sweeps.json')
+if not os.path.exists(SWEEPS_JSON):
+    sys.exit("build_page.py: sweeps.json is missing, so the Sweeps view would "
+             "ship empty. Run: node build_sweeps.js")
+sweeps = open(SWEEPS_JSON).read().strip()
+
+# ---- THE STANDARD PATIENT'S FIGURES, ONE DEFINITION ------------------------
+# These are quoted in TWO places on the page -- the startup notice and the
+# footer -- and on 2026-10-05 they ROTTED APART: the standard patient became
+# BMI 25, the notice was updated, and the footer went on saying 107 kg, 285 s
+# and 243 s. That is the "same fact in several places with no link between
+# them" failure sources_registry.py exists to prevent, so the numbers now live
+# here once and are substituted into both texts. The PROSE differs between the
+# two (the notice is the short form, the footer the long one); only the FIGURES
+# are shared, which is the part that can rot.
+#
+# Every value is checked against model.js in handover_numbers.py, through
+# parity_driver.js, on the page's real cico timeline -- not recomputed in
+# Python, because the page runs model.js and a 1% parity difference would show
+# up as a false drift in a number a clinician reads.
+STD_FIGURES = {
+    'BMI':   '25',
+    'WT':    '76.5 kg',
+    'HT':    '1.75 m',
+    'T95M':  '562 s',      # control arm reaches SpO2 95%
+    'T95F':  '485 s',      # ... with a woman's FRC, 14% less
+    'DEADM': '12.4 min',   # control arm loses cardiac output
+    'DEADF': '11.1 min',   # ... with a woman's FRC
+    'OVER':  '77 s',       # the margin the page promises and she lacks
+    'SHY':   '3.2%',       # shunt at age 20 AND at 40 -- identical
+    'SHO':   '5.7%',       # shunt at age 80
+}
 
 HTML = """<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -196,6 +235,13 @@ body.graphon .main .stage canvas:not(.ecg){height:clamp(110px,21vh,300px)}
 .trendnow{margin-left:auto;color:var(--ink);font-variant-numeric:tabular-nums}
 #trendc{width:100%;height:220px;display:block}
 .sw{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+.swdash{display:inline-block;width:14px;height:0;border-top:2px dashed #4fd8e8;
+ margin-right:5px;vertical-align:2px}
+.swnav{font-size:14px;padding:2px 9px;line-height:1.1}
+#swc{width:100%;height:420px;display:block}
+.swnote{font-size:12px;color:var(--dim);margin:6px 2px 0;line-height:1.5}
+.swnote b{color:var(--ink)}
+@media(max-width:620px){#swc{height:300px}}
 .credit{color:var(--dim);font-size:11px;line-height:1.45;margin-top:10px;max-width:78ch;
  opacity:.85}
 .foot{color:var(--dim);font-size:12px;line-height:1.5;margin-top:16px;max-width:78ch;
@@ -241,7 +287,70 @@ body.zen .stage canvas:not(.ecg){height:clamp(110px,32vh,330px);width:auto}
 body.zen .row{font-size:clamp(10px,1.65vh,15px);padding:clamp(1px,0.35vh,5px) 0}
 body.zen .row b{font-size:clamp(12px,2vh,19px)}
 body.zen .flat{font-size:clamp(9px,1.3vh,12px);padding:2px 0}
-</style></head><body><div class="wrap">
+/* ---- STARTUP DEMOGRAPHICS NOTICE ------------------------------------------
+   Shown once per browser unless dismissed with the box ticked. It is a
+   STATEMENT, not a consent gate: dismissing it changes nothing about the
+   model, and the same text stays in the footer for anyone who ticked the box
+   and later wants it back. */
+#demogwrap{position:fixed;inset:0;z-index:60;display:none;
+ background:rgba(4,10,14,0.78);backdrop-filter:blur(2px);
+ align-items:center;justify-content:center;padding:16px}
+#demogwrap.on{display:flex}
+#demog{max-width:620px;width:100%;max-height:88vh;overflow:auto;
+ background:#0f1a22;border:1px solid #27414f;border-radius:10px;
+ padding:20px 22px;box-shadow:0 18px 50px rgba(0,0,0,0.55)}
+#demog h2{margin:0 0 10px;font-size:1.12rem;color:#e8f3f7;
+ font-family:'Barlow Condensed',Barlow,system-ui,sans-serif;
+ letter-spacing:0.01em}
+#demog p{margin:0 0 10px;font-size:0.88rem;line-height:1.5;color:#b9ccd6}
+#demog .warn{color:#ff9f43;font-weight:600}
+#demog .foot{margin-top:14px;display:flex;flex-wrap:wrap;gap:12px;
+ align-items:center;justify-content:space-between}
+#demog label{font-size:0.82rem;color:#9fb4c0;display:flex;gap:7px;
+ align-items:center;cursor:pointer}
+#demog label input{cursor:pointer}
+#demogok{background:#1d7f8c;color:#eaf7fa;border:0;border-radius:6px;
+ padding:8px 18px;font-size:0.9rem;cursor:pointer;font-weight:600}
+#demogok:hover{background:#249aa9}
+#demognote{font-size:0.76rem;color:#7d93a0;margin:8px 0 0}
+@media(max-width:620px){#demog{padding:16px}}
+</style></head><body>
+<div id="demogwrap" role="dialog" aria-modal="true"
+     aria-labelledby="demogh" aria-describedby="demogb">
+<div id="demog">
+<h2 id="demogh">Who this patient is</h2>
+<div id="demogb">
+<p><b>This patient is a 45-year-old man of BMI @@BMI@@.</b> The age and the sex
+are fixed &mdash; neither is a slider on this page. The body weight is a slider,
+and its default puts him at @@WT@@ for a height of @@HT@@.</p>
+<p><b>Sex.</b> The model uses Quanjer's <b>male</b> reference equations for every
+patient, by ruling. A woman of the same height has about 14% less FRC and 16%
+less total lung capacity, and <span class="warn">the error runs in the unsafe
+direction</span>: on this page's own timeline the control patient reaches
+SpO&#8322; 95% at <b>@@T95M@@</b> and loses cardiac output at <b>@@DEADM@@</b>,
+where her own lung volume gives <b>@@T95F@@</b> and <b>@@DEADF@@</b>. <b>The page
+promises about @@OVER@@ of margin to desaturation that she does not have.</b> Scale the times
+down for a woman, and do not read the absolute numbers.</p>
+<p><b>Age.</b> Fixed at 45, and it acts on <b>one thing only</b>: the lung volume
+at which small airways begin to close. Lung capacity and FRC carry no age term
+at all. In this standard BMI 25 patient <b>age does nothing at all up to about
+40</b> &mdash; the closing capacity is still below the anaesthetised lung volume,
+so no part of the lung is shutting &mdash; and only then begins to bite: the
+shunt is @@SHY@@ at both 20 and 40, and @@SHO@@ at 80. Move the weight slider up and
+it bites from the start instead. Published measurements that the FRC lost at
+induction <i>also</i> grows with age are not represented, so an older patient's
+margin is if anything flattered.</p>
+<p>Modelled, not measured. Unpublished research model &mdash; not a medical
+device, not for patient care.</p>
+</div>
+<div class="foot">
+<label><input type="checkbox" id="demogsupp"> Don't show this again</label>
+<button type="button" id="demogok">Continue</button>
+</div>
+<p id="demognote"></p>
+</div>
+</div>
+<div class="wrap">
 <div class="side" id="side">
 <h1>An apnoea simulator</h1>
 <p class="sub"><b>What this is.</b> A computational model of gas exchange during apnoea, run
@@ -273,9 +382,9 @@ The two arms differ only after the re-obstruction time: the control arm loses th
 airway there, the device arm keeps it. Times are seconds from induction.</p>
 <div class="sbrow"><label for="sbpre">Preset</label>
 <select id="sbpre"></select>
-<label for="sbend">Run length</label><input type="number" id="sbend" min="120" max="1800" step="30">
+<label for="sbend">Run length</label><input type="number" id="sbend" min="120" max="3600" step="30">
 <label for="sbre">Control arm re-obstructs at</label>
-<input type="number" id="sbre" min="0" max="1800" step="10" placeholder="never">
+<input type="number" id="sbre" min="0" max="3600" step="10" placeholder="never">
 <button type="button" id="sbclear">never</button></div>
 <table class="sbt" id="sbt"><thead><tr><th>Time (s)</th><th>Label</th>
 <th>Airway</th><th>Icon</th><th></th></tr></thead><tbody></tbody></table>
@@ -298,35 +407,41 @@ helium regression. Closing capacity is Buist &amp; Ross 1973's published
 regression &mdash; 0.525% of total lung capacity per year of age &mdash; applied
 to a predicted total lung capacity.</p>
 
-<p class="foot"><strong>This patient is a 45-year-old man.</strong> Both are
-deliberate, and neither is a slider on this page. What that costs is set out
-here rather than left to be discovered.
+<p class="foot"><strong>This patient is a 45-year-old man of BMI @@BMI@@
+(@@WT@@ at @@HT@@).</strong> The age and the sex are deliberate and neither is a
+slider; the weight is a slider, and its default puts him there. What that costs
+is set out here rather than left to be discovered, and the same statement
+appears as a notice when the page opens.
 
 <br><br><strong>Sex.</strong> Quanjer's MALE reference equations are used for
 every patient, by ruling. A woman of the same height has about 14% less FRC and
 16% less total lung capacity, and <strong>the error runs in the unsafe
-direction</strong>: at this page's default patient the timeline shows 285 s to
-SpO&#8322; 95% where her own lung volume gives 243 s, so the page promises about
-42 s &mdash; a sixth of the margin &mdash; that she does not have. Scale the
-times down accordingly, and do not read the absolute numbers for a woman at
-all. The cohorts this model is anchored to are themselves female-majority
-(Pelosi 1998 ran seven women to one man per group), so a male model is being
-fitted through female-majority data. That is a known limitation, recorded, and
-not an oversight.
+direction</strong>: on this page's own timeline the control patient reaches
+SpO&#8322; 95% at @@T95M@@ and loses cardiac output at @@DEADM@@, where her own
+lung volume gives @@T95F@@ and @@DEADF@@ &mdash; so the page promises about
+@@OVER@@ of margin to desaturation that she does not have. Scale the times down
+accordingly, and do not read the absolute numbers for a woman at all. The
+cohorts this model is anchored to are themselves female-majority (Pelosi 1998
+ran seven women to one man per group), so a male model is being fitted through
+female-majority data. That is a known limitation, recorded, and not an
+oversight.
 
 <br><br><strong>Age.</strong> Age is fixed at 45 and acts on <strong>one thing
 only</strong>: the lung volume at which small airways begin to close. Lung
 capacity and FRC carry no age term at all &mdash; two reference sets disagree
-about whether they should, and this model follows the one that says no. The
-consequence is that age bites hardest in the patient who is already near
-closure: in this 107 kg default it moves the shunt from 3.5% at age 20 to 10.7%
-at 80, while in a slim patient it does nothing whatever below about 40, because
-nothing is closing yet. Two published measurements that the FRC lost at
-induction <em>also</em> grows with age &mdash; Hewlett 1974 and Laws 1968, both
-about 0.43 to 0.45 percentage points per year &mdash; are <strong>not
-represented here</strong>, by ruling, because age is not modelled in the other
-systems either and carrying it in one place alone would be a fit rather than a
-mechanism. So an older patient's margin is, if anything, flattered.</p>
+about whether they should, and this model follows the one that says no. In this
+standard BMI @@BMI@@ patient the consequence is that <strong>age does nothing at
+all up to about 40</strong>: the closing capacity is still below the
+anaesthetised lung volume, so no part of the lung is shutting and age has no
+route to act. The shunt is @@SHY@@ at age 20 and still @@SHY@@ at 40, reaching
+@@SHO@@ only by 80. Move the weight slider up and it bites from the start
+instead, because an obese lung starts nearer closure. Two published measurements
+that the FRC lost at induction <em>also</em> grows with age &mdash; Hewlett 1974
+and Laws 1968, both about 0.43 to 0.45 percentage points per year &mdash; are
+<strong>not represented here</strong>, by ruling, because age is not modelled in
+the other systems either and carrying it in one place alone would be a fit
+rather than a mechanism. So an older patient's margin is, if anything,
+flattered.</p>
 </div>
 
 <div class="main">
@@ -335,6 +450,7 @@ mechanism. So an older patient's margin is, if anything, flattered.</p>
 <button id="runbtn">Run simulation</button>
 <button id="play">Play</button><button id="rew">Restart</button>
 <button id="graphbtn" aria-expanded="false" aria-controls="trend">Graph</button>
+<button id="swbtn" aria-expanded="false" aria-controls="sweeps">Sweeps</button>
 <button id="fs">Expand</button>
 <button id="snd">Sound off</button><button id="spd">4&times;</button>
 <span class="clock" id="clock">0:00</span>
@@ -371,6 +487,23 @@ mechanism. So an older patient's margin is, if anything, flattered.</p>
 <span class="tkey"><i class="sw" style="background:#4fd8e8"></i>buccal oxygen</span>
 <span class="trendnow" id="trendnow"></span></div>
 <canvas id="trendc" width="1160" height="220"></canvas>
+</div>
+
+<!-- THE SWEEPS VIEW. One page of graph per slider: that slider from end to end
+     on x, time to death on y over 0 to 60 minutes, the two arms together.
+     Precomputed by build_sweeps.js because a live sweep is 208 simulations and
+     over an hour of compute -- see that file for the measurements. -->
+<div class="trend" id="sweeps" hidden>
+<div class="trendbar">
+<button type="button" id="swprev" class="swnav">&larr;</button>
+<select id="swsel"></select>
+<button type="button" id="swnext" class="swnav">&rarr;</button>
+<span class="tkey"><i class="sw" style="background:#ff9f43"></i>no buccal oxygen</span>
+<span class="tkey"><i class="sw" style="background:#4fd8e8"></i>buccal oxygen</span>
+<span class="tkey"><i class="swdash"></i>pH 7.0 reached</span>
+<span class="trendnow" id="swnow"></span></div>
+<canvas id="swc" width="1160" height="420"></canvas>
+<p class="swnote" id="swnote"></p>
 </div>
 
 <div class="legend"><span><i class="sw" style="background:var(--o2)"></i>oxygen in the lung</span>
@@ -451,7 +584,11 @@ const STEPS=()=>SCENARIO.segs.map(s=>[s.t,s.icon,s.label]);
 const EVENTS=()=>SCENARIO.segs.map(s=>[s.t,s.note]);
 
 const DIALS=[
- ['weight','Body weight',45,180,1,107,null],
+ // THE STANDARD PATIENT IS BMI 25 AT 1.75 m, ruled 2026-10-05.
+ // 76.5 kg / 1.75 m = BMI 24.98, which reads 25.0. The step is 0.5
+ // rather than 1 so the default lands there exactly: at step 1 the
+ // nearest values are 76 kg (BMI 24.8) and 77 kg (BMI 25.1).
+ ['weight','Body weight',45,180,0.5,76.5,null],
  ['height','Height',1.45,2.05,0.01,1.75,null],
  ['frcScale','FRC',0.55,1.5,0.01,1.0,null],
  ['bmrScale','Metabolic rate',0.6,1.7,0.01,1.0,null],
@@ -567,6 +704,54 @@ function loadSaved(){if(!CANSAVE)return{};
 function putSaved(o){if(!CANSAVE)return false;
  try{localStorage.setItem(SAVEKEY,JSON.stringify(o));return true;}
  catch(e){return false;}}
+
+// ---- the startup demographics notice ---------------------------------------
+// Its own key, so clearing the saved-simulation list does not silently bring
+// the notice back and vice versa. EVERY access is guarded exactly as above:
+// localStorage throws outright in a private window and is commonly absent
+// from a file:// page, and this notice must not be the thing that breaks the
+// page when it is. With no storage the box disables itself, says why, and the
+// notice simply appears every time -- which is the SAFE failure, because the
+// statement is about reading the numbers wrongly.
+const DEMOGKEY='apnoea.demog.v1';
+function demogSuppressed(){if(!CANSAVE)return false;
+ try{return localStorage.getItem(DEMOGKEY)==='1';}catch(e){return false;}}
+function demogSuppress(){if(!CANSAVE)return false;
+ try{localStorage.setItem(DEMOGKEY,'1');return true;}catch(e){return false;}}
+
+const demogWrap=document.getElementById('demogwrap');
+const demogSupp=document.getElementById('demogsupp');
+const demogNote=document.getElementById('demognote');
+const demogOk=document.getElementById('demogok');
+
+function closeDemog(){
+ if(demogSupp && demogSupp.checked && !demogSuppress()){
+  // Ticked but could not be stored: say so rather than pretending.
+  demogNote.textContent='This browser will not let the page remember that, '
+   +'so the notice will appear again.';
+  return;
+ }
+ demogWrap.classList.remove('on');
+ document.removeEventListener('keydown',demogKey);
+}
+function demogKey(e){ if(e.key==='Escape'){e.preventDefault();closeDemog();} }
+
+function openDemog(){
+ if(!CANSAVE && demogSupp){
+  demogSupp.disabled=true;
+  demogNote.textContent='Storage is unavailable in this browser, so this '
+   +'notice cannot be suppressed. The same statement is in the footer.';
+ }
+ demogWrap.classList.add('on');
+ document.addEventListener('keydown',demogKey);
+ if(demogOk) demogOk.focus();
+}
+
+if(demogOk) demogOk.addEventListener('click',closeDemog);
+// Clicking the backdrop dismisses, but NOT a click inside the dialog.
+if(demogWrap) demogWrap.addEventListener('click',e=>{
+ if(e.target===demogWrap) closeDemog();});
+if(!demogSuppressed()) openDemog();
 
 function refreshPresets(sel){
  sbPre.innerHTML='';
@@ -1251,6 +1436,152 @@ setPlayState();
 // pushed the patient drawing -- the head -- below the fold. The head is
 // the point of the page, so the graph is opt-in and the default view is
 // exactly what it was before the graph existed.
+// ---- THE SWEEPS VIEW -------------------------------------------------------
+// SWEEPS is baked in at build time by build_sweeps.js. Nothing here simulates:
+// one simulation costs about 4 s when the patient dies early and about 33 s
+// when they survive the hour, so the 208 runs behind these ten pages are an
+// hour of compute and cannot happen in a browser.
+//
+// WHAT THE LINES MEAN, and the dashed one is not decoration. Solid is TIME TO
+// LOSS OF CARDIAC OUTPUT -- death. The control arm dies on every page. THE
+// DEVICE ARM DOES NOT DIE WITHIN THE HOUR ON NINE OF THE TEN PAGES, at any
+// value of any slider, because THE MODEL HAS NO DEATH-FROM-ACIDOSIS
+// MECHANISM: "time to death" here is time to HYPOXIC death, and buccal oxygen
+// abolishes it. Those points are drawn as open markers along the top rule and
+// read ">60 min", NOT as 60: the model cannot say when that patient dies and
+// plotting 60 would assert something it does not know. The DASHED line is when
+// arterial pH reaches 7.0, which is the limit the model CAN see -- without it
+// the device arm would be blank almost everywhere. See HANDOVER entry 30 (the
+// buccal arm is CO2-limited, not oxygen-limited).
+const SWEEPS=__SWEEPS__;
+const swEl=document.getElementById('sweeps');
+const swSel=document.getElementById('swsel');
+const swNote=document.getElementById('swnote');
+const swNow=document.getElementById('swnow');
+let swIdx=0;
+
+SWEEPS.dials.forEach((d,i)=>{const o=document.createElement('option');
+ o.value=i;o.textContent=d.label;swSel.appendChild(o);});
+
+const DERIV_LABEL={bmi:'BMI',frc:'FRC at induction',cc:'closing capacity',
+ vo2:'oxygen consumption',co:'cardiac output'};
+const DERIV_UNIT={bmi:'',frc:' mL',cc:' mL',vo2:' mL/min',co:' L/min'};
+
+function drawSweep(){
+ const cv=document.getElementById('swc'); if(!cv) return;
+ const d=SWEEPS.dials[swIdx];
+ // Lay the backing store out at device resolution, or the text is soft and
+ // the hairlines land between pixels.
+ const dpr=window.devicePixelRatio||1, W=cv.clientWidth||1160, H=cv.clientHeight||420;
+ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+ const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0);
+ g.clearRect(0,0,W,H);
+ const L=62,R=18,T=18,B=52, pw=W-L-R, ph=H-T-B;
+ const ymax=SWEEPS.horizon/60;                       // 60 minutes
+ const xs=d.x, n=xs.length;
+ const xlo=Math.min(...xs), xhi=Math.max(...xs);
+ const px=i=>L+(n===1?pw/2:pw*(xs[i]-xlo)/(xhi-xlo||1));
+ const py=m=>T+ph*(1-m/ymax);
+
+ // grid and y axis, every ten minutes
+ g.font='12px Barlow, system-ui, sans-serif'; g.textBaseline='middle';
+ for(let m=0;m<=ymax;m+=10){
+  const y=py(m);
+  g.strokeStyle=(m===0?'#3a5663':'#22343d'); g.lineWidth=1;
+  g.beginPath(); g.moveTo(L,y+0.5); g.lineTo(W-R,y+0.5); g.stroke();
+  g.fillStyle='#7d93a0'; g.textAlign='right'; g.fillText(m+' min',L-8,y);
+ }
+ // x axis ticks: the ends always, plus the default, plus evenly spaced labels
+ g.textBaseline='top'; g.textAlign='center';
+ const fmtx=v=>d.xlabels?d.xlabels[v]:(Math.abs(v)>=100?v.toFixed(0):
+   (Number.isInteger(v)?String(v):v.toFixed(2).replace(/0$/,'')));
+ const every=Math.max(1,Math.round(n/6));
+ for(let i=0;i<n;i++){
+  if(i!==0&&i!==n-1&&i%every!==0) continue;
+  const x=px(i);
+  g.strokeStyle='#22343d'; g.beginPath(); g.moveTo(x+0.5,T); g.lineTo(x+0.5,T+ph); g.stroke();
+  g.fillStyle='#7d93a0';
+  const lab=String(fmtx(xs[i]));
+  if(d.xlabels){ // the buccal-start page has prose labels; stack them short
+   g.save(); g.translate(x,T+ph+8); g.rotate(-Math.PI/9);
+   g.textAlign='right'; g.fillText(lab.length>22?lab.slice(0,21)+'\u2026':lab,0,0);
+   g.restore();
+  } else g.fillText(lab,x,T+ph+8);
+ }
+ g.fillStyle='#9fb4c0'; g.textAlign='center';
+ g.fillText(d.label+(d.unit?' ('+d.unit+')':''),L+pw/2,H-16);
+
+ // one series: nulls break the line, and are marked along the top instead
+ function series(vals,colour,dash){
+  g.strokeStyle=colour; g.lineWidth=dash?1.6:2.4;
+  g.setLineDash(dash?[6,5]:[]);
+  g.beginPath(); let open=false;
+  for(let i=0;i<n;i++){
+   const v=vals[i];
+   if(v===null){open=false;continue;}
+   const x=px(i), y=py(Math.min(v/60,ymax));
+   if(open) g.lineTo(x,y); else {g.moveTo(x,y); open=true;}
+  }
+  g.stroke(); g.setLineDash([]);
+  for(let i=0;i<n;i++){
+   const v=vals[i]; if(v===null) continue;
+   g.fillStyle=colour; g.beginPath();
+   g.arc(px(i),py(Math.min(v/60,ymax)),dash?2.2:3.2,0,6.284); g.fill();
+  }
+  // ">60 min": an OPEN marker on the top rule, never a point at 60
+  for(let i=0;i<n;i++){
+   if(vals[i]!==null) continue;
+   const x=px(i), y=py(ymax);
+   g.strokeStyle=colour; g.lineWidth=1.6; g.beginPath();
+   g.arc(x,y+5,3.4,0,6.284); g.stroke();
+   g.beginPath(); g.moveTo(x,y+1); g.lineTo(x-3,y+5); g.lineTo(x+3,y+5);
+   g.closePath(); g.fillStyle=colour; g.fill();
+  }
+ }
+ series(d.control.death,'#ff9f43',false);
+ series(d.device.death,'#4fd8e8',false);
+ series(d.device.ph,'#4fd8e8',true);
+
+ // the note: what the page is, and what ELSE this slider changed
+ const censored=d.device.death.filter(v=>v===null).length;
+ let note='<b>Solid</b> is time to loss of cardiac output. <b>Dashed</b> is when '
+  +'arterial pH reaches '+SWEEPS.phDead+'. Every other slider is at the standard '
+  +'patient. Scenario: '+SWEEPS.scenario+'.';
+ if(censored) note+=' <b>'+censored+' of '+n+' buccal points did not arrest within '
+  +'the hour</b> and are marked on the top rule as &gt;60 min &mdash; the model has '
+  +'no death-from-acidosis mechanism, so it cannot say when they die.';
+ if(d.deviceOnly) note+=' This slider only affects the buccal arm, so the no-buccal '
+  +'line is flat by construction.';
+ if(d.moved.length){
+  const bits=d.moved.map(k=>{
+   const v=d.derived[k], a=v[0], b=v[v.length-1];
+   const f=x=>k==='bmi'?x.toFixed(1):(k==='co'?x.toFixed(2):x.toFixed(0));
+   return '<b>'+(DERIV_LABEL[k]||k)+'</b> '+f(a)+(DERIV_UNIT[k]||'')+' \u2192 '
+    +f(b)+(DERIV_UNIT[k]||'');
+  });
+  note+=' Moving this slider also changes: '+bits.join(', ')+'.';
+ } else note+=' It changes no other derived quantity.';
+ swNote.innerHTML=note;
+ swNow.textContent='page '+(swIdx+1)+' of '+SWEEPS.dials.length;
+}
+
+swSel.onchange=()=>{swIdx=+swSel.value; drawSweep();};
+document.getElementById('swprev').onclick=()=>{
+ swIdx=(swIdx-1+SWEEPS.dials.length)%SWEEPS.dials.length;
+ swSel.value=swIdx; drawSweep();};
+document.getElementById('swnext').onclick=()=>{
+ swIdx=(swIdx+1)%SWEEPS.dials.length; swSel.value=swIdx; drawSweep();};
+
+const swBtn=document.getElementById('swbtn');
+swBtn.onclick=()=>{
+ const open=swEl.hasAttribute('hidden');
+ if(open) swEl.removeAttribute('hidden'); else swEl.setAttribute('hidden','');
+ swBtn.setAttribute('aria-expanded',open?'true':'false');
+ swBtn.textContent=open?'Hide sweeps':'Sweeps';
+ if(open) drawSweep();            // clientWidth is 0 while hidden
+};
+window.addEventListener('resize',()=>{if(!swEl.hasAttribute('hidden')) drawSweep();});
+
 const graphBtn=document.getElementById('graphbtn');
 const trendEl=document.getElementById('trend');
 graphBtn.onclick=()=>{
@@ -1327,6 +1658,23 @@ labels(); run();
 </script></body></html>"""
 
 page = HTML.replace('__MODEL__', model)
+
+# The standard patient's figures, substituted from their ONE definition into
+# both the startup notice and the footer. Done here rather than with format()
+# because the template is full of CSS and JS braces.
+page = page.replace('__SWEEPS__', sweeps)
+
+for _k, _v in STD_FIGURES.items():
+    page = page.replace('@@' + _k + '@@', _v)
+
+# A SURVIVING TOKEN WOULD SHIP "@@T95M@@" TO A CLINICIAN, so it is an error and
+# not a warning. This also catches the reverse mistake -- renaming a key in
+# STD_FIGURES and leaving the old token in the prose.
+_left = re.findall(r'@@[A-Z0-9_]+@@', page)
+if _left:
+    sys.exit("build_page.py: unsubstituted figure token(s) "
+             + ', '.join(sorted(set(_left)))
+             + ". Every @@TOKEN@@ must have a key in STD_FIGURES.")
 
 # --check compares without writing, so the pre-commit hook can refuse a commit
 # that changes model.js and leaves the embedded copy in the HTML behind. The

@@ -4529,126 +4529,134 @@ print("    are age-flat BY NO RULING AT ALL -- that is the open question, and")
 print("    RULED 2026-10-02: age is NOT PURSUED in any of them.")
 
 print()
-print("  THE SIMULATOR'S OWN SEX-AND-AGE STATEMENT, added 2026-10-02. These are")
-print("  quoted to a clinician in airway_scenario.html, which makes them worse")
-print("  to let rot than anything in HANDOVER -- the statement replaced TWO")
-print("  claims that had already rotted there (an 'age basis' that FRC does not")
-print("  have, and Buist placeholders retired on 2026-09-26).")
-print("  Page default patient: 107 kg, 1.75 m, age 45, 25 deg, frc_ref 2860.")
+print("  THE SIMULATOR'S OWN SEX-AND-AGE NOTICE, rewritten 2026-10-05 when")
+print("  THE STANDARD PATIENT BECAME BMI 25 AT 1.75 m (ruled). These are")
+print("  quoted to a clinician in airway_scenario.html, so a number rotting")
+print("  here is worse than one rotting in HANDOVER.")
+print("  THE PREVIOUS VERSION OF THIS BLOCK WAS WRONG TWICE and is the reason")
+print("  it is now split by engine: its figures were computed at the OLD 107 kg")
+print("  default AND on a single permanently-obstructed epoch, while the notice")
+print("  claimed to describe 'the timeline' -- the page's real CICO scenario,")
+print("  which holds the airway PATENT from 280 to 430 s.")
+
+# ---- part 1: what derive() gives, checked in PYTHON ------------------------
+# Verified 2026-10-05 to agree with model.js to every digit printed, which is
+# why these may be checked here rather than through the driver.
+_STD = dict(weight=76.5, height=1.75, hb=14.0, tilt_deg=25.0, frc_ref=2860.0)
+_std = lambda age=45: Patient(age=age, **_STD)
+check("page default: BMI", _std().bmi(), 24.98, 0.01, "")
+check("page default: FRC anaesthetised", _std().frc_anaes(), 2722.0, 1.0, " mL")
+print("  AND WHAT AGE DOES, which the notice quotes. Age reaches ONE thing, the")
+print("  volume at which airways close, so it cannot act until closure is")
+print("  reached -- and in THIS standard patient that is not until about 40.")
+for _a, _cc, _sh in ((20, 1715.0, 3.23), (40, 2440.0, 3.23), (80, 3889.0, 5.70)):
+    check(f"  age {_a}: closing capacity", _std(_a).closing_capacity(), _cc, 1.0, " mL")
+    check(f"  age {_a}: shunt", _std(_a).shunt_base_eff() * 100, _sh, 0.02, "%")
+print("    IDENTICAL AT 20 AND 40 (3.23%): closing capacity is still BELOW the")
+print("    anaesthetised lung volume, so nothing is shutting and age has no")
+print("    route to act. That is what the notice means by 'nothing up to 40'.")
+
+# ---- part 2: the TIMELINE numbers, checked through model.js ----------------
+# The notice quotes these, and the PAGE RUNS model.js, so they are checked
+# against model.js through the existing parity_driver.js rather than recomputed
+# in Python: a 1% parity difference would otherwise show up as a false drift in
+# a number a clinician reads.
+import json as _json  # noqa: E402
+import shutil as _shutil  # noqa: E402
+import subprocess as _subprocess  # noqa: E402
+
+# Resolved from the imported model package, not from __file__: this block is
+# also extracted and run standalone when it is being developed, and __file__
+# then points at the scratchpad copy, where the driver does not exist.
+_DRIVER = os.path.join(os.path.dirname(os.path.abspath(ac.__file__)),
+                       'parity_driver.js')
+# the cico preset's airway timeline, verbatim from build_page.py
+_SEGS = ((0, 'obstructed'), (120, 'partial'), (130, 'obstructed'),
+         (160, 'obstructed'), (220, 'obstructed'), (280, 'patent'),
+         (430, 'patent'))
+_R = {'patent': 2.0, 'partial': 8.0, 'obstructed': 1.0e9}
 
 
-def _pgp(age=45, scale=1.0):
-    return Patient(weight=107.0, height=1.75, age=age, hb=15.0,
-                   tilt_deg=25.0, frc_ref=2860.0 * scale)
+def _aw(t):
+    a = 'obstructed'
+    for _t, _s in _SEGS:
+        if t >= _t:
+            a = _s
+    return a
 
 
-def _pgt(scale):
-    _r = simulate(_pgp(scale=scale), [AirwayEpoch(900, resistance=OBS, fgo2=0.21)],
-                  dt=0.05, feo2_start=0.87, stop_sao2=0.0)
-    return time_to(_r, 'spo2', 95)
+def _cico(end, fg, keep):
+    """The page's tl() for the cico preset. OBS is 1e9 and FINITE in the page,
+    so it is sent as 1e9 and NOT as null: model.js branches on isFinite(R),
+    so null/Infinity would take a different path from the one the page uses."""
+    cuts = sorted({0, *[t for t, _ in _SEGS], 430, end})
+    cuts = [c for c in cuts if 0 <= c <= end]
+    ep = []
+    for a, b in zip(cuts, cuts[1:]):
+        r = 1.0e9 if (a >= 430 and not keep) else _R[_aw(a)]
+        ep.append({'d': b - a, 'R': r, 'fg': fg})
+    return ep
 
 
-check("page default: BMI", _pgp().bmi(), 34.94, 0.01, "")
-_tm, _tf = _pgt(1.0), _pgt(0.86)
-check("page says: t95 on MALE equations", _tm, 285.40, 0.50, " s")
-check("page says: t95 at a woman's FRC (-14%)", _tf, 243.05, 0.50, " s")
-check("page says: the over-estimate", _tm - _tf, 42.35, 0.50, " s")
-check("  ... as a fraction", (_tm / _tf - 1) * 100, 17.4, 0.2, "%")
-print("    THE ERROR RUNS IN THE UNSAFE DIRECTION FOR A WOMAN: the page")
-print("    promises margin her lung volume does not support. Stated on the")
-print("    page in those terms, not as a neutral 'limitation'.")
+def _js_page(frc_ref, fg, keep, end=3600.0):
+    params = dict(age=45, lmaOpens=True, frcRef=frc_ref, frcDrop=400,
+                  tiltDeg=25, ccAt20=1800, ccPerYear=20, ccPerBmi=45, ccK=1.5,
+                  vo2Ref=250, coRef=5, crs=75, vArt=1.0, vVen=2.0, vTisO2=1.5,
+                  feo2=0.87, rv=1100, kRvBmi=0.0198, pCollapse=-149.5461,
+                  nVq=80, tauMix=45, inflowMechFrac=0.18, weight=76.5,
+                  height=1.75, frcScale=1.0, bmrScale=1.0, hb=14.0,
+                  ccScale=1.0, maxClosed=0.25, fgBuccal=1.0, buccalIdx=0)
+    job = {'params': params, 'epochs': _cico(end, fg, keep), 'dt': 0.1}
+    pr = _subprocess.run([_shutil.which('node'), _DRIVER],
+                         input=_json.dumps(job), capture_output=True,
+                         text=True, timeout=900)
+    if not pr.stdout.strip():
+        # The driver's own header warns that an empty stdout is the failure
+        # mode worth naming; a bare JSONDecodeError hides the cause.
+        raise RuntimeError(
+            f"parity_driver.js produced no output (exit {pr.returncode}). "
+            f"driver={_DRIVER}\nstderr:\n{pr.stderr}")
+    res = _json.loads(pr.stdout)
+    if not res.get('ok'):
+        raise RuntimeError(f"parity_driver.js: {res.get('error')}")
+    return res['out']
 
-print("  AND WHAT AGE DOES, which the page also quotes. Age acts on ONE thing,")
-print("  the volume at which airways close, so it bites only once closure is")
-print("  reached -- continuously in the obese default, not at all in a slim")
-print("  patient below about 40.")
-check("page says: shunt at age 20, 107 kg",
-      _pgp(age=20).shunt_base_eff() * 100, 3.50, 0.02, "%")
-check("page says: shunt at age 80, 107 kg",
-      _pgp(age=80).shunt_base_eff() * 100, 10.73, 0.02, "%")
-_sl = lambda a: Patient(weight=22 * 1.70 ** 2, height=1.70, age=a, hb=14.0)
-check("slim patient, shunt at age 20", _sl(20).shunt_base_eff() * 100,
-      3.23, 0.02, "%")
-check("  ... and at age 40, UNCHANGED", _sl(40).shunt_base_eff() * 100,
-      3.23, 0.02, "%")
-print("    Identical at 20 and 40 in the slim patient: closing capacity is")
-print("    still BELOW the anaesthetised lung volume, so nothing closes and")
-print("    age has no route to act. That is why the page says 'below about 40'.")
 
-print()
-print("=" * 72)
-print("ENTRY 36: HEWLETT I BOUNDS THE MEASUREMENT ERROR, which explains why")
-print("Laws cannot move frc_drop and changes no parameter")
-print("=" * 72)
-print("  Hewlett, Hulands, Nunn & Minty 1974, Br J Anaesth 46:479, read at")
-print("  source 2026-10-05. Model lung of KNOWN volume 4.528 L by water")
-print("  displacement. Figures below are transcribed from its Table I; the")
-print("  propagation is computed here.")
+def _down(out, key, thr):
+    v, t = out[key], out['t']
+    for k in range(1, len(v)):
+        if v[k - 1] >= thr > v[k]:
+            return t[k - 1] + (t[k] - t[k - 1]) * (v[k - 1] - thr) / (v[k - 1] - v[k])
+    return None
 
-_H1_TRUE = 4.528
-_H1_MEANS = (("spont S1", 4.563), ("spont S2", 4.559),
-             ("artif S1", 4.511), ("artif S2", 4.529))
-_H1_SP = (0.046, 0.060)     # L, SD of individual measurements, spontaneous
-_H1_AR = (0.107, 0.159)     # L, SD of individual measurements, artificial
 
-print("  THE METHOD IS UNBIASED -- no significant systematic error, either mode:")
-for _lab, _m in _H1_MEANS:
-    check(f"Hewlett I bias, {_lab}", (_m - _H1_TRUE) * 1000.0,
-          round((_m - _H1_TRUE) * 1000.0), 0.6, " mL")
-check("  ... largest bias as a fraction of the model volume",
-      max(abs(_m - _H1_TRUE) for _l, _m in _H1_MEANS) / _H1_TRUE * 100.0,
-      0.77, 0.01, "%")
+def _dead(out):
+    for k in range(len(out['t'])):
+        if out['co'][k] <= 0.001 or out['hr'][k] <= 0:
+            return out['t'][k]
+    return None
 
-print("  BUT ARTIFICIAL VENTILATION COSTS PRECISION. Their mechanism: the")
-print("  artificial mode adds ~1.5 L of apparatus volume to the circuit.")
-check("artificial/spontaneous SD ratio, low end", _H1_AR[0] / _H1_SP[1],
-      1.78, 0.01, "x")
-check("artificial/spontaneous SD ratio, high end", _H1_AR[1] / _H1_SP[0],
-      3.46, 0.01, "x")
 
-_dsd = lambda a, b: (a * a + b * b) ** 0.5 * 1000.0
-print("  PROPAGATED TO A BEFORE-AFTER DIFFERENCE. Laws measured his baseline")
-print("  awake-SPONTANEOUS and his post-induction value PARALYSED, so his")
-print("  difference carries ONE ERROR OF EACH KIND. Hewlett II was")
-print("  spontaneous throughout.")
-_l_lo, _l_hi = _dsd(_H1_SP[0], _H1_AR[0]), _dsd(_H1_SP[1], _H1_AR[1])
-_h_lo, _h_hi = _dsd(_H1_SP[0], _H1_SP[0]), _dsd(_H1_SP[1], _H1_SP[1])
-check("Laws, method SD of the difference, low", _l_lo, 116.0, 1.0, " mL")
-check("Laws, method SD of the difference, high", _l_hi, 170.0, 1.0, " mL")
-check("Hewlett II, method SD of the difference, low", _h_lo, 65.0, 1.0, " mL")
-check("Hewlett II, method SD of the difference, high", _h_hi, 85.0, 1.0, " mL")
-
-# observed scatter: Laws from his Table III (transcribed above), Hewlett II as
-# published -- 390 mL = 16.1%, SD 13.4% of the implied baseline
-_laws_sd = float(np.std([b - a for _ag, _w, b, a in _LAWS3], ddof=1))
-_h2_sd = 0.134 * (390.0 / 0.161)
-print("  AND AGAINST THE SCATTER EACH PAPER ACTUALLY REPORTED:")
-check("Laws, observed per-patient SD", _laws_sd, 238.0, 1.0, " mL")
-check("Hewlett II, observed per-patient SD", _h2_sd, 324.6, 1.0, " mL")
-check("Laws, variance that IS THE METHOD, low",
-      (_l_lo / _laws_sd) ** 2 * 100.0, 24.0, 0.5, "%")
-check("Laws, variance that IS THE METHOD, high",
-      (_l_hi / _laws_sd) ** 2 * 100.0, 51.0, 0.5, "%")
-check("Hewlett II, variance that IS THE METHOD, low",
-      (_h_lo / _h2_sd) ** 2 * 100.0, 4.0, 0.5, "%")
-check("Hewlett II, variance that IS THE METHOD, high",
-      (_h_hi / _h2_sd) ** 2 * 100.0, 6.8, 0.5, "%")
-print("    SO BETWEEN A QUARTER AND HALF of Laws's scatter is the INSTRUMENT.")
-print("    Hewlett II's is ~95% biological. That is why Laws's CI is wide")
-print("    enough to contain the shipped value, and it is a limit of the")
-print("    EVIDENCE, not a licence to move the parameter.")
-
-print("  LAWS'S OWN PRECISION CLAIM IS OPTIMISTIC BY HIS OWN ACCOUNT:")
-check("Laws's quoted CV 0.7% on a lung analogue, in mL",
-      0.007 * _H1_TRUE * 1000.0, 31.7, 0.2, " mL")
-check("  ... how much smaller than Hewlett I's artificial-mode SD, low",
-      _H1_AR[0] / (0.007 * _H1_TRUE), 3.38, 0.02, "x")
-check("  ... high", _H1_AR[1] / (0.007 * _H1_TRUE), 5.02, 0.02, "x")
-print("    He states the reason: 'No parallel for oxygen consumption could be")
-print("    designed with this set-up without loss of helium at the same time.'")
-print("  NOTHING MOVED. frc_drop is still 400 mL and the 2026-10-02 ruling")
-print("  stands; this only says WHY Laws is too imprecise to disturb it.")
-check("frc_drop UNCHANGED", Patient().frc_drop, 400.0, 0.0, " mL")
+if _shutil.which('node') is None:
+    print("    node is absent, so the notice's TIMELINE numbers cannot be")
+    print("    checked against the engine the page runs. NOT silently skipped:")
+    _fails.append("page notice timeline numbers (node absent)")
+else:
+    _ctl = _js_page(2860.0, 0.21, False)
+    _fem = _js_page(2860.0 * 0.86, 0.21, False)
+    check("notice: control reaches SpO2 95%", _down(_ctl, 'spo2', 95.0),
+          561.6, 1.0, " s")
+    check("notice: control loses cardiac output", _dead(_ctl) / 60.0,
+          12.4, 0.1, " min")
+    check("notice: a woman's FRC, SpO2 95%", _down(_fem, 'spo2', 95.0),
+          485.2, 1.0, " s")
+    check("notice: a woman's FRC, loses cardiac output", _dead(_fem) / 60.0,
+          11.1, 0.1, " min")
+    check("notice: the over-estimate she does not have",
+          _down(_ctl, 'spo2', 95.0) - _down(_fem, 'spo2', 95.0), 76.4, 1.5, " s")
+    print("    THE ERROR RUNS IN THE UNSAFE DIRECTION FOR A WOMAN, and at the")
+    print("    BMI 25 standard patient it is LARGER than the old 107 kg figure")
+    print("    the notice used to quote: about 77 s, not 42 s.")
 
 print()
 if _fails:
