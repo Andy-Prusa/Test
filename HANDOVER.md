@@ -236,6 +236,73 @@ figures carry an unsourced parameter worth minutes, and the acquisition priority
 is `perfusion_gain`, `cv_frac` and `max_closed` — not the absorption rate, and
 not Rothen.
 
+### 10. ROTHEN'S FIGURE 1 BOUNDS `perfusion_gain`, AND HIS TABLE 3 SAYS THE MODEL HAS THE FiO₂ EFFECT IN THE WRONG COMPARTMENT
+
+**Added 2026-10-07** on A. Heard's instruction to try anchoring the parameter
+§9 showed is worth minutes. It can be bounded, not pinned — and the attempt
+turned up something sharper than the bound.
+
+**Figure 1 plots shunt against atelectasis directly**, three groups, which is
+very nearly the quantity `perfusion_gain` encodes:
+
+| | atelectasis | shunt |
+|---|---|---|
+| FiO₂ 0.3, n=12 | 0.2 cm² | 2.1% |
+| FiO₂ 1.0, n=45 (his ref 18) | 3.0 cm² | 4.6% |
+| FiO₂ 1.0, n=12 | 8.0 cm² | 6.5% |
+
+Least squares: **shunt = 2.37% + 0.542 × atelectasis(cm²)**.
+
+**The intercept vindicates this model's structure.** 2.37% of shunt at *zero*
+atelectasis is shunt that is not collapse — which is exactly what
+`shunt_base_eff()` is, airway closure without collapse, added to
+`perfusion_gain × collapsed`. The two-term form was not chosen from this paper
+and the paper independently shows both terms.
+
+**The bound.** Turning cm² into a fraction needs a denominator, and Table 2
+gives only thoracic area (313 cm² anaesthetised), which includes mediastinum and
+chest wall — so true lung area is smaller and the collapsed fraction larger:
+
+| denominator | collapsed fraction | implied gain |
+|---|---|---|
+| thoracic area, 313 cm² | 2.56% | **1.61** |
+| lung ≈70% of thorax | 3.65% | **1.13** |
+| lung ≈60% of thorax | 4.26% | **0.97** |
+
+**`perfusion_gain = 1.2` sits inside that range.** It goes from *unsourced* to
+*bounded at roughly 1.0–1.6*, and the shipped value needs no change. The
+denominator ambiguity spans the whole range, so this cannot pin it tighter, and
+a single CT slice just above the diaphragm — the most dependent region — will
+overstate the whole-lung fraction anyway. **Nothing was tuned toward it.**
+
+### THE SHARPER FINDING: TABLE 3 PUTS THE FiO₂ EFFECT IN TRUE SHUNT, NOT LOW V/Q
+
+| | group 1 (30%) | group 2 (100%) | P |
+|---|---|---|---|
+| **shunt** (%CO) | 2.1 ± 3.8 | **6.5 ± 5.2** | **0.03** |
+| **low V̇A/Q̇** (%CO) | 4.9 ± 4.4 | **4.9 ± 3.3** | **0.6** |
+
+**The low-V/Q compartment is identical between the two gases. All of the FiO₂
+effect is in true shunt.**
+
+**And this model puts its FiO₂ effect in the low-V/Q compartment.**
+`unwashed_fraction()` is the only FiO₂-dependent induction term, and it is a
+low-V/Q route by construction — units whose airway shut during preoxygenation
+and still hold nitrogen. Rothen measured that compartment and it does not move
+with inspired gas.
+
+**That explains §8 exactly.** The model failed to reproduce his 4.4-point shunt
+difference not because a parameter is mis-valued but because the effect is
+routed through the wrong compartment: it should act on **collapse**, which
+becomes true shunt, and instead acts on an unwashed low-V/Q fraction that is
+~0 at normal BMI and, per Rothen, FiO₂-independent anyway.
+
+**NOTHING WAS CHANGED.** Moving the FiO₂ effect from the low-V/Q route to the
+collapse route is a structural change to both implementations and a ruling for
+A. Heard, not a correction. §9 bounds what it is worth: the induction-time
+consequence is 2 s, so this is about being right for the right reason rather
+than about the outcome.
+
 ### 7. WHAT WAS NOT CHANGED
 
 No parameter, no threshold, no band, no `KNOWN_OPEN` row, no model file. The
