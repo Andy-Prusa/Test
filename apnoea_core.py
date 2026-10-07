@@ -1030,6 +1030,28 @@ class Patient:
     max_closed: float = 0.25
 
     # --- collapse kinetics -------------------------------------------------
+    # UNSOURCED, AND SAID SO 2026-10-07 because this heading had nothing under
+    # it in a file where every neighbouring parameter is densely cited, which
+    # reads as sourced-by-association. These three, with cv_frac, recruit_frac,
+    # tau_recruit and inflow_mech_frac above, rest on MECHANISM and on no
+    # measurement. Dale & Rahn 1952 is the classical source and we do not have
+    # it; protocol/evidence.md claimed we did until 2026-10-07.
+    #
+    # WHAT IS KNOWN ABOUT THEIR LEVERAGE, measured rather than assumed: the two
+    # TAUS DO ALMOST NOTHING. Swept 30 -> 240 s on the obstructed,
+    # preoxygenated case where this mechanism dominates, time to SpO2 95% did
+    # not move at all -- 275 s obese, 406 s lean, across the whole 8x range --
+    # and peak shunt moved about 4%. They set the APPROACH RATE; the endpoint
+    # is set by cv_frac, max_closed and perfusion_gain. So a paper pinning the
+    # absorption RATE would pin a parameter that does not move this model, and
+    # the magnitude side is what to chase: see sources_registry.py on Rothen
+    # 1996, and HANDOVER entry 43.
+    #
+    # CORROBORATED, NOT ANCHORED: Joyce & Williams 1999 (a MODEL, read in full
+    # 2026-10-07) puts collapse of an unventilated pocket under 10 min at FiO2
+    # 1.0 after preoxygenation and over 4 h on air. This model's atelectasis
+    # term plateaus by 600 s preoxygenated and is 0.000000 through 1200 s
+    # started on air. Agreement at both ends, fitted toward neither.
     tau_collapse_o2: float = 60.0
     tau_collapse_air: float = 900.0
     perfusion_gain: float = 1.2
@@ -2222,6 +2244,20 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
         # V/Q mismatch from absorption atelectasis, not device failure.
         v_frac_c = n_c / np.maximum(n_c0, 1e-9)
         exposed = np.clip((pt.cv_frac - v_frac_c) / pt.cv_frac, 0.0, 1.0)
+        # THESE LITERALS ARE A SECOND COPY of tau_collapse_o2/tau_collapse_air
+        # and are NOT wired to them. Found 2026-10-07 while sweeping those
+        # fields for sensitivity: the sweep came back flat because it moved
+        # only the GLOBAL route below, leaving this one at 60/900 throughout,
+        # and the measurement had to be redone on a modified copy.
+        #
+        # IT IS ALSO A PARITY HAZARD of the class this file already warns about
+        # for its experimental switches. model.js hardcodes 60 and 900 in BOTH
+        # routes and has no corresponding parameter, while reading cvFrac,
+        # tauRecruit and recruitFrac from P as it should. So setting
+        # tau_collapse_o2 in Python makes the two implementations DIFFERENT
+        # MODELS, and test_parity.py runs at the defaults so it cannot see it.
+        # NOT REPAIRED: wiring these up touches both implementations and must
+        # be one commit. See HANDOVER entry 43.
         tau_c_c = 60.0 * fr_c[:, 0] + 900.0 * (1.0 - fr_c[:, 0])
         gain = np.maximum(exposed - coll_c, 0.0) * (dt / tau_c_c)
         loss = (np.minimum(exposed - coll_c, 0.0) * (dt / pt.tau_recruit)

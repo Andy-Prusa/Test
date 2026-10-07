@@ -5,6 +5,130 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-07 (forty-third entry): absorption atelectasis asked about, found already modelled and verified correct against Joyce 1999 — and seven of its parameters have no source at all
+
+**Asked by A. Heard:** *"Do we need to model absorption atelectasis because
+we're using 100% O₂?"* **No — it is already there, by two routes, and it
+behaves correctly.** What the investigation turned up instead is a set of
+unsourced parameters, a duplicated constant, a parity hazard and a false claim
+in the evidence map.
+
+### 1. THE MECHANISM IS THERE AND IT IS RIGHT
+
+Two routes feed shunt together, both FiO₂-dependent:
+
+- **Per-compartment absorption collapse** (`coll_c`, reported as `atelectasis`).
+  A unit whose uptake outruns its refill shrinks; below `cv_frac` = 0.55 of its
+  own starting volume it closes, and its residual gas then absorbs at a rate set
+  by **its own composition** — 60 s at pure oxygen, 900 s at none.
+- **Global airway-closure collapse** (`collapsed`), driven by how far below
+  closing capacity the lung sits, with the same FiO₂ weighting.
+
+**Traced through real runs, it does exactly what the physiology requires:**
+
+| scenario | peak `atelectasis` | peak `collapsed` | shunt |
+|---|---|---|---|
+| obese, obstructed, **preox 0.80** | **0.1635** | 0.0791 | 0.058 → 0.214 |
+| obese, obstructed, **air start** | **0.000000** | 0.0209 | 0.058 → 0.070 |
+| lean, obstructed, **preox 0.80** | **0.1957** | 0.0794 | 0.040 → 0.219 |
+| either, **patent airway** | **0.000000** | 0.058 | — |
+
+**Zero to six decimal places on air** — that is the nitrogen splint, emerging
+from the mechanism rather than switched on. **Zero on a patent airway too**,
+because inflow keeps refilling the units so none reaches its closing volume;
+that is correct, not inert. And when obstructed *and* preoxygenated the
+per-compartment route is **2–2.5× the global one**, i.e. the dominant source of
+shunt in exactly the CICO case this model exists for.
+
+### 2. JOYCE & WILLIAMS 1999 AGREES, AND IT IS THE FIRST EXTERNAL CHECK THIS HAS HAD
+
+Read in full after A. Heard confirmed Dale & Rahn unavailable. His time for an
+unventilated pocket to collapse: **with 3 min preoxygenation, <10 min at FiO₂
+1.0** and ~0.5 h on air; **without preoxygenation, >4 h on air**.
+
+Ours: obstructed and preoxygenated, `atelectasis` plateaus by **600 s** —
+inside 10 minutes. Started on air, **0.000000 through 1200 s**, which is what
+">4 h" requires. **Agreement at both ends, and nothing was fitted toward it:
+the paper was read after the runs.**
+
+**It is a model, not a measurement**, so it anchors nothing — this project has
+refused model-against-model as an anchor before. Recorded as corroboration.
+
+### 3. THE RATE CONSTANTS DO ALMOST NOTHING; THE MAGNITUDE ONES DO EVERYTHING
+
+Swept `tau_collapse_o2` across 30 → 240 s, on the obstructed preoxygenated case
+where the mechanism dominates:
+
+| patient | SpO₂<95% across the whole 8× sweep | peak shunt |
+|---|---|---|
+| obese | **275 s, unchanged** | 0.2156 → 0.2062 |
+| lean | **406 s, unchanged** | 0.2209 → 0.2110 |
+
+**Zero seconds of movement.** The time constant sets only the approach rate; the
+endpoint is set by `cv_frac`, `max_closed` and `perfusion_gain`. **So a paper
+pinning the absorption rate would pin a parameter that does not move this
+model** — the acquisition priority is the magnitude side, and `sources_registry`
+now names Rothen 1996 as what would do it.
+
+**Two earlier sweeps of mine were worthless and are recorded as such**: both
+used a patent airway, where the mechanism is correctly silent, so their flat
+results said nothing about leverage. The third needed a **modified copy**,
+because of §5.
+
+### 4. THE MODEL BRACKETS EDMARK, BUT NOT ON ATELECTASIS
+
+Time to SpO₂ 90% after preoxygenation:
+
+| | 100% | 80% | difference |
+|---|---|---|---|
+| lean | 521 s | 417 s | 104 s |
+| obese | 351 s | 283 s | 68 s |
+| **Edmark, secondhand** | **391 s** | **307 s** | **84 s** |
+
+All three of his numbers fall between our two patients, whose build his
+abstract does not give. **But the atelectasis ratio does not agree** — 1.77×
+lean and 1.68× obese against his 8.5×. Those are different quantities (a
+perfusion fraction against CT area per cent), so the mismatch may be the
+comparison rather than the model; **Rothen 1996 pairs shunt with area in the
+same patients and would separate them.**
+
+**Edmark is *Anesthesiology* 2001; 95: A1330 — an ASA meeting abstract, reached
+secondhand through a review.** No band was drawn from it and none should be.
+
+### 5. SEVEN PARAMETERS WITH NO SOURCE, A CONSTANT THAT EXISTS TWICE, AND A PARITY HAZARD
+
+`tau_collapse_o2`, `tau_collapse_air`, `perfusion_gain`, `cv_frac`,
+`recruit_frac`, `tau_recruit` and `inflow_mech_frac` carry **mechanism prose and
+no measurement**, in a file where every neighbouring parameter is densely
+sourced. `# --- collapse kinetics ---` has nothing under it at all.
+
+**The constants exist twice.** `apnoea_core.py`'s global route reads
+`pt.tau_collapse_o2`; its per-compartment route hardcodes `60.0` and `900.0`.
+**`model.js` hardcodes both and has no such parameter**, while reading `cvFrac`,
+`tauRecruit` and `recruitFrac` from `P` as it should.
+
+**That is a parity hazard of the class this file already warns about** for its
+experimental switches: setting `tau_collapse_o2` in Python makes the two
+implementations different models, and `test_parity.py` runs at the defaults so
+it cannot see it. Here it sits on shipped dataclass fields with no warning
+attached. **Not fixed — it touches both implementations and needs a ruling.**
+
+### 6. THE EVIDENCE MAP CLAIMED A SOURCE WE DO NOT HAVE
+
+`protocol/evidence.md` said **"Dale WA, Rahn H… Held here. The classical
+source."** It is not in `sources_registry.py`, not in the tree, and its only
+other mention is inside a file `SOURCES.md` itself calls "a reference list, not
+a source — it verifies nothing". A. Heard confirmed it unavailable. Corrected.
+
+**Read status lives in `sources_registry.py` and nowhere else.** This is the
+duplicated-fact rot CLAUDE.md has a rule against, and it stood long enough to be
+acted on — the search for Dale & Rahn began because that line said we had it.
+
+### 7. WHAT WAS NOT CHANGED
+
+No parameter, no threshold, no band, no `KNOWN_OPEN` row, no model file. The
+duplication is recorded, not repaired. Everything above is an audit.
+
 ## Current state — 2026-10-06 (forty-second entry): Potkin tests the acid-base relation where it had never been tested and it holds to 1% at PaCO₂ 375 — so the Frumin disagreement is a CO₂ rate defect, not an acid-base one, and the base-excess route stays refused
 
 **Investigated on A. Heard's instruction**, following the lead recorded in entry
