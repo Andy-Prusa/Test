@@ -4658,6 +4658,216 @@ else:
     print("    BMI 25 standard patient it is LARGER than the old 107 kg figure")
     print("    the notice used to quote: about 77 s, not 42 s.")
 
+# ---------------------------------------------------------------------------
+print("\nENTRY 40: FRUMIN'S ARRHYTHMIAS AND POTASSIUM -- the paper's own")
+print("numbers, pinned so the PROSE cannot rot away from them")
+print("  These are MEASURED VALUES FROM A PAPER, not model outputs, so there is")
+print("  nothing for the engine to drift against. What they CAN do is rot in")
+print("  markdown -- which is exactly what entry 40 is about. So each one is")
+print("  written here ONCE and this block asserts HANDOVER.md still says it.")
+print("  Frumin, Epstein & Cohen 1959, Anesthesiology 20(6):789-798, read in")
+print("  full 2026-09-29 (CO2 and acid-base) and re-read 2026-10-06 for the")
+print("  cardiac findings. Page numbers are the paper's own.")
+
+_FRUMIN = [
+    ("6.72",  "subject 7's lowest arterial pH, Table 1 p.790"),
+    ("250",   "subject 7's highest PaCO2, ESTIMATED not measured, Table 1"),
+    ("53",    "subject 7's apnoea duration in minutes, Table 1"),
+    ("6.97",  "subject 5's lowest arterial pH, Table 1"),
+    ("55",    "the longest apnoea in the series, no irregularity, p.791"),
+    ("15 seconds", "delay from restarting ventilation to the VT, p.791"),
+    ("0.4",   "max rise in plasma potassium during apnoea, mEq/l, p.792"),
+    ("4.3",   "subject 6's potassium at 40 min, Table 2"),
+    ("6.87",  "subject 6's pH at 40 min, Table 2"),
+    ("3.8",   "subject 6's control potassium, Table 2"),
+]
+_hpath = os.path.join(os.path.dirname(os.path.abspath(ac.__file__)),
+                      'HANDOVER.md')
+try:
+    _htext = open(_hpath, encoding='utf-8').read()
+except OSError as _e:
+    _htext = None
+    print(f"    HANDOVER.md unreadable ({_e}); NOT silently skipped:")
+    _fails.append("Frumin paper values (HANDOVER.md unreadable)")
+if _htext is not None:
+    _e40 = _htext.split("(fortieth entry)")
+    if len(_e40) < 2:
+        print("    entry 40 is GONE from HANDOVER.md.")
+        _fails.append("Frumin paper values (entry 40 missing)")
+    else:
+        # the entry runs until the next '## Current state' heading
+        _body = _e40[1].split("\n## Current state")[0]
+        for _v, _what in _FRUMIN:
+            _ok = _v in _body
+            print(f"    {'ok  ' if _ok else 'FAIL'} {_v:<12} {_what}")
+            if not _ok:
+                _fails.append(f"Frumin {_v} ({_what}) no longer in entry 40")
+        print("    THE ECTOPY DOES NOT TRACK pH: subject 5 threw extrasystoles")
+        print("    WITHIN 7 MINUTES at a near-normal pH, subject 7 at the last")
+        print("    minute of 53 at 6.72, and the other six had none at all. No")
+        print("    pH here is a threshold, so the 6.8 line on the sweep is a")
+        print("    DECLARED MARKER and entry 40 says so.")
+        print("    THE VT WAS A REOXYGENATION EVENT, within 15 s of restarting")
+        print("    ventilation, and every subject recovered -- so 6.72 is a")
+        print("    SURVIVED FLOOR, not a lethal one.")
+        print("    POTASSIUM IS RULED OUT BY THE AUTHORS: the VT subject's")
+        print("    changes were 'similar to those in subjects 6 and 8 who had")
+        print("    normal rhythms' (p.794).")
+
+
+# ---------------------------------------------------------------------------
+print("\nENTRY 41: POTKIN & SWENSON 1992 -- the survivability ceiling, pinned")
+print("  Same discipline as the Frumin block: measured values from a paper, so")
+print("  nothing for the engine to drift against, but they CAN rot in markdown.")
+print("  Potkin & Swenson, Chest 1992;102(6):1742-1745, read at source")
+print("  2026-10-06. Table 1 is arterial; the man recovered completely.")
+
+_POTKIN = [
+    ("6.60", "arterial pH on admission, Table 1 -- SURVIVED, full recovery"),
+    ("375",  "PaCO2 on admission, mmHg; the authors call it an over-read"),
+    ("300",  "what they put the true PaCO2 above, on Prys-Roberts's data"),
+    ("6.91", "pH at 5 min of mask ventilation, Table 1"),
+    ("151",  "PaCO2 at 5 min, mmHg, Table 1"),
+    ("7.19", "pH at 90 min, Table 1"),
+    ("5.1",  "serum K+ mmol/L at pH ~6.6-6.9 -- NOT arrhythmogenic"),
+    ("32.2", "core temperature, degrees C -- the stated caveat"),
+    ("130",  "lower end of earlier complete recoveries, mmHg"),
+    ("270",  "upper end, and the limit of human data they acknowledge"),
+]
+if _htext is None:
+    _fails.append("Potkin paper values (HANDOVER.md unreadable)")
+else:
+    _e41 = _htext.split("(forty-first entry)")
+    if len(_e41) < 2:
+        print("    entry 41 is GONE from HANDOVER.md.")
+        _fails.append("Potkin paper values (entry 41 missing)")
+    else:
+        _b41 = _e41[1].split("\n## Current state")[0]
+        for _v, _what in _POTKIN:
+            _ok = _v in _b41
+            print(f"    {'ok  ' if _ok else 'FAIL'} {_v:<8} {_what}")
+            if not _ok:
+                _fails.append(f"Potkin {_v} ({_what}) no longer in entry 41")
+        print("    THE PROVISO IS THE FINDING: tolerated 'WHEN OXYGENATION AND")
+        print("    TISSUE PERFUSION ARE MAINTAINED'. Intracellular pH defence")
+        print("    runs on Na+/H+ exchange and H+-ATPases, both energy using, so")
+        print("    it fails exactly when the cell is hypoxic. The buccal arm sits")
+        print("    INSIDE that regime at SpO2 100; the control arm does not.")
+        print("    BASE EXCESS -16 WITH A NORMAL ANION GAP OF 9: not a metabolic")
+        print("    acidosis. Bears on the base-excess sweep above, which cannot")
+        print("    reproduce Frumin's pH and CO2 content together. Recorded as a")
+        print("    lead; NOTHING was changed on the strength of it.")
+
+
+# ---------------------------------------------------------------------------
+print("\nENTRY 42: POTKIN TESTS THE ACID-BASE RELATION WHERE IT HAD NEVER BEEN")
+print("TESTED, and it holds to 1 per cent at PaCO2 375")
+print("  sources_registry.py has recorded since 2026-09-29 that the open")
+print("  question against Frumin is 'the pH/PCO2 relation above PaCO2 ~100,")
+print("  where his estimate is an extrapolation off the end of a 1959 nomogram")
+print("  and THE MODEL HAS NEVER BEEN TESTED'. Potkin & Swenson 1992 is a")
+print("  MODERN electrode in exactly that regime, so it closes the question.")
+print("  Table 1 is the paper's; HCO3 model is Kelman 1967 pK' from the")
+print("  paper's OWN measured pH and PaCO2, with no base excess involved.")
+
+_S = _bg._co2_solubility(37.0)
+def _hco3_m(pco2, ph):
+    return _S * pco2 * 10.0 ** (ph - _bg._pk_prime(ph, 37.0))
+def _be_sa(hco3, ph, hb=15.0):
+    _m = hb * 0.6206
+    return (1 - 0.0143 * _m) * ((hco3 - 24.8) + (9.5 + 1.63 * _m) * (ph - 7.4))
+
+# TEMPERATURE MATTERS AND THE FIRST VERSION OF THIS BLOCK IGNORED IT.
+# The paper says these are "temperature-corrected values" and the man was at
+# 32.2 C, so the triple most likely belongs at HIS temperature, not at 37.
+# bloodgas carries temperature in BOTH terms -- solubility 0.0307 -> 0.0339 and
+# pK' 6.1254 -> 6.1534 at pH 6.60 -- so it is not a rounding matter. Both are
+# computed and both are pinned, because the paper does not say which
+# temperature its derived HCO3 column was computed at, and picking the
+# flattering one is how "1.0 per cent" got quoted unqualified on 2026-10-06.
+#  label                 pH    PaCO2  HCO3(his)  @37C   @32.2C
+for _nm, _ph, _pc, _h, _w37, _w32 in (
+        ("admission",  6.60, 375.0, 34, 34.3, 35.5),
+        ("5 min mask", 6.91, 151.0, 29, 29.1, 30.3),
+        ("90 min",     7.19,  58.0, 21, 21.9, 22.9)):
+    check(f"Potkin {_nm}: HCO3 at 37 C (he reported {_h})",
+          _hco3_m(_pc, _ph), _w37, 0.15, " mmol/L")
+    check(f"Potkin {_nm}: HCO3 at his 32.2 C (he reported {_h})",
+          _bg._co2_solubility(32.2) * _pc
+          * 10.0 ** (_ph - _bg._pk_prime(_ph, 32.2)), _w32, 0.15, " mmol/L")
+print("    4.5 PER CENT AT HIS OWN TEMPERATURE, 1.0 PER CENT AT 37 C. The 4.5")
+print("    is the one to quote, because the paper calls these values")
+print("    TEMPERATURE-CORRECTED and he was 32.2 C; entry 42 quoted the 1.0")
+print("    unqualified until A. Heard pointed at the hypothermia on")
+print("    2026-10-06. Either way the relation holds at pH 6.60 and PaCO2 375,")
+print("    the most extreme gas reported in a surviving human, so")
+print("    the Frumin disagreement is NOT an acid-base defect, which is what")
+print("    the block above already concluded from the other side ('the CO2")
+print("    store was never it').")
+print("    IT DOES NOT DISCOVER A CO2 RATE DEFECT, and this section said it")
+print("    did until corrected the same day. test_frumin_1959 has carried both")
+print("    Frumin rows as RULED OPEN since 2026-09-29, and 19781b8 of")
+print("    2026-09-27 withdrew three 'too slow' claims, one against Frumin by")
+print("    name, ruling the decay past 15 min 'tested by NOTHING. Untested,")
+print("    not wrong.' Eliminating acid-base removes an EXCUSE for a known")
+print("    open row; it does not find it. Matched per subject on the")
+print("    benchmark's own configuration the model is 0.66x Frumin, range")
+print("    0.48-0.80 -- see HANDOVER entry 42 sections 7 and 8.")
+
+print()
+print("  ROW 3 OF HIS TABLE IS INTERNALLY INCONSISTENT, and it is the PaCO2.")
+print("  Each row ties four numbers with two equations, so any three predict")
+print("  the fourth. For the other three rows the paper agrees with itself.")
+for _nm, _ph, _pc, _h, _w in (("admission",  6.60, 375.0, 34, 371.3),
+                              ("5 min mask", 6.91, 151.0, 29, 150.4),
+                              ("25 min",     7.08,  68.0, 25,  86.2),
+                              ("90 min",     7.19,  58.0, 21,  55.6)):
+    check(f"Potkin {_nm}: PaCO2 implied by his pH+HCO3 (he printed {_pc:g})",
+          _h / (_S * 10.0 ** (_ph - _bg._pk_prime(_ph, 37.0))), _w, 0.5, " mmHg")
+check("Potkin row 3 at PaCO2 87: HCO3 (he printed 25)",
+      _hco3_m(87.0, 7.08), 25.2, 0.1, " mmol/L")
+check("Potkin row 3 at PaCO2 87: base excess (he printed -7)",
+      _be_sa(_hco3_m(87.0, 7.08), 7.08), -6.5, 0.1, " mEq/L")
+check("Potkin row 3 at PaCO2 68: HCO3 (he printed 25)",
+      _hco3_m(68.0, 7.08), 19.7, 0.1, " mmol/L")
+print("    At 87 his HCO3 and his base excess BOTH fall out; at 68 neither")
+print("    does. 87 -> 68 is a digit transposition. THIS IS AN INFERENCE ABOUT")
+print("    THE PAPER, not a finding about the model, and it is recorded as one.")
+print("    Classic Henderson-Hasselbalch at pK 6.1 gives 19.6 at 68 too, so it")
+print("    is not an artefact of Kelman's pK'.")
+
+print()
+print("  THE BASE-EXCESS COLUMN DOES NOT REPRODUCE FROM HIS OWN pH AND HCO3,")
+print("  and that is the lead entry 41 recorded, now quantified:")
+for _nm, _ph, _h, _rep, _w in (("admission",  6.60, 34, -16, -9.1),
+                               ("5 min mask", 6.91, 29,  -9, -6.8),
+                               ("90 min",     7.19, 21,  -5, -7.8)):
+    check(f"Potkin {_nm}: Siggaard-Andersen BE from pH+HCO3 (he printed {_rep})",
+          _be_sa(_h, _ph), _w, 0.15, " mEq/L")
+print("    At admission he printed -16 where the formula gives -9.1 from his")
+print("    own numbers: a 6.9-unit gap, in the direction he describes. BUT the")
+print("    90-min row goes the OTHER way (-5 printed, -7.8 computed), and he")
+print("    was 32.2 C and warming throughout, so temperature correction")
+print("    confounds the whole column. SUGGESTIVE, NOT ESTABLISHED, and")
+print("    NOTHING WAS TUNED ON IT -- which is the point: the be sweep above")
+print("    was already refused on mechanism, and Potkin says the quantity it")
+print("    would have been fitted to is not reliably a metabolic one.")
+
+print()
+print("  FRUMIN'S NOMOGRAM, CHECKED AGAINST HENDERSON-HASSELBALCH at his own")
+print("  measured content of 32.9 mmol/L. Three of four agree; the one that")
+print("  does not is the 250 the registry already flags as off the end.")
+for _ph, _rep, _w in ((6.88, 160, 156.6), (6.87, 160, 159.8),
+                      (6.97, 130, 129.8), (6.72, 250, 215.2)):
+    check(f"Frumin pH {_ph} at content 32.9: H-H PaCO2 (he reported {_rep})",
+          32.9 / (_S * (1.0 + 10.0 ** (_ph - _bg._pk_prime(_ph, 37.0)))),
+          _w, 0.5, " mmHg")
+print("    CAVEAT THAT MATTERS: 32.9 is SUBJECT 6's content at 40 min, and the")
+print("    6.72 row is SUBJECT 7, whose content was not reported. So the 215 is")
+print("    what subject 6's content would imply at subject 7's pH, NOT a")
+print("    measurement of subject 7. It bounds the nomogram, not the patient.")
+
+
 print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")

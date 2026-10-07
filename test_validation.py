@@ -133,13 +133,23 @@ KNOWN_OPEN = {
     # DECAYS, 2.27 at 15 min and 1.64 by 45, so it is roughly half. The pH row
     # is the same defect from the acid-base side: too little CO2 accumulated,
     # so too alkaline.
+    #   ^ SUPERSEDED BY THE 2026-10-01 BLOCK TWELVE LINES BELOW, and left in
+    #   place per this file's habit of keeping the superseded text visible.
+    #   Both the decay and the "roughly half" are gone: k_co2_slow 0.45 fixed
+    #   the decay (CV 13.1% -> 1.8%) and the 45-min rate is 2.11, not 1.64.
+    #   Matched per subject over each man's OWN duration the model is 0.66x
+    #   Frumin, range 0.48-0.80 -- see the table in test_frumin_1959. Quoted
+    #   as live on 2026-10-06 before the block below was read; that is what
+    #   superseded-but-visible text costs if the supersession is not marked.
     #
     # These rows are the MEASUREMENT of a defect now scheduled for work. They
     # are not tuned toward, and nothing compensating may be added to pass them
     # -- a compensating term would break Stock's obstructed slope further, as
     # the eleventh entry warned.
     #
-    # Tolerances 0.30 (18% of 1.64) and 0.05 pH: loose enough to survive
+    # Tolerances 0.30 (14% of the 2.11 baseline; it was 18% of 1.64 when
+    # written, and the rationale was not updated with the baseline on
+    # 2026-10-01 -- corrected 2026-10-06) and 0.05 pH: loose enough to survive
     # ordinary parameter work on the circulation, tight enough that real
     # movement on the CO2 limb reports.
     # BOTH FRUMIN BASELINES RE-RECORDED 2026-10-01, with k_co2_slow 0.80 ->
@@ -394,24 +404,51 @@ def test_heard_2017():
     #     90   min   97.86%    169     172.3    6.94
     #     120  min   95.88%    144    ~198     ~6.90
     #
-    # OXYGEN DOES DISAPPEAR. PaO2 falls monotonically 312 -> 144 mmHg and the
-    # fall accelerates; SpO2 crosses 95% just past TWO HOURS. What hid that is
-    # the oxyhaemoglobin dissociation curve, which is flat up there: saturation
-    # barely moves while the tension halves. So the band's 1e9 upper bound --
-    # thirty-one years -- is not describing the model. The model has a number.
+    #   ^ THE TABLE ABOVE IS SUPERSEDED. It is kept because the argument below
+    #   was built on it. RE-RUN 2026-10-06 ON THE SAME PATIENT, EPOCH AND
+    #   TIMESTEP, every cell has moved and the drift GROWS with time:
     #
-    # BUT OXYGEN IS NOT WHAT ENDS THIS PATIENT, and that is why the band is
-    # left alone rather than given an oxygen ceiling. By 60 minutes PaCO2 is
-    # 143.7 and pH 7.00 while SpO2 is still 98.96%. The binding constraint is
-    # acid-base, and it binds an hour before saturation becomes interesting. A
-    # ceiling drawn from oxygen would be a tighter band on the WRONG CHANNEL.
+    #     t          SpO2     PaO2     PaCO2      pH
+    #     12.5 min   99.78%  270.8      76.6    7.199
+    #     30   min   99.33%  217.1     117.7    7.063
+    #     60   min   97.39%  160.4     182.2    6.923
+    #     90   min   90.59%  110.0     232.1    6.846
+    #     120  min   75.30%   77.5     267.2    6.806
+    #
+    #   TWO FAMILIES MOVED IT AT ONCE, which is why no single ruling is named:
+    #   PaCO2 and pH by k_co2_slow 0.80 -> 0.45 (ecba80b, 2026-10-01, the same
+    #   day this table was written), PaO2 and SpO2 by the oxygenation rulings
+    #   of that week. PaCO2 at 60 min is +26.8% and PaO2 -20.6%.
+    #
+    # OXYGEN DOES DISAPPEAR. PaO2 falls monotonically and the fall accelerates.
+    # The 2026-10-01 text read "SpO2 crosses 95% just past TWO HOURS"; ON THE
+    # CURRENT ENGINE IT CROSSES AT 4555 s = 75.9 MINUTES, and 92% at 86.5 min.
+    # What hid it originally is the oxyhaemoglobin dissociation curve, which is
+    # flat up there: saturation barely moves while the tension halves. Either
+    # way the band's 1e9 upper bound -- thirty-one years -- is not describing
+    # the model. The model has a number, and it is now a much earlier one.
+    #
+    # THE ARGUMENT FOR LEAVING THE BAND ONE-SIDED IS WEAKER THAN IT WAS, AND
+    # THAT IS FLAGGED RATHER THAN QUIETLY REPAIRED. The 2026-10-01 reasoning
+    # was that acid-base "binds an hour before saturation becomes interesting",
+    # so an oxygen ceiling would be "a tighter band on the WRONG CHANNEL". On
+    # the current engine pH is already 6.923 at 60 min while SpO2 crosses 95%
+    # at 75.9 min, so the two limbs are no longer an hour apart -- they are
+    # close together. The band is NOT changed here: 750-1e9 is what the
+    # right-censored data support, and the row still passes (SpO2 99.78% at the
+    # 750 s cap). But WHETHER THIS ROW SHOULD KEEP A ONE-SIDED BAND IS NOW A
+    # LIVE QUESTION for A. Heard, not a settled one, and it is recorded as open
+    # rather than answered by whoever next reads this file.
     #
     # AND THE CHANNEL THAT BINDS IS ALREADY KNOWN TO BE WRONG, in the direction
-    # that matters. Against Frumin 1959, both rows below are KNOWN_OPEN:
-    # PaCO2 rise 1.64 mmHg/min against a measured 2.7-4.9, and arterial pH at
-    # 40 min 7.09 against a measured 6.72-6.97. The model accumulates CO2 at
-    # about HALF the measured rate, so it is TOO ALKALINE and the table above
-    # is the OPTIMISTIC trajectory. A real patient reaches any given pH sooner.
+    # that matters. Against Frumin 1959, both rows below are KNOWN_OPEN: PaCO2
+    # rise 2.11 mmHg/min against a measured 2.7-4.9, and arterial pH at 40 min
+    # 7.04 against a measured 6.72-6.97. (Those were 1.64 and 7.09 in the
+    # 2026-10-01 text here, pre-k_co2_slow; corrected 2026-10-06.) Matched per
+    # subject over each man's own duration the model runs at 0.66x Frumin's
+    # rate, range 0.48-0.80 -- NOT the "about HALF" this block used to say. It
+    # is still TOO ALKALINE and the table above is still the OPTIMISTIC
+    # trajectory: a real patient reaches any given pH sooner.
     #
     # SO WHAT A PASS HERE MEANS, stated so it is not read as more: the model
     # holds saturation past the censoring cap, which is consistent with "we
@@ -591,10 +628,39 @@ def test_frumin_1959():
     model's 7.40, reaching 6.87 at 40 minutes.
 
     BOTH ROWS FAIL AND ARE RULED OPEN, 2026-09-29, on the ruling that put the
-    CO2 channel back in the queue. The model's rate DECAYS -- 2.27 mmHg/min at
-    15 min, 1.64 by 45 -- where Frumin's is sustained near 3 for the whole
-    apnoea. They measure the defect that work is meant to close. Nothing is
-    tuned toward them.
+    CO2 channel back in the queue. The model sits BELOW Frumin's level --
+    2.11 mmHg/min over 45 min against his band of 2.7-4.9 -- where his is
+    sustained near 3 for the whole apnoea. They measure the defect that work
+    is meant to close. Nothing is tuned toward them.
+
+    THE RATE NO LONGER DECAYS, and this docstring said it did until
+    2026-10-06. k_co2_slow 0.80 -> 0.45 on 2026-10-01 (ecba80b) fixed the
+    SHAPE -- CV across the window 13.1% -> 1.8% -- and moved both rows toward
+    their bands, 1.64 -> 2.11 and 7.09 -> 7.04. That is recorded in the
+    KNOWN_OPEN table above, which re-recorded both baselines the same day
+    under its rule 3. SHAPE-CORRECTED, NOT LEVEL-CORRECTED is the accurate
+    description, and the figures quoted here were the pre-correction ones for
+    five days.
+
+    WHAT THAT COST, recorded because it is the point of rule 3: the KNOWN_OPEN
+    table caught the move, attributed it to the parameter, and re-recorded the
+    baselines -- the mechanism worked exactly as designed. The PROSE in this
+    file did not follow, in two places, and on 2026-10-06 both were quoted as
+    live. Numbers in the table did not rot. Numbers in the comments did.
+
+    MATCHED PER SUBJECT, each over HIS OWN duration -- the comparison the
+    2026-09-27 retraction demands, since a long-window mean of a decaying
+    quantity is not the same measurement as a short-window rate:
+
+        subject   min   his mmHg/min   model   ratio
+              4    45           3.00    2.11    0.70
+              5    18           4.90    2.37    0.48
+              6    45           3.00    2.11    0.70
+              7    53           3.50    2.07    0.59
+              8    38           2.70    2.16    0.80
+
+    Mean 0.66x, range 0.48-0.80. THE BAND BELOW IS UNTOUCHED: 2.7-4.9 is
+    Frumin's own range and no part of it is ours to move.
 
     Weight and height are NOT stated by the paper, so this uses the project's
     lean configuration and says so rather than inventing a body.

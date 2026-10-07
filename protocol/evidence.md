@@ -267,7 +267,17 @@ the obstructed case, which is Stock's alone.
   (OCAT: median time to complete collapse 10 min vs 25 min), and Quan et al.
   (80 patients, 1 min of -30 cmH2O bronchial suction).
 - **Dale WA, Rahn H. Rate of gas absorption during atelectasis. Am J Physiol
-  1952;170:606-13.** Held here. The classical source.
+  1952;170:606-13.** **NOT HELD — corrected 2026-10-07.** This line read "Held
+  here. The classical source." It is not in `sources_registry.py`, not in the
+  working tree, and its only other mention in this project is inside
+  `Douglas_AR.docx`, which `SOURCES.md` describes as "a reference list, not a
+  source — it verifies nothing." A. Heard confirmed on 2026-10-07 that it is
+  not available. **Read status lives in `sources_registry.py` and nowhere
+  else**; this file asserting it independently is the duplicated-fact rot
+  CLAUDE.md has a rule against, and it stood long enough to be acted on.
+  **Substituted by Joyce & Williams 1999**, read in full 2026-10-07 and
+  registered — a model rather than a measurement, so it anchors nothing, but
+  it agrees with this model at both ends. See HANDOVER entry 43.
 - **Alveolar gas exchanges and atelectasis: the mechanism of gas absorption in
   bronchial obstruction** (Arch Surg / JAMA Surgery). Not yet read.
 

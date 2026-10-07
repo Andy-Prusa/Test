@@ -5,6 +5,881 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-07 (forty-third entry): absorption atelectasis asked about, found already modelled and verified correct against Joyce 1999 — and seven of its parameters have no source at all
+
+**Asked by A. Heard:** *"Do we need to model absorption atelectasis because
+we're using 100% O₂?"* **No — it is already there, by two routes, and it
+behaves correctly.** What the investigation turned up instead is a set of
+unsourced parameters, a duplicated constant, a parity hazard and a false claim
+in the evidence map.
+
+### 1. THE MECHANISM IS THERE AND IT IS RIGHT
+
+Two routes feed shunt together, both FiO₂-dependent:
+
+- **Per-compartment absorption collapse** (`coll_c`, reported as `atelectasis`).
+  A unit whose uptake outruns its refill shrinks; below `cv_frac` = 0.55 of its
+  own starting volume it closes, and its residual gas then absorbs at a rate set
+  by **its own composition** — 60 s at pure oxygen, 900 s at none.
+- **Global airway-closure collapse** (`collapsed`), driven by how far below
+  closing capacity the lung sits, with the same FiO₂ weighting.
+
+**Traced through real runs, it does exactly what the physiology requires:**
+
+| scenario | peak `atelectasis` | peak `collapsed` | shunt |
+|---|---|---|---|
+| obese, obstructed, **preox 0.80** | **0.1635** | 0.0791 | 0.058 → 0.214 |
+| obese, obstructed, **air start** | **0.000000** | 0.0209 | 0.058 → 0.070 |
+| lean, obstructed, **preox 0.80** | **0.1957** | 0.0794 | 0.040 → 0.219 |
+| either, **patent airway** | **0.000000** | 0.058 | — |
+
+**Zero to six decimal places on air** — that is the nitrogen splint, emerging
+from the mechanism rather than switched on. **Zero on a patent airway too**,
+because inflow keeps refilling the units so none reaches its closing volume;
+that is correct, not inert. And when obstructed *and* preoxygenated the
+per-compartment route is **2–2.5× the global one**, i.e. the dominant source of
+shunt in exactly the CICO case this model exists for.
+
+### 2. JOYCE & WILLIAMS 1999 AGREES, AND IT IS THE FIRST EXTERNAL CHECK THIS HAS HAD
+
+Read in full after A. Heard confirmed Dale & Rahn unavailable. His time for an
+unventilated pocket to collapse: **with 3 min preoxygenation, <10 min at FiO₂
+1.0** and ~0.5 h on air; **without preoxygenation, >4 h on air**.
+
+Ours: obstructed and preoxygenated, `atelectasis` plateaus by **600 s** —
+inside 10 minutes. Started on air, **0.000000 through 1200 s**, which is what
+">4 h" requires. **Agreement at both ends, and nothing was fitted toward it:
+the paper was read after the runs.**
+
+**It is a model, not a measurement**, so it anchors nothing — this project has
+refused model-against-model as an anchor before. Recorded as corroboration.
+
+### 3. THE RATE CONSTANTS DO ALMOST NOTHING; THE MAGNITUDE ONES DO EVERYTHING
+
+Swept `tau_collapse_o2` across 30 → 240 s, on the obstructed preoxygenated case
+where the mechanism dominates:
+
+| patient | SpO₂<95% across the whole 8× sweep | peak shunt |
+|---|---|---|
+| obese | **275 s, unchanged** | 0.2156 → 0.2062 |
+| lean | **406 s, unchanged** | 0.2209 → 0.2110 |
+
+**Zero seconds of movement.** The time constant sets only the approach rate; the
+endpoint is set by `cv_frac`, `max_closed` and `perfusion_gain`. **So a paper
+pinning the absorption rate would pin a parameter that does not move this
+model** — the acquisition priority is the magnitude side, and `sources_registry`
+now names Rothen 1996 as what would do it.
+
+**Two earlier sweeps of mine were worthless and are recorded as such**: both
+used a patent airway, where the mechanism is correctly silent, so their flat
+results said nothing about leverage. The third needed a **modified copy**,
+because of §5.
+
+### 4. THE MODEL BRACKETS EDMARK, BUT NOT ON ATELECTASIS
+
+Time to SpO₂ 90% after preoxygenation:
+
+| | 100% | 80% | difference |
+|---|---|---|---|
+| lean | 521 s | 417 s | 104 s |
+| obese | 351 s | 283 s | 68 s |
+| **Edmark, secondhand** | **391 s** | **307 s** | **84 s** |
+
+All three of his numbers fall between our two patients, whose build his
+abstract does not give. **But the atelectasis ratio does not agree** — 1.77×
+lean and 1.68× obese against his 8.5×. Those are different quantities (a
+perfusion fraction against CT area per cent), so the mismatch may be the
+comparison rather than the model; **Rothen 1996 pairs shunt with area in the
+same patients and would separate them.**
+
+**Edmark is *Anesthesiology* 2001; 95: A1330 — an ASA meeting abstract, reached
+secondhand through a review.** No band was drawn from it and none should be.
+
+### 5. SEVEN PARAMETERS WITH NO SOURCE, A CONSTANT THAT EXISTS TWICE, AND A PARITY HAZARD
+
+`tau_collapse_o2`, `tau_collapse_air`, `perfusion_gain`, `cv_frac`,
+`recruit_frac`, `tau_recruit` and `inflow_mech_frac` carry **mechanism prose and
+no measurement**, in a file where every neighbouring parameter is densely
+sourced. `# --- collapse kinetics ---` has nothing under it at all.
+
+**The constants exist twice.** `apnoea_core.py`'s global route reads
+`pt.tau_collapse_o2`; its per-compartment route hardcodes `60.0` and `900.0`.
+**`model.js` hardcodes both and has no such parameter**, while reading `cvFrac`,
+`tauRecruit` and `recruitFrac` from `P` as it should.
+
+**That is a parity hazard of the class this file already warns about** for its
+experimental switches: setting `tau_collapse_o2` in Python makes the two
+implementations different models, and `test_parity.py` runs at the defaults so
+it cannot see it. Here it sits on shipped dataclass fields with no warning
+attached. **Not fixed — it touches both implementations and needs a ruling.**
+
+### 6. THE EVIDENCE MAP CLAIMED A SOURCE WE DO NOT HAVE
+
+`protocol/evidence.md` said **"Dale WA, Rahn H… Held here. The classical
+source."** It is not in `sources_registry.py`, not in the tree, and its only
+other mention is inside a file `SOURCES.md` itself calls "a reference list, not
+a source — it verifies nothing". A. Heard confirmed it unavailable. Corrected.
+
+**Read status lives in `sources_registry.py` and nowhere else.** This is the
+duplicated-fact rot CLAUDE.md has a rule against, and it stood long enough to be
+acted on — the search for Dale & Rahn began because that line said we had it.
+
+### 8. ROTHEN 1996 ARRIVED, AND THE MODEL FAILS IT: NO GAS-COMPOSITION EFFECT ON INDUCTION SHUNT
+
+**Added 2026-10-07**, after A. Heard supplied the paper named in §4 as the one
+that would settle things. It settles two things, and the second is a defect.
+
+**It settles the Edmark comparison.** Rothen pairs **shunt with CT area in the
+same patients**, which neither Edmark nor our model could do alone:
+
+| | atelectasis | shunt |
+|---|---|---|
+| awake | none | 0.3 ± 0.7% |
+| 30% O₂ (n=12) | 0.2 ± 0.4 cm² | 2.1 ± 3.8% |
+| 100% O₂ (n=12) | 8.0 ± 8.2 cm² | 6.5 ± 5.2% |
+
+**Area ratio 40×; shunt ratio 3.1×.** They do not scale together. So §4's worry
+— that our 1.7× perfusion-fraction ratio looked tiny against Edmark's 8.5%
+*area* ratio — was the wrong comparison, exactly as suspected. **Against a
+shunt ratio the gap is 1.7× versus 3.1×, not 1.7× versus 8.5×.**
+
+**And the model fails the gas effect.** Run at Rothen's own cohort (his group 1
+age 48, BMI 27.2; group 2 age 46, BMI 25.5; height not reported, 1.75 m assumed
+and said so):
+
+| group | model shunt @60 s | Rothen |
+|---|---|---|
+| 1, 30% O₂ | **6.68%** | **2.1%** |
+| 2, 100% O₂ | **6.86%** | **6.5%** |
+| **difference** | **0.18 pp** | **4.4 pp (P<0.05)** |
+
+The 100% arm is about right. **The 30% arm is three times too high**, and the
+two arms are flat where his differ by 4.4 points.
+
+**The cause is identifiable, not mysterious.** `unwashed_fraction()` is the only
+FiO₂-dependent induction term, and it returns **0.15% and 0.00%** for these
+patients. The parameter block claims the model predicts *"(c) MORE atelectasis
+on 100% oxygen than on 30–50%"*, citing Hedenstierna's 12.8 against 8.1 cm² as
+the sign it predicts. **At normal BMI that route produces essentially nothing**,
+so the claimed prediction does not hold where Rothen measured it. The claim is
+not withdrawn — it may well hold at the obese end, where `unwashed_fraction()`
+is non-zero — but it is **untested there and false here**.
+
+**CAVEATS, and they matter:** his patients were **mechanically ventilated** after
+induction while this model's t=0 is the onset of **apnoea**, which are different
+states; his SDs are large on n=12 and **2.1 ± 3.8 overlaps zero**, so the
+*difference* between groups is the firm part and not the absolutes; and the
+groups were not BMI-matched — though the two heaviest patients (BMI 37.1 and
+44.0) were in the **30%** group with 0.0 and 0.2 cm² of atelectasis, which
+strengthens the gas effect rather than confounding it.
+
+**NOTHING WAS CHANGED AND NO BENCHMARK ROW WAS ADDED.** Whether this becomes a
+row — and whether it is `KNOWN_OPEN` from the start, since no parameter
+currently in the model can close it — is a ruling for A. Heard. What is clear is
+that the 80-versus-100 question §4 brackets so well is being answered by the
+**oxygen store alone**, with the shunt difference that should accompany it
+almost entirely absent.
+
+### 9. WHAT ANY OF IT IS WORTH IN THE ONLY OUTCOME THAT MATTERS — ASKED BY A. HEARD, AND IT REORDERS THE WHOLE ENTRY
+
+**A. Heard, 2026-10-07:** *"Is it relevant though. I'm interested in what it
+does to our main outcome. Hypoxia"* — and then the sharper point: **both arms
+are preoxygenated, so the only place prolonged hyperoxia acts is the BUCCAL
+arm**, which sits on 100% oxygen for an hour while the control dies at twelve
+minutes. Rothen's 30%-versus-100% contrast is not our scenario at all.
+
+Measured rather than argued, and it ranks the findings above:
+
+| what | worth in time to hypoxia | sourced? |
+|---|---|---|
+| collapse **rate** (`tau_collapse_o2`/`_air`) | **0 s** | **no** |
+| **induction shunt** level (the §8 defect) | **2 s** | — |
+| collapse **magnitude**, buccal arm (`perfusion_gain`) | **1.7–3.5 min** | **no** |
+
+**Induction shunt is worth two seconds.** Forcing it across Rothen's whole
+measured range, 2.1% → 6.5%, moves time to SpO₂ 90% by **2 s in both patients**
+(+0.3% lean, +0.4% obese); even 9%, beyond anything he measured, costs 3 s. With
+a preoxygenated lung the alveolar PO₂ is several hundred mmHg and blood leaving
+ventilated units is saturated regardless, so a few per cent of venous admixture
+cannot move arterial saturation until alveolar oxygen has already fallen far.
+**So §8's defect does not touch the outcome**, and the recommendation there
+reverses: **record it, do not add a benchmark row.** A row failing by 4.4
+percentage points on a quantity worth two seconds would be noise in the arbiter.
+
+**But in the buccal arm the magnitude matters.** Counterfactual with
+`perfusion_gain` 1.2 (shipped) against 0.0 — the collapsed bed contributing no
+shunt at all, i.e. no absorption atelectasis — patent, 100% oxygen, two hours:
+
+| obese BMI 34.7 | shunt @60 min | SpO₂<95% | SpO₂<90% |
+|---|---|---|---|
+| shipped | **11.35%** | 75.6 min | 90.9 min |
+| no atelectasis | 5.81% | 79.2 min | 92.6 min |
+| **cost** | | **3.5 min** | **1.7 min** |
+
+**3.5 minutes to 95% and 1.7 to 90%** — about 4.4% and 1.8% of the patient's
+time, and roughly **a hundredfold** the induction defect. The lean patient does
+not desaturate within two hours either way, so this shows only at the obese end.
+It bites late because that is when alveolar oxygen has fallen far enough for
+shunt to matter, which is exactly where the early leverage test could not see.
+
+**THE FINDING THAT MATTERS: an unsourced constant is setting a multi-minute
+effect in the arm whose survival is this model's central claim.**
+`perfusion_gain = 1.2` is one of §5's seven with no measurement behind it, and
+it scales this cost directly. **That reverses what §3 implied** — the unsourced
+parameters are inert for the rate and for induction, and they are not inert
+here.
+
+**It does not threaten the headline.** The control arm dies at ~12 min against
+the buccal arm's ~91, so a 1.7-minute correction does not touch a sevenfold
+difference. What it does mean is that the buccal arm's **absolute** survival
+figures carry an unsourced parameter worth minutes, and the acquisition priority
+is `perfusion_gain`, `cv_frac` and `max_closed` — not the absorption rate, and
+not Rothen.
+
+### 10. ROTHEN'S FIGURE 1 BOUNDS `perfusion_gain`, AND HIS TABLE 3 SAYS THE MODEL HAS THE FiO₂ EFFECT IN THE WRONG COMPARTMENT
+
+**Added 2026-10-07** on A. Heard's instruction to try anchoring the parameter
+§9 showed is worth minutes. It can be bounded, not pinned — and the attempt
+turned up something sharper than the bound.
+
+**Figure 1 plots shunt against atelectasis directly**, three groups, which is
+very nearly the quantity `perfusion_gain` encodes:
+
+| | atelectasis | shunt |
+|---|---|---|
+| FiO₂ 0.3, n=12 | 0.2 cm² | 2.1% |
+| FiO₂ 1.0, n=45 (his ref 18) | 3.0 cm² | 4.6% |
+| FiO₂ 1.0, n=12 | 8.0 cm² | 6.5% |
+
+Least squares: **shunt = 2.37% + 0.542 × atelectasis(cm²)**.
+
+**The intercept vindicates this model's structure.** 2.37% of shunt at *zero*
+atelectasis is shunt that is not collapse — which is exactly what
+`shunt_base_eff()` is, airway closure without collapse, added to
+`perfusion_gain × collapsed`. The two-term form was not chosen from this paper
+and the paper independently shows both terms.
+
+**The bound.** Turning cm² into a fraction needs a denominator, and Table 2
+gives only thoracic area (313 cm² anaesthetised), which includes mediastinum and
+chest wall — so true lung area is smaller and the collapsed fraction larger:
+
+| denominator | collapsed fraction | implied gain |
+|---|---|---|
+| thoracic area, 313 cm² | 2.56% | **1.61** |
+| lung ≈70% of thorax | 3.65% | **1.13** |
+| lung ≈60% of thorax | 4.26% | **0.97** |
+
+**`perfusion_gain = 1.2` sits inside that range.** It goes from *unsourced* to
+*bounded at roughly 1.0–1.6*, and the shipped value needs no change. The
+denominator ambiguity spans the whole range, so this cannot pin it tighter, and
+a single CT slice just above the diaphragm — the most dependent region — will
+overstate the whole-lung fraction anyway. **Nothing was tuned toward it.**
+
+### THE SHARPER FINDING: TABLE 3 PUTS THE FiO₂ EFFECT IN TRUE SHUNT, NOT LOW V/Q
+
+| | group 1 (30%) | group 2 (100%) | P |
+|---|---|---|---|
+| **shunt** (%CO) | 2.1 ± 3.8 | **6.5 ± 5.2** | **0.03** |
+| **low V̇A/Q̇** (%CO) | 4.9 ± 4.4 | **4.9 ± 3.3** | **0.6** |
+
+**The low-V/Q compartment is identical between the two gases. All of the FiO₂
+effect is in true shunt.**
+
+**And this model puts its FiO₂ effect in the low-V/Q compartment.**
+`unwashed_fraction()` is the only FiO₂-dependent induction term, and it is a
+low-V/Q route by construction — units whose airway shut during preoxygenation
+and still hold nitrogen. Rothen measured that compartment and it does not move
+with inspired gas.
+
+**That explains §8 exactly.** The model failed to reproduce his 4.4-point shunt
+difference not because a parameter is mis-valued but because the effect is
+routed through the wrong compartment: it should act on **collapse**, which
+becomes true shunt, and instead acts on an unwashed low-V/Q fraction that is
+~0 at normal BMI and, per Rothen, FiO₂-independent anyway.
+
+**NOTHING WAS CHANGED.** Moving the FiO₂ effect from the low-V/Q route to the
+collapse route is a structural change to both implementations and a ruling for
+A. Heard, not a correction. §9 bounds what it is worth: the induction-time
+consequence is 2 s, so this is about being right for the right reason rather
+than about the outcome.
+
+### 7. WHAT WAS NOT CHANGED
+
+No parameter, no threshold, no band, no `KNOWN_OPEN` row, no model file. The
+duplication is recorded, not repaired. Everything above is an audit.
+
+## Current state — 2026-10-06 (forty-second entry): Potkin tests the acid-base relation where it had never been tested and it holds to 1% at PaCO₂ 375 — so the Frumin disagreement is a CO₂ rate defect, not an acid-base one, and the base-excess route stays refused
+
+**Investigated on A. Heard's instruction**, following the lead recorded in entry
+41 section 5. The lead does not go where I suggested it might, and the result is
+better than the one I was looking for.
+
+### 1. THE OPEN QUESTION THAT HAS STOOD SINCE 2026-09-29
+
+`sources_registry.py` has carried this against Frumin since the day he was read:
+the open question is *"the pH/PCO₂ relation above PaCO₂ ~100, where his estimate
+is an extrapolation off the end of a 1959 nomogram and **the model has never
+been tested**."*
+
+Potkin & Swenson is a **modern electrode in exactly that regime**. It closes the
+question, and the answer is that the model is right.
+
+### 2. THE RESULT
+
+The model's apparent pK′ is Kelman 1967. Given Potkin's own measured pH and
+PaCO₂ — **no base excess involved anywhere** — it predicts his reported
+bicarbonate:
+
+| row | pH | PaCO₂ | HCO₃⁻ his | model @37 °C | model @32.2 °C |
+|---|---|---|---|---|---|
+| admission | 6.60 | 375 | 34 | 34.3 (+1.0%) | **35.5 (+4.5%)** |
+| 5 min mask | 6.91 | 151 | 29 | 29.1 (+0.4%) | **30.3 (+4.4%)** |
+| 90 min | 7.19 | 58 | 21 | 21.9 (+4.4%) | 22.9 (+9.0%) |
+
+**THE FIGURE TO QUOTE IS 4.5%, NOT 1.0%, AND THIS ENTRY SAID 1.0% UNQUALIFIED
+UNTIL A. HEARD POINTED AT THE HYPOTHERMIA.** The paper calls these
+*"temperature-corrected values"* and the man was at **32.2 °C**, so the triple
+most likely belongs at his temperature rather than at 37. `bloodgas.py` carries
+temperature in *both* terms — solubility 0.0307 → 0.0339, pK′ 6.1254 → 6.1534 at
+pH 6.60 — so it is not a rounding matter. The paper does not say which
+temperature its *derived* HCO₃⁻ column was computed at, so both are pinned and
+the less flattering one is the headline.
+
+**The relation still holds at pH 6.60 and PaCO₂ 375** — 4.5% at the most extreme
+arterial gas reported in a surviving human is a pass by any reading, and the
+conclusion that the Frumin disagreement is not an acid-base one is unaffected.
+What changed is the size of the claim.
+
+**So the Frumin disagreement is not an acid-base failure.** That is what the
+base-excess block already concluded from the other side ("the CO₂ store was
+never the defect"); this confirms it from the end that had never been tested,
+with a measurement rather than an argument.
+
+**What it does NOT do is discover a CO₂ rate defect, and this entry said it did
+until it was corrected — see section 7.** `test_validation.py::test_frumin_1959`
+has carried both Frumin rows as **ruled open since 2026-09-29**, and the
+2026-09-27 retraction (`19781b8`) withdrew three successive "too slow" claims,
+including one against Frumin by name. Eliminating acid-base **removes an excuse
+for an already-known open row. It does not find it.**
+
+### 3. THE BASE-EXCESS LEAD: SUGGESTIVE, NOT ESTABLISHED, AND NOTHING TUNED
+
+Entry 41 recorded Potkin's claim that a base excess in extreme hypercapnia may
+not be a metabolic quantity. Quantified against his own table:
+
+| row | BE printed | Siggaard-Andersen from his pH + HCO₃⁻ |
+|---|---|---|
+| admission | **−16** | **−9.1** |
+| 5 min mask | −9 | −6.8 |
+| 90 min | −5 | −7.8 |
+
+At admission he printed −16 where the formula gives **−9.1 from his own
+numbers** — a 6.9-unit gap, in the direction he describes. **But the 90-min row
+goes the other way**, and he was 32.2 °C and warming throughout, so temperature
+correction confounds the entire column.
+
+**Suggestive, not established — and nothing was tuned on it.** That is the
+point rather than a disappointment: the `be` sweep was already refused on
+mechanism (it trades CO₂ content against pH, and Frumin had both high content
+*and* low pH), and Potkin independently says the quantity it would have been
+fitted to is not reliably metabolic. **Fitting `be` to chase Frumin's pH would
+have been fitting a parameter to an artefact.** The refusal now has a sourced
+mechanism behind it, not only an empirical one.
+
+### 4. ROW 3 OF HIS TABLE IS INTERNALLY INCONSISTENT, AND IT IS THE PaCO₂
+
+Each row ties four numbers with two equations, so any three predict the fourth.
+Three rows agree with themselves. One does not:
+
+| row | PaCO₂ implied by his pH + HCO₃⁻ | PaCO₂ printed |
+|---|---|---|
+| admission | 371.3 | 375 |
+| 5 min mask | 150.4 | 151 |
+| **25 min mech vent** | **86.2** | **68** |
+| 90 min | 55.6 | 58 |
+
+At **PaCO₂ 87** his HCO₃⁻ (25.2 against a printed 25) *and* his base excess
+(−6.5 against a printed −7) both fall out. At 68 neither does — HCO₃⁻ would be
+19.7. **87 → 68 is a digit transposition.**
+
+**This is an inference about the paper, not a finding about the model**, and it
+is recorded as one. It is not an artefact of Kelman's pK′ either: classic
+Henderson-Hasselbalch at pK 6.1 gives 19.6 at 68 as well. The row is excluded
+from the validation above for that reason, and excluding it is stated rather
+than silent.
+
+### 5. FRUMIN'S NOMOGRAM, CHECKED THE SAME WAY
+
+At his measured plasma CO₂ content of 32.9 mmol/L:
+
+| his pH | H-H PaCO₂ | he reported | |
+|---|---|---|---|
+| 6.88 | 156.6 | 160 | −2.1% |
+| 6.87 | 159.8 | 160 | **−0.1%** |
+| 6.97 | 129.8 | 130 | **−0.1%** |
+| 6.72 | 215.2 | **250** | **−13.9%** |
+
+Three of four are exact. The one that is not is the **250** the registry already
+flags as an extrapolation off the end of the nomogram — and the direction is
+what that flag predicts, the nomogram over-reading as it leaves its range.
+
+**CAVEAT THAT MATTERS AND IS NOT A FOOTNOTE:** 32.9 is **subject 6's** content
+at 40 min, and the 6.72 row is **subject 7**, whose content was never reported.
+So 215 is what subject 6's content would imply at subject 7's pH. **It bounds
+the nomogram, not the patient**, and it does not license rewriting the 250 into
+a 215 as the model's target.
+
+### 6. WHAT WAS NOT CHANGED
+
+No parameter, no threshold, no benchmark band, no `KNOWN_OPEN` row. The seventeen
+numbers above are pinned in `handover_numbers.py` and recompute from the live
+engine, so this entry cannot rot the way the ones above it did.
+
+### 7. CORRECTION, SAME DAY: THIS ENTRY OVERSTATED, AND THE MATCHED NUMBERS
+
+**Corrected on A. Heard's "we just did that."** As first written, section 2
+ended by calling the residue a CO₂ *accumulation rate failure*. Three things
+were wrong with that.
+
+**It restated a withdrawn claim without citing the withdrawal.** `19781b8`
+(2026-09-27) retracted "2.5× too slow", "5×" and **"3.3× against Frumin"**
+together, because they compared the model's long-window mean against
+measurements taken over 1–15 minutes. Its surviving ruling is that the decay
+past 15 minutes is **"tested by NOTHING. Untested, not wrong."** That ruling
+still governs every window past Frumin's 55 minutes.
+
+**It presented a known open row as a discovery.** `test_frumin_1959` already
+bands the 45-minute rate at Frumin's own 2.7–4.9 and the 40-minute pH at
+6.72–6.97, and already rules both open with the words *"they measure the defect
+that work is meant to close. Nothing is tuned toward them."*
+
+**And the number was computed on the wrong patient.** The 1.55 mmHg/min came
+from the base-excess block's configuration, which sets `paco2_start=25.0`.
+`test_frumin_1959` does not set it, and starts at 40.1. On the benchmark's own
+configuration, per subject and each over **his own duration** — the matched test
+the retraction demands:
+
+| subject | min | his mmHg/min | model | ratio |
+|---|---|---|---|---|
+| 4 | 45 | 3.00 | 2.11 | 0.70 |
+| 5 | 18 | 4.90 | 2.37 | 0.48 |
+| 6 | 45 | 3.00 | 2.11 | 0.70 |
+| 7 | 53 | 3.50 | 2.07 | 0.59 |
+| 8 | 38 | 2.70 | 2.16 | 0.80 |
+
+**Matched mean 0.66×, range 0.48–0.80** — not the 0.48× a first misconfigured
+attempt gave, and not "half". Both benchmark rows still fail (2.11 against a
+2.7 floor; pH 7.041 against a 6.97 ceiling), so **no verdict changes** — only
+the magnitude, and who found it.
+
+### 8. THE PROSE IN THE ARBITER HAD ROTTED, AND THE TABLE HAD NOT — WHICH IS THE WHOLE ARGUMENT FOR RULE 3
+
+Two passages in `test_validation.py` say the model gives **"2.27 mmHg/min at 15
+min, 1.64 by 45"** and that it is **"roughly half"** Frumin. Both were quoted as
+live on 2026-10-06, including by me. Both were five days stale.
+
+**`KNOWN_OPEN` had it right the whole time.** Twelve lines below the first of
+those comments sits a block dated **2026-10-01**: `k_co2_slow` 0.80 → 0.45 fixed
+the *shape* of the rise — **CV across the window 13.1% → 1.8%** — and moved both
+rows toward their bands, **1.64 → 2.11** and **7.09 → 7.04**. Both baselines were
+re-recorded the same day, under the table's own rule 3: *"a known-open row that
+has moved must not keep a stale baseline, or the next genuine drift is
+invisible."*
+
+**So this is not a drift that escaped.** The table caught the move, named the
+parameter, and re-recorded. The mechanism worked exactly as designed. **The prose
+beside it did not follow.** `test_frumin_1959` passes on the current engine
+because the recorded baseline is 2.11 ± 0.30 and the model gives 2.11.
+
+**Two corrections to section 7 and to my own first fix, both from reading
+further:**
+
+- **"The rate decays" is no longer true.** It was fixed on 2026-10-01. The
+  accurate description is the table's own: **shape-corrected, not
+  level-corrected**. My first fix kept the word "DECAYS" and merely updated the
+  numbers under it.
+- **The `k_co2_slow` attribution is established, not a candidate.** I labelled it
+  a candidate on the grounds that it had not been traced per row. It had been —
+  in the same file, twelve lines below the stale comment, with the parameter
+  named and both before-and-after values given. Entry 40's CO₂ family can be
+  promoted from *candidate* to *established* on this evidence; the **tilt** family
+  cannot, and stays a candidate.
+
+**The band is untouched**: 2.7–4.9 is Frumin's own range and no part of it is
+ours to move. Both stale passages are corrected in place, with the supersession
+marked rather than the old text deleted.
+
+### 9. A POTKIN-AGAINST-FRUMIN RATE COMPARISON, PROPOSED AND WITHDRAWN BEFORE USE
+
+**RULED 2026-10-06 by A. Heard: "the hypothermic patient can't be used as a
+comparison for our scenario."** Withdrawn, and recorded because the reasoning
+was visible and the refusal should be too.
+
+Asked whether Frumin is an outlier against Potkin, I proposed a one-sided test:
+apnoea eliminates no CO₂ while Potkin's man was partly ventilated, so the
+apnoeic model should reach at least his tension on the same clock. A six-hour
+run was started and **stopped unfinished** on the ruling.
+
+**The ruling is right and the test was not sound.** The two are not the same
+measurement, which is the error `19781b8` exists to prevent:
+
+| | regime | window | mmHg/min |
+|---|---|---|---|
+| Stock 1989 | obstructed | 1–5 min | 3.40 |
+| **Frumin 1959** | **apnoeic**, patent, O₂ reservoir | 18–55 min | **2.7–4.9** |
+| Kaiser 2024 | apnoeic, patent 100% O₂ | 15 min | 2.10 |
+| **Potkin 1992** | **mask-ventilated, inadequately** | 4–6 h | **0.72–1.40** |
+
+Potkin's rise is production *minus* elimination; Frumin's is production alone.
+And he was **hypothermic**, which lowers production by an amount nobody
+measured, on a 4–6 h clock that is the surgeon's estimate rather than a
+measurement. Three confounds, none quantifiable.
+
+**So: Frumin is not an outlier against Potkin, because Potkin cannot test him.**
+He remains an outlier only against **Kaiser** — 2.7–4.9 against 2.10 — and even
+that is 18–55 min against 15 min, which is why `test_frumin_1959` exists as its
+own ruled-open row instead of being folded into Kaiser's band.
+
+**Nothing from the withdrawn test is recorded as a result.** The six-hour run's
+output is not quoted here and was not committed.
+
+## Current state — 2026-10-06 (forty-first entry): pure hypercapnic acidosis is not the danger, Potkin's man survived pH 6.60 at PaCO₂ 375, and the Sweeps pH limbs become a teaching point instead of a death line
+
+**RULED 2026-10-06 by A. Heard:** *"purely hypercapnoeic acidosis is nowhere near
+as dangerous as hypoxia or metabolic acidosis… have this as a teaching
+opportunity. Don't worry too much about hypercapnoeic acidosis."*
+
+### 1. THE UPPER ANCHOR, READ AT SOURCE
+
+Potkin & Swenson 1992, *Chest* 102(6):1742–45, uploaded and read in full. A
+46-year-old healthy man could not be intubated for elective cosmetic facial
+surgery, so he was **mask-ventilated for 4–6 hours** on supplemental oxygen with
+oximetry as the only monitor. He did not wake.
+
+| | pH | PaCO₂ | PaO₂ | HCO₃⁻ | base excess |
+|---|---|---|---|---|---|
+| admission | **6.60** | **375** | 40 | 34 | −16 |
+| 5 min mask | 6.91 | 151 | 244 | 29 | −9 |
+| 25 min mechanical | 7.08 | 68 | 56 | 25 | −7 |
+| 90 min | 7.19 | 58 | 65 | 21 | −5 |
+
+Comatose, 70 systolic, apnoeic, 32.2 °C. **He recovered completely** — conscious
+on the second hospital day, and at discharge his gases, chest film and
+neurological examination were all normal, with no memory or attention deficits
+at follow-up.
+
+The authors call 375 *"the highest reported value in a surviving human"* while
+saying plainly it is an over-read — the PCO₂ electrode was past its calibration
+range — and putting the true figure **"over 300 mm Hg"**. Earlier complete
+recoveries span **130–270 mmHg**.
+
+### 2. THE PROVISO IS THE WHOLE FINDING
+
+*"even profound hypercapnia with PCO₂ exceeding 150 mm Hg and severe respiratory
+acidosis for many hours can be tolerated and are associated with no long-term
+morbidity **when oxygenation and tissue perfusion are maintained**."*
+
+That condition is not decoration, and the mechanism says why. Intracellular pH
+defence runs on **Na⁺/H⁺ exchange and H⁺-translocating ATPases — both energy
+consuming**, so it fails precisely when the cell is hypoxic or underperfused.
+Hypercapnia is tolerable *because* the cell can spend energy defending itself;
+take the oxygen away and the tolerance goes with it.
+
+**Which is exactly this model's situation.** The buccal arm holds SpO₂ at 100%
+while PaCO₂ climbs, so it is in Potkin's tolerated regime. The control arm is
+not — it dies hypoxic, and that is the real endpoint on the Sweeps pages.
+
+### 3. WHAT CHANGED ON THE PAGE
+
+**Both pH limbs are now drawn, and labelled as markers rather than death.**
+Entry 40 section 8 recorded that 6.8 is reached at only 3 of 104 device points
+where 7.0 is reached at 90 — so drawing 6.8 alone left nine of ten pages blank
+for the device arm and taught nothing. 7.0 is dashed, 6.8 dotted, both off the
+same stored runs with **no recompute**.
+
+The legend now says in as many words that **neither dashed line is a death
+line**, and a standing teaching block under the graph gives Potkin and Frumin
+with the oxygenation proviso quoted. The per-page note says the solid line is
+death and that it is always hypoxic in this model.
+
+**No threshold was moved and no parameter was touched to achieve this.** 6.8
+stands as ruled in entry 40; it simply stopped being presented as a danger.
+
+### 4. POTASSIUM: A SECOND INDEPENDENT HUMAN SOURCE
+
+The serum drawn with the second gas gave **K⁺ 5.1 mmol/L** at an arterial pH of
+roughly 6.6–6.9. Mildly raised, nowhere near arrhythmogenic. With Frumin's
+maximum rise of **0.4 mEq/l** (entry 40 section 5), two independent human
+sources now say acute respiratory acidosis does not produce a dangerous
+potassium. The question asked on 2026-10-05 is answered and can be closed.
+
+### 5. A BASE-EXCESS ARTEFACT THAT BEARS ON OUR OWN FRUMIN COMPARISON
+
+**The base excess of −16 did not mean a metabolic acidosis.** The venous anion
+gap was **9 — normal**. The authors attribute the apparent deficit to the
+difference between whole blood *in vitro* and the whole body: intracellular pH
+regulation moves HCO₃⁻ into cells at the expense of the extracellular space,
+which reads as lost bicarbonate. They state there are **no data to quantitate
+the error of standard base-excess calculations in extreme hypercapnia**.
+
+That lands on a live problem here. `handover_numbers.py` records that **no base
+excess reproduces Frumin** — he had CO₂ content 32.9 *and* pH 6.87, and the
+sweep over base excess cannot hit both. Potkin offers an explanation that is not
+a model defect: **a measured base excess at PaCO₂ above 100 may not be a
+metabolic quantity at all.** Recorded as a lead, not acted on — nothing was
+changed on the strength of it, and the sweep rows stay as they are.
+
+### 6. CAVEATS KEPT WITH THE FINDING
+
+n = 1. He was **hypothermic at 32.2 °C**, which the authors say may have been
+crucial and which they cannot test, since *"there are no human data above a
+PCO₂ of 270 mm Hg"*. And the tolerance is for **nonhypoxic** acidosis: his PaO₂
+was 40 on admission, so the intraoperative oximetry reporting above 90% is the
+weakest link in the account. None of that disturbs the direction of the finding,
+and all of it is in `sources_registry.py` against the paper.
+
+## Current state — 2026-10-06 (fortieth entry): HANDOVER's numbers are stale by a known amount from a known date, Frumin's arrhythmias do not track pH, and the sweep's pH line becomes 6.8
+
+**RULED 2026-10-06 by A. Heard.** Four rulings: mark the three superseded
+families rather than silently refresh them; the pH line moves to 6.8 as a
+declared marker; Frumin's vagal caveat is **not** recorded as a model
+limitation; PR #8 merges.
+
+### 1. THE RE-MEASUREMENT: 516 OF 863 RECORDED NUMBERS HAVE MOVED
+
+`handover_numbers.py` — the script that recomputes every number quoted in this
+document and fails if one has drifted — was run to completion for the first time
+since 2026-09-25. It is deliberately **not** in the pre-commit hook, because it
+checks claims about the world rather than invariants of the code; the point is
+that those claims must not move *silently*. They have moved, and this entry is
+the un-silencing.
+
+| | |
+|---|---|
+| checks | **863** |
+| pass | **347** |
+| moved | **516** |
+| median drift (of the 511 carrying a comparable value) | **18.6%** |
+| largest | **1655%** |
+| run cost | 31 min, 798 cache hits to 28 misses |
+
+| drift band | count | |
+|---|---|---|
+| under 5% | 110 | 22% |
+| 5–25% | 189 | 37% |
+| over 25% | 212 | **41%** |
+
+**The failures are not an artefact of the script's preserved-wrong blocks.**
+This file deliberately keeps superseded blocks so past errors stay visible, and
+those pin their historical model through the `_Retired` class, so they still
+reproduce. Only **9 of 511** failing rows name a retired or struck pin. The
+drift is live.
+
+### 2. IT IS NOT RANDOM ROT. IT HAS A DATE LINE
+
+The failures cluster into three families rather than scattering, and each family
+has a ruling behind it that was taken deliberately and recorded at the time.
+**This document's numbers were current as of roughly 2026-09-25. Three rulings
+since then moved the engine underneath them, and the document was never
+regenerated.**
+
+| family | the ruling that moved it | date | attribution |
+|---|---|---|---|
+| **BMI and lung volume** | the RV floor goes (`3b3228a`) | 2026-09-26 | **established** |
+| **tilt** | tilt gains solved on Lane and Dixon, the BMI term changing sign (`bcbd37c`) | 2026-10-02 | **established 2026-10-06, but NOT the sole cause** — see entry 40 §4 |
+| **CO₂ rates** | `k_co2_slow` 0.45 adopted (`ecba80b`), `shunt_cc_k` re-fit to Pelosi (`2ebfd72`) | 2026-10-01 | **established 2026-10-06** — see entry 42 §8 |
+
+### 4. TILT ATTRIBUTED PER ROW, AND THE FAMILIES TURN OUT NOT TO SEPARATE
+
+**Added 2026-10-06.** The tilt family is promoted to *established* — `bcbd37c`
+is unambiguously its dominant cause — but the per-row work shows the "one ruling
+per family" framing of the table above is itself an approximation, and the table
+now says so.
+
+Two things settle the cause. First, **the parameters themselves are in the
+drifted list**: `handover_numbers.py` checks `tilt_gain_lean` against 0.013 and
+`tilt_gain_bmi` against +0.00015, which are exactly the pre-`bcbd37c` values.
+Second, recomputing the drifted rows with the **old gains restored on the current
+engine** — the `_Retired` idiom — and asking how much of the HANDOVER-to-live gap
+comes back:
+
+| row | HANDOVER | live | old gains | gap recovered |
+|---|---|---|---|---|
+| lean 20° | 28.6 | 24.16 | 27.58 | **77%** |
+| BMI 35 at 30° | 45.4 | 30.63 | 45.44 | **100%** |
+| BMI 44 at 25° | 33.4 | 21.35 | 41.03 | **163%** |
+
+**They do not agree, and they disagree monotonically in BMI.** That is not noise.
+`bcbd37c` flipped the *sign* of the BMI term, so the size of the change grows
+with BMI:
+
+| | old gain | new gain | ratio |
+|---|---|---|---|
+| lean (BMI 22.9) | 0.013000 | 0.011388 | 1.14× |
+| BMI 35 | 0.014500 | 0.009809 | 1.48× |
+| BMI 44 | 0.015850 | 0.008388 | **1.89×** |
+
+So at the lean end the tilt change **under-explains** the row (77%) and something
+else supplies the rest; at BMI 44 it **over-explains** it (163%), meaning another
+ruling moved that row the *opposite* way and partly cancelled it. The obvious
+candidate is family 1 — the RV floor went on 2026-09-26 and its own commit
+message says *"removing it makes the obese end WORSE"*, which is the right sign
+and the right BMI dependence to be the offsetting term.
+
+**The honest statement is therefore:** tilt is established as the dominant cause
+of this family, it is the sole cause on exactly one of the three rows tested, and
+at the obese end **families 1 and 2 are not separable row-by-row** because they
+act on the same quantity in opposite directions. Anyone refreshing these values
+must not attribute a tilt row wholly to `bcbd37c`.
+
+**Nothing was changed on the strength of this.** No parameter, no band. It is an
+attribution, not a correction.
+
+**The distinction in that last column is not decoration.** Family 3 was promoted
+from *candidate* to *established* on 2026-10-06: `test_validation.py`'s own
+`KNOWN_OPEN` block names `k_co2_slow` 0.80 → 0.45 and gives both before-and-after
+values (1.64 → 2.11, 7.09 → 7.04), which is the per-row trace this column was
+waiting for. **Family 2, tilt, remains a candidate.** Family 1 is
+*established*: the ERV figure was written on 2026-09-25 and the RV floor was
+removed the next day in a commit whose own message reads *"removing it makes the
+obese end WORSE, which is the most useful thing that happened today."* The
+worsening was predicted, accepted and recorded. Families 2 and 3 are attributed
+**by date and topic only** — the right ruling is in the right window and touches
+the right quantities — and have **not** been individually traced the way family 1
+was. They are candidates, and should be treated as candidates until someone runs
+the per-row attribution.
+
+Worked examples, all recomputed on 2026-10-06 against the live
+`apnoea_core.py` (model hash `998db3fcdfa56bbe`, provenance printed by the run):
+
+| row | recorded | now |
+|---|---|---|
+| ERV vs Jones, mean abs error as shipped | 3.62 pp | **52.15 pp** |
+| BMI 40: `frc_anaes` change on Jones's `k_rv_bmi` | 10.9% | **79.08%** |
+| Frumin 45-min rate, base excess 0 | 1.18 mmHg/min | **1.55 mmHg/min** |
+| `v_tis_co2_slow` 140→280: Frumin45 | 1.6 mmHg/min | **2.09 mmHg/min** |
+
+**None of this is evidence of a model defect.** Every one of these movements is
+downstream of a ruling already taken. What it is evidence of is that this
+document rots exactly the way CLAUDE.md says markdown rots, and that the only
+defence is the script.
+
+### 3. A SUSPICION I RAISED AND THEN DISPROVED
+
+I recommended holding PR #8 on the grounds that the ERV drift sat in territory
+the obese-shunt branch touched. **That was wrong, and the hold was withdrawn
+before the merge.** The branch changes no model file; the cause predates it by
+over a week. Recorded because the reasoning was visible to the reader at the
+time and the correction should be too.
+
+### 4. FRUMIN RE-READ: THE ECTOPY DOES NOT TRACK pH
+
+Frumin was read in full on 2026-09-29 for the CO₂ and acid-base trajectory. The
+**arrhythmias and the potassium** were left, and were re-read at source on
+2026-10-06 because the sweep's pH line was about to be justified on them.
+
+**The two subjects who threw ventricular extrasystoles were at opposite ends of
+the pH range.** Subject 5 did so **within 7 minutes of the onset of apnoea**,
+when his pH was still near normal — his lowest, 6.97, came later, at
+termination around 18 minutes. Subject 7 did so **at the last minute of 53**, at
+pH **6.72** with an estimated PaCO₂ of **250**. The other six had no irregularity
+at all, one of them through **55 minutes** with *"virtually no change in the
+shape of the complex from control"* (p.791).
+
+**So no pH in this series is an arrhythmia threshold**, and the secondhand
+reading that reached this project — "Frumin saw ventricular ectopics that ended
+two apnoeas" — is true but carries none of that.
+
+**The ventricular tachycardia was a reoxygenation event, not an apnoea one.**
+p.791: after a few premature contractions at 53 minutes the apnoea was stopped,
+and *"the institution of artificial respiration with oxygen was accompanied
+within 15 seconds by ventricular tachycardia, lasting less than one minute. The
+rhythm became normal spontaneously."* All eight recovered. **What this paper
+establishes is a survived floor of pH 6.72, not a lethal one.**
+
+### 5. POTASSIUM IS RULED OUT, BY THE AUTHORS THEMSELVES
+
+Asked whether acute hypercapnia reaches an arrhythmogenic potassium, this paper
+answers directly and in the negative. p.792: the maximum rise from control
+during apnoea was **0.4 mEq/l**, with a further 0.6 or less immediately after.
+Table 2, subject 6: 3.8 control → 4.0 at 10 min → 4.0 at 30 → **4.3 at 40 min
+(pH 6.87)** → 4.8 post-apnoea.
+
+And the decisive sentence, p.794: *"The potassium changes in subject 7 in whom
+the ventricular tachycardia was demonstrated were **similar** to those in
+subjects 6 and 8 who had normal rhythms when respirations were resumed."*
+
+**The arrhythmic subject's potassium was indistinguishable from the
+non-arrhythmic ones.** Respiratory acidosis does not produce an arrhythmogenic
+potassium in this territory — not even at pH 6.72. The hyperkalaemia route is a
+chronic and metabolic story, and this is direct evidence against importing it
+here.
+
+### 6. THE pH LINE BECOMES 6.8, AND IS LABELLED AS A MARKER
+
+**RULED: 6.8, declared, not predicted.** Section 4 is the reason it cannot be
+anything else — Frumin gives no threshold to anchor it to. 6.8 is a line drawn
+to mark severe acidaemia, chosen to sit just above **6.72**, the lowest pH a
+human is documented to have survived.
+
+The 7.0 crossing the sweep used until today is **kept alongside it** (`PH_ALSO`)
+off the same runs at no extra cost, so the change of line can be seen rather
+than taken on trust. Death on the graph remains **hypoxia only**: the model
+still has no death-from-acidosis mechanism (entry 38), and the pH line asserts
+no more than it did before.
+
+**RULED NOT TO RECORD** Frumin's own caveat (p.795) as a model limitation: his
+subjects were undisturbed paralysed volunteers with no endobronchial
+manipulation, dural traction or other vagal stimulus, and he cites Bohr and
+Helmendach that vagally-induced asystole in dogs lengthened once pH fell 0.4 or
+more. It is in `sources_registry.py` against the paper, and it stops there.
+
+### 7. A STALENESS HOLE FOUND WHILE MAKING THE CHANGE
+
+`build_sweeps.js --check` compared only the **engine hash**, which covers
+`model.js` and the page's dials. It does **not** cover the reading thresholds.
+So moving `PH_DEAD` from 7.0 to 6.8 — which changes a whole stored column —
+would have left `--check` reporting *"up to date"* on data computed against the
+old line, and the pre-commit hook and CI both call `--check`.
+
+Closed: the horizon, point count and all three thresholds are now compared
+explicitly and named individually when they differ. Verified by running it
+against the then-current `sweeps.json`, which it correctly refused.
+
+### 8. WHAT 6.8 COST THE GRAPH, MEASURED AFTER THE RULING AND NOT COMPENSATED
+
+The sweep was regenerated at 6.8 — 208 simulations, 40 minutes, engine hash
+unchanged because no model file moved, only the reading threshold. **The result
+is not the one the ruling expected, and it is recorded rather than fixed.**
+
+Entry 39 found the dashed pH line was *load-bearing*: the device arm does not
+arrest within the hour at any slider extreme, so without the pH limb those pages
+would be blank. **At 7.0 that limb was populated at 90 of 104 device points. At
+6.8 it is populated at 3** — all three on `bmrScale`, the raised metabolic rate.
+
+| device arm, across all 10 sliders | points |
+|---|---|
+| loses cardiac output within 60 min | 9 / 104 (all `fgBuccal`) |
+| reaches pH 7.0 | **90 / 104** |
+| reaches pH 6.8 | **3 / 104** |
+
+Where both crossings exist, the device arm reaches 6.8 a **median of 26.9
+minutes after 7.0** (range 23.7–31.0). That is the whole explanation: 60 minutes
+is not long enough to contain the 6.8 crossing for this patient on this device.
+
+**So the device arm now has no death line and effectively no pH line on nine of
+the ten pages.** The 6.8 ruling stands on the evidence — Frumin gives no
+threshold, 6.72 is a survived floor, and sections 4–6 set that out — but its
+consequence *for this graph at this horizon* is that the limb goes nearly empty.
+
+**Nothing was moved back to make a line reappear.** No threshold was restored,
+no horizon was stretched. Per CLAUDE.md, a change that makes something worse is
+information, and the compensating move is the one that is refused.
+
+**Both crossings are stored** (`phDead` 6.8, `phAlso` 7.0) off the same runs, so
+drawing the 7.0 limb alongside 6.8 is a page change with **no recompute**. Not
+done: it is a presentation decision and it is open.
+
 ## Current state — 2026-10-05 (thirty-ninth entry): the Sweeps view — one page of graph per slider, 208 precomputed simulations, and the device arm's death line is EMPTY on nine of ten pages
 
 **RULED 2026-10-05 by A. Heard.** View code and a generated artifact. `model.js`,
@@ -5800,6 +6675,11 @@ compared against". That is a question for the person who measured them.
 
 ## Start here
 
+> **READ ENTRY 40 FIRST (2026-10-06).** 516 of the 863 numbers quoted in this
+> document have moved since 2026-09-25, for three recorded reasons, none of them
+> a model defect. Entry 40 names the ruling behind each family. Recompute before
+> quoting: `python3 handover_numbers.py`.
+
 ```
 pip install -r requirements.txt   # numpy, scipy, matplotlib (+ node for the port)
 ./setup-hooks.sh                  # once per clone: gate commits on the benchmarks
@@ -5852,6 +6732,16 @@ forgot, and the hook runs it first — the page embeds its own copy of the model
 so a stale HTML runs different physics from the file next to it.
 
 ## What is validated, and against what
+
+> **⚠ NUMBERS BELOW MAY BE SUPERSEDED — see entry 40 (2026-10-06).**
+> `handover_numbers.py` reports **516 of 863** recorded values moved. They are
+> stale by a known amount from a known date: this document was current as of
+> **2026-09-25**, and three rulings since then moved the engine underneath it —
+> **BMI and lung volume** (RV floor removed, 2026-09-26, *established*),
+> **tilt** (gains re-solved, 2026-10-02, *candidate*) and **CO₂ rates**
+> (`k_co2_slow` and `shunt_cc_k`, 2026-10-01, *candidate*).
+> **Before quoting any number in this section, recompute it:**
+> `python3 handover_numbers.py`. The script is the source; this is the copy.
 
 Two classes of target, and they are not equal. Clinical studies are
 measurements in patients and are the arbiters. ICSM/Nottingham results are
@@ -6694,6 +7584,16 @@ be compared with Heard's.
 
 ## Parameter provenance — read before quoting any obese result
 
+> **⚠ NUMBERS BELOW MAY BE SUPERSEDED — see entry 40 (2026-10-06).**
+> `handover_numbers.py` reports **516 of 863** recorded values moved. They are
+> stale by a known amount from a known date: this document was current as of
+> **2026-09-25**, and three rulings since then moved the engine underneath it —
+> **BMI and lung volume** (RV floor removed, 2026-09-26, *established*),
+> **tilt** (gains re-solved, 2026-10-02, *candidate*) and **CO₂ rates**
+> (`k_co2_slow` and `shunt_cc_k`, 2026-10-01, *candidate*).
+> **Before quoting any number in this section, recompute it:**
+> `python3 handover_numbers.py`. The script is the source; this is the copy.
+
 ### Anchored in measurement
 - O2 dissociation: Severinghaus with Kelman Bohr correction. Exact.
 - HPV: Marshall BE, Clarke WR, et al. Respir Physiol 1994;96:231-47. PSO2 =
@@ -6732,6 +7632,16 @@ be compared with Heard's.
   seconds each) are illustrative. Anything below SaO2 ~70% is not predictive.
 
 ## Numerical notes
+
+> **⚠ NUMBERS BELOW MAY BE SUPERSEDED — see entry 40 (2026-10-06).**
+> `handover_numbers.py` reports **516 of 863** recorded values moved. They are
+> stale by a known amount from a known date: this document was current as of
+> **2026-09-25**, and three rulings since then moved the engine underneath it —
+> **BMI and lung volume** (RV floor removed, 2026-09-26, *established*),
+> **tilt** (gains re-solved, 2026-10-02, *candidate*) and **CO₂ rates**
+> (`k_co2_slow` and `shunt_cc_k`, 2026-10-01, *candidate*).
+> **Before quoting any number in this section, recompute it:**
+> `python3 handover_numbers.py`. The script is the source; this is the copy.
 
 - The inflow-compliance loop has tau = R x Crs. At R=2 that is 0.17 s, so
   **dt must stay well under 0.1**. dt=0.2 is unstable and gives PaCO2 168
@@ -7172,6 +8082,16 @@ and which is not what Tokics measured.
    patients and would convert the central claim from plausible to shown.
 
 ## Findings worth keeping
+
+> **⚠ NUMBERS BELOW MAY BE SUPERSEDED — see entry 40 (2026-10-06).**
+> `handover_numbers.py` reports **516 of 863** recorded values moved. They are
+> stale by a known amount from a known date: this document was current as of
+> **2026-09-25**, and three rulings since then moved the engine underneath it —
+> **BMI and lung volume** (RV floor removed, 2026-09-26, *established*),
+> **tilt** (gains re-solved, 2026-10-02, *candidate*) and **CO₂ rates**
+> (`k_co2_slow` and `shunt_cc_k`, 2026-10-01, *candidate*).
+> **Before quoting any number in this section, recompute it:**
+> `python3 handover_numbers.py`. The script is the source; this is the copy.
 
 - **The plateau.** Substituting Fick into the shunt equation gives
   CaO2 = Cc'O2 - [f/(1-f)] x VO2/(10Q). A stable fixed point that exists only

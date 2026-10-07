@@ -2,6 +2,7 @@
 # Unpublished research software. See LICENSE: use in any publication
 # requires prior written permission. Cite as in CITATION.cff.
 import os
+import json
 import re
 import sys
 
@@ -240,6 +241,10 @@ body.graphon .main .stage canvas:not(.ecg){height:clamp(110px,21vh,300px)}
 .swnav{font-size:14px;padding:2px 9px;line-height:1.1}
 #swc{width:100%;height:420px;display:block}
 .swnote{font-size:12px;color:var(--dim);margin:6px 2px 0;line-height:1.5}
+.swdot{display:inline-block;width:14px;height:0;border-top:1.6px dotted #2f8f9b;vertical-align:middle;margin-right:5px}
+.swsurv{color:#7d93a0;font-style:italic}
+.swteach{font-size:12px;color:var(--dim);margin:10px 2px 0;line-height:1.6;border-left:2px solid #2f8f9b;padding-left:10px}
+.swteach b{color:var(--ink)}
 .swnote b{color:var(--ink)}
 @media(max-width:620px){#swc{height:300px}}
 .credit{color:var(--dim);font-size:11px;line-height:1.45;margin-top:10px;max-width:78ch;
@@ -500,10 +505,13 @@ flattered.</p>
 <button type="button" id="swnext" class="swnav">&rarr;</button>
 <span class="tkey"><i class="sw" style="background:#ff9f43"></i>no buccal oxygen</span>
 <span class="tkey"><i class="sw" style="background:#4fd8e8"></i>buccal oxygen</span>
-<span class="tkey"><i class="swdash"></i>pH 7.0 reached</span>
+<span class="tkey"><i class="swdash"></i>pH @@PHALSO@@ reached</span>
+<span class="tkey"><i class="swdot"></i>pH @@PHDEAD@@ reached</span>
+<span class="tkey swsurv">neither dashed line is a death line &mdash; see below</span>
 <span class="trendnow" id="swnow"></span></div>
 <canvas id="swc" width="1160" height="420"></canvas>
 <p class="swnote" id="swnote"></p>
+<p class="swteach"><b>Why the dashed lines are not death lines.</b> Respiratory acidosis on its own &mdash; hypercapnia with the oxygen kept up &mdash; is far better tolerated than hypoxia or than a metabolic acidosis of the same pH. <b>Potkin &amp; Swenson 1992</b> report a 46-year-old man admitted after 4&ndash;6 h of mask ventilation at <b>pH 6.60 with PaCO&#8322; 375 mmHg</b> (their electrode was past its calibration range, so they put the true value over 300); he was conscious the next day and left hospital with normal gases, a normal chest film and a normal neurological examination. They call it the highest PaCO&#8322; reported in a surviving human. <b>Frumin 1959</b> held eight anaesthetised volunteers apnoeic for 18&ndash;55 minutes on an oxygen reservoir, down to <b>pH 6.72</b>; all eight recovered and six never threw a single ectopic beat. Their condition is the one that matters: <b>&ldquo;when oxygenation and tissue perfusion are maintained&rdquo;</b>. So read the dashed lines as how deep the acidosis has gone, not as how close the patient is to dying. <b>On this page the lethal line is the solid one</b>, and it is lethal because of hypoxia.</p>
 </div>
 
 <div class="legend"><span><i class="sw" style="background:var(--o2)"></i>oxygen in the lung</span>
@@ -1450,9 +1458,15 @@ setPlayState();
 // abolishes it. Those points are drawn as open markers along the top rule and
 // read ">60 min", NOT as 60: the model cannot say when that patient dies and
 // plotting 60 would assert something it does not know. The DASHED line is when
-// arterial pH reaches 7.0, which is the limit the model CAN see -- without it
-// the device arm would be blank almost everywhere. See HANDOVER entry 30 (the
-// buccal arm is CO2-limited, not oxygen-limited).
+// arterial pH reaches SWEEPS.phDead -- 6.8 since 2026-10-06, 7.0 before it --
+// which is the limit the model CAN see; without it the device arm would be
+// blank almost everywhere. THE LINE IS A DECLARED MARKER, NOT A PREDICTED
+// DEATH: Frumin's two subjects who threw ventricular ectopics did so at
+// OPPOSITE ends of the pH range, so no pH in the evidence is a threshold, and
+// his subject 7 recovered fully from 6.72. The legend's label is substituted
+// from sweeps.json rather than typed, so it cannot disagree with the curve.
+// See HANDOVER entry 40, and entry 30 (the buccal arm is CO2-limited, not
+// oxygen-limited).
 const SWEEPS=__SWEEPS__;
 const swEl=document.getElementById('sweeps');
 const swSel=document.getElementById('swsel');
@@ -1467,6 +1481,8 @@ const DERIV_LABEL={bmi:'BMI',frc:'FRC at induction',cc:'closing capacity',
  vo2:'oxygen consumption',co:'cardiac output'};
 const DERIV_UNIT={bmi:'',frc:' mL',cc:' mL',vo2:' mL/min',co:' L/min'};
 
+// "pH 7" next to "pH 6.8" reads as a typo, so a whole number keeps its decimal.
+function phTxt(v){ const t=String(v); return t.indexOf('.')<0 ? t+'.0' : t; }
 function drawSweep(){
  const cv=document.getElementById('swc'); if(!cv) return;
  const d=SWEEPS.dials[swIdx];
@@ -1514,7 +1530,7 @@ function drawSweep(){
  // one series: nulls break the line, and are marked along the top instead
  function series(vals,colour,dash){
   g.strokeStyle=colour; g.lineWidth=dash?1.6:2.4;
-  g.setLineDash(dash?[6,5]:[]);
+  g.setLineDash(dash?(Array.isArray(dash)?dash:[6,5]):[]);
   g.beginPath(); let open=false;
   for(let i=0;i<n;i++){
    const v=vals[i];
@@ -1540,16 +1556,21 @@ function drawSweep(){
  }
  series(d.control.death,'#ff9f43',false);
  series(d.device.death,'#4fd8e8',false);
- series(d.device.ph,'#4fd8e8',true);
+ if(d.device.ph7) series(d.device.ph7,'#4fd8e8',[6,5]);   // the shallower line
+ series(d.device.ph,'#2f8f9b',[2,4]);                     // the deeper one
 
  // the note: what the page is, and what ELSE this slider changed
  const censored=d.device.death.filter(v=>v===null).length;
- let note='<b>Solid</b> is time to loss of cardiac output. <b>Dashed</b> is when '
-  +'arterial pH reaches '+SWEEPS.phDead+'. Every other slider is at the standard '
-  +'patient. Scenario: '+SWEEPS.scenario+'.';
+ let note='<b>Solid</b> is time to loss of cardiac output &mdash; death, and in '
+  +'this model always from hypoxia. <b>Dashed</b> is when arterial pH reaches '
+  +phTxt(SWEEPS.phAlso)+', <b>dotted</b> when it reaches '+phTxt(SWEEPS.phDead)+'; both are '
+  +'markers of how deep the respiratory acidosis has gone, not predictions of '
+  +'death. Every other slider is at the standard patient. Scenario: '
+  +SWEEPS.scenario+'.';
  if(censored) note+=' <b>'+censored+' of '+n+' buccal points did not arrest within '
-  +'the hour</b> and are marked on the top rule as &gt;60 min &mdash; the model has '
-  +'no death-from-acidosis mechanism, so it cannot say when they die.';
+  +'the hour</b> and are marked on the top rule as &gt;60 min. The model has no '
+  +'death-from-acidosis mechanism, so it cannot say when those patients die &mdash; '
+  +'and the evidence below says the acidosis alone would not be what killed them.';
  if(d.deviceOnly) note+=' This slider only affects the buccal arm, so the no-buccal '
   +'line is flat by construction.';
  if(d.moved.length){
@@ -1663,6 +1684,29 @@ page = HTML.replace('__MODEL__', model)
 # both the startup notice and the footer. Done here rather than with format()
 # because the template is full of CSS and JS braces.
 page = page.replace('__SWEEPS__', sweeps)
+
+# PHDEAD IS NOT A TYPED CONSTANT. It is read out of sweeps.json, because the
+# legend and the curve it labels must not be able to rot apart -- the notice and
+# the footer already did exactly that once (entry 39), and a legend reading
+# "pH 7.0" over a 6.8 curve is the same failure with a clinical edge on it.
+# Ruled 2026-10-06 with the move to 6.8; see HANDOVER entry 40.
+_sw = json.loads(sweeps)
+if 'phDead' not in _sw:
+    sys.exit("build_page.py: sweeps.json has no phDead, so the Sweeps legend "
+             "cannot be labelled from the data it describes. Regenerate it: "
+             "node build_sweeps.js")
+def _phfmt(v):
+    # "pH 7" reads as a typo next to "pH 6.8", so a whole number keeps its
+    # decimal. %g alone drops it.
+    t = '%g' % v
+    return t if '.' in t else t + '.0'
+
+STD_FIGURES['PHDEAD'] = _phfmt(_sw['phDead'])
+if 'phAlso' not in _sw:
+    sys.exit("build_page.py: sweeps.json has no phAlso, so the shallower pH limb "
+             "cannot be labelled from the data it describes. Regenerate it: "
+             "node build_sweeps.js")
+STD_FIGURES['PHALSO'] = _phfmt(_sw['phAlso'])
 
 for _k, _v in STD_FIGURES.items():
     page = page.replace('@@' + _k + '@@', _v)
