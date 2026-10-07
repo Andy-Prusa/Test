@@ -704,43 +704,72 @@ class Patient:
     inflow_mech_frac: float = 0.18
     cv_frac: float = 0.55        # a unit closes below this fraction of its
                                  # own starting volume
-    # Reinflation partially recruits. A lung refilling after obstruction fills
-    # toward its resting distribution, not its collapsed one, so the excess
-    # inflow above the metabolic deficit is shared by ORIGINAL volume - that
-    # is what lets a collapsed unit see gas again. Recruitment is incomplete
-    # because passive reinflation cannot generate the transpulmonary pressure
-    # a deliberate recruitment manoeuvre does; recruit_frac is how much of the
-    # collapse is recoverable without positive pressure.
-    recruit_frac: float = 0.65
-    tau_recruit: float = 25.0    # s
-    # RECRUITMENT IS GATED ON AIRWAY PRESSURE, 2026-10-07, ruled by A. Heard
-    # on the objection "I wonder why the reinflation, without PEEP, is so
-    # quick. Surely the studies showed no reinflation."
+    # RECRUITMENT IS OFF. recruit_frac is 0.0 and nothing in this model
+    # reopens a collapsed unit. Ruled by A. Heard 2026-10-07, in two steps.
     #
-    # He is right and the held literature is explicit. Magnusson & Spahn 2003
-    # (BJA 91:61-72, read 2026-10-07): "an airway pressure of 20 cm H2O did
-    # NOT affect atelectasis; an airway pressure of 30 cm H2O REDUCED
-    # atelectasis; only with a pressure of 40 cm H2O maintained for 15 s is
-    # atelectatic lung tissue FULLY re-expanded." They add that reopened lung
-    # is MORE prone to collapse again, not less, because collapse impedes
-    # surfactant function.
+    # THE OBJECTION: "I wonder why the reinflation, without PEEP, is so quick.
+    # Surely the studies showed no reinflation." Until that day this model
+    # recovered 65 per cent of the collapse with a 25 s time constant, purely
+    # on a unit refilling through a partially obstructed airway, with no
+    # pressure term anywhere in the limb.
     #
-    # Until today this model reopened collapsed units at NO POSITIVE PRESSURE
-    # AT ALL -- 65 per cent of the collapse with a 25 s time constant, purely
-    # on a unit refilling through a partially obstructed airway. There was no
-    # pressure term anywhere in the recruitment limb.
+    # THE HELD LITERATURE IS EXPLICIT THAT THIS TAKES PRESSURE.
+    #   Magnusson & Spahn 2003, BJA 91:61-72, read 2026-10-07: "an airway
+    #   pressure of 20 cm H2O did NOT affect atelectasis; an airway pressure
+    #   of 30 cm H2O REDUCED atelectasis; only with a pressure of 40 cm H2O
+    #   maintained for 15 s is atelectatic lung tissue FULLY re-expanded."
+    #   They add that reopened lung is MORE prone to collapse again, because
+    #   collapse impedes surfactant function.
     #
-    # 30 cmH2O is the threshold at which Magnusson reports an effect at all.
-    # In every scenario this model currently runs the alveolar pressure is at
-    # or below atmospheric, so recruitment is now ZERO throughout and
-    # atelectasis persists once formed -- which is the behaviour A. Heard
-    # expected to see and did not. MEASURED COST: 1 s to SpO2 95% at BMI 50,
-    # nothing at BMI 25, because the collapse magnitude in these scenarios is
-    # 1.5-2.7 per cent. This is a correctness change, not an outcome change.
+    #   Tweed WA et al, Anaesth Intens Care 1993;21:806-810, read in full
+    #   2026-10-07 -- A MEASUREMENT IN PATIENTS, and the only one this project
+    #   holds. 14 at-risk adults, FiO2 0.5, supine, lungs "manually
+    #   hyperinflated three to four times to a peak pressure of 30 cm H2O,
+    #   which was held for 10 to 15 seconds". Alveolar-arterial oxygen
+    #   difference in mmHg, by order of study: 128 (41) awake, 123 (48) at
+    #   30 min, 130 (52) at 60 min, 103 (48) AFTER HYPERINFLATION. Doubling
+    #   the tidal volume did nothing at all -- 126 (44) against 127 (56).
+    #   "Only manual HI effectively improved gas exchange."
     #
-    # The limb is kept rather than deleted so that a vital-capacity manoeuvre,
-    # if one is ever modelled, reopens the lung as it should.
-    recruit_p_cmh2o: float = 30.0
+    #   Joyce & Williams 1999's Discussion agrees from the other side: the FRC
+    #   fall and the area of atelectasis are "independent of whether ...
+    #   intermittent positive pressure ventilation is used, or spontaneous
+    #   ventilation is maintained". That is a secondary citation of
+    #   Hedenstierna, Br J Anaesth 1990;64:507-514, a review WE DO NOT HOLD,
+    #   and is weighted accordingly.
+    #
+    # WHY ZERO AND NOT A PRESSURE THRESHOLD. A threshold was tried first, as
+    # recruit_p_cmh2o = 30.0, and REMOVED THE SAME DAY when A. Heard asked
+    # where 30 cmH2O is ever applied. The answer is nowhere: the inflow term
+    # below passes gas only while the lung is BELOW atmospheric
+    # ("driving = max(0.0, (PB - p_abs) * 1.35951)"), so alveolar pressure is
+    # never positive -- under obstruction the suite checks it between -50 and
+    # -12 cmH2O. The comparison could not be true in any scenario, so the
+    # threshold was inert and the limb it guarded was dead code dressed as
+    # physiology. recruit_frac = 0.0 states the same behaviour honestly.
+    #
+    # WHAT THE NUMBERS ABOVE DO AND DO NOT ANCHOR. They are why recruitment is
+    # OFF -- reopening lung costs about 30 cmH2O and this model never delivers
+    # it, having no positive-pressure ventilation at all. They do NOT set any
+    # parameter here. Tweed's improvement was PARTIAL (130 -> 103, 21 per cent
+    # of the gradient, not abolition) and that 21 per cent is deliberately NOT
+    # converted into a recovery fraction: a fraction of an A-a gradient and a
+    # fraction of collapsed lung are different quantities, and turning one
+    # into the other is the fitting this project refuses. His caveat is kept
+    # too -- his Table 2 footnote reads "There were no significant differences
+    # among the four experimental states" under ANOVA, and the P = 0.01
+    # appears only in Table 3, by order, on a Wilcoxon signed-rank test for
+    # paired data.
+    #
+    # MEASURED COST of turning it off: 1 s to SpO2 95% at BMI 50, nothing at
+    # BMI 25, because the collapse magnitude in these scenarios is 1.5-2.7 per
+    # cent. A correctness change, not an outcome change.
+    #
+    # IF IPPV OR A VITAL-CAPACITY MANOEUVRE IS EVER MODELLED, this is where
+    # recruitment goes back in, and the three sources above are what it must
+    # be built against -- including that 30 cmH2O gives only partial recovery.
+    recruit_frac: float = 0.0
+    tau_recruit: float = 25.0    # s; inert while recruit_frac is 0.0
     # COMPLIANCE -- how much the lungs and chest wall expand per unit of
     # pressure. Question answered against the paper 2026-09-21; the data
     # exists and we hold it.
@@ -2288,12 +2317,12 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
         # be one commit. See HANDOVER entry 43.
         tau_c_c = 60.0 * fr_c[:, 0] + 900.0 * (1.0 - fr_c[:, 0])
         gain = np.maximum(exposed - coll_c, 0.0) * (dt / tau_c_c)
-        # gated on airway pressure -- see recruit_p_cmh2o. At or below
-        # atmospheric nothing reopens, which is every scenario this model runs.
-        _p_cmh2o = (p_abs - PB) * 1.35951
-        _rf = pt.recruit_frac if _p_cmh2o >= pt.recruit_p_cmh2o else 0.0
+        # Recruitment is OFF -- recruit_frac is 0.0, so this term is always
+        # zero and a collapsed unit stays collapsed. See the parameter for the
+        # ruling and the three sources. Kept as an expression rather than
+        # deleted so that the limb is here to re-enable if IPPV is modelled.
         loss = (np.minimum(exposed - coll_c, 0.0) * (dt / pt.tau_recruit)
-                * _rf)
+                * pt.recruit_frac)
         coll_c = np.clip(coll_c + gain + loss, 0.0, 1.0)
 
         # ---- airway closure -> absorption collapse -> shunt ---------------

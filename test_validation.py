@@ -1178,27 +1178,40 @@ def test_icsm_jet_2026():
           75.8, 93.4, " mmHg", "MODEL comparator; 84.6 (4.4), 2 SD")
 
 
-def test_icsm_airway_rescue():
-    """Laviola M et al. Br J Anaesth 2020. MODEL, not measurement.
-    Obstructed to SaO2 60%, then relieved with supraglottic FO2 100%:
-    post-rescue PaO2 42.3 (4.4) kPa."""
-    p = Patient(weight=70, height=1.75, age=45, hb=15, tilt_deg=0)
-    base = simulate(p, [AirwayEpoch(3000, resistance=OBS, fgo2=0.21)],
-                    dt=DT, stop_sao2=0.0)
-    trig = base['t'][np.where(base['sao2'] < 60)[0][0]]
-    r = simulate(p, [AirwayEpoch(trig, resistance=OBS, fgo2=1.0),
-                     AirwayEpoch(600, resistance=2, fgo2=1.0)],
-                 dt=DT, stop_sao2=0.0)
-    peak = r['pao2'][r['t'] >= trig].max() / KPA
-    check("ICSM rescue, post-rescue PaO2", peak, 33.5, 51.1, " kPa",
-          "MODEL comparator; 42.3 (4.4), we allow 2 SD")
-    # their qualitative finding: room air does not sustain the rescue
-    ra = simulate(p, [AirwayEpoch(trig, resistance=OBS, fgo2=0.21),
-                      AirwayEpoch(600, resistance=2, fgo2=0.21)],
-                  dt=DT, stop_sao2=0.0)
-    late = np.interp(min(trig + 300, ra['t'][-1]), ra['t'], ra['sao2'])
-    check("ICSM rescue on room air is NOT sustained", late, 0, 60, " %",
-          "MODEL comparator; their central qualitative result")
+# RETIRED 2026-10-07, RULED. This was test_icsm_airway_rescue, two checks
+# graded against Laviola M et al, Br J Anaesth 2020: post-rescue PaO2
+# 42.3 (4.4) kPa (band 33.5-51.1) and the qualitative "room air does not
+# sustain the rescue".
+#
+# IT TESTED A SCENARIO THIS PROJECT DOES NOT RUN. protocol/predictions.py
+# states the scenario in one line -- "a preoxygenated, paralysed adult whose
+# tracheal tube is occluded at end-expiration: a single AirwayEpoch at
+# infinite resistance" -- and there is no rescue in it, no cricothyroidotomy
+# and no can't-intubate-can't-oxygenate limb anywhere in the three-way study.
+# The row graded a sequence the model never performs, against a comparator
+# that is itself a simulator rather than a measurement, which this file
+# already warns about at test_icsm_jet_2026: "DO NOT READ AGREEMENT HERE AS
+# CORROBORATION."
+#
+# SAME CLASS OF REASON as the Altermatt (2026-09-26) and Valenza (2026-10-02)
+# retirements above: the row was outside what the model claims, not wrong
+# against it. Retired, not passed.
+#
+# WHAT MADE IT VISIBLE, recorded because the order matters. The row had been
+# PASSING at 50.54 kPa, near the top of its band. It passed because the model
+# reopened collapsed lung at ZERO AIRWAY PRESSURE: across the rescue the
+# collapsed fraction fell 0.1593 -> 0.0000, i.e. 16 per cent of the lung
+# recruited completely with nothing inflating it. Turning recruitment off
+# (recruit_frac, now 0.0 -- see apnoea_core.py) dropped the row to 23.52 kPa
+# and made it fail. THAT IS NOT WHY IT IS RETIRED -- retiring a
+# row to clear a failure is what .github/known-blocking.txt rule 1 forbids.
+# It is retired for its scope. But the failure is what exposed that this row
+# had been certifying free recruitment, and that is worth having in writing.
+#
+# NOT RETIRED HERE, AND NOT FOR WANT OF A RULING: test_icsm_jet_2026 stays
+# because the scope argument does not reach it. It simulates no jet
+# ventilation and no rescue -- it runs the obstruction to SaO2 40% and samples
+# the gas state at that instant, which is this project's scenario exactly.
 
 
 def test_physical_consistency():
@@ -1297,7 +1310,7 @@ PLAN = [
       "test_cardiac_output_body_size", "test_anaemia_cardiac_response",
       "test_stock_1989", "test_moreault_2021"]),
     ("MODEL COMPARATORS — other people's simulations, not measurements.",
-     ["test_icsm_airway_rescue", "test_icsm_jet_2026"]),
+     ["test_icsm_jet_2026"]),
     ("INTERNAL CONSISTENCY",
      ["test_physical_consistency", "test_timestep_stability",
       "test_co2_mass_balance"]),
