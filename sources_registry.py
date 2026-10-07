@@ -648,6 +648,41 @@ BENCHMARK_SOURCES = [
      "is a single 10 per cent cavity and ours is a per-compartment fraction; "
      "and 'collapse complete' is not the same event as 'our atelectasis term "
      "plateaus'. NOTHING WAS CHANGED FROM IT. See HANDOVER entry 43"),
+    ("Rothen 1996, *Acta Anaesthesiol Scand* 40:524-529 (n=24, RANDOMISED)",
+     "the gas-composition effect on INDUCTION shunt -- and the model fails it",
+     "2026-10-07",
+     "READ AT SOURCE from upload, the paper Magnusson & Spahn cite and the one "
+     "that pairs SHUNT with CT AREA in the SAME patients, which is what makes "
+     "it decisive. 24 adults with healthy lungs, elective surgery, face-mask "
+     "induction on 30% oxygen in nitrogen (group 1, n=12, age 48+-15, BMI "
+     "27.2+-6.7) or 100% oxygen (group 2, n=12, age 46+-14, BMI 25.5+-3.4). "
+     "Atelectasis by CT 1 cm above the right diaphragm, V/Q by MIGET, awake "
+     "and anaesthetised. HEIGHT IS NOT REPORTED. "
+     "MEASURED: no atelectasis awake. Atelectasis 0.2+-0.4 cm2 (30%) against "
+     "8.0+-8.2 cm2 (100%), P<0.001. Shunt 0.3+-0.7% awake, rising to 2.1+-3.8% "
+     "(30%) and 6.5+-5.2% (100%), P<0.05. V/Q mismatch indices did NOT differ "
+     "between groups. "
+     "IT SETTLES THE EDMARK COMPARISON in HANDOVER entry 43: his CT-AREA ratio "
+     "is 40x while his SHUNT ratio is only 3.1x, so area and shunt DO NOT "
+     "SCALE TOGETHER and comparing this model's perfusion-fraction term "
+     "against a CT-area ratio was the wrong comparison. "
+     "AND THE MODEL FAILS IT. Run at Rothen's own cohort (1.75 m assumed), "
+     "shunt at 60 s is 6.68% for group 1 and 6.86% for group 2 -- a 0.18 "
+     "percentage point difference against his measured 4.4. The 100% arm is "
+     "about right (6.86 against 6.5); the 30% arm is THREE TIMES TOO HIGH "
+     "(6.68 against 2.1). The reason is visible: unwashed_fraction(), the only "
+     "FiO2-dependent induction term, returns 0.15% and 0.00% for these "
+     "patients, so apnoea_core's claim to predict 'MORE atelectasis on 100% "
+     "oxygen than on 30-50%' does not hold at normal BMI. "
+     "CAVEATS: his patients were MECHANICALLY VENTILATED after induction and "
+     "this model's t=0 is the onset of APNOEA, which are different states; his "
+     "SDs are large on n=12 and 2.1+-3.8 overlaps zero, so the DIFFERENCE "
+     "between groups is the firm part and not the absolutes; the groups were "
+     "not BMI-matched, though the two heaviest patients (BMI 37.1 and 44.0) "
+     "were in the 30% group and had 0.0 and 0.2 cm2 of atelectasis, which "
+     "STRENGTHENS the gas effect rather than confounding it. "
+     "NOTHING WAS CHANGED FROM IT and no benchmark row was added: that is a "
+     "ruling for A. Heard. See HANDOVER entry 43 section 8"),
     ("Magnusson & Spahn 2003, *Br J Anaesth* 91(1):61-72 (REVIEW)",
      "how MUCH lung collapses at different FiO2 -- the magnitude side, which "
      "is the side that moves this model",

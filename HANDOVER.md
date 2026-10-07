@@ -124,6 +124,62 @@ a source — it verifies nothing". A. Heard confirmed it unavailable. Corrected.
 duplicated-fact rot CLAUDE.md has a rule against, and it stood long enough to be
 acted on — the search for Dale & Rahn began because that line said we had it.
 
+### 8. ROTHEN 1996 ARRIVED, AND THE MODEL FAILS IT: NO GAS-COMPOSITION EFFECT ON INDUCTION SHUNT
+
+**Added 2026-10-07**, after A. Heard supplied the paper named in §4 as the one
+that would settle things. It settles two things, and the second is a defect.
+
+**It settles the Edmark comparison.** Rothen pairs **shunt with CT area in the
+same patients**, which neither Edmark nor our model could do alone:
+
+| | atelectasis | shunt |
+|---|---|---|
+| awake | none | 0.3 ± 0.7% |
+| 30% O₂ (n=12) | 0.2 ± 0.4 cm² | 2.1 ± 3.8% |
+| 100% O₂ (n=12) | 8.0 ± 8.2 cm² | 6.5 ± 5.2% |
+
+**Area ratio 40×; shunt ratio 3.1×.** They do not scale together. So §4's worry
+— that our 1.7× perfusion-fraction ratio looked tiny against Edmark's 8.5%
+*area* ratio — was the wrong comparison, exactly as suspected. **Against a
+shunt ratio the gap is 1.7× versus 3.1×, not 1.7× versus 8.5×.**
+
+**And the model fails the gas effect.** Run at Rothen's own cohort (his group 1
+age 48, BMI 27.2; group 2 age 46, BMI 25.5; height not reported, 1.75 m assumed
+and said so):
+
+| group | model shunt @60 s | Rothen |
+|---|---|---|
+| 1, 30% O₂ | **6.68%** | **2.1%** |
+| 2, 100% O₂ | **6.86%** | **6.5%** |
+| **difference** | **0.18 pp** | **4.4 pp (P<0.05)** |
+
+The 100% arm is about right. **The 30% arm is three times too high**, and the
+two arms are flat where his differ by 4.4 points.
+
+**The cause is identifiable, not mysterious.** `unwashed_fraction()` is the only
+FiO₂-dependent induction term, and it returns **0.15% and 0.00%** for these
+patients. The parameter block claims the model predicts *"(c) MORE atelectasis
+on 100% oxygen than on 30–50%"*, citing Hedenstierna's 12.8 against 8.1 cm² as
+the sign it predicts. **At normal BMI that route produces essentially nothing**,
+so the claimed prediction does not hold where Rothen measured it. The claim is
+not withdrawn — it may well hold at the obese end, where `unwashed_fraction()`
+is non-zero — but it is **untested there and false here**.
+
+**CAVEATS, and they matter:** his patients were **mechanically ventilated** after
+induction while this model's t=0 is the onset of **apnoea**, which are different
+states; his SDs are large on n=12 and **2.1 ± 3.8 overlaps zero**, so the
+*difference* between groups is the firm part and not the absolutes; and the
+groups were not BMI-matched — though the two heaviest patients (BMI 37.1 and
+44.0) were in the **30%** group with 0.0 and 0.2 cm² of atelectasis, which
+strengthens the gas effect rather than confounding it.
+
+**NOTHING WAS CHANGED AND NO BENCHMARK ROW WAS ADDED.** Whether this becomes a
+row — and whether it is `KNOWN_OPEN` from the start, since no parameter
+currently in the model can close it — is a ruling for A. Heard. What is clear is
+that the 80-versus-100 question §4 brackets so well is being answered by the
+**oxygen store alone**, with the shunt difference that should accompany it
+almost entirely absent.
+
 ### 7. WHAT WAS NOT CHANGED
 
 No parameter, no threshold, no band, no `KNOWN_OPEN` row, no model file. The
