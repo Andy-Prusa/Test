@@ -351,7 +351,16 @@ function simulate(P, epochs, dt=0.1){
       const tc=60*(n[3*c]/Math.max(nc[c],1e-12))+900*(1-n[3*c]/Math.max(nc[c],1e-12));
       // collapse ratchets up quickly, recruits back only partially
       if(exp_>collC[c]) collC[c]+=(exp_-collC[c])*(dt/tc);
-      else collC[c]+=(exp_-collC[c])*(dt/(P.tauRecruit||25))*(P.recruitFrac===undefined?0.65:P.recruitFrac);
+      else {
+        // RECRUITMENT GATED ON AIRWAY PRESSURE, 2026-10-07 -- tracks
+        // apnoea_core.py recruit_p_cmh2o. Magnusson & Spahn 2003: 20 cmH2O
+        // does nothing, 30 reduces, only 40 fully re-expands. Below the
+        // threshold nothing reopens, which is every scenario this page runs.
+        const pcm=(pabs-PB)*1.35951;
+        const rf=(pcm>=(P.recruitPcmH2O===undefined?30:P.recruitPcmH2O))
+          ?(P.recruitFrac===undefined?0.65:P.recruitFrac):0;
+        collC[c]+=(exp_-collC[c])*(dt/(P.tauRecruit||25))*rf;
+      }
       if(collC[c]<0) collC[c]=0; if(collC[c]>1) collC[c]=1;
       absorbed+=qw[c]*collC[c];
     }

@@ -713,6 +713,34 @@ class Patient:
     # collapse is recoverable without positive pressure.
     recruit_frac: float = 0.65
     tau_recruit: float = 25.0    # s
+    # RECRUITMENT IS GATED ON AIRWAY PRESSURE, 2026-10-07, ruled by A. Heard
+    # on the objection "I wonder why the reinflation, without PEEP, is so
+    # quick. Surely the studies showed no reinflation."
+    #
+    # He is right and the held literature is explicit. Magnusson & Spahn 2003
+    # (BJA 91:61-72, read 2026-10-07): "an airway pressure of 20 cm H2O did
+    # NOT affect atelectasis; an airway pressure of 30 cm H2O REDUCED
+    # atelectasis; only with a pressure of 40 cm H2O maintained for 15 s is
+    # atelectatic lung tissue FULLY re-expanded." They add that reopened lung
+    # is MORE prone to collapse again, not less, because collapse impedes
+    # surfactant function.
+    #
+    # Until today this model reopened collapsed units at NO POSITIVE PRESSURE
+    # AT ALL -- 65 per cent of the collapse with a 25 s time constant, purely
+    # on a unit refilling through a partially obstructed airway. There was no
+    # pressure term anywhere in the recruitment limb.
+    #
+    # 30 cmH2O is the threshold at which Magnusson reports an effect at all.
+    # In every scenario this model currently runs the alveolar pressure is at
+    # or below atmospheric, so recruitment is now ZERO throughout and
+    # atelectasis persists once formed -- which is the behaviour A. Heard
+    # expected to see and did not. MEASURED COST: 1 s to SpO2 95% at BMI 50,
+    # nothing at BMI 25, because the collapse magnitude in these scenarios is
+    # 1.5-2.7 per cent. This is a correctness change, not an outcome change.
+    #
+    # The limb is kept rather than deleted so that a vital-capacity manoeuvre,
+    # if one is ever modelled, reopens the lung as it should.
+    recruit_p_cmh2o: float = 30.0
     # COMPLIANCE -- how much the lungs and chest wall expand per unit of
     # pressure. Question answered against the paper 2026-09-21; the data
     # exists and we hold it.
@@ -2260,8 +2288,12 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
         # be one commit. See HANDOVER entry 43.
         tau_c_c = 60.0 * fr_c[:, 0] + 900.0 * (1.0 - fr_c[:, 0])
         gain = np.maximum(exposed - coll_c, 0.0) * (dt / tau_c_c)
+        # gated on airway pressure -- see recruit_p_cmh2o. At or below
+        # atmospheric nothing reopens, which is every scenario this model runs.
+        _p_cmh2o = (p_abs - PB) * 1.35951
+        _rf = pt.recruit_frac if _p_cmh2o >= pt.recruit_p_cmh2o else 0.0
         loss = (np.minimum(exposed - coll_c, 0.0) * (dt / pt.tau_recruit)
-                * pt.recruit_frac)
+                * _rf)
         coll_c = np.clip(coll_c + gain + loss, 0.0, 1.0)
 
         # ---- airway closure -> absorption collapse -> shunt ---------------

@@ -169,6 +169,7 @@ def js_params(pt, feo2):
         "nVq": pt.n_vq, "vqLogSd": pt.vq_log_sd, "tauMix": pt.tau_mix,
         "inflowMechFrac": pt.inflow_mech_frac, "cvFrac": pt.cv_frac,
         "recruitFrac": pt.recruit_frac, "tauRecruit": pt.tau_recruit,
+        "recruitPcmH2O": pt.recruit_p_cmh2o,
         "coTiltGain": pt.co_tilt_gain,
         "shuntAnat": pt.shunt_anat,
         "shuntCcK": pt.shunt_cc_k,
