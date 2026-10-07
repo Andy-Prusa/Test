@@ -396,13 +396,13 @@ flattered.</p>
 <div class="transport">
 <button id="sidebtn" aria-controls="side" aria-expanded="true">Hide sliders</button>
 <button id="runbtn">Run simulation</button>
-<button id="play">Play</button><button id="rew">Restart</button>
+<button id="play">Play</button>
 <button id="graphbtn" aria-expanded="false" aria-controls="trend">Graph</button>
-<button id="swbtn" aria-expanded="false" aria-controls="sweeps">Sweeps</button>
+<button id="swbtn" aria-expanded="false" aria-controls="sweeps">Outputs</button>
 <button id="fs">Expand</button>
 <button id="snd">Sound off</button><button id="spd">4&times;</button>
 <span class="clock" id="clock">0:00</span>
-<input type="range" id="scrub" min="0" max="900" value="0" step="1" aria-label="Time">
+<input type="range" id="scrub" min="0" max="3600" value="0" step="1" aria-label="Time">
 <span class="busy" id="busy"></span>
 </div>
 <div class="steps" id="steps"></div>
@@ -1090,6 +1090,10 @@ const PRESETS={
    {t:420,icon:'blade',label:'Laryngoscopy',airway:'patent',
     note:'Laryngoscopy \u2014 airway open'}]}};
 let SCENARIO=JSON.parse(JSON.stringify(PRESETS['cico']));
+// The scrubber and the playback clock follow SCENARIO.end. They were pinned at
+// a literal 900 until 2026-10-07, so raising "Run length" lengthened the
+// SIMULATION while Play still stopped dead at 15 minutes -- reported from use.
+
 const STEPS=()=>SCENARIO.segs.map(s=>[s.t,s.icon,s.label]);
 const EVENTS=()=>SCENARIO.segs.map(s=>[s.t,s.note]);
 
@@ -1103,8 +1107,6 @@ const DIALS=[
  ['frcScale','FRC',0.55,1.5,0.01,1.0,null],
  ['bmrScale','Metabolic rate',0.6,1.7,0.01,1.0,null],
  ['hb','Haemoglobin',4.0,18.0,0.5,14.0,null],
- ['ccScale','Closing capacity',0.6,1.6,0.01,1.0,null],
- ['maxClosed','Lung collapsibility',0.10,0.65,0.01,0.25,null],
  ['fgBuccal','Pharyngeal O₂ (device arm)',0.21,1.00,0.01,1.00,null],
  ['tiltDeg','Bed tilt (head up)',-20,45,1,25,null],
  ['buccalIdx','Buccal switched on',0,4,1,0,null]];
@@ -1127,7 +1129,27 @@ const BASE={age:45,lmaOpens:true,frcRef:2860,frcDrop:400,tiltDeg:25,
  // nothing when dragged costs more credibility than it earns, so it
  // is hidden rather than shown. The inertness itself is a real
  // finding and is NOT fixed by hiding it: see HANDOVER.
- tauMix:45,inflowMechFrac:0.18};
+ tauMix:45,inflowMechFrac:0.18,
+ // HIDDEN 2026-10-07 BY THE SAME RULE AS tauMix/inflowMechFrac ABOVE, and
+ // for the same measured reason. ccScale ("Closing capacity") moves time to
+ // loss of cardiac output by 12 SECONDS across its whole 0.6-1.6 range -- a
+ // 2.7x change in closing capacity -- and maxClosed ("Lung collapsibility")
+ // by NOTHING AT ALL, 12.4 min at every value from 0.10 to 0.65. Both were
+ // swept through model.js for the Outputs view, so those are measurements
+ // and not estimates.
+ //
+ // WHY THEY ARE WEAK, since it is not obvious: both act only through
+ // COLLAPSE-DRIVEN SHUNT, and shunt barely moves time to hypoxia in a
+ // preoxygenated patient -- forcing shunt across Rothen 1996's entire
+ // measured range, 2.1 to 6.5 per cent, costs 2 s. See HANDOVER entry 43
+ // section 9. maxClosed is weaker still because it caps the GLOBAL closure
+ // term, the minor limb; the major one is per-compartment absorption, which
+ // it does not touch.
+ //
+ // HELD AT THEIR FORMER DIAL DEFAULTS so the model receives exactly what it
+ // did before: the page's numbers are unchanged by this edit. The inertness
+ // is a real finding and is NOT fixed by hiding it.
+ ccScale:1.0,maxClosed:0.25};
 const P=Object.assign({},BASE);
 DIALS.forEach(d=>P[d[0]]=d[5]);
 
@@ -1542,9 +1564,6 @@ function labels(){
  if(D.B){
   document.getElementById('v_frcScale').textContent=D.B.frc.toFixed(0)+' mL';
   document.getElementById('v_bmrScale').textContent=D.B.vo2.toFixed(0)+' mL/min';
-  document.getElementById('v_ccScale').textContent=D.B.cc.toFixed(0)+' mL';
-  document.getElementById('v_maxClosed').textContent=
-    'shunt '+(D.B.shunt[D.B.shunt.length-1]*100).toFixed(0)+'%';
  }
 }
 function dirty(){stale=true;busy.textContent='parameters changed';
@@ -1566,7 +1585,6 @@ function run(){
    for(const k of ['A','B']){ phase[k]=0; acc[k]=0;
      trace[k].fill(0); plethTrace[k].fill(0);
      ecgStep(k, D[k].hr[0], trace[k].length/SR); }
-   runBtn.textContent='Re-run';
   }catch(err){
    busy.textContent='error: '+err.message;
   }
@@ -1927,7 +1945,7 @@ function render(){
 }
 function loop(ts){if(!playing)return;if(!last)last=ts;
  const wall=Math.min(0.1,(ts-last)/1000); last=ts;
- T=Math.min(900,T+wall*SPEED);
+ T=Math.min(SCENARIO.end,T+wall*SPEED);
  for(const k of ['A','B']){
    if(!D[k]) continue;
    const live = T<=D[k].t[D[k].t.length-1];
@@ -1937,7 +1955,7 @@ function loop(ts){if(!playing)return;if(!last)last=ts;
    if(soundArm===k && hr>1 && phase[k]<before) beep(at(D[k],'spo2',T));
  }
  render();
- if(T>=900){playing=false;document.getElementById('play').textContent='Play';return;}
+ if(T>=SCENARIO.end){playing=false;document.getElementById('play').textContent='Play';return;}
  requestAnimationFrame(loop);}
 runBtn.onclick=run;
 setPlayState();
@@ -2100,7 +2118,7 @@ swBtn.onclick=()=>{
  const open=swEl.hasAttribute('hidden');
  if(open) swEl.removeAttribute('hidden'); else swEl.setAttribute('hidden','');
  swBtn.setAttribute('aria-expanded',open?'true':'false');
- swBtn.textContent=open?'Hide sweeps':'Sweeps';
+ swBtn.textContent=open?'Hide outputs':'Outputs';
  if(open) drawSweep();            // clientWidth is 0 while hidden
 };
 window.addEventListener('resize',()=>{if(!swEl.hasAttribute('hidden')) drawSweep();});
@@ -2120,7 +2138,6 @@ document.getElementById('play').onclick=e=>{
  if(stale||!D.A){run();return;}
  playing=!playing;
  e.target.textContent=playing?'Pause':'Play';last=0;if(playing)requestAnimationFrame(loop);};
-document.getElementById('rew').onclick=()=>{T=0;render();};
 document.getElementById('scrub').oninput=e=>{T=+e.target.value;render();};
 // ---- sliders panel ---------------------------------------------------------
 // Folds itself away after ten seconds so the patients get the whole width,
