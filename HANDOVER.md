@@ -180,6 +180,62 @@ that the 80-versus-100 question §4 brackets so well is being answered by the
 **oxygen store alone**, with the shunt difference that should accompany it
 almost entirely absent.
 
+### 9. WHAT ANY OF IT IS WORTH IN THE ONLY OUTCOME THAT MATTERS — ASKED BY A. HEARD, AND IT REORDERS THE WHOLE ENTRY
+
+**A. Heard, 2026-10-07:** *"Is it relevant though. I'm interested in what it
+does to our main outcome. Hypoxia"* — and then the sharper point: **both arms
+are preoxygenated, so the only place prolonged hyperoxia acts is the BUCCAL
+arm**, which sits on 100% oxygen for an hour while the control dies at twelve
+minutes. Rothen's 30%-versus-100% contrast is not our scenario at all.
+
+Measured rather than argued, and it ranks the findings above:
+
+| what | worth in time to hypoxia | sourced? |
+|---|---|---|
+| collapse **rate** (`tau_collapse_o2`/`_air`) | **0 s** | **no** |
+| **induction shunt** level (the §8 defect) | **2 s** | — |
+| collapse **magnitude**, buccal arm (`perfusion_gain`) | **1.7–3.5 min** | **no** |
+
+**Induction shunt is worth two seconds.** Forcing it across Rothen's whole
+measured range, 2.1% → 6.5%, moves time to SpO₂ 90% by **2 s in both patients**
+(+0.3% lean, +0.4% obese); even 9%, beyond anything he measured, costs 3 s. With
+a preoxygenated lung the alveolar PO₂ is several hundred mmHg and blood leaving
+ventilated units is saturated regardless, so a few per cent of venous admixture
+cannot move arterial saturation until alveolar oxygen has already fallen far.
+**So §8's defect does not touch the outcome**, and the recommendation there
+reverses: **record it, do not add a benchmark row.** A row failing by 4.4
+percentage points on a quantity worth two seconds would be noise in the arbiter.
+
+**But in the buccal arm the magnitude matters.** Counterfactual with
+`perfusion_gain` 1.2 (shipped) against 0.0 — the collapsed bed contributing no
+shunt at all, i.e. no absorption atelectasis — patent, 100% oxygen, two hours:
+
+| obese BMI 34.7 | shunt @60 min | SpO₂<95% | SpO₂<90% |
+|---|---|---|---|
+| shipped | **11.35%** | 75.6 min | 90.9 min |
+| no atelectasis | 5.81% | 79.2 min | 92.6 min |
+| **cost** | | **3.5 min** | **1.7 min** |
+
+**3.5 minutes to 95% and 1.7 to 90%** — about 4.4% and 1.8% of the patient's
+time, and roughly **a hundredfold** the induction defect. The lean patient does
+not desaturate within two hours either way, so this shows only at the obese end.
+It bites late because that is when alveolar oxygen has fallen far enough for
+shunt to matter, which is exactly where the early leverage test could not see.
+
+**THE FINDING THAT MATTERS: an unsourced constant is setting a multi-minute
+effect in the arm whose survival is this model's central claim.**
+`perfusion_gain = 1.2` is one of §5's seven with no measurement behind it, and
+it scales this cost directly. **That reverses what §3 implied** — the unsourced
+parameters are inert for the rate and for induction, and they are not inert
+here.
+
+**It does not threaten the headline.** The control arm dies at ~12 min against
+the buccal arm's ~91, so a 1.7-minute correction does not touch a sevenfold
+difference. What it does mean is that the buccal arm's **absolute** survival
+figures carry an unsourced parameter worth minutes, and the acquisition priority
+is `perfusion_gain`, `cv_frac` and `max_closed` — not the absorption rate, and
+not Rothen.
+
 ### 7. WHAT WAS NOT CHANGED
 
 No parameter, no threshold, no band, no `KNOWN_OPEN` row, no model file. The
