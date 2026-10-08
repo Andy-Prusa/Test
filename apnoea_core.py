@@ -1010,6 +1010,75 @@ class Patient:
     # twenty-fourth of its closing capacity -- which no timeline reaches.
     shunt_ceiling: float = 0.40
 
+    # EXTRA SHUNT FROM LUNG PATHOLOGY, added 2026-10-08 by ruling of A. Heard
+    # ("Add shunts"), so the page can show patients this study never recruited:
+    # consolidation, collapse, a right-to-left cardiac shunt, severe COPD.
+    #
+    # WHAT IT IS. A venous admixture fraction added on top of whatever this
+    # patient's own body habitus already produces. Everything above this line
+    # DERIVES shunt from lung volume against closing capacity, so a fat patient
+    # already shunts more than a thin one; this term is the DISEASE, which the
+    # habitus route cannot express because it only knows about airway closure.
+    #
+    # THE ARITHMETIC IS THE TEXTBOOK SHUNT EQUATION AND NOTHING MORE. The model
+    # already mixes CONTENTS, not tensions -- see plateau_sao2's docstring:
+    #     CaO2 = (1 - f) Cc'O2 + f CvO2
+    # so setting f to 0.20 mixes one part mixed-venous blood with four parts
+    # end-capillary blood, and the arterial oxygen tension falls out of the
+    # dissociation curve. THE A-a GRADIENT IS NOT SET; IT IS A CONSEQUENCE,
+    # which is why this is a shunt dial and not an "A-a gradient" dial. A fixed
+    # A-a gradient would be physiologically incoherent here: for one shunt the
+    # gradient is enormous at an alveolar PO2 of 600 mmHg and small once it has
+    # fallen to 60, so a number the user typed would be true for one instant of
+    # a run and wrong for the rest of it.
+    #
+    # ADDED AFTER shunt_ceiling, DELIBERATELY. That ceiling is a numerical
+    # guard on the CLOSURE route, binding at a lung a twenty-fourth of its
+    # closing capacity. Disease is not bound by it -- a lobar consolidation
+    # shunts more than 40% -- so the ceiling applies to the derived part only
+    # and the total is clamped at 0.95 where it is used.
+    #
+    # DEFAULT 0.0 MAKES THIS BIT-IDENTICAL TO WHAT SHIPPED. No benchmark can
+    # move, no row in test_validation.py can change, and handover_numbers.py's
+    # several dozen shunt_base_eff() checks are untouched. That is the point of
+    # an additive term with a zero default rather than an override.
+    #
+    # UNSOURCED, AND SAID SO. This is a USER INPUT, not a fitted constant --
+    # the user asserts the pathology and the model shows its consequence -- so
+    # it needs no source in the way a parameter would. But nothing calibrates
+    # the mapping from a named disease to a number, so the page must not claim
+    # that 20% IS pneumonia. It is 20% shunt, and what that does is the lesson.
+    shunt_extra: float = 0.0
+
+    # EXTRA A-a GRADIENT, kPa. Added 2026-10-08 by ruling of A. Heard, who
+    # asked for the control in these terms twice. It is the SAME PHYSICS as
+    # shunt_extra above, driven from the other end.
+    #
+    # WHY A SOLVER AND NOT A STORED GRADIENT. The alveolar-to-arterial oxygen
+    # difference is an OUTPUT: it falls out of shunt, cardiac output, Hb and
+    # oxygen consumption. It cannot be stored and handed back, because for one
+    # fixed shunt the gradient is enormous at an alveolar PO2 of 570 mmHg and
+    # small once that has fallen to 60 -- the dissociation curve makes it so.
+    # So this field does not SET a gradient; it asks "what shunt would produce
+    # this much extra gradient, in this patient, at the reference condition?",
+    # solves for it, and then lets the gradient evolve as physics dictates.
+    #
+    # THE REFERENCE CONDITION IS pao2_alv = 570 mmHg, which is plateau_sao2()'s
+    # existing default and is roughly a preoxygenated lung at the start of
+    # apnoea. THE NUMBER ON THE DIAL IS THEREFORE TRUE AT THAT INSTANT AND NOT
+    # THROUGHOUT A RUN. The page says so; nothing here should pretend
+    # otherwise.
+    #
+    # IT COMPOSES WITH shunt_extra RATHER THAN FIGHTING IT. The gradient the
+    # patient already has -- from habitus and from shunt_extra -- is computed
+    # first, this is added on top, and the total is inverted back to a shunt.
+    # So both dials can be used together and the arithmetic is well defined.
+    #
+    # DEFAULT 0.0 IS BIT-IDENTICAL to what shipped: the solver is not even
+    # called at zero, so no benchmark can move and nothing pays for the
+    # inversion.
+    aa_extra_kpa: float = 0.0
+
     # --- closing capacity (PLACEHOLDER VALUES, BUT THE SOURCE IS KNOWN) ----
     #
     # THE SOURCE WAS READ AT SOURCE 2026-09-23. Buist AS, Ross BB, Am Rev
@@ -2010,7 +2079,23 @@ class Patient:
         """
         x = self.closure_x(self.frc_anaes())
         s = self.shunt_anat + (1.0 - self.shunt_anat) * x / (x + self.shunt_cc_k)
-        return float(min(s, self.shunt_ceiling))
+        # shunt_ceiling guards the CLOSURE route only; pathological shunt is
+        # added after it and is not bound by it. See the parameter block.
+        f = min(min(s, self.shunt_ceiling) + self.shunt_extra, 0.95)
+        if self.aa_extra_kpa <= 0.0:
+            return float(f)
+        # The A-a dial, solved. Cached because this is called every timestep
+        # and the inversion bisects; the key is every input the answer uses,
+        # so a mutated Patient re-solves rather than returning a stale number.
+        key = (f, self.aa_extra_kpa, self.hb, self.vo2_anaes(), self.co_anaes())
+        hit = getattr(self, '_aa_cache', None)
+        if hit is not None and hit[0] == key:
+            return hit[1]
+        g0 = aa_gradient_mmhg(self, f)
+        tot = shunt_for_aa_gradient(self, g0 + self.aa_extra_kpa * KPA_MMHG)
+        out = float(min(max(tot, f), 0.95))
+        object.__setattr__(self, '_aa_cache', (key, out))
+        return out
 
     def unwashed_fraction(self):
         """Perfusion share whose airway was shut throughout preoxygenation.
@@ -2061,6 +2146,56 @@ class AirwayEpoch:
 
 
 # ---------------------------------------------------------------------------
+# mmHg per kPa. Here rather than imported so this file stays standalone.
+KPA_MMHG = 7.50062
+
+# REFERENCE ALVEOLAR PO2 for the A-a dial, mmHg. The same 570 that
+# plateau_sao2() has always defaulted to: roughly a preoxygenated lung at the
+# start of apnoea. The A-a gradient a user dials is true AT THIS CONDITION and
+# nowhere else in the run, which is a property of the quantity, not a defect.
+AA_REF_PAO2 = 570.0
+
+
+def aa_gradient_mmhg(pt: Patient, shunt, pao2_alv=AA_REF_PAO2, co=None):
+    """Alveolar-to-arterial oxygen difference, mmHg, for a given shunt.
+
+    The forward direction of plateau_sao2(): mix end-capillary blood with
+    mixed-venous in the proportion the shunt sets, read the arterial oxygen
+    CONTENT, then come back through the dissociation curve to a tension. The
+    gradient is what is left over. Nothing here is fitted -- it is the shunt
+    equation and Hufner's constant.
+    """
+    cc_o2 = bg.HUFNER * pt.hb + bg.O2_SOL * pao2_alv
+    d_av = pt.vo2_anaes() / (10.0 * (co if co is not None else pt.co_anaes()))
+    f = float(np.clip(shunt, 0.0, 0.95))
+    ca_o2 = cc_o2 - (f / (1.0 - f)) * d_av
+    pa_o2 = bg.po2_from_o2_content(max(ca_o2, 1e-6), pt.hb)
+    return float(pao2_alv - pa_o2)
+
+
+def shunt_for_aa_gradient(pt: Patient, aa_mmhg, pao2_alv=AA_REF_PAO2, co=None):
+    """The shunt that produces a given A-a gradient. Inverts the above.
+
+    Solved, not iterated: from the target tension comes a target content, and
+    the shunt equation rearranges to f = r/(1+r) with r the content deficit in
+    units of the arteriovenous difference. The only numerical step is the
+    dissociation curve itself.
+
+    THIS IS WHY A SLIDER CAN BE LABELLED IN A-a GRADIENT HONESTLY. The user
+    names a gradient, the model works out what shunt that implies, and from
+    then on the gradient is free to move as the alveolar oxygen falls -- which
+    is what a real lung does and what a stored gradient could never do.
+    """
+    cc_o2 = bg.HUFNER * pt.hb + bg.O2_SOL * pao2_alv
+    d_av = pt.vo2_anaes() / (10.0 * (co if co is not None else pt.co_anaes()))
+    pa_target = max(1.0, pao2_alv - float(aa_mmhg))
+    ca_target = bg.o2_content(pa_target, pt.hb)
+    r = (cc_o2 - ca_target) / max(d_av, 1e-9)
+    if r <= 0.0:
+        return 0.0
+    return float(np.clip(r / (1.0 + r), 0.0, 0.95))
+
+
 def plateau_sao2(pt: Patient, shunt, pao2_alv=570.0, co=None):
     """
     Steady-state arterial saturation during MAINTAINED apnoeic oxygenation.

@@ -204,13 +204,50 @@ function derive(P){
   // re-fitted; re-fit to Pelosi alone. See apnoea_core.py shunt_cc_k.
   const _sck=P.shuntCcK===undefined?16.36:P.shuntCcK;
   const _scl=P.shuntCeiling===undefined?0.40:P.shuntCeiling;
+  // EXTRA SHUNT FROM LUNG PATHOLOGY, 2026-10-08 -- tracks apnoea_core.py
+  // shunt_extra. Added AFTER shuntCeiling, which guards the airway-closure
+  // route only; disease is not bound by it. Default 0 is bit-identical to
+  // what shipped. The A-a gradient is a CONSEQUENCE of this, never an input.
+  const _sx=P.shuntExtra===undefined?0:P.shuntExtra;
   const _xs=Math.max(0,cc-frc)/Math.max(frc,100);
-  const shuntBaseEff=Math.min(_scl,_sanat+(1-_sanat)*_xs/(_xs+_sck));
+  let shuntBaseEff=Math.min(0.95,
+    Math.min(_scl,_sanat+(1-_sanat)*_xs/(_xs+_sck))+_sx);
+  // THE A-a GRADIENT DIAL, 2026-10-08 -- tracks apnoea_core.py aa_extra_kpa,
+  // aa_gradient_mmhg() and shunt_for_aa_gradient(). The gradient is an OUTPUT,
+  // so this does not store one: it asks what shunt would produce this much
+  // EXTRA gradient at the reference alveolar PO2 of 570 mmHg, solves for it,
+  // and lets the gradient move from there as the alveolar oxygen falls. The
+  // number on the dial is therefore true at the start of apnoea and not
+  // throughout the run. Composes with shuntExtra: that patient's existing
+  // gradient is computed first and this is added on top.
+  const _aa=P.aaExtraKpa===undefined?0:P.aaExtraKpa;
+  const AAREF=570, KPAMM=7.50062;
+  if(_aa>0){
+    // P.hb, not hb: derive() has no local of that name. vo2 here is the
+    // UNCLAMPED local, which is what Python's vo2_anaes() returns -- the
+    // Math.max(60,...) in derive's return value is applied only on the way out.
+    const ccO2b=HUFNER*P.hb+O2SOL*AAREF;
+    const dav=Math.max(vo2/(10*co),1e-9);
+    const fb=Math.min(Math.max(shuntBaseEff,0),0.95);
+    const caNow=ccO2b-(fb/(1-fb))*dav;
+    const g0=AAREF-po2FromO2Content(Math.max(caNow,1e-6),P.hb,7.40,40,37);
+    const paT=Math.max(1,AAREF-(g0+_aa*KPAMM));
+    const caT=o2Content(paT,P.hb,7.40,40,37);
+    const r=(ccO2b-caT)/dav;
+    if(r>0) shuntBaseEff=Math.min(0.95,Math.max(fb,r/(1+r)));
+  }
+  // The resulting A-a gradient at the reference condition, kPa. For the dial
+  // readout only -- no physics reads it. Computed here rather than in the page
+  // so there is ONE copy of the arithmetic.
+  const _fg=Math.min(Math.max(shuntBaseEff,0),0.95);
+  const aaG0=(AAREF-po2FromO2Content(
+    Math.max(HUFNER*P.hb+O2SOL*AAREF
+      -(_fg/(1-_fg))*Math.max(vo2/(10*co),1e-9),1e-6),P.hb,7.40,40,37))/KPAMM;
   const _xu=Math.max(0,cc-frcAwake)/Math.max(frcAwake,100);
   const MAXC=P.maxClosed===undefined?0.25:P.maxClosed;
   const CCK=P.ccK===undefined?1.5:P.ccK;
   const unwashed=MAXC*_xu/(_xu+CCK);
-  return {bmi,frc,cc,vo2:Math.max(60,vo2),co,n2cap,lam,hf,tiltF,anaemiaCo,rvEff,unwashed,shuntBaseEff};
+  return {bmi,frc,cc,vo2:Math.max(60,vo2),co,n2cap,lam,hf,tiltF,anaemiaCo,rvEff,unwashed,shuntBaseEff,aaG0};
 }
 
 function simulate(P, epochs, dt=0.1){

@@ -607,6 +607,22 @@ const DIALS=[
  ['hb','Haemoglobin',4.0,18.0,0.5,14.0,null],
  ['fgBuccal','Pharyngeal O\u2082 (device arm)',0.21,1.00,0.01,1.00,null],
  ['tiltDeg','Bed tilt (head up)',-20,45,1,25,null],
+ // EXTRA SHUNT FROM LUNG PATHOLOGY, 2026-10-08, ruled by A. Heard.
+ // Venous admixture added on top of what this patient's habitus already
+ // produces, so the page can show a diseased lung and not only a fat one.
+ // 0 to 40 per cent: 0 is the healthy default and bit-identical to what
+ // shipped before; the top end is lobar consolidation or a large
+ // right-to-left shunt. The readout shows the RESULTING baseline shunt, so
+ // the dial teaches that habitus and disease add.
+ // THE A-a GRADIENT DIAL, 2026-10-08, asked for twice by A. Heard.
+ // kPa of EXTRA alveolar-to-arterial oxygen difference on top of the
+ // patient's own. It does not store a gradient -- the gradient is an output
+ // -- it solves for the shunt that produces this much extra at the reference
+ // alveolar PO2 of 570 mmHg, roughly a preoxygenated lung at the start of
+ // apnoea, and then lets physics take it from there. The readout shows the
+ // shunt it implies and says WHEN the number is true, because for one fixed
+ // shunt the gradient is large at a high alveolar PO2 and small at a low one.
+ ['aaExtraKpa','Extra A\u2013a gradient',0,40,1,0,null],
  ['buccalIdx','Buccal switched on',0,4,1,0,null]];
 // The decision points an anaesthetist actually has, not arbitrary seconds.
 const STARTS=[[0,'From induction'],[120,'After mask ventilation fails'],
@@ -1051,6 +1067,20 @@ function labels(){
   document.getElementById('v_hb').textContent=
     hb.toFixed(1)+' g/dL'+(f>1.005?' \u00b7 CO \u00d7'+f.toFixed(1):'');}
  document.getElementById('v_fgBuccal').textContent=(P.fgBuccal*100).toFixed(0)+'%';
+ // Show the RESULT, not just the setting: the patient's own habitus already
+ // shunts, and the dial adds to it. shuntBaseEff already includes the extra.
+ // derive(P) rather than D.B: simulate() copies only frc/cc/vo2/coBase/bmi
+ // onto its result, so shuntBaseEff is not on it. Calling derive directly also
+ // means the readout is right before the first run, not only after it.
+ // Show the gradient asked for, the shunt it implies, and -- when the dial
+ // is off -- the gradient the patient has anyway. derive(P) rather than D.B:
+ // simulate() copies only frc/cc/vo2/coBase/bmi onto its result.
+ {const _sb=derive(P).shuntBaseEff;
+  const _g=derive(P).aaG0;
+  document.getElementById('v_aaExtraKpa').textContent=
+    (P.aaExtraKpa>0?'+'+P.aaExtraKpa.toFixed(0)+' kPa':'none')+
+    (isFinite(_sb)?' \u00b7 '+_g.toFixed(1)+' kPa at onset \u00b7 shunt '
+      +(_sb*100).toFixed(1)+'%':'');}
  const st=STARTS[P.buccalIdx], mm=Math.floor(st[0]/60)+':'+
    String(st[0]%60).padStart(2,'0');
  document.getElementById('v_buccalIdx').textContent=mm;

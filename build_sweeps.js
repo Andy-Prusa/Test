@@ -72,19 +72,30 @@ const SPO2_DEAD = 90;          // the hypoxia limb, for reference
 // ---- the page's own dials and base, kept in step with build_page.py --------
 // A copy, and that is a risk: if build_page.py's DIALS and BASE change and
 // these do not, the sweep describes a patient the page no longer offers. The
-// --check below hashes build_page.py for exactly that reason.
+// --check below hashes build_page.py for exactly that reason, AND compares the
+// dial KEYS -- see checkDialKeys(), added 2026-10-08 after the hash alone let
+// a drifted copy through for a day.
 const DIALS = [
   ['weight', 'Body weight', 45, 180, 0.5, 76.5, 'kg'],
   ['height', 'Height', 1.45, 2.05, 0.01, 1.75, 'm'],
   ['frcScale', 'FRC', 0.55, 1.5, 0.01, 1.0, 'x'],
   ['bmrScale', 'Metabolic rate', 0.6, 1.7, 0.01, 1.0, 'x'],
   ['hb', 'Haemoglobin', 4.0, 18.0, 0.5, 14.0, 'g/dL'],
-  ['ccScale', 'Closing capacity', 0.6, 1.6, 0.01, 1.0, 'x'],
-  ['maxClosed', 'Lung collapsibility', 0.10, 0.65, 0.01, 0.25, ''],
   ['fgBuccal', 'Pharyngeal O2 (device arm)', 0.21, 1.00, 0.01, 1.00, ''],
   ['tiltDeg', 'Bed tilt (head up)', -20, 45, 1, 25, 'deg'],
+  // ADDED 2026-10-08. Extra alveolar-to-arterial oxygen difference on top of
+  // the patient's own, solved back to the shunt that produces it. The
+  // underlying shuntExtra remains a model parameter but is not a dial.
+  ['aaExtraKpa', 'Extra A-a gradient', 0, 40, 1, 0, 'kPa'],
   ['buccalIdx', 'Buccal switched on', 0, 4, 1, 0, ''],
 ];
+// ccScale and maxClosed WERE HERE UNTIL 2026-10-08 and should not have been.
+// build_page.py hid them from the page on 2026-10-07 (4c47279) for being
+// inert -- 12 s and nothing across their whole ranges -- and moved them into
+// BASE at their defaults. THIS FILE WAS NOT UPDATED, so for a day the Outputs
+// view offered two pages of graph for controls the page no longer has, and
+// the 2026-10-07 regeneration reproduced them. They are now in BASE below,
+// which is what build_page.py does. See the keys check in pageInputs().
 const STARTS = [[0, 'From induction'], [120, 'After mask ventilation fails'],
                 [160, 'After the LMA fails'], [280, 'At laryngoscopy'],
                 [370, 'After failed intubation attempts']];
@@ -94,6 +105,8 @@ const BASE = {
   crs: 75, vArt: 1.0, vVen: 2.0, vTisO2: 1.5, feo2: 0.87, rv: 1100,
   kRvBmi: 0.0198, pCollapse: -149.5461, nVq: 80, tauMix: 45,
   inflowMechFrac: 0.18,
+  // hidden dials, held at their former slider defaults -- see build_page.py
+  ccScale: 1.0, maxClosed: 0.25, shuntExtra: 0,
 };
 DIALS.forEach(d => { BASE[d[0]] = d[5]; });
 
@@ -206,6 +219,44 @@ function pageInputs() {
   return out;
 }
 
+// THE HASH ALONE IS NOT ENOUGH, AND A DAY OF WRONG OUTPUT PROVED IT.
+// engineHash() notices that build_page.py's DIALS block CHANGED and forces a
+// rebuild -- but a rebuild re-runs THIS file's copy, so if the copy is wrong
+// the rebuild faithfully reproduces the wrong sweep. That is exactly what
+// happened between 2026-10-07 and 2026-10-08: ccScale and maxClosed were
+// hidden from the page, this copy was not updated, the hash changed, sweeps
+// was regenerated, and the Outputs view carried two pages of graph for
+// controls the page no longer offered. The hash said "something moved"; it
+// could not say "your copy is wrong".
+//
+// So compare the KEYS themselves. This is cheap and it is the check the
+// comment at the head of DIALS always claimed to be.
+function checkDialKeys() {
+  const src = fs.readFileSync(path.join(__dirname, 'build_page.py'), 'utf8');
+  const a = src.indexOf('const DIALS=[');
+  const b = src.indexOf('];', a);
+  const block = src.slice(a, b);
+  // first string literal of each row: ['key','Label',...]
+  const pageKeys = [];
+  const re = /\[\s*'([A-Za-z0-9_]+)'\s*,/g;
+  let m;
+  while ((m = re.exec(block)) !== null) pageKeys.push(m[1]);
+  const mine = DIALS.map(d => d[0]);
+  const missing = pageKeys.filter(k => !mine.includes(k));
+  const extra = mine.filter(k => !pageKeys.includes(k));
+  if (missing.length || extra.length) {
+    const lines = [];
+    if (missing.length) lines.push(`  on the page but NOT swept: ${missing.join(', ')}`);
+    if (extra.length) lines.push(`  swept but NOT on the page:   ${extra.join(', ')}`);
+    throw new Error('build_sweeps.js\'s DIALS copy has drifted from '
+      + 'build_page.py:\n' + lines.join('\n')
+      + '\nFix the copy in build_sweeps.js. A dial the page does not offer '
+      + 'gets a page of graph nobody can reach; a dial it does offer gets '
+      + 'none. Hidden dials belong in BASE, not in DIALS.');
+  }
+  return pageKeys.length;
+}
+
 function engineHash() {
   const h = crypto.createHash('sha256');
   h.update(fs.readFileSync(path.join(__dirname, 'model.js')));
@@ -252,6 +303,7 @@ function loadPartial(hash) {
 }
 
 function build() {
+  checkDialKeys();          // refuse to sweep a dial set the page does not have
   const hash = engineHash();
   const dials = SMOKE ? [] : loadPartial(hash);
   const done = new Set(dials.map(d => d.key));
@@ -383,11 +435,29 @@ if (process.argv.includes('--verify') || process.argv.includes('--restamp')) {
 }
 
 if (process.argv.includes('--check')) {
+  // keys first: a drifted copy is a louder failure than a stale file, and it
+  // is not fixed by rebuilding.
+  checkDialKeys();
   if (!fs.existsSync(OUT)) {
     console.error(`STALE: ${path.basename(OUT)} does not exist; run: node build_sweeps.js`);
     process.exit(1);
   }
   const have = JSON.parse(fs.readFileSync(OUT, 'utf8'));
+  // THE STORED FILE'S OWN DIAL KEYS, compared against the dial set now. The
+  // engine hash covers model.js and build_page.py but NOT this file's copy of
+  // DIALS, so correcting a drifted copy leaves the hash unchanged and the
+  // stored sweep wrong. Found 2026-10-08 immediately after fixing the drift:
+  // --check said "up to date" over a sweeps.json built from the old dial list.
+  {
+    const stored = (have.dials || []).map(d => d.key);
+    const now = DIALS.map(d => d[0]);
+    if (stored.length !== now.length || stored.some((k, i) => k !== now[i])) {
+      console.error(`STALE: ${path.basename(OUT)} was built for dials `
+        + `[${stored.join(', ')}] and the dial set is now [${now.join(', ')}]. `
+        + 'Run: node build_sweeps.js');
+      process.exit(1);
+    }
+  }
   const want = engineHash();
   if (have.engineHash !== want) {
     console.error(`STALE: ${path.basename(OUT)} was built against engine `
