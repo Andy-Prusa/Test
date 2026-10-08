@@ -86,7 +86,7 @@ const DIALS = [
   // ADDED 2026-10-08. Extra alveolar-to-arterial oxygen difference on top of
   // the patient's own, solved back to the shunt that produces it. The
   // underlying shuntExtra remains a model parameter but is not a dial.
-  ['aaExtraKpa', 'Extra A-a gradient', 0, 40, 1, 0, 'kPa'],
+  ['aaExtraKpa', 'Extra A-a gradient', 0, 75, 1, 0, 'kPa'],
   ['buccalIdx', 'Buccal switched on', 0, 4, 1, 0, ''],
 ];
 // ccScale and maxClosed WERE HERE UNTIL 2026-10-08 and should not have been.

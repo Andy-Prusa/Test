@@ -622,7 +622,16 @@ const DIALS=[
  // apnoea, and then lets physics take it from there. The readout shows the
  // shunt it implies and says WHEN the number is true, because for one fixed
  // shunt the gradient is large at a high alveolar PO2 and small at a low one.
- ['aaExtraKpa','Extra A\u2013a gradient',0,40,1,0,null],
+ // CEILING 75 kPa, NOT 90, AND THAT IS PHYSICS NOT PREFERENCE. A. Heard asked
+ // for 90 on 2026-10-08. The TOTAL gradient cannot exceed the alveolar PO2
+ // itself -- 570 mmHg, 76.0 kPa -- because arterial tension cannot go below
+ // zero, so the dial saturates at (76 - the patient's own gradient): 58 kPa
+ // for the obese standard patient, about 67 for the lean one. Measured, not
+ // argued: at 58, 70 and 90 the obese patient gives an identical 77.93% shunt
+ // and 75.9 kPa. A dial whose top third does nothing, at a point that MOVES
+ // WITH THE PATIENT, is the control this project hides. 75 is the physical
+ // limit; past each patient's own saturation the readout says "capped".
+ ['aaExtraKpa','Extra A\u2013a gradient',0,75,1,0,null],
  ['buccalIdx','Buccal switched on',0,4,1,0,null]];
 // The decision points an anaesthetist actually has, not arbitrary seconds.
 const STARTS=[[0,'From induction'],[120,'After mask ventilation fails'],
@@ -1077,8 +1086,15 @@ function labels(){
  // simulate() copies only frc/cc/vo2/coBase/bmi onto its result.
  {const _sb=derive(P).shuntBaseEff;
   const _g=derive(P).aaG0;
+  // "capped" when the lung has run out: the gradient asked for exceeds the
+  // alveolar PO2, so the solver cannot deliver it and the dial has stopped
+  // responding. Shown rather than hidden -- a silent dead zone is worse than
+  // a stated one.
+  const _want=derive({...P,aaExtraKpa:0}).aaG0+P.aaExtraKpa;
+  const _capped=P.aaExtraKpa>0 && _g < _want-0.2;
   document.getElementById('v_aaExtraKpa').textContent=
     (P.aaExtraKpa>0?'+'+P.aaExtraKpa.toFixed(0)+' kPa':'none')+
+    (_capped?' \u00b7 capped':'')+
     (isFinite(_sb)?' \u00b7 '+_g.toFixed(1)+' kPa at onset \u00b7 shunt '
       +(_sb*100).toFixed(1)+'%':'');}
  const st=STARTS[P.buccalIdx], mm=Math.floor(st[0]/60)+':'+
