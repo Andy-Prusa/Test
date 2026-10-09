@@ -2187,6 +2187,21 @@ function drawSweep(){
   +'and the evidence below says the acidosis alone would not be what killed them.';
  if(d.deviceOnly) note+=' This slider only affects the buccal arm, so the no-buccal '
   +'line is flat by construction.';
+ // THE A-a PAGE NEEDS SAYING OUT LOUD, 2026-10-09, ruled by A. Heard. Without
+ // it the graph reads as a broken control: nearly flat, then a cliff. Both
+ // features are real and measured, and they are the point of the dial.
+ if(d.key==='aaExtraKpa') note+=' <b>Read this page twice.</b> Below about '
+  +'60 kPa the solid line barely moves &mdash; 745 s down to 701 s across that '
+  +'whole range &mdash; because in an apnoeic patient with no supply of oxygen '
+  +'the <b>store</b> sets the clock and the gradient only sets the tension. '
+  +'The same dial halves arterial PO&#8322;. <b>The buccal arm is the opposite</b>: '
+  +'it is supplied rather than stored, so shunt decides whether supply can keep '
+  +'up, and in an obese patient the same range costs <b>17.5 minutes</b> of time '
+  +'to SpO&#8322; 95%. <b>Then both arms fall off a cliff.</b> Between 60 and 68 kPa '
+  +'the implied shunt crosses about three quarters of the cardiac output, and no '
+  +'amount of pharyngeal oxygen can oxygenate blood that never meets gas &mdash; '
+  +'the device survives the whole hour at every setting below it and then dies in '
+  +'fifty seconds. It fails abruptly rather than degrading.';
  if(d.moved.length){
   const bits=d.moved.map(k=>{
    const v=d.derived[k], a=v[0], b=v[v.length-1];
