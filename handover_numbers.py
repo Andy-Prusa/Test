@@ -4869,6 +4869,7 @@ print("    measurement of subject 7. It bounds the nomogram, not the patient.")
 
 
 print()
+print()
 if _fails:
     print(f"{len(_fails)} value(s) in HANDOVER.md have drifted:")
     for f in _fails:

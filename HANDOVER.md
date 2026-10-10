@@ -5,6 +5,151 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-10 (forty-fourth entry): `handover_numbers.py` has been silently failing for two weeks, 323 of its 601 reachable checks are wrong, and one commit on 2026-09-26 explains 135 of them — the file that exists to stop numbers rotting had itself rotted
+
+**Found while answering a different question.** A. Heard asked for a `--only`
+flag so sections of `handover_numbers.py` could be run separately. Measuring
+where its time went turned up something larger: **nobody can run the file, and
+most of what it checks is now wrong.**
+
+### 1. THE FILE CANNOT BE RUN TO COMPLETION
+
+Instrumented with a timer at every one of its 79 section boundaries and run
+once: **29 sections, covering lines 1–1367 of 4879, consumed 111 minutes** and
+the run was killed at the two-hour limit. Extrapolating from measured sections
+rather than guesses, the whole file is **four to six hours**.
+
+It is in neither gate. Not in `.githooks/pre-commit` (deliberately, and that
+is right — it checks claims about the world, not invariants of the code) and
+**not in CI either**, which was never a decision, just an absence. So its
+checks are run only by hand, and it is now far too long for anyone to do that.
+
+**A self-checking file nobody can finish running is a file whose checks do not
+get run.** That is the same failure mode as a permanently red benchmark suite,
+which this project already has a rule against.
+
+### 2. 323 OF 601 CHECKS FAIL
+
+The 3511 lines nobody reaches were run in three parallel chunks, each section
+isolated in `try/except` so one failure could not stop the rest, and with the
+distinction kept between a check that **ran and disagreed** and a section that
+**could not run** for want of a variable defined earlier:
+
+| chunk | lines | ok | FAIL | untested |
+|---|---|---|---|---|
+| 1 | 1368–2500 | 42 | **146** | 0 |
+| 2 | 2500–3600 | 90 | **93** | 0 |
+| 3 | 3600–4879 | 146 | **84** | 1 |
+| | | **278** | **323** | 1 |
+
+**54% of the checks in the unreachable two-thirds of the file are failing.**
+The one untested section (3921–4143) needs `PB`, barometric pressure, which the
+preamble does not import — a gap in the harness, not in the code.
+
+**THESE ARE NOT ARTEFACTS OF CHUNKING.** Two failures from unrelated
+subsystems were re-run in total isolation — the file's own preamble plus the
+single check, nothing else — and reproduced exactly: the closing-capacity
+crossover at 51.59 y against a recorded 41.66, and cardiac output at Tokics'
+cohort at 4.55 l/min against a recorded 4.04.
+
+### 3. ONE COMMIT EXPLAINS ROUGHLY 135 OF THEM
+
+`frc_awake()` — the lung volume an awake patient sits at — was re-solved on
+2026-09-26 in `48ffe03`, "RULED: frc_awake re-solved on Watson & Pride's own
+two cohorts". Computed at each commit from a checkout of that commit, BMI 22,
+age 45, supine:
+
+| | awake FRC | CC = awake FRC at | CC = anaesthetised FRC at |
+|---|---|---|---|
+| `34b1f7c`, 2026-09-26 **05:22** | 2500 mL | **41.66 y** | **30.62 y** |
+| `48ffe03`, 2026-09-26 **07:27** | 2860 mL | **51.59 y** | **40.55 y** |
+| now | 2860 mL | 51.59 y | 40.55 y |
+
+**The recorded numbers reproduce to the decimal at the commit that wrote them,
+and were invalidated two hours later the same day.** Closing capacity is
+2621.1 mL throughout — unchanged. Only lung volume moved, by 360 mL, and it
+has been stable since, so this is ONE EVENT and not ongoing drift.
+
+**Everything downstream of lung volume moved with it.** Grouping the 323
+failures:
+
+| n | median error | family | downstream of FRC? |
+|---|---|---|---|
+| 39 | 18% | shunt against BMI | **yes** — `shunt_base_eff()` keys on FRC against closing capacity |
+| 26 | 14% | tilt | **yes** — head-up acts by changing FRC |
+| 25 | 90% | FRC form variants A/B/C/D | **yes** |
+| 19 | 39% | Damia supine/seated ratios | **yes** |
+| 18 | 11% | sensitivity sweeps ±10% | **yes** |
+| 8 | 21% | closing capacity / crossover | **yes** |
+| 17 | 91% | timestep and discretisation | no |
+| 5 | 4% | cardiac output | no |
+| 4 | 5% | time to SpO₂ | no |
+| 162 | — | unclassified: 21 Frumin, 14 CO₂-slope sweeps, 11 "adopted" curve | mixed |
+
+**135 of the 323 are FRC consumers.** They are not 135 investigations; they
+are one event with 135 consequences, and recording it once is the honest fix.
+
+CAVEAT ON THE PERCENTAGES: the largest divide by a recorded zero — "ERV
+anaesthetised at BMI 46.4 (Holley: zero in morbidly obese)" got 274 mL against
+0 — so the ratio is meaningless even though the change is real. Do not quote
+the headline percentages.
+
+### 4. WHAT IT COSTS THE 2026-09-26 CLOSING-CAPACITY RULING
+
+The file says of the crossover test: **"It has NO FREE PARAMETER in it, which
+is what makes it worth failing against"**, and that the adopted curve cut the
+error from 13.0 years to 2.3 against the literature's ~44 y (Milic-Emili 2007;
+BJA Education 2022).
+
+Measured today, **the adopted curve is 7.6 years out, not 2.3** (51.59 against
+44), and the retired curve is 29 years out (73.00 against 44).
+
+**THE DIRECTION OF THE RULING SURVIVES AND THE HEADLINE FIGURE DOES NOT.**
+Adopted is still far better than retired — 7.6 years against 29. What is no
+longer true is the number used to justify it. The ruling does not need
+re-opening; the figure in it needs correcting, with the date it changed.
+
+### 5. WHAT IS NOT EXPLAINED BY FRC, AND NEEDS ITS OWN LOOK
+
+- **The a-A CO₂ gap has CHANGED SIGN.** −0.35 mmHg against a recorded +8.27
+  sealed, and −0.19 against +0.08 patent. A gap going negative means alveolar
+  CO₂ below arterial. A sign change is structural, not drift, and it is the one
+  finding here that might be a defect rather than a stale record.
+- **The CO₂ slope sweeps are uniformly ~4% high** — 1.98 against 1.91 sealed,
+  1.85 against 1.78 patent — and the offset is the SAME whatever parameter the
+  sweep varies (`vq_log_sd`, `tau_mix`, `rq`, `v_tis_co2_fast`). That is one
+  baseline shift, not fourteen failures.
+- **The Frumin pH rows are tolerance questions, not drift.** 21 of them, all
+  under 1% out: pH recorded to three decimals and checked at a tolerance that
+  no longer admits the rounding. These need their bands widened, not the model
+  changed.
+
+### 6. WHAT WAS DONE ABOUT IT, AND WHAT WAS NOT
+
+**Done:** the A-a gradient dial's own numbers were split into `aa_numbers.py`
+(169 lines, ~9 min) following `buccal_numbers.py`, so at least the newest and
+most actively used set of numbers is in a file that can be run. `CLAUDE.md`
+lists it.
+
+**NOT done, and deliberately:** none of the 323 failures has been corrected.
+Each is either a number to re-record against the current model or a document to
+fix, and that is a body of rulings, not a tidy-up. **The `--only` flag that
+started this was NOT built either** — `handover_numbers.py` is a flat script
+whose 79 sections share state through module-level variables, so selecting
+sections means restructuring it into functions, which is a real refactor of the
+one file whose job is to catch drift. Per-topic scripts are the pattern that
+already works here.
+
+### 7. THE LESSON, WHICH IS THE PROJECT'S OWN RULE TURNED ON ITSELF
+
+CLAUDE.md says **"Numbers in markdown rot. Numbers in scripts do not."**
+`handover_numbers.py` is the script that makes that true. It stopped being run,
+and the numbers in it rotted exactly as prose would have — silently, for two
+weeks, while every commit message in that period could still cite them.
+
+The guarantee was never "the numbers are in a script". It was "the script is
+run". Nothing in this repository enforced the second half.
+
 ## Current state — 2026-10-07 (forty-third entry): absorption atelectasis asked about, found already modelled and verified correct against Joyce 1999 — and seven of its parameters have no source at all
 
 **Asked by A. Heard:** *"Do we need to model absorption atelectasis because

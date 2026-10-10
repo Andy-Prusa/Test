@@ -153,3 +153,29 @@ Heard control, time to SpO2<95%
 # tilt_gain_lean and tilt_gain_bmi with NO INDEPENDENT CHECK: Valenza was the
 # only anaesthetised FRC-against-tilt measurement held, and the two gains are
 # now solved on two apnoea-time trials, exactly determined.
+
+# NOTED 2026-10-07, RULED. `ICSM rescue, post-rescue PaO2` DOES NOT ENTER THIS
+# FILE. It was a new failure this morning and the honest resolution was not a
+# ruling under rule 1 but RETIREMENT: the row graded a can't-intubate-
+# can't-oxygenate rescue, and protocol/predictions.py runs one scenario -- "a
+# preoxygenated, paralysed adult whose tracheal tube is occluded at
+# end-expiration" -- with no rescue limb anywhere in the three-way study. Out
+# for SCOPE, as Altermatt and Valenza went, not to clear a red suite. The
+# reasoning sits where the test was, in test_validation.py.
+#
+# WHAT IT WAS CERTIFYING, recorded because it is the useful part: the row had
+# been PASSING at 50.54 kPa only because the model reopened collapsed lung at
+# ZERO AIRWAY PRESSURE -- 0.1593 -> 0.0000 across the rescue. Turning
+# recruitment off (recruit_frac = 0.0, ruled the same day on Magnusson &
+# Spahn 2003 and Tweed 1993) dropped it to 23.52 kPa. That is not the reason
+# for retirement, but it is how the free recruitment was found.
+#
+# `ICSM jet, PaO2 at cricothyroidotomy` STAYS, AND THE SCOPE ARGUMENT DOES
+# NOT REACH IT. Checked 2026-10-07 when A. Heard asked what the jet row is.
+# Despite the name it simulates NO jet ventilation and no rescue: it runs a
+# complete obstruction to SaO2 40% and samples the gas state AT THAT INSTANT,
+# the moment of cricothyroidotomy, before anything is done. That is this
+# project's scenario exactly -- obstruction, apnoea, gas state -- whereas the
+# retired rescue row simulated what happens AFTER the airway is restored. An
+# earlier draft of this note said the same argument reached both rows. It
+# does not.
