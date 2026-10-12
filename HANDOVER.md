@@ -5,7 +5,59 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
-## Current state — 2026-10-12 (forty-fifth entry): it was not one commit but FOUR IN THIRTY-SIX MINUTES, and underneath them a structural fault — `frc_anaes()` carries Pelosi's SHAPE but takes its LEVEL from `frc_ref`, an AWAKE parameter, so re-solving awake lung volume moves the anaesthetised lung for no anaesthetised reason
+## Current state — 2026-10-12 (forty-fifth entry, WITH ITS CENTRAL CLAIM RETRACTED THE SAME DAY): the cascade is real, the "structural fault" is NOT — the model sits 3.67% from the curve it actually targets, and the 32.65% was scored against a target abandoned on 2026-09-26
+
+### 0. RETRACTION, WRITTEN HOURS AFTER THE REST OF THIS ENTRY
+
+**THE STRUCTURAL FAULT CLAIMED BELOW DOES NOT EXIST, AND THE FIX PROPOSED FOR
+IT WOULD HAVE MADE THINGS WORSE.** Left in place rather than deleted, because
+the error is instructive and this project keeps its retractions visible.
+
+`_pelosi_frc()` IS NOT PELOSI. Ruling `bffbbf4` on 2026-09-26 read Damia 1988
+at source — same quantity, same method, same conditions, roughly twice the
+volume — and made the curve's offset **the mean of the two papers**,
+`C = (0.4600 + 0.9163) / 2 = 0.6882 L`. The model has aimed at that mean ever
+since. The check in `handover_numbers.py` still scores against
+`11.97 exp(-0.096 BMI) + 460` — **pure Pelosi, the target the model gave up.**
+
+Scored against what it actually targets, at Pelosi's geometry:
+
+| | vs pure Pelosi | **vs Pelosi/Damia mean** |
+|---|---|---|
+| now, `frc_ref` 2860 | 32.65% | **3.67%** |
+| `frc_ref` 2500 | 13.33% | **11.73%** |
+
+**The model is 3.67% from its own target — better than the 7.79% the old row
+recorded.** And reverting `frc_ref` to 2500, which §3 below proposes, would
+take agreement with that target from 3.67% to 11.73%. **I would have made the
+model worse while believing I was repairing it.**
+
+So there is no awake/anaesthetised coupling to fix. The level inherited from
+`frc_ref` is very nearly right for the curve the model aims at.
+
+**WHAT SURVIVES FROM THE REST OF THIS ENTRY:** the thirty-six-minute cascade
+(§1) happened; the `"shipped"`/`_Legacy` label trap (§1) is real and still
+there; the Heard table (§2) is measured. **WHAT DOES NOT:** §3's diagnosis and
+its proposed de-coupling, and the framing of the Pelosi error as a defect.
+
+**AND THE CHECK ITSELF IS THE THIRD STALE THING FOUND IN THIS FILE IN THREE
+DAYS** — after the `"shipped"` label and the forty-fourth entry's crossover.
+It was not updated when `bffbbf4` changed what it should measure. That is the
+same failure as everything else here: the ruling moved, the instrument did not.
+
+**WHAT IS STILL GENUINELY OPEN.** Heard's obese control runs 347.2 s against a
+measured 244–314, and that is real. It is NOT explained by disagreement with
+Pelosi, because there is not much. Whatever runs obese patients long is
+something else, and it is not yet identified.
+
+**THE LIVE QUESTION UNDERNEATH ALL OF IT** is whether averaging Pelosi and
+Damia was right. Two primary sources, same method, differing roughly twofold.
+`bffbbf4` averaged rather than choosing. If Damia is right the model is fine;
+if Pelosi alone was right, that ruling is what to revisit — not `frc_ref`.
+
+---
+
+**WHAT THE ENTRY ORIGINALLY SAID FOLLOWS, UNEDITED:**
 
 **This corrects the forty-fourth entry, written two days ago.** That entry said
 "one commit on 2026-09-26 explains 135 of them" and named `48ffe03`. **That is
