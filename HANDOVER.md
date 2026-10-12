@@ -5,6 +5,120 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-12 (forty-fifth entry): it was not one commit but FOUR IN THIRTY-SIX MINUTES, and underneath them a structural fault — `frc_anaes()` carries Pelosi's SHAPE but takes its LEVEL from `frc_ref`, an AWAKE parameter, so re-solving awake lung volume moves the anaesthetised lung for no anaesthetised reason
+
+**This corrects the forty-fourth entry, written two days ago.** That entry said
+"one commit on 2026-09-26 explains 135 of them" and named `48ffe03`. **That is
+incomplete, and the number it rested on was the wrong row.**
+
+### 1. TWO CORRECTIONS TO THE FORTY-FOURTH ENTRY
+
+**THE "115%" IS THE RETIRED FORM, NOT THE SHIPPED MODEL.** The check reads
+`check("mean |error| vs Pelosi: shipped", _err["shipped"], 7.79, ...)`, and
+`"shipped"` maps to `_Legacy` — `Patient` with `frc_legacy_exp = True`, the
+form RETIRED by the 2026-09-25 ruling. The actually-shipped model is plain
+`Patient`, which that block labels **"C, Pelosi's shape with our level"**.
+
+| row | class | what it really is | recorded | now |
+|---|---|---|---|---|
+| "shipped" | `_Legacy` | the **retired** exponential | 7.79% | 115.29% |
+| "C, Pelosi-shape" | `Patient` | **the live model** | 1.86% | **32.65%** |
+
+**The live model is 32.65%, not 115.29%.** Still a seventeen-fold worsening,
+and still the largest single disagreement with a held measurement in this
+project — but the headline figure in the previous entry was the wrong row.
+**THE LABEL IS A TRAP AND IT WILL CATCH THE NEXT READER TOO**: it went stale
+when the ruling adopted the Pelosi shape and nobody renamed it.
+
+**AND IT WAS NOT ONE COMMIT.** Bisected across all 48 commits touching
+`apnoea_core.py` since 2026-09-18, computing the live model's mean absolute
+error against Pelosi at each:
+
+| commit | time | error vs Pelosi | what it ruled |
+|---|---|---|---|
+| `7330e05` | 09-23 07:23 | 44.01% | floor FRC at residual volume |
+| `b3a5eda` | 09-23 14:13 | 7.79% | RV falls with BMI (Reinius) — **caught and fixed in 7 h** |
+| **`3f42878`** | **09-25 13:43** | **1.86%** | **ADOPTED Pelosi's measured shape — the best it ever was** |
+| `bffbbf4` | 09-26 **06:51** | 6.82% | anaesthetised FRC = mean of Pelosi and Damia |
+| `3b3228a` | 09-26 **06:56** | 6.99% | the RV floor goes |
+| `e1be19f` | 09-26 **07:01** | 13.33% | frc_awake re-anchored on Damia |
+| `48ffe03` | 09-26 **07:27** | **32.65%** | frc_awake re-solved on Watson & Pride |
+
+**1.86% to 32.65% in thirty-six minutes, across four separate rulings.** No
+single step is reckless — `bffbbf4` nearly quadruples the error and 6.82% is
+still respectable; `3b3228a` costs almost nothing. **Each looks defensible
+alone. The sequence does not, and nobody saw it as a sequence**, because by
+then `handover_numbers.py` was already too slow to run. Note `b3a5eda`: the
+same thing happened on 09-23 and was caught within the day, when the file
+could still be run.
+
+### 2. WHAT IT COSTS THE ONE OBESE CLINICAL BENCHMARK
+
+Heard 2017 standard-care arm — n=20, BMI 34.5, 30° head-up, patent airway,
+measured band 244–314 s to SpO₂ 95%:
+
+| commit | anaesthetised FRC | Heard control |
+|---|---|---|
+| `3f42878` | 1470 mL | **295.9 s — INSIDE the band** |
+| `e1be19f` | 1650 mL | 337.7 s |
+| `48ffe03` | 1918 mL | 385.9 s |
+| now | 1713 mL | 347.2 s |
+
+**A configuration existed, on 2026-09-25, that sat inside Heard's band AND
+matched Pelosi to under 2%.** It lasted seventeen hours.
+
+### 3. THE STRUCTURAL FAULT, WHICH IS THE FINDING WORTH KEEPING
+
+Changing ONLY `frc_ref` — the reference awake lung volume — on today's model,
+nothing else touched:
+
+| `frc_ref` | anaesthetised FRC | Heard control | error vs Pelosi |
+|---|---|---|---|
+| 2860 (now) | 1713 mL | 347.2 s | 32.65% |
+| 2700 | 1606 mL | 327.4 s | 23.89% |
+| 2600 | 1538 mL | 314.9 s | 18.41% |
+| 2500 | 1471 mL | **302.4 s — inside band** | 13.33% |
+
+**ONE AWAKE PARAMETER MOVES BOTH.** `frc_anaes()` computes
+`at22 * pelosi(bmi)/pelosi(22)` where `at22` derives from
+`frc_ref * height_factor * tilt_factor`. Its own docstring says the shape is
+Pelosi's "with the LEVEL left ours" — **and "ours" is an AWAKE number.**
+
+**SO THE FOUR RULINGS ARE NOT THE DEFECT.** Every one of them was about the
+AWAKE lung, and each may be right about it. The defect is that an
+ANAESTHETISED quantity is anchored to an AWAKE parameter, so agreement with
+Watson & Pride (awake) and agreement with Pelosi (anaesthetised, paralysed,
+helium dilution, n=24) **cannot both be held.** Improving one necessarily
+degrades the other. That is an architectural limitation, not a bad judgement.
+
+Note that `frc_ref` = 2500 gives 13.33%, not the 1.86% of `3f42878` — so it is
+not the whole story. The other three commits carry the rest. But `frc_ref`
+alone carries the benchmark back inside its band.
+
+### 4. WHAT WAS NOT DONE, AND WHY
+
+**NOTHING WAS CHANGED.** Reverting `frc_ref` would trade Pelosi back for
+Watson & Pride and would be a parameter moved to pass a benchmark, which
+CLAUDE.md forbids in terms.
+
+**THE CANDIDATE FIX IS A MECHANISM AND NEEDS A RULING**: give `frc_anaes()` its
+own level from Pelosi's measured data rather than inheriting `frc_ref`'s. That
+introduces no new fitted parameter — it is the same move the 2026-09-25 ruling
+made for the SHAPE, extended to the LEVEL — and it would let both anchors hold
+at once. It touches `apnoea_core.py` and `model.js` and must be one commit.
+
+### 5. PROPORTION, BECAUSE THE WORD "RUINED" WAS USED
+
+The model fails Heard's band **by 33 s on a 300 s prediction, about 11%**.
+Every other clinical arbiter passes: Toner, Berthoud, O'Loughlin, Frumin, the
+positioning trials, cardiac output, Stock, Moreault. CI is green. The headline
+claim is untouched — control arm about 12 min, buccal arm beyond the hour.
+
+**One quantity, one direction, one cause, and the configuration that worked is
+still in the history.** What failed was not judgement about physiology. It was
+that the instrument which would have shown the cost had already stopped being
+runnable before the rulings were made.
+
 ## Current state — 2026-10-10 (forty-fourth entry): `handover_numbers.py` has been silently failing for two weeks, 323 of its 601 reachable checks are wrong, and one commit on 2026-09-26 explains 135 of them — the file that exists to stop numbers rotting had itself rotted
 
 **Found while answering a different question.** A. Heard asked for a `--only`
