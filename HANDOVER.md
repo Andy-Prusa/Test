@@ -5,6 +5,79 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-13 (forty-eighth entry): the offset ruling is COSTED — de-coupling is worse at every offset, and Pelosi's offset alone is the only 46/1 configuration ever measured here. THE SECOND FACT MUST NOT BE ACTED ON, and the one mechanism argument for it was tested today and FAILS
+
+Regenerate with `python3 frc_level_numbers.py` §6–§7 (seconds). The suite rows
+are six full runs: `variant_cost.py shipped | pel_c046 | pel_c092 | frc_abs |
+abs_c046 | abs_c092`, ~34 min each.
+
+### 1. THE TABLE
+
+| form | offset | pass/fail | rows that FAIL |
+|---|---|---|---|
+| shipped | C=0.6882 **ruled mean** | 45 / 2 | Heard control, ICSM jet |
+| shipped | C=0.4600 Pelosi alone | **46 / 1** | ICSM jet |
+| shipped | C=0.9163 Damia alone | 45 / 2 | Heard control, ICSM jet |
+| de-coupled | C=0.6882 | 45 / 2 | Berthoud BMI 23, ICSM jet |
+| de-coupled | C=0.4600 | 43 / 4 | + Heard, + Berthoud obese |
+| de-coupled | C=0.9163 | 43 / 4 | + Toner, + Heard, + Berthoud obese |
+
+`ICSM jet, PaO2 at cricothyroidotomy` moves 1.6% across all six and fails in
+every one — it is insensitive to lung-volume level and is a different problem.
+
+### 2. DE-COUPLING IS WORSE AT EVERY OFFSET — and this one IS safe to act on
+
+It is never better than shipped, and 43/4 at both extremes against shipped's
+45/2. With Hewlett's correlation evidence (awake→anaesthetised **+0.919**
+disattenuated, against BMI's **−0.171**), that is **two independent lines
+against `frc_anaes_absolute`**. Acting on a negative result costs nothing here:
+the switch stays off, which is where it already is. **The owner's position —
+"awake has no use in calculating anaesthetised" — now has evidence against it
+from both a measurement and the benchmark suite**, and my own entry 46, which
+argued its case, is superseded on that point.
+
+### 3. PELOSI'S OFFSET ALONE IS 46/1 — AND THIS MUST NOT BE ACTED ON
+
+It is the only configuration ever measured in this project with one blocking
+row, and the only one that puts Heard control inside its band (318.5 → **287.1
+s**, band 244–314). **Adopting 0.46 because it passes Heard is tuning a
+parameter to a benchmark, which this project has refused four times.** The
+benchmark count is not a reason; it is the thing a reason has to be found
+independently of. It is recorded here precisely so that it cannot be
+rediscovered later and mistaken for one.
+
+### 4. THE ONE MECHANISM ARGUMENT AVAILABLE WAS TESTED TODAY AND FAILS
+
+**The hypothesis, formed *after* seeing §3 and therefore suspect from the
+outset:** Pelosi's 0.4600 is a *published* regression coefficient fitted over
+BMI 20–66, whereas Damia's 0.9163 is *not* published — `apnoea_core.py` derives
+it by assuming Pelosi's exponent and solving for the offset through two Damia
+points. If that inversion were badly conditioned, 0.9163 would be soft and the
+average unjustified, and Pelosi would win on merit rather than on benchmarks.
+
+| assumed exponent | 0.070 | 0.080 | **0.096** | 0.110 | 0.125 |
+|---|---|---|---|---|---|
+| implied Damia offset | 0.663 | 0.801 | **0.916** | 0.964 | 0.988 |
+
+**It fails.** Over a wide range of assumed exponents the implied offset moves
+only 0.663–0.988, because at BMI 48–53 the exponential term is already tiny —
+0.115 L of a measured 0.930, and 0.073 L of 1.090, i.e. 12% and 7%. **Damia's
+offset is essentially just his measured volume at high BMI, and it is robust.**
+The twofold disagreement with Pelosi is a real measurement conflict, not an
+artefact of the derivation.
+
+**So there is currently no mechanism argument for preferring either paper**, and
+the ruled mean stands until someone can say *why* one measurement is better.
+Hewlett cannot arbitrate it: his cohort is BMI 18.6–30.8 and the offset is the
+ASYMPTOTE, which only the obese end constrains.
+
+### 5. WHAT WOULD SETTLE IT
+
+Not another benchmark run. A reason to believe Pelosi or Damia over the other —
+a procedural difference, a third measurement of anaesthetised FRC at BMI 45+,
+or an argument that one cohort is not the population this model targets. Until
+then the 46/1 result in §3 is a fact about the model, not a licence.
+
 ## Current state — 2026-10-13 (forty-seventh entry): Hewlett 1974 read — the first PAIRED awake/anaesthetised FRC this project holds, and it argues AGAINST de-coupling at the lean end. Also corrects entry 46: the offset is NOT "nearly divided out" in the shipped model, it moves obese FRC by 22–45%
 
 Regenerate with `python3 hewlett_numbers.py` (seconds) and `python3
