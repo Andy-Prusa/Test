@@ -5,6 +5,161 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-13 (forty-sixth entry): the owner's ruling-in-waiting — "awake has no use in calculating anaesthetised" — is right, and the 3.67% I used to dismiss it on 2026-10-12 IS the awake anchor, entire. De-coupling is built, costed and DELIBERATELY NOT ADOPTED: it fixes the obese benchmark and breaks a lean one, and it makes the unruled offset question load-bearing
+
+Every number below regenerates with `python3 frc_level_numbers.py` (seconds),
+except the benchmark table, which regenerates with `python3 variant_cost.py
+shipped` and `python3 variant_cost.py frc_abs` (~34 min each).
+
+### 1. WHAT I GOT WRONG ON 2026-10-12, AND IT IS A DIFFERENT ERROR FROM THE ONE I RETRACTED
+
+Entry 45 claimed a structural fault, then retracted it the same day because the
+error metric was stale — it scored the model against pure Pelosi when the model
+had targeted the Pelosi/Damia mean since `bffbbf4`. That retraction was correct
+on its own terms, and its arithmetic still stands: reverting `frc_ref` to 2500
+would have taken agreement with the real target from 3.67% to 11.73%. **I would
+have made the model worse.**
+
+But the retraction then concluded: *"So there is no awake/anaesthetised coupling
+to fix. The level inherited from `frc_ref` is very nearly right."* **That
+conclusion is wrong, and the number in front of me disproved it.** Scored at
+Pelosi's geometry against the curve the model actually targets:
+
+| BMI | 22 | 26 | 30 | 40 | 50 | 66 |
+|---|---|---|---|---|---|---|
+| error | +3.67% | +3.67% | +3.67% | +3.67% | +3.67% | +3.67% |
+
+**The same number at every BMI.** The shape is carried as a ratio and is exact
+by construction, so the only thing the comparison can see is the LEVEL. 3.67%
+is not scatter about a curve — it is a pure systematic bias, and its whole size
+is the awake anchor. I read a bias as if it were noise, and used it to dismiss
+an architectural argument that the bias itself supports. The fix was never a
+different `frc_ref`; it is `frc_ref` not reaching this quantity at all.
+
+(At BMI 20 the error is −7.01%, because the curve there extrapolates the
+anaesthetised lung ABOVE the awake one, which is impossible, and `awake − drop`
+correctly caps it.)
+
+### 2. WHERE THE AWAKE LUNG ACTUALLY ENTERS
+
+`frc_anaes()` — lung volume at the start of apnoea — sets its level at
+`frc_ref * height_factor * tilt_factor`, minus an induction drop. `frc_ref` is
+commented in `apnoea_core.py` as *"mL supine AWAKE at BMI 22"* and `frc_drop`
+is a CHANGE from awake. So the level is awake-derived end to end — although
+Pelosi 1998 and Damia 1988 both measured the anaesthetised volume DIRECTLY, in
+litres, in anaesthetised paralysed patients. The level has a published source
+and the model is not using it.
+
+Three uses of awake volume are legitimate and stay: `unwashed_fraction()` (the
+perfusion share whose airway was shut during preoxygenation — preoxygenation IS
+awake), the expiratory reserve, and `frc_anaes()`'s own UPPER BOUND, because
+anaesthesia cannot ADD gas. **A bound is not a level.**
+
+### 3. THE CASCADE, DECOMPOSED — ONE AWAKE PARAMETER DID ALL OF IT
+
+`48ffe03` (2026-09-26) re-solved `frc_awake` on Watson & Pride's two SUPINE
+AWAKE cohorts, moving `frc_ref` 2500 → 2860 mL and `k_frc_bmi` 0.0012 →
+0.01074, and added 71 s to a desaturation benchmark. At Toner's geometry:
+
+| change | anaesthetised volume | attributable |
+|---|---|---|
+| `frc_ref` 2860 → 2500 | 2328.3 → 1987.6 mL | **all 340.7 mL** |
+| `k_frc_bmi` 0.01074 → 0.0012 | 2328.3 → 2328.3 mL | **exactly zero** |
+
+`k_frc_bmi` is inert here because Pelosi's shape now carries the BMI dependence
+and the awake exponential no longer reaches this quantity. **A ruling made
+correctly, on awake data, re-aimed the anaesthetised benchmarks through one
+parameter, and nothing in the repository flagged it.** That is the mechanism
+behind entry 45's thirty-six-minute cascade, stated as a single channel.
+
+### 4. THE SWITCH, AND WHY IT IS NOT INDEPENDENCE
+
+`frc_anaes_absolute` (`apnoea_core.py`, OFF by default, Python only) takes the
+level from the curve's own absolute value, scaled for body size off Pelosi's
+cohort height rather than off an awake volume:
+
+    frc_anaes = _pelosi_frc(bmi) * height_factor / _PELOSI_HF * tilt_factor
+
+No new parameter — `_PELOSI_HF` is the existing height term evaluated at the
+cohort's own 1.64 m, so it is divided out rather than introduced. Error at
+Pelosi's geometry: 0.00% from BMI 22 up.
+
+**It does not remove the coupling.** At Toner's LEAN patient the curve's own
+level sits ABOVE `awake − drop`, so the bound binds at the lower `frc_ref` and
+`48ffe03` would still have moved the volume 2077.1 → 2211.5 mL — **+134 mL
+instead of +341**. The surviving channel is the physical bound, in lean
+patients only. Smaller and far more defensible than inheriting the level, but
+it must not be recorded as independence.
+
+### 5. THE BENCHMARK COST: A TRADE, NOT AN IMPROVEMENT
+
+Two full suite runs, 2026-10-13. **45 pass / 2 fail BOTH WAYS — and the two
+failures are different rows.**
+
+| row | shipped | de-coupled | band |
+|---|---|---|---|
+| Heard control, SpO₂<95% | 318.5 **FAIL** | 294.5 pass | 244–314 s |
+| Berthoud control BMI 23 | 548.6 pass | 530.3 **FAIL** | 537–653 s |
+| Toner sham, SpO₂<95% | 509.1 pass | 485.6 pass | 380–525 s |
+| Berthoud obese BMI 49 | 201.7 pass | 197.3 pass | 163–229 s |
+| Stock obstructed, PaO₂ at 5 min | 275.5 pass | 232.7 pass | 140–488 mmHg |
+
+De-coupling **fixes the obese benchmark and breaks a lean one**, which is what
+the mechanism predicts: removing the awake anchor lowers FRC everywhere above
+BMI 22, helping a row that ran too long and hurting one with no headroom. The
+KNOWN OPEN set is unchanged, 4 rows by the same four names.
+
+**AND THE WINDOW BETWEEN THEM IS NOT A LICENCE.** Heard needs about 1.4% off
+and Berthoud tolerates about 2.1%, so some level cut between them would pass
+both. Choosing a cut because it passes two benchmarks is a fit, and this
+project has refused that four times. The de-coupled level is not free — it is
+fixed by the two papers, and it overshoots.
+
+### 6. THE REASON NOT TO ADOPT IT YET, AND IT IS NEW
+
+**De-coupling makes the unruled offset question load-bearing.** Shipped, the
+offset is very nearly divided out by the ratio form. De-coupled, it SETS the
+level — anaesthetised FRC, mL:
+
+| cohort | shipped | C=0.460 Pelosi | C=0.688 ruled | C=0.916 Damia |
+|---|---|---|---|---|
+| Berthoud lean BMI 23 | 2298.6 | 1936.1 | 2184.8 | 2418.8 |
+| Toner lean BMI 22.9 | 2328.3 | 1962.0 | 2211.5 | 2433.8 |
+| Heard obese BMI 34.7 | 1713.2 | 1249.7 | 1570.5 | 1891.3 |
+
+Spread across the two papers' offsets: **24.9% lean, 51.3% obese.** The offset
+IS the asymptote, so it bites hardest where the exponential has decayed. The
+choice between Pelosi's 0.46, Damia's 0.92 and the ruled mean of 0.6882 has
+been unruled since 2026-09-26, when it mattered far less than it would after
+de-coupling. **Adopting de-coupling before ruling on the offset would hang the
+whole anaesthetised level on an unresolved average of two papers.**
+
+### 7. WHAT IS STILL OPEN
+
+1. Whether de-coupling is adopted. Built, costed, off, unruled.
+2. Whether averaging Pelosi and Damia was right — now load-bearing, see §6.
+3. Whether the surviving lean-patient coupling through the physical bound is
+   acceptable, or whether that bound needs its own source.
+4. **An anaesthetised FRC measurement in LEAN patients.** Pelosi's range starts
+   at BMI 20 and Damia's cohort is morbidly obese, so the lean end — exactly
+   where the bound binds, and where Toner, Berthoud and Frumin sit — is
+   extrapolation in both papers. This is the gap that decides §5's trade.
+5. `handover_numbers.py`'s expected 1886 mL at BMI 22 is **literally the
+   `frc_ref` 2500 level**, i.e. a direct footprint of the cascade, and is one
+   of the 323 stale checks from entry 44.
+
+### 8. VERIFICATION
+
+`model.js` implements the switch NOT, and `test_parity.py` runs at the defaults
+so it cannot see it; if it is ever adopted, `model.js` changes in the same
+commit. Parity was run by hand at this commit: every row bit-identical at
+0.000%, zero failures, *"model.js tracks apnoea_core.py"*. `build_page.py
+--check` and `check_sources.py --check` both pass. `test_validation.py` exits 1
+on the two pre-existing blocking rows in `.github/known-blocking.txt`, which
+this commit cannot have moved: the switch defaults to False and the only
+non-comment lines added are its declaration, the `_PELOSI_HF` constant and one
+guarded branch.
+
 ## Current state — 2026-10-12 (forty-fifth entry, WITH ITS CENTRAL CLAIM RETRACTED THE SAME DAY): the cascade is real, the "structural fault" is NOT — the model sits 3.67% from the curve it actually targets, and the 32.65% was scored against a target abandoned on 2026-09-26
 
 ### 0. RETRACTION, WRITTEN HOURS AFTER THE REST OF THIS ENTRY
