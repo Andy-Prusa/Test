@@ -68,7 +68,7 @@ artefact of the derivation.
 
 **So there is currently no mechanism argument for preferring either paper**, and
 the ruled mean stands until someone can say *why* one measurement is better.
-Hewlett cannot arbitrate it: his cohort is BMI 18.6–30.8 and the offset is the
+Hewlett cannot arbitrate it: his cohort is BMI 19.1–32.5 and the offset is the
 ASYMPTOTE, which only the obese end constrains.
 
 ### 5. WHAT WOULD SETTLE IT
@@ -104,6 +104,34 @@ not only if de-coupling is ever adopted.** `pelosi_offset_l` was promoted from a
 literal to a switch today so the choice can be costed instead of argued; the
 default is the ruled 0.6882 and the change is bit-identical at the defaults.
 
+### 0. CORRECTION, SAME DAY: SEVEN CELLS OF TABLE II WERE MISREAD
+
+An adversarial re-read found **seven wrong cells in the first transcription —
+five weights and two heights**, including a one-row slip of the weight column
+across patients 4–7 and a value (84.5 kg) that is not in the table at all.
+Verified against the PDF's own text layer (`pdftotext -layout`).
+
+**It was caught by the paper's own statistic.** Hewlett prints a weight/height
+correlation of 0.415; the misread table gave 0.327 and I logged that as an
+"unresolved discrepancy". It was not unresolved — it was the signal. Corrected,
+it reproduces at **0.410**.
+
+**Both FRC columns were right throughout**, so §3's headline (awake →
+anaesthetised, r = +0.894) never depended on the error. What moved is BMI:
+
+| | as first reported | corrected |
+|---|---|---|
+| BMI range | 18.6–30.8 | **19.1–32.5** |
+| anaes FRC vs BMI | −0.167 (3%) | **−0.434 (19%)** |
+| anaes FRC vs height | +0.380 | **+0.163** |
+| model awake bias | +553 mL | **+510 mL** |
+| shipped / de-coupled bias | +123 / +73 mL | **+109 / +69 mL** |
+
+**The conclusion is weakened but not overturned:** BMI explains 19% rather than
+3%, against the awake volume's 80%. The lesson is recorded in
+`hewlett_numbers.py` — a paper's own internal statistic is a better
+transcription check than re-reading the page.
+
 ### 1. WHAT HEWLETT IS, AND WHY IT IS THE PAPER THAT WAS MISSING
 
 Hewlett, Hulands, Nunn & Milledge, *Br J Anaesth* 1974;46:495–502, part III of
@@ -111,11 +139,11 @@ three. Helium dilution, supine, measured **awake pre-induction and again
 anaesthetised, paralysed and ventilated** in the same 13 patients. Entry 46
 closed by naming one external gap: an anaesthetised FRC measurement in LEAN
 patients, because Pelosi starts at BMI 20 and Damia is morbidly obese. **His
-cohort is BMI 18.6–30.8 and it is paired**, which no source here had been.
+cohort is BMI 19.1–32.5 and it is paired**, which no source here had been.
 
 **Its limit is not small: by the Table II footnote only patients 2, 8 and 9 were
 male.** Ten of thirteen were female and this model is male by ruling. The
-model's awake FRC runs 553 mL high against him, which is what a male model
+model's awake FRC runs 510 mL high against him, which is what a male model
 measured against a mostly-female cohort should do.
 
 ### 2. THE TRANSCRIPTION, VALIDATED BEFORE ANYTHING WAS CONCLUDED FROM IT
@@ -141,12 +169,12 @@ In his paired data, what predicts the anaesthetised lung volume:
 | predictor | r | variance explained |
 |---|---|---|
 | the patient's own **awake FRC** | **+0.894** | **80%** |
-| BMI | −0.167 | 3% |
-| height | +0.380 | 15% |
+| BMI | −0.434 | 19% |
+| height | +0.163 | 3% |
 | age | +0.029 | 0.1% |
 
 Why, visible in the raw table: among his five patients between BMI 28 and 31 the
-anaesthetised FRC runs **0.880 → 2.952 L, a factor of 3.4 at the same BMI.** A
+anaesthetised FRC runs **0.880 → 2.952 L, a factor of 3.35 at the same BMI.** A
 curve keyed on BMI alone cannot produce that spread; the awake volume can,
 because it already contains whatever makes those patients differ.
 
@@ -154,14 +182,14 @@ because it already contains whatever makes those patients differ.
 open, and it runs against the de-coupling** — against `frc_anaes_absolute`, and
 against the position that awake has no use in calculating anaesthetised.
 
-**THE HONEST REBUTTAL, which is real:** his BMI range is 18.6–30.8, so BMI has
-little room to show what it can do. Over Pelosi's 20–66 it would explain far
+**THE HONEST REBUTTAL, which is real:** his BMI range is 19.1–32.5, so BMI has
+limited room to show what it can do. Over Pelosi's 20–66 it would explain far
 more. This bears on the LEAN end — where Toner, Berthoud and Frumin sit — and
 not on the obese end.
 
-**AND ON ABSOLUTE LEVEL HE CANNOT ARBITRATE AT ALL.** Shipped gives +123 mL mean
-bias and 518 mL mean absolute error; de-coupled gives +73 mL and 508 mL. Ten mL
-of MAE apart, inside a 553 mL sex confound. Only the correlation structure in
+**AND ON ABSOLUTE LEVEL HE CANNOT ARBITRATE AT ALL.** Shipped gives +109 mL mean
+bias and 479 mL mean absolute error; de-coupled gives +69 mL and 476 mL. Three mL
+of MAE apart, inside a 510 mL sex confound. Only the correlation structure in
 the table above carries weight, because sex does not confound it the same way.
 
 ### 4. A SECOND, INDEPENDENT FINDING: THE EFFECTIVE DROP IS TOO STEEP IN BMI
@@ -191,8 +219,7 @@ lung of known volume through the same rig in both modes, and part III used the
 2. The factor-3.4 spread at BMI 28–31 is **15.6 measurement SDs wide** — the
    biological spread §3 rests on is real and not an artefact.
 3. **Disattenuating for that noise widens §3's gap:** awake→anaesthetised goes
-   **+0.894 → +0.919**, BMI only −0.167 → −0.171. The finding survives its most
-   obvious objection, and the correction runs in its favour.
+   **+0.894 → +0.919**, BMI −0.434 → −0.444. The awake lung keeps its lead.
 
 ### 5b. WHAT IS STILL NOT HELD
 

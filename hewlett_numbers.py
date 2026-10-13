@@ -23,7 +23,7 @@ how much weight part III's scatter can bear, and it changes the answer in part
 III's favour.
 
 WHY IT MATTERS. It is the FIRST source this project holds with PAIRED awake and
-anaesthetised FRC in the SAME patients, and its BMI range 18.6-30.8 is the lean
+anaesthetised FRC in the SAME patients, and its BMI range 19.1-32.5 is the lean
 gap that Pelosi (from BMI 20) and Damia (morbidly obese) both leave as
 extrapolation. It therefore speaks directly to the open question of whether the
 anaesthetised lung volume should be derived from the awake one.
@@ -43,22 +43,32 @@ from apnoea_core import Patient
 print(A.provenance())
 print()
 
-# Hewlett 1974 part III, TABLE II, transcribed from the page.
+# Hewlett 1974 part III, TABLE II.
+# CORRECTED 2026-10-13, SAME DAY, BY AN ADVERSARIAL RE-READ. The first
+# transcription of this table, made by eye from the rotated page, had SEVEN
+# cells wrong -- five weights and two heights, including a one-row slip of the
+# weight column across patients 4-7 and a value (84.5 kg) that is not in the
+# table at all. Every other cell, both FRC columns included, was right.
+# The error was CAUGHT BY THE PAPER'S OWN INTERNAL CHECK: Hewlett prints a
+# weight/height correlation of 0.415, the first transcription gave 0.327, and
+# the corrected one gives 0.410. That discrepancy was recorded as "unresolved"
+# for several hours when it was in fact the signal that the table was misread.
+# Verified against the PDF text layer with `pdftotext -layout -f 3 -l 3`.
 # pt, age y, height cm, weight kg, FRC awake l, FRC anaes l, % fall,
 # (A-a)PO2 awake mmHg, (A-a)PO2 anaesthetised mmHg.  Volumes BTPS.
 T2 = [
     (1,  54, 160, 74.5, 1.860, 1.893,  -1.8,  54.7,  83.9),
     (2,  64, 165, 71.5, 1.618, 1.129,  30.2,  75.0, 126.9),
     (3,  22, 169, 82.0, 1.241, 0.944,  23.9,  50.5, 104.4),
-    (4,  35, 169, 84.5, 2.138, 2.118,   3.4,  42.0,  42.1),
-    (5,  62, 154, 54.5, 1.206, 0.994,  17.6, 106.5, 134.7),
-    (6,  43, 175, 77.0, 2.079, 1.529,  26.5,  38.0,  85.4),
-    (7,  34, 173, 75.5, 2.271, 1.882,  17.1,  34.5,  30.9),
+    (4,  35, 169, 54.5, 2.138, 2.118,   3.4,  42.0,  42.1),
+    (5,  62, 154, 77.0, 1.206, 0.994,  17.6, 106.5, 134.7),
+    (6,  43, 175, 75.5, 2.079, 1.529,  26.5,  38.0,  85.4),
+    (7,  34, 160, 53.5, 2.271, 1.882,  17.1,  34.5,  30.9),
     (8,  59, 164, 77.5, 3.827, 2.952,  22.9,  71.5, 127.3),
     (9,  41, 174, 74.5, 2.259, 2.092,   7.4,  44.3,  75.1),
     (10, 51, 161, 55.0, 2.318, 1.704,  26.5,  62.2,  98.5),
-    (11, 26, 172, 55.0, 1.925, 1.943,  -0.9,  25.6,  37.2),
-    (12, 23, 170, 56.0, 2.189, 2.354,  -7.5,  21.4,   9.2),
+    (11, 26, 172, 61.0, 1.925, 1.943,  -0.9,  25.6,  37.2),
+    (12, 23, 156, 56.0, 2.189, 2.354,  -7.5,  21.4,   9.2),
     (13, 27, 156, 75.0, 1.343, 0.880,  34.4,  11.5,  81.1),
 ]
 MALE = {2, 8, 9}        # Table II footnote
@@ -102,31 +112,37 @@ check("% fall vs age, r [paper: 0.289]", np.corrcoef(AGE, PCT)[0, 1], 0.289, 0.0
 print("   Four printed statistics AND his published regression recovered from")
 print("   the transcribed cells. The table is read correctly.")
 print()
-print("   ONE THING THAT DOES NOT REPRODUCE, recorded rather than explained")
-print("   away. He prints a correlation of the FRC change with weight/height")
-print("   ratio of 0.415. Refitting gives:")
+print("   THE CHECK THAT CAUGHT A MISREADING. He prints a correlation of the")
+print("   FRC change with weight/height ratio of 0.415. The FIRST transcription")
+print("   of this table gave 0.327 and that was logged as an unresolved")
+print("   discrepancy -- when it was in fact the signal that seven height and")
+print("   weight cells had been misread. Corrected, it reproduces:")
 WH = np.array([r[3] / (r[2] / 100.0) for r in T2])
 check("   wt/ht vs PERCENTAGE change [paper: 0.415]",
-      np.corrcoef(WH, PCT)[0, 1], 0.327, 0.001)
+      np.corrcoef(WH, PCT)[0, 1], 0.410, 0.001)
 check("   wt/ht vs ABSOLUTE change [paper: 0.415]",
-      np.corrcoef(WH, AW - AN)[0, 1], 0.284, 0.001)
+      np.corrcoef(WH, AW - AN)[0, 1], 0.282, 0.001)
 check("   BMI vs percentage change (nearest candidate)",
-      np.corrcoef(BMI, PCT)[0, 1], 0.390, 0.001)
-print("   Using his PRINTED percentage column the age figure reproduces EXACTLY,")
-print("   which fixes what 'change in FRC' means; on that same definition his wt/ht")
-print("   figure does not. BMI gives 0.390, the nearest candidate, and is still")
-print("   not 0.415. UNRESOLVED -- his 0.415 is not to be quoted.")
+      np.corrcoef(BMI, PCT)[0, 1], 0.385, 0.001)
+print("   0.410 against his printed 0.415, on the same definition of 'change in")
+print("   FRC' that his age figure pins. NOTHING IS NOW UNRESOLVED IN THIS TABLE,")
+print("   and the lesson is that a paper's own internal statistic is a better")
+print("   transcription check than re-reading the page.")
 print()
 
 print("2. THE LOAD-BEARING FINDING: WHAT PREDICTS THE ANAESTHETISED LUNG VOLUME")
 print("   IN HIS PAIRED DATA. This is the first direct evidence the project has")
 print("   on whether the anaesthetised level should come from the awake lung.")
 for _lbl, _x, _rec in (("the patient's own AWAKE FRC", AW, 0.894),
-                       ("BMI", BMI, -0.167),
-                       ("height", np.array([r[2] / 100.0 for r in T2]), 0.380),
+                       ("BMI", BMI, -0.434),
+                       ("height", np.array([r[2] / 100.0 for r in T2]), 0.163),
                        ("age", AGE, 0.029)):
     check(f"anaesthetised FRC vs {_lbl}", np.corrcoef(_x, AN)[0, 1], _rec, 0.002)
-print("   The awake volume explains about 80% of the variance; BMI about 3%.")
+print("   The awake volume explains about 80% of the variance; BMI about 19%.")
+print("   (Before the transcription fix BMI appeared to explain 3%. The")
+print("   correction QUADRUPLES BMI's share and narrows the gap, but does not")
+print("   close it: awake FRC remains far the stronger predictor, and the")
+print("   headline r = +0.894 is untouched because both FRC columns were right.)")
 print()
 print("   WHY, visible in the raw table -- his five patients between BMI 28")
 print("   and 31, anaesthetised FRC in litres:")
@@ -139,7 +155,7 @@ check("   spread at essentially one BMI, as a ratio", max(_vs) / min(_vs), 3.355
 print("   A curve keyed on BMI alone cannot produce that spread. The awake")
 print("   volume can, because it already contains whatever makes them differ.")
 print()
-print("   THE HONEST REBUTTAL, and it is a real one: his BMI range is 18.6-30.8,")
+print("   THE HONEST REBUTTAL, and it is a real one: his BMI range is 19.1-32.5,")
 print("   so BMI has little room to show what it can do. Over Pelosi's 20-66 it")
 print("   would explain far more. This result bears on the LEAN end, which is")
 print("   where Toner, Berthoud and Frumin sit, and not on the obese end.")
@@ -152,14 +168,14 @@ for _pt, _age, _ht, _wt, _fa, _fn, *_ in T2:
     _e_aw.append(Patient(**_g).frc_awake() - _fa * 1000)
     _e_sh.append(Patient(**_g).frc_anaes() - _fn * 1000)
     _e_dc.append(absolute()(**_g).frc_anaes() - _fn * 1000)
-check("awake: model - measured, mean bias", float(np.mean(_e_aw)), 553.0, 1.0, " mL")
-check("anaes SHIPPED: mean bias", float(np.mean(_e_sh)), 123.0, 1.0, " mL")
-check("anaes DE-COUPLED: mean bias", float(np.mean(_e_dc)), 73.0, 1.0, " mL")
-check("anaes SHIPPED: mean absolute error", float(np.mean(np.abs(_e_sh))), 518.0, 1.0, " mL")
-check("anaes DE-COUPLED: mean absolute error", float(np.mean(np.abs(_e_dc))), 508.0, 1.0, " mL")
-print("   The model's AWAKE volume runs 553 mL high, which is what a male model")
+check("awake: model - measured, mean bias", float(np.mean(_e_aw)), 510.0, 1.0, " mL")
+check("anaes SHIPPED: mean bias", float(np.mean(_e_sh)), 109.0, 1.0, " mL")
+check("anaes DE-COUPLED: mean bias", float(np.mean(_e_dc)), 69.0, 1.0, " mL")
+check("anaes SHIPPED: mean absolute error", float(np.mean(np.abs(_e_sh))), 479.0, 1.0, " mL")
+check("anaes DE-COUPLED: mean absolute error", float(np.mean(np.abs(_e_dc))), 476.0, 1.0, " mL")
+print("   The model's AWAKE volume runs 510 mL high, which is what a male model")
 print("   measured against a 10/13 female cohort should do. The two anaesthetised")
-print("   forms differ by 10 mL of mean absolute error -- FAR inside that")
+print("   forms differ by 3 mL of mean absolute error -- FAR inside that")
 print("   confound. ON ABSOLUTE LEVEL THIS COHORT CANNOT DISCRIMINATE THEM, and")
 print("   section 2 above, which is a correlation, is the part that can.")
 print()
@@ -227,10 +243,10 @@ check("       reliability, anaesthetised column", _rel_an, 0.9533, 0.0005)
 check("       awake vs anaes, DISATTENUATED r",
       np.corrcoef(AW, AN)[0, 1] / np.sqrt(_rel_aw * _rel_an), 0.919, 0.002)
 check("       BMI   vs anaes, DISATTENUATED r",
-      np.corrcoef(BMI, AN)[0, 1] / np.sqrt(_rel_an), -0.171, 0.002)
-print("       Correcting for the instrument WIDENS the gap, 0.894 -> 0.919")
-print("       against -0.167 -> -0.171. Section 3's finding survives its own")
-print("       most obvious objection.")
+      np.corrcoef(BMI, AN)[0, 1] / np.sqrt(_rel_an), -0.444, 0.002)
+print("       Correcting for the instrument raises both, 0.894 -> 0.919 and")
+print("       -0.434 -> -0.444. The awake lung keeps its lead. Section 3's")
+print("       finding survives both the instrument AND the transcription fix.")
 print()
 
 if FAILED:
