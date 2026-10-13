@@ -1675,6 +1675,72 @@ class Patient:
     frc_legacy_exp = False
     k_rv_bmi_jones = False
 
+    # frc_anaes_absolute -- TAKE THE ANAESTHETISED LEVEL FROM THE CURVE
+    #   INSTEAD OF FROM THE AWAKE LUNG. Raised by the owner 2026-10-13 as
+    #   "awake has no use in calculating anaesthetised", and it is an argument
+    #   about where a number comes from, not a fit.
+    #
+    #   THE SHIPPED PATH sets the level at `frc_ref * height_factor *
+    #   tilt_factor` MINUS the induction drop, then carries Pelosi's shape as
+    #   a RATIO to its own value at BMI 22. frc_ref is an AWAKE reference FRC
+    #   and frc_drop is a CHANGE from awake, so the anaesthetised starting
+    #   volume is awake-derived end to end even though the quantity has been
+    #   measured directly.
+    #
+    #   WHAT THAT COSTS, measured 2026-10-13 at Pelosi's own geometry
+    #   (1.64 m, age 52) against the Pelosi/Damia mean the model has targeted
+    #   since bffbbf4: the model sits +3.67 % high at BMI 22, 26, 30, 40, 50
+    #   AND 66 -- the SAME number at every BMI, because the shape is exact by
+    #   construction and the only thing the comparison can see is the level.
+    #   The "3.67 % mean absolute error" recorded on 2026-10-12 is therefore
+    #   not scatter around the curve, it is a pure systematic bias, and its
+    #   whole size is the awake anchor.
+    #
+    #   WITH THIS ON the level is the curve's own absolute value, scaled for
+    #   body size off Pelosi's cohort height rather than off an awake volume:
+    #       frc_anaes = _pelosi_frc(bmi) * height_factor / _PELOSI_HF * tilt
+    #   At Pelosi's geometry that is 0.00 % by construction. NO NEW PARAMETER:
+    #   _PELOSI_HF is the existing height term evaluated at the cohort's own
+    #   1.64 m, and both published offsets are already in _pelosi_frc.
+    #
+    #   THE AWAKE GUARD STAYS, and this is the one place awake belongs here:
+    #   anaesthesia cannot ADD gas, so `awake - drop` remains an UPPER BOUND
+    #   via the same min(cap, ...) the shipped path uses. A bound is not a
+    #   level. frc_awake() itself is untouched, and so are unwashed_fraction()
+    #   -- preoxygenation IS awake -- and the expiratory reserve.
+    #
+    #   WHAT IT WOULD HAVE PREVENTED, and the honest size of it. Commit
+    #   48ffe03 (2026-09-26) re-solved frc_awake on Watson & Pride's two
+    #   SUPINE AWAKE cohorts and raised `frc_ref` 2500 -> 2860 mL. The line
+    #   it changed is commented "mL supine awake at BMI 22". At Toner's
+    #   geometry that moved the ANAESTHETISED starting volume 1987.6 ->
+    #   2328.3 mL and added 71 s to a desaturation benchmark. Decomposed
+    #   2026-10-13: `frc_ref` alone accounts for ALL 340.7 mL of it, and
+    #   `k_frc_bmi` -- the other parameter that commit changed -- moves
+    #   frc_anaes by EXACTLY ZERO, because Pelosi's shape carries the BMI
+    #   dependence and the awake exponential no longer reaches this quantity.
+    #
+    #   WITH THIS SWITCH ON the same commit would have moved it 2077.1 ->
+    #   2211.5 mL, +134 mL instead of +341. NOT ZERO, and the reason matters:
+    #   Toner's patient is LEAN, so the curve's own level sits ABOVE
+    #   `awake - drop` and the guard binds at the lower `frc_ref`. The
+    #   coupling that survives is therefore only through the PHYSICAL BOUND,
+    #   and only for lean patients. That is a much smaller and much more
+    #   defensible channel than inheriting the level outright, but it is not
+    #   independence and must not be described as independence.
+    #
+    #   NOT YET RULED. It lowers the anaesthetised starting volume about
+    #   3.67 % at Pelosi's geometry and 5.0 % at Toner's, which will SHORTEN
+    #   every desaturation benchmark. Cost it with
+    #   `python3 variant_cost.py frc_abs` before any ruling, and if a
+    #   benchmark gets worse that is information -- do not reach for a
+    #   compensating parameter.
+    frc_anaes_absolute = False
+
+    # The existing height term evaluated at Pelosi's cohort height of 1.64 m,
+    # so frc_anaes_absolute can divide it out. Not a new parameter.
+    _PELOSI_HF = (2.34 * 1.64 - 1.09) / (2.34 * 1.75 - 1.09)
+
     @staticmethod
     def _pelosi_frc(bmi):
         """Anaesthetised supine FRC shape, from TWO measurements averaged.
@@ -1784,6 +1850,14 @@ class Patient:
         cap = awake - min(self.frc_drop, 0.25 * awake)
         if self.frc_legacy_exp:
             return max(self.rv_eff(), cap)
+        if self.frc_anaes_absolute:
+            # The level is the measured curve's own, not awake minus a drop.
+            # `cap` is retained as the physical upper bound: see the switch's
+            # block comment above for why a bound is not a level.
+            lev = (self._pelosi_frc(self.bmi()) * 1000.0
+                   * self.height_factor() / self._PELOSI_HF
+                   * self.tilt_factor())
+            return min(cap, lev)
         base = self.frc_ref * self.height_factor() * self.tilt_factor()
         at22 = base - min(self.frc_drop, 0.25 * base)
         pel = at22 * self._pelosi_frc(self.bmi()) / self._pelosi_frc(22.0)

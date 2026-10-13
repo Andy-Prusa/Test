@@ -60,6 +60,12 @@ VARIANTS = {
     # 1-5 min slope 4.60 -> 1.94, ICSM jet PaCO2 71.70 -> 53.81 -- came from
     # the Pelosi FRC adoption or from something else again.
     'pre_pelosi': {'frc_legacy_exp': True, 'cc_legacy': True},
+    # The anaesthetised level taken from the measured curve instead of from
+    # the awake lung minus an induction drop. Raised 2026-10-13; the whole
+    # +3.67 % the model sits above its own target is the awake anchor, and it
+    # is the same 3.67 % at every BMI. See the switch's block comment in
+    # apnoea_core.py. UNRULED -- this run is what the ruling needs.
+    'frc_abs': {'frc_anaes_absolute': True},
 }
 
 
