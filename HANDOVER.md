@@ -132,6 +132,36 @@ anaesthetised, r = +0.894) never depended on the error. What moved is BMI:
 `hewlett_numbers.py` — a paper's own internal statistic is a better
 transcription check than re-reading the page.
 
+### 0b. TWO FURTHER CORRECTIONS FROM THE ADVERSARIAL PASS
+
+**(i) The disattenuation used the wrong error term.** Part I's SDs are for a
+*single* measurement; Table II's cells are **means of duplicates** (the Methods
+say so, and the table prints "FRC first", "FRC second", "FRC mean"). The error
+on a mean of two is SD/√2. Corrected: awake→anaesthetised disattenuates to
+**+0.906** (not +0.919) and BMI to **−0.439** (not −0.444). Patient 12's +165 mL
+becomes **1.63 SD** of the instrument rather than 1.15 — still the only one of
+the three "FRC rose" patients that is not comfortably noise.
+
+**(ii) §3 reported correlations with no interval and no significance**, which is
+how a contrast can look more decisive than 13 patients allow:
+
+| | r | 95% CI | permutation p |
+|---|---|---|---|
+| anaes FRC vs **awake FRC** | +0.894 | [+0.676, +0.968] | **0.0001** |
+| anaes FRC vs **BMI** | −0.434 | [−0.795, **+0.154**] | 0.14 |
+
+The awake correlation is strong and significant. **The BMI one is not
+distinguishable from zero**, so "BMI explains 19%" overstates what this cohort
+can say. **And it turns on one patient:** dropping patient 8 (awake FRC 3.827 L,
+far the largest) moves BMI from −0.434 to **−0.741** — 19% of the variance to
+55% — while the awake correlation barely moves (+0.894 → +0.867).
+
+**So the honest claim is narrower than §3's.** The awake volume is robustly the
+better predictor by both readings, and the argument against keying the
+anaesthetised level on **BMI alone** holds. The argument that **BMI carries
+little information does not hold** — that was an artefact of one patient and of
+reporting a point estimate without its interval.
+
 ### 1. WHAT HEWLETT IS, AND WHY IT IS THE PAPER THAT WAS MISSING
 
 Hewlett, Hulands, Nunn & Milledge, *Br J Anaesth* 1974;46:495–502, part III of

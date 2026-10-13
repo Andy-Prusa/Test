@@ -208,16 +208,27 @@ for _lbl, _n, _m, _sd, _e in (("spontaneous 1", 10, 4.563, 0.046, -0.035),
                               ("artificial 1",  10, 4.511, 0.159, -0.017),
                               ("artificial 2",  10, 4.529, 0.107, -0.001)):
     print(f"     {_lbl:<16}{_n:>3}{_m:>9.3f}{_sd:>12.3f}{_e:>15.3f}")
-SD_SPONT = (0.046 + 0.060) / 2.0      # part III's AWAKE measurements
-SD_ARTIF = (0.159 + 0.107) / 2.0      # part III's ANAESTHETISED measurements
-check("awake-measurement SD (spontaneous mode)", SD_SPONT, 0.053, 0.0005, " l")
-check("anaes-measurement SD (ventilated mode)", SD_ARTIF, 0.133, 0.0005, " l")
+# CORRECTED 2026-10-13 BY AN ADVERSARIAL VERIFIER. Part I's SDs are for a
+# SINGLE measurement. Table II's cells are MEANS OF DUPLICATES -- the Methods
+# say "a duplicate pre-induction FRC measurement was made" and "A duplicate FRC
+# measurement was made 9-22 min after the first", and the table itself prints
+# "FRC first", "FRC second", "FRC mean". The error on a mean of two is SD/sqrt2.
+# The first version of this section fed in the single-measurement SDs, which
+# OVERSTATED the instrument's noise and so overstated the attenuation it causes.
+SD1_SPONT = (0.046 + 0.060) / 2.0     # part I, ONE measurement, spontaneous
+SD1_ARTIF = (0.159 + 0.107) / 2.0     # part I, ONE measurement, ventilated
+SD_SPONT = SD1_SPONT / np.sqrt(2.0)   # part III's AWAKE cells, means of two
+SD_ARTIF = SD1_ARTIF / np.sqrt(2.0)   # part III's ANAESTHETISED cells
+check("single-measurement SD, spontaneous mode", SD1_SPONT, 0.053, 0.0005, " l")
+check("single-measurement SD, ventilated mode", SD1_ARTIF, 0.133, 0.0005, " l")
+check("SD of a MEAN OF TWO, spontaneous", SD_SPONT, 0.0375, 0.0005, " l")
+check("SD of a MEAN OF TWO, ventilated", SD_ARTIF, 0.0940, 0.0005, " l")
 print("   The anaesthetised numbers are 2.5x NOISIER than the awake ones, which")
 print("   part I attributes to about 1.5 l of extra apparatus in the ventilated")
 print("   circuit. That asymmetry matters three times over:")
 print()
 _SD_D = float(np.hypot(SD_SPONT, SD_ARTIF))
-check("   SD of the awake-to-anaesthetised DIFFERENCE", _SD_D, 0.143, 0.001, " l")
+check("   SD of the awake-to-anaesthetised DIFFERENCE", _SD_D, 0.101, 0.001, " l")
 print("   (a) THE THREE PATIENTS WHOSE FRC DID NOT FALL are patients 1, 11 and 12.")
 for _pt, _a, _n in ((1, 1.860, 1.893), (11, 1.925, 1.943), (12, 2.189, 2.354)):
     print(f"       pt {_pt:>2}: {1000 * (_n - _a):+6.0f} mL = {(_n - _a) / _SD_D:+.2f} SD of method noise")
@@ -227,7 +238,7 @@ print("       gas -- which is the reading a mandatory induction drop would need"
 print("       to explain away, and now does not have to.")
 print()
 print("   (b) THE FACTOR-3.4 SPREAD AT BMI 28-31 IS NOT THE INSTRUMENT:")
-check("       spread in units of measurement SD", (2.952 - 0.880) / SD_ARTIF, 15.58, 0.02, " SD")
+check("       spread in units of measurement SD", (2.952 - 0.880) / SD_ARTIF, 22.03, 0.02, " SD")
 print("       Fifteen measurement SDs wide. The biological spread at one BMI is")
 print("       real, and section 2's conclusion rests on something the rig could")
 print("       not have manufactured.")
@@ -238,15 +249,67 @@ print("       lung's hold on the anaesthetised one. Correcting with Spearman's")
 print("       formula, using part I's SDs as the error term:")
 _rel_aw = 1 - SD_SPONT ** 2 / AW.std(ddof=1) ** 2
 _rel_an = 1 - SD_ARTIF ** 2 / AN.std(ddof=1) ** 2
-check("       reliability, awake column", _rel_aw, 0.9938, 0.0005)
-check("       reliability, anaesthetised column", _rel_an, 0.9533, 0.0005)
+check("       reliability, awake column", _rel_aw, 0.9969, 0.0005)
+check("       reliability, anaesthetised column", _rel_an, 0.9766, 0.0005)
 check("       awake vs anaes, DISATTENUATED r",
-      np.corrcoef(AW, AN)[0, 1] / np.sqrt(_rel_aw * _rel_an), 0.919, 0.002)
+      np.corrcoef(AW, AN)[0, 1] / np.sqrt(_rel_aw * _rel_an), 0.906, 0.002)
 check("       BMI   vs anaes, DISATTENUATED r",
-      np.corrcoef(BMI, AN)[0, 1] / np.sqrt(_rel_an), -0.444, 0.002)
-print("       Correcting for the instrument raises both, 0.894 -> 0.919 and")
-print("       -0.434 -> -0.444. The awake lung keeps its lead. Section 3's")
-print("       finding survives both the instrument AND the transcription fix.")
+      np.corrcoef(BMI, AN)[0, 1] / np.sqrt(_rel_an), -0.439, 0.002)
+print("       Correcting for the instrument moves both only slightly, 0.894 ->")
+print("       0.906 and -0.434 -> -0.439, because a mean of two duplicates is")
+print("       quieter than a single run. The awake lung keeps its lead.")
+print()
+
+print("6. HOW MUCH WEIGHT n = 13 ACTUALLY BEARS. Added 2026-10-13 after an")
+print("   adversarial verifier pointed out that section 2 reported correlations")
+print("   with no interval and no significance, which is how a 3%-vs-80% contrast")
+print("   can look more decisive than the data allow.")
+print()
+
+
+def _fisher(r, n):
+    z, se = np.arctanh(r), 1.0 / np.sqrt(n - 3)
+    return np.tanh(z - 1.959963985 * se), np.tanh(z + 1.959963985 * se)
+
+
+def _perm_p(x, y, iters=50000, seed=0):
+    rng = np.random.default_rng(seed)
+    r0, yy, hits = abs(np.corrcoef(x, y)[0, 1]), y.copy(), 0
+    for _ in range(iters):
+        rng.shuffle(yy)
+        if abs(np.corrcoef(x, yy)[0, 1]) >= r0:
+            hits += 1
+    return (hits + 1) / (iters + 1)
+
+
+for _lbl, _x, _r, _lo, _hi, _p in (
+        ("awake FRC", AW, 0.894, 0.676, 0.968, 0.0001),
+        ("BMI", BMI, -0.434, -0.795, 0.154, 0.1378)):
+    _rr = np.corrcoef(_x, AN)[0, 1]
+    _l, _h = _fisher(_rr, 13)
+    check(f"   anaes FRC vs {_lbl}: r", _rr, _r, 0.002)
+    check(f"   anaes FRC vs {_lbl}: 95% CI low", _l, _lo, 0.002)
+    check(f"   anaes FRC vs {_lbl}: 95% CI high", _h, _hi, 0.002)
+    check(f"   anaes FRC vs {_lbl}: permutation p", _perm_p(_x, AN), _p, 0.004)
+print()
+print("   SO THE TWO HALVES OF THE CONTRAST ARE NOT EQUALLY SOLID. The awake")
+print("   correlation is strong and significant (p = 0.0001). THE BMI ONE IS NOT")
+print("   DISTINGUISHABLE FROM ZERO (p = 0.14, interval crossing zero). Reporting")
+print("   'BMI explains 19%' as a quantity overstates what 13 patients can say.")
+print()
+print("   AND IT TURNS ON ONE PATIENT. Patient 8's awake FRC is 3.827 l, far the")
+print("   largest in the table. Dropping him alone:")
+_m = np.array([r[0] != 8 for r in T2])
+for _lbl, _x, _rec in (("awake FRC", AW, 0.867), ("BMI", BMI, -0.741)):
+    check(f"   without pt 8: anaes FRC vs {_lbl}", np.corrcoef(_x[_m], AN[_m])[0, 1], _rec, 0.002)
+print("   The awake correlation barely moves (+0.894 -> +0.867). BMI's goes from")
+print("   -0.434 to -0.741, i.e. from 19% of the variance to 55%, and becomes")
+print("   significant. SO THE HONEST STATEMENT IS NARROWER THAN SECTION 2's:")
+print("   the awake volume is robustly the better predictor in this cohort, by")
+print("   both readings; but 'BMI explains almost nothing' does NOT survive, and")
+print("   how much BMI explains is unstable between 19% and 55% on one patient.")
+print("   The argument against keying the anaesthetised level on BMI ALONE holds.")
+print("   The argument that BMI carries little information does not.")
 print()
 
 if FAILED:
