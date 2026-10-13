@@ -16,6 +16,12 @@ THE SOURCE. Hewlett AM, Hulands GH, Nunn JF, Milledge JS. "Functional residual
 capacity during anaesthesia III: Artificial ventilation." Br J Anaesth
 1974;46:495-502. Read in full from upload 2026-10-13. Published data only.
 
+PART I (same authors with Minty, Br J Anaesth 1974;46:479-85) was read in full
+from upload the same day. It carries NO patient data -- it is the helium-dilution
+apparatus and its accuracy -- but its Table I is what lets section 5 below decide
+how much weight part III's scatter can bear, and it changes the answer in part
+III's favour.
+
 WHY IT MATTERS. It is the FIRST source this project holds with PAIRED awake and
 anaesthetised FRC in the SAME patients, and its BMI range 18.6-30.8 is the lean
 gap that Pelosi (from BMI 20) and Damia (morbidly obese) both leave as
@@ -175,6 +181,56 @@ print("   400 mL is only 103 mL biased against him -- it is Pelosi's shape")
 print("   steepening the fall after it. Pelosi and Hewlett disagree here and")
 print("   BOTH are published. That is a conflict to record, not an error to")
 print("   patch, and NOTHING here licenses moving a parameter to split them.")
+print()
+
+print("5. HOW MUCH OF PART III'S SCATTER IS THE INSTRUMENT? Part I measured a")
+print("   MODEL LUNG of known volume 4.528 l by water displacement, through the")
+print("   same rig, in both of its modes. Its Table I:")
+print("                        n   mean l   SD(indiv)   mean error l")
+for _lbl, _n, _m, _sd, _e in (("spontaneous 1", 10, 4.563, 0.046, -0.035),
+                              ("spontaneous 2",  9, 4.559, 0.060, -0.031),
+                              ("artificial 1",  10, 4.511, 0.159, -0.017),
+                              ("artificial 2",  10, 4.529, 0.107, -0.001)):
+    print(f"     {_lbl:<16}{_n:>3}{_m:>9.3f}{_sd:>12.3f}{_e:>15.3f}")
+SD_SPONT = (0.046 + 0.060) / 2.0      # part III's AWAKE measurements
+SD_ARTIF = (0.159 + 0.107) / 2.0      # part III's ANAESTHETISED measurements
+check("awake-measurement SD (spontaneous mode)", SD_SPONT, 0.053, 0.0005, " l")
+check("anaes-measurement SD (ventilated mode)", SD_ARTIF, 0.133, 0.0005, " l")
+print("   The anaesthetised numbers are 2.5x NOISIER than the awake ones, which")
+print("   part I attributes to about 1.5 l of extra apparatus in the ventilated")
+print("   circuit. That asymmetry matters three times over:")
+print()
+_SD_D = float(np.hypot(SD_SPONT, SD_ARTIF))
+check("   SD of the awake-to-anaesthetised DIFFERENCE", _SD_D, 0.143, 0.001, " l")
+print("   (a) THE THREE PATIENTS WHOSE FRC DID NOT FALL are patients 1, 11 and 12.")
+for _pt, _a, _n in ((1, 1.860, 1.893), (11, 1.925, 1.943), (12, 2.189, 2.354)):
+    print(f"       pt {_pt:>2}: {1000 * (_n - _a):+6.0f} mL = {(_n - _a) / _SD_D:+.2f} SD of method noise")
+print("       All three are inside about one SD of the instrument. They are")
+print("       consistent with NO CHANGE mismeasured, NOT with anaesthesia adding")
+print("       gas -- which is the reading a mandatory induction drop would need")
+print("       to explain away, and now does not have to.")
+print()
+print("   (b) THE FACTOR-3.4 SPREAD AT BMI 28-31 IS NOT THE INSTRUMENT:")
+check("       spread in units of measurement SD", (2.952 - 0.880) / SD_ARTIF, 15.58, 0.02, " SD")
+print("       Fifteen measurement SDs wide. The biological spread at one BMI is")
+print("       real, and section 2's conclusion rests on something the rig could")
+print("       not have manufactured.")
+print()
+print("   (c) ATTENUATION, AND IT RUNS THE HELPFUL WAY. Measurement noise biases")
+print("       a correlation TOWARD ZERO, so r = +0.894 UNDERSTATES the awake")
+print("       lung's hold on the anaesthetised one. Correcting with Spearman's")
+print("       formula, using part I's SDs as the error term:")
+_rel_aw = 1 - SD_SPONT ** 2 / AW.std(ddof=1) ** 2
+_rel_an = 1 - SD_ARTIF ** 2 / AN.std(ddof=1) ** 2
+check("       reliability, awake column", _rel_aw, 0.9938, 0.0005)
+check("       reliability, anaesthetised column", _rel_an, 0.9533, 0.0005)
+check("       awake vs anaes, DISATTENUATED r",
+      np.corrcoef(AW, AN)[0, 1] / np.sqrt(_rel_aw * _rel_an), 0.919, 0.002)
+check("       BMI   vs anaes, DISATTENUATED r",
+      np.corrcoef(BMI, AN)[0, 1] / np.sqrt(_rel_an), -0.171, 0.002)
+print("       Correcting for the instrument WIDENS the gap, 0.894 -> 0.919")
+print("       against -0.167 -> -0.171. Section 3's finding survives its own")
+print("       most obvious objection.")
 print()
 
 if FAILED:

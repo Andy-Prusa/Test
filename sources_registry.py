@@ -271,6 +271,30 @@ BENCHMARK_SOURCES = [
      "awake SUPINE FRC at BMI 53.2 as 2250 mL against Jones's SEATED 2125 "
      "mL at BMI 50. It also disagrees with Pelosi 1998 on anaesthetised FRC "
      "by a factor of two at the same BMI, same method, same conditions"),
+    ("Hewlett, Hulands, Nunn & Minty 1974, *Br J Anaesth* 46:479-85, "
+     "part I of three",
+     "the MEASUREMENT ERROR of part III, and nothing else -- no patient data",
+     "2026-10-13",
+     "READ IN FULL from upload. Methodology only: the closed-circuit helium "
+     "dilution rig, its modification for IPPV, and its accuracy. IT CARRIES NO "
+     "PATIENT FRC DATA and must not be cited for any. WHAT IT IS FOR is its "
+     "Table I, a model lung of known volume 4.528 l by water displacement run "
+     "through the same rig in both modes: SD of an individual measurement "
+     "0.046/0.060 l SPONTANEOUS against 0.159/0.107 l ARTIFICIAL VENTILATION, "
+     "the latter blamed on about 1.5 l of extra apparatus in the ventilated "
+     "circuit. Part III measured AWAKE in the quiet mode and ANAESTHETISED in "
+     "the noisy one, so its anaesthetised column is 2.5x noisier than its "
+     "awake column, and that asymmetry decides three things. (1) Part III's "
+     "three patients whose FRC did not fall -- 1, 11 and 12, at +33, +18 and "
+     "+165 mL -- are all inside about one SD of the instrument, so they are "
+     "no-change mismeasured rather than anaesthesia adding gas. (2) Part "
+     "III's factor-3.4 spread of anaesthetised FRC at BMI 28-31 is 15.6 "
+     "measurement SDs wide, so it is real. (3) Disattenuating for this noise "
+     "RAISES the awake-to-anaesthetised correlation from +0.894 to +0.919 "
+     "while BMI moves only -0.167 to -0.171 -- the central finding survives "
+     "its most obvious objection. Also states the scale plainly: \"supine "
+     "patients have FRC values of the order of 2 litres\", and that 0.001 of "
+     "full-scale helium error is about 3% of FRC, 60 mL during anaesthesia"),
     ("Hewlett, Hulands, Nunn & Milledge 1974, *Br J Anaesth* 46:495-502 "
      "(n=13), part III of three",
      "the FIRST PAIRED awake/anaesthetised FRC held, in the LEAN range, and "
