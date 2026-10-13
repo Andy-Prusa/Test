@@ -5,6 +5,127 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-13 (forty-seventh entry): Hewlett 1974 read — the first PAIRED awake/anaesthetised FRC this project holds, and it argues AGAINST de-coupling at the lean end. Also corrects entry 46: the offset is NOT "nearly divided out" in the shipped model, it moves obese FRC by 22–45%
+
+Regenerate with `python3 hewlett_numbers.py` (seconds) and `python3
+frc_level_numbers.py`. The offset benchmark cost is four suite runs,
+`variant_cost.py pel_c046 | pel_c092 | abs_c046 | abs_c092`, ~34 min each.
+
+### 0. CORRECTION TO ENTRY 46, FOUND BY COMPUTING WHAT IT ASSERTED
+
+Entry 46 §6 said that in the shipped model "the offset is very nearly divided
+out by the ratio form". **That is true at BMI 22 and increasingly false above
+it.** Computed today, the spread from Pelosi's 0.46 L to Damia's 0.9163 L:
+
+| cohort | SHIPPED | de-coupled |
+|---|---|---|
+| Toner lean BMI 22.9 | 1.2% | 24.0% |
+| Berthoud lean BMI 23 | 1.4% | 24.9% |
+| Heard obese BMI 34.7 | **22.1%** | 51.3% |
+| Berthoud obese BMI 49 | **45.4%** | 80.2% |
+
+The offset is the curve's ASYMPTOTE, so it bites where the exponential has
+decayed — in the obese. It is divided out EXACTLY at BMI 22 by construction and
+nowhere else. **So the offset ruling is live for the model as it ships today,
+not only if de-coupling is ever adopted.** `pelosi_offset_l` was promoted from a
+literal to a switch today so the choice can be costed instead of argued; the
+default is the ruled 0.6882 and the change is bit-identical at the defaults.
+
+### 1. WHAT HEWLETT IS, AND WHY IT IS THE PAPER THAT WAS MISSING
+
+Hewlett, Hulands, Nunn & Milledge, *Br J Anaesth* 1974;46:495–502, part III of
+three. Helium dilution, supine, measured **awake pre-induction and again
+anaesthetised, paralysed and ventilated** in the same 13 patients. Entry 46
+closed by naming one external gap: an anaesthetised FRC measurement in LEAN
+patients, because Pelosi starts at BMI 20 and Damia is morbidly obese. **His
+cohort is BMI 18.6–30.8 and it is paired**, which no source here had been.
+
+**Its limit is not small: by the Table II footnote only patients 2, 8 and 9 were
+male.** Ten of thirteen were female and this model is male by ruling. The
+model's awake FRC runs 553 mL high against him, which is what a male model
+measured against a mostly-female cohort should do.
+
+### 2. THE TRANSCRIPTION, VALIDATED BEFORE ANYTHING WAS CONCLUDED FROM IT
+
+Table II is printed rotated and was read by eye, so it is checked by whether the
+paper's own published statistics fall out of it. They do: mean awake FRC 2.021
+L, mean anaesthetised 1.724 L, mean fall 297 mL, mean fall 15.4%, and —
+independently — refitting his A-a regression from the transcribed cells gives
+**8.17 + 1.466 × (% fall in FRC), r = 0.790** against his printed **8.2 + 1.47,
+r = 0.790**, with his age correlation reproducing exactly at 0.289.
+
+**One figure does not reproduce and is recorded rather than explained away.** He
+prints a correlation of the FRC change with weight/height ratio of 0.415;
+refitting gives 0.327 on his printed percentage column, 0.284 on absolute
+change, and 0.390 for BMI, the nearest candidate. His age figure fixes which
+definition he used, and on that definition his 0.415 is not recoverable.
+**Unresolved — his 0.415 is not to be quoted.**
+
+### 3. THE LOAD-BEARING FINDING: IT ARGUES AGAINST DE-COUPLING AT THE LEAN END
+
+In his paired data, what predicts the anaesthetised lung volume:
+
+| predictor | r | variance explained |
+|---|---|---|
+| the patient's own **awake FRC** | **+0.894** | **80%** |
+| BMI | −0.167 | 3% |
+| height | +0.380 | 15% |
+| age | +0.029 | 0.1% |
+
+Why, visible in the raw table: among his five patients between BMI 28 and 31 the
+anaesthetised FRC runs **0.880 → 2.952 L, a factor of 3.4 at the same BMI.** A
+curve keyed on BMI alone cannot produce that spread; the awake volume can,
+because it already contains whatever makes those patients differ.
+
+**This is the first direct evidence either way on the question entry 46 left
+open, and it runs against the de-coupling** — against `frc_anaes_absolute`, and
+against the position that awake has no use in calculating anaesthetised.
+
+**THE HONEST REBUTTAL, which is real:** his BMI range is 18.6–30.8, so BMI has
+little room to show what it can do. Over Pelosi's 20–66 it would explain far
+more. This bears on the LEAN end — where Toner, Berthoud and Frumin sit — and
+not on the obese end.
+
+**AND ON ABSOLUTE LEVEL HE CANNOT ARBITRATE AT ALL.** Shipped gives +123 mL mean
+bias and 518 mL mean absolute error; de-coupled gives +73 mL and 508 mL. Ten mL
+of MAE apart, inside a 553 mL sex confound. Only the correlation structure in
+the table above carries weight, because sex does not confound it the same way.
+
+### 4. A SECOND, INDEPENDENT FINDING: THE EFFECTIVE DROP IS TOO STEEP IN BMI
+
+| BMI | 19 | 22 | 25 | 28 | 31 |
+|---|---|---|---|---|---|
+| model's induction drop | 14.1% | 14.6% | 26.7% | 35.9% | 42.8% |
+
+Hewlett measured **15.4%** as the mean of a cohort whose mean BMI is 25.4, where
+the model gives about 27%. **This is not `frc_drop`** — a flat 400 mL is only
+103 mL biased against him — **it is Pelosi's BMI shape steepening the fall after
+it.** Pelosi and Hewlett disagree here and both are published. That is a conflict
+to record, not an error to patch, and nothing in it licenses moving a parameter
+to split them.
+
+### 5. WHAT COULD NOT BE OBTAINED
+
+Parts **I** (46:479, methodology) and **II** (46:486, spontaneous respiration)
+are not held. The environment's network policy denied `bjanaesthesia.org` and
+`bjanaesthesia.org.uk` to both the proxy and the fetch tool. **Part II is the
+one that matters**: by search result it is 26 **males** breathing
+spontaneously with a 390 mL mean fall — it would break the sex confound AND be
+the condition closer to apnoea. **Nothing from those abstracts may be used until
+the pages are seen**, and the 390 mL above is recorded here only as the reason
+to want the paper.
+
+### 6. WHAT IS STILL OPEN
+
+1. The offset ruling — now shown to be live for the shipped model (§0), with
+   four suite runs costing it.
+2. De-coupling — still built, still off, and now with evidence against it at the
+   lean end (§3) and the restriction-of-range rebuttal to that evidence.
+3. Whether a mostly-female 1974 cohort can carry any benchmark row here.
+4. Hewlett parts I and II; Juno & Rehder 1978 (closing capacity awake vs
+   anaesthetised-paralysed, 61 supine patients); Westbrook 1973; Don, Wahba &
+   Craig 1972.
+
 ## Current state — 2026-10-13 (forty-sixth entry): the owner's ruling-in-waiting — "awake has no use in calculating anaesthetised" — is right, and the 3.67% I used to dismiss it on 2026-10-12 IS the awake anchor, entire. De-coupling is built, costed and DELIBERATELY NOT ADOPTED: it fixes the obese benchmark and breaks a lean one, and it makes the unruled offset question load-bearing
 
 Every number below regenerates with `python3 frc_level_numbers.py` (seconds),
@@ -117,8 +238,13 @@ fixed by the two papers, and it overshoots.
 
 ### 6. THE REASON NOT TO ADOPT IT YET, AND IT IS NEW
 
-**De-coupling makes the unruled offset question load-bearing.** Shipped, the
-offset is very nearly divided out by the ratio form. De-coupled, it SETS the
+**De-coupling makes the unruled offset question load-bearing.**
+**[CORRECTED 2026-10-13, see entry 47 §0: the clause that followed here —
+"shipped, the offset is very nearly divided out by the ratio form" — is true at
+BMI 22 and false above it. Shipped, the offset moves Heard's obese FRC by 22.1%
+and Berthoud's BMI 49 by 45.4%. The offset ruling is live for the model as it
+ships, not only after de-coupling.]** Shipped, the
+offset is divided out exactly at BMI 22 and increasingly not above it. De-coupled, it SETS the
 level — anaesthetised FRC, mL:
 
 | cohort | shipped | C=0.460 Pelosi | C=0.688 ruled | C=0.916 Damia |
@@ -4912,6 +5038,13 @@ in a script rather than in prose.
 | baseline (shipped, `crs` 75) | 4.60 | -19.8 | — | — |
 | `tau_mix` 25 | 6.09 | -19.9 | +32% | -0.1% |
 | `tau_mix` 90 | 3.09 | -19.9 | -33% | -0.1% |
+
+> **STALE 2026-10-13: `tau_mix` IS NOW WHOLLY INERT.** Re-run today at the
+> Stock configuration it gives an obstructed PaCO₂ slope of **2.073539
+> mmHg/min at tau_mix 25, 60 AND 90 — identical to six decimal places.** The
+> ±32% sensitivity in these two rows was disconnected by `4579c4e`. The rows
+> are left for the record; the lever they describe no longer moves anything.
+
 | `vq_log_sd` 0.50 | 3.16 | -19.8 | -31% | -0.0% |
 | `vq_log_sd` 1.18 | 7.56 | -19.8 | +64% | -0.0% |
 | `crs` 60 | 4.37 | -24.2 | -5% | -22% |
@@ -5153,7 +5286,9 @@ that have had their oxygen taken and can give none back. They are a shunt in
 everything but name, which is why turning the named shunt off changed nothing.
 Perfusion-weighted mean content is 17.15 mL/dL against 20.10 fully saturated.
 
-**Faster stirring does not fix it.** `tau_mix` is the time constant for
+**Faster stirring does not fix it.** *(And since `4579c4e` it does not do
+ANYTHING — see the staleness note on the lever table above; this sweep's
+spread of 183→330 mmHg is no longer reproducible.)* `tau_mix` is the time constant for
 cardiogenic mixing between units — HANDOVER has always called it "not well
 characterised". Sweeping it 180× with the shunt off:
 
@@ -8265,6 +8400,26 @@ Two changes to consider, neither made:
 **Get Eger & Severinghaus 1961 before acting on either.** It is reported free.
 
 ## Where the Stock residual actually lives — located, not yet fixed
+
+> **SUPERSEDED 2026-10-13 — RE-MEASURED, AND THE RESIDUAL THIS SECTION LOCATED
+> NO LONGER EXISTS IN THIS FORM.** `4579c4e` (2026-09-23, "gas volume no longer
+> allocated by the V/Q ratio") disconnected the mechanism this diagnosis rests
+> on. Re-run today at the same configuration (70 kg, 1.75 m, 45 y, Hb 15,
+> `resistance=np.inf`, slopes over 60–300 s, mmHg/min):
+>
+> | | this section recorded | measured 2026-10-13 |
+> |---|---|---|
+> | obstructed PaCO₂ slope | 4.35 | **2.07** |
+> | obstructed PACO₂ slope | 2.63 | **2.11** |
+> | obstructed PvCO₂ slope | 2.01 | **1.82** |
+> | obstructed a-A gap growth | **+1.72** | **−0.04** |
+>
+> The obstructed slope has roughly halved and the arterial-to-alveolar gap has
+> closed completely. The reasoning below — that the whole excess is in the a-A
+> gap — described a model that no longer exists. Left visible rather than
+> deleted, because the *method* (excluding stores by comparing venous slopes) is
+> still right and the project keeps its superseded work readable. **Do not quote
+> the numbers in this section.**
 
 Established September 2026 after V/Q spread, CO2 stores, mechanics, the Muller
 term and cardiac output had all been excluded. Nothing in the model has been

@@ -66,6 +66,16 @@ VARIANTS = {
     # is the same 3.67 % at every BMI. See the switch's block comment in
     # apnoea_core.py. UNRULED -- this run is what the ruling needs.
     'frc_abs': {'frc_anaes_absolute': True},
+    # THE OFFSET RULING, OPEN SINCE 2026-09-26 AND COSTABLE SINCE 2026-10-13.
+    # The anaesthetised FRC curve's asymptote is the mean of two primary
+    # sources that disagree twofold. These four runs are what the ruling needs:
+    # the two offsets, each in the SHIPPED form and in the de-coupled one.
+    # Shipped is NOT insensitive to this -- 22% at Heard's BMI, 45% at
+    # Berthoud's obese BMI 49. See the switch's block comment in apnoea_core.
+    'pel_c046': {'pelosi_offset_l': 0.4600},
+    'pel_c092': {'pelosi_offset_l': 0.9163},
+    'abs_c046': {'frc_anaes_absolute': True, 'pelosi_offset_l': 0.4600},
+    'abs_c092': {'frc_anaes_absolute': True, 'pelosi_offset_l': 0.9163},
 }
 
 

@@ -1737,12 +1737,41 @@ class Patient:
     #   compensating parameter.
     frc_anaes_absolute = False
 
+    # pelosi_offset_l -- THE OFFSET OF THE ANAESTHETISED FRC CURVE, IN LITRES,
+    #   AND THE ONE NUMBER IN IT THAT IS NOT SETTLED. Ruled 2026-09-26
+    #   (bffbbf4) to the MEAN of two primary sources that measured the same
+    #   quantity the same way and disagreed about twofold:
+    #
+    #       Pelosi 1998   C = 0.4600 L     Damia 1988   C = 0.9163 L
+    #       ruled mean    C = (0.4600 + 0.9163) / 2 = 0.6882 L
+    #
+    #   PROMOTED FROM A LITERAL TO A SWITCH 2026-10-13, so the choice can be
+    #   COSTED rather than argued. Changing it here changes nothing else; the
+    #   default IS the ruled value and this is a no-op at the defaults.
+    #
+    #   WHAT IT CONTROLS, computed 2026-10-13 -- and the shipped model is NOT
+    #   insensitive to it, which an earlier note in HANDOVER entry 46 got
+    #   wrong. The offset is the curve's ASYMPTOTE, so it bites where the
+    #   exponential has decayed, i.e. in the obese. Spread from Pelosi's
+    #   0.4600 to Damia's 0.9163, as anaesthetised FRC:
+    #
+    #                              SHIPPED   DE-COUPLED
+    #       Toner lean BMI 22.9       1.2 %      24.0 %
+    #       Berthoud lean BMI 23      1.4 %      24.9 %
+    #       Heard obese BMI 34.7     22.1 %      51.3 %
+    #       Berthoud obese BMI 49    45.4 %      80.2 %
+    #
+    #   Shipped, it is divided out EXACTLY at BMI 22 by the ratio form and
+    #   increasingly NOT above it. "Nearly divided out" is true of the lean
+    #   end only. UNRULED: cost it with variant_cost.py pel_c046 / pel_c092.
+    pelosi_offset_l = 0.6882
+
     # The existing height term evaluated at Pelosi's cohort height of 1.64 m,
     # so frc_anaes_absolute can divide it out. Not a new parameter.
     _PELOSI_HF = (2.34 * 1.64 - 1.09) / (2.34 * 1.75 - 1.09)
 
-    @staticmethod
-    def _pelosi_frc(bmi):
+    @classmethod
+    def _pelosi_frc(cls, bmi):
         """Anaesthetised supine FRC shape, from TWO measurements averaged.
 
         Pelosi 1998:  FRC = 11.97 exp(-0.096 BMI) + 0.46 L, r 0.86, n = 24
@@ -1782,7 +1811,7 @@ class Patient:
 
         Regenerate the derivation with handover_numbers.py.
         """
-        return 11.97 * np.exp(-0.096 * bmi) + 0.6882
+        return 11.97 * np.exp(-0.096 * bmi) + cls.pelosi_offset_l
 
     def k_rv_bmi_eff(self):
         """How fast residual volume falls with BMI, and WHOSE measurement.

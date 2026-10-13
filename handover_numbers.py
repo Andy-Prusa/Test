@@ -2108,6 +2108,13 @@ def _pel_invert(b):
 
 
 check("Pelosi: alveolar PO2 at FiO2 0.40, PaCO2 33", _PALV, 243.9, 1.0, " mmHg")
+# THE 1886.0 BELOW IS NOT A MEASUREMENT, IT IS A FOOTPRINT OF THE CASCADE.
+# Identified 2026-10-13: it is exactly the anaesthetised FRC this model gave at
+# BMI 22 when frc_ref was 2500 mL, i.e. the value recorded BEFORE 48ffe03
+# (2026-09-26) re-solved the AWAKE lung on Watson & Pride and moved frc_ref to
+# 2860. It is one of the 323 stale checks of entry 44 and it will FAIL until
+# the FRC-level question is ruled. Do not 'fix' it by writing today's number
+# in: that would erase the evidence of what 48ffe03 moved.
 for _b, _ours_sh, _pel_sh, _frc in ((22, 3.71, 3.47, 1886.0),
                                     (30, 5.75, 5.96, 1237.0),
                                     (34, 7.09, 7.28, 1039.0),

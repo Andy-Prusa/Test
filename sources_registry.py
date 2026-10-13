@@ -271,6 +271,40 @@ BENCHMARK_SOURCES = [
      "awake SUPINE FRC at BMI 53.2 as 2250 mL against Jones's SEATED 2125 "
      "mL at BMI 50. It also disagrees with Pelosi 1998 on anaesthetised FRC "
      "by a factor of two at the same BMI, same method, same conditions"),
+    ("Hewlett, Hulands, Nunn & Milledge 1974, *Br J Anaesth* 46:495-502 "
+     "(n=13), part III of three",
+     "the FIRST PAIRED awake/anaesthetised FRC held, in the LEAN range, and "
+     "the (A-a)PO2-vs-FRC-fall relation",
+     "2026-10-13",
+     "READ IN FULL from upload. Helium dilution, supine, measured AWAKE "
+     "pre-induction and again ANAESTHETISED + PARALYSED (pancuronium) + "
+     "IPPV, thiopentone/halothane, 35% oxygen, for cholecystectomy. FRC "
+     "2.021 (SD 0.674) -> 1.724 (SD 0.615) l BTPS; mean fall 297 mL = 15.4% "
+     "(SD 13.7). BMI 18.6-30.8, so it fills the LEAN gap Pelosi (from BMI "
+     "20) and Damia (morbidly obese) both leave as extrapolation. "
+     "CAVEAT THAT LIMITS EVERYTHING: by its Table II footnote only patients "
+     "2, 8 and 9 were MALE -- 10 of 13 FEMALE -- and this model is male by "
+     "ruling, so absolute volumes are confounded and the model's awake FRC "
+     "runs 553 mL high against it. WHAT IT IS GOOD FOR is the CORRELATION "
+     "STRUCTURE, which sex does not confound the same way: in his paired "
+     "data the patient's own AWAKE FRC predicts the anaesthetised FRC at "
+     "r = +0.894 (r2 0.80) where BMI gives r = -0.167 (r2 0.03), and "
+     "between BMI 28 and 31 his anaesthetised FRC spans 0.880-2.952 l, a "
+     "factor of 3.4 at the same BMI. That is evidence AGAINST keying the "
+     "anaesthetised level on BMI alone, i.e. against frc_anaes_absolute, "
+     "and it is the first direct evidence either way. RESTRICTION OF RANGE "
+     "is the honest rebuttal: over Pelosi's BMI 20-66 the BMI term would "
+     "have far more to explain. (A-a)PO2 49.1 -> 79.7 mmHg; he prints "
+     "increase = 8.2 + 1.47 x (% fall in FRC), r 0.790, and REFITTING FROM "
+     "HIS TABLE II GIVES 8.17 + 1.466, r 0.790, which is how the "
+     "transcription was validated; his age correlation 0.289 also "
+     "reproduces exactly. ONE THING THAT DOES NOT REPRODUCE: his "
+     "weight/height correlation of 0.415 -- refitting gives 0.306 on "
+     "percentage change and 0.284 on absolute change. Unresolved. "
+     "PARTS I (46:479, methodology) and II (46:486, SPONTANEOUS "
+     "respiration, and by search 26 MALES with a 390 mL fall) ARE NOT HELD "
+     "-- the network policy blocks bjanaesthesia.org -- and nothing from "
+     "their abstracts may be used until the pages are seen"),
     ("Fraioli 1973, *Anesthesiology* 39(6):588-96 (n=31)",
      "apnoeic-oxygenation PaO2 and the FRC/weight desaturation split",
      "2026-09-28",

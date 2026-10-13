@@ -98,7 +98,7 @@ clone. `git commit --no-verify` exists but say in the message which benchmark
 is broken and why.
 
 `protocol/predictions.py`, `handover_numbers.py`, `buccal_numbers.py`,
-`aa_numbers.py` and `frc_level_numbers.py` are
+`aa_numbers.py`, `frc_level_numbers.py` and `hewlett_numbers.py` are
 deliberately NOT in the hook. They check claims about the world, not invariants of the code, and are
 expected to move when the model is corrected — the point is that they must not
 move silently.
@@ -116,6 +116,7 @@ move silently.
 | `buccal_numbers.py` | regenerates the buccal-oxygen numbers, and the audit of `editorial.md` |
 | `aa_numbers.py` | regenerates the A-a gradient dial's numbers. ~9 min; split out of `handover_numbers.py` 2026-10-09 because that file now runs over two hours |
 | `frc_level_numbers.py` | regenerates WHERE THE ANAESTHETISED LUNG VOLUME'S LEVEL COMES FROM — the awake-anchor bias, the `48ffe03` cascade decomposed, and how much the unruled Pelosi/Damia offset would control if the level were de-coupled. Seconds, nothing simulated |
+| `hewlett_numbers.py` | regenerates everything quoted from Hewlett 1974 — the only PAIRED awake/anaesthetised lung-volume measurement held, the transcription's own validation, and what predicts the anaesthetised volume in his data. Seconds, nothing simulated |
 | `protocol/` | the three-way study, its predictions and its evidence map |
 | `sources_registry.py` | WHICH PAPERS HAVE BEEN READ. The only place that fact is written |
 | `check_sources.py` | regenerates README's read-status table from it; `--check` in the hook |

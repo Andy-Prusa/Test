@@ -58,10 +58,7 @@ def absolute(offset=MEAN_C):
     @dataclasses.dataclass
     class V(Patient):
         frc_anaes_absolute = True
-        if offset != MEAN_C:
-            @staticmethod
-            def _pelosi_frc(bmi):
-                return 11.97 * np.exp(-0.096 * bmi) + offset
+        pelosi_offset_l = offset
     return V
 
 
