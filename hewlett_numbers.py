@@ -312,6 +312,95 @@ print("   The argument against keying the anaesthetised level on BMI ALONE holds
 print("   The argument that BMI carries little information does not.")
 print()
 
+# Hewlett 1974 PART II (Br J Anaesth 46:486-94), TABLE II. 26 MALES,
+# SPONTANEOUSLY breathing, thiopentone + halothane, supine, read in full from
+# upload 2026-10-14. Volumes litres BTPS. Transcribed from the PDF text layer.
+# pt, age, ht cm, wt kg, FRC pre-induction, FRC anaesthetised, % reduction
+P2 = [
+    (1, 39, 171, 66.5, 2.184, 1.934, 11.45), (2, 47, 168, 64.2, 2.733, 2.300, 15.84),
+    (3, 42, 174, 79.0, 1.846, 1.535, 16.85), (4, 54, 165, 71.5, 1.755, 1.535, 12.54),
+    (5, 44, 179, 68.5, 2.606, 1.960, 24.79), (6, 34, 190, 80.0, 1.551, 1.611, -3.87),
+    (7, 26, 173, 74.5, 1.934, 1.772, 8.38), (8, 27, 170, 66.6, 2.647, 2.640, 0.26),
+    (9, 37, 167, 56.0, 1.347, 1.118, 17.00), (10, 25, 176, 92.0, 2.188, 1.872, 14.44),
+    (11, 24, 194, 85.0, 3.096, 2.830, 8.59), (12, 58, 154, 64.0, 1.808, 1.519, 15.98),
+    (13, 31, 177, 85.0, 1.443, 1.381, 4.30), (14, 36, 181, 74.0, 2.571, 1.527, 40.61),
+    (15, 31, 170, 61.0, 1.571, 1.123, 28.52), (16, 45, 171, 69.8, 2.251, 1.886, 16.22),
+    (17, 43, 172, 90.0, 2.093, 1.435, 31.44), (18, 43, 179, 53.0, 4.771, 3.290, 31.04),
+    (19, 34, 171, 76.7, 2.206, 1.251, 43.29), (20, 32, 175, 75.0, 2.527, 2.931, -15.99),
+    (21, 24, 182, 73.5, 1.732, 1.656, 4.39), (22, 37, 175, 80.0, 2.553, 2.271, 11.05),
+    (23, 68, 174, 68.2, 2.651, 2.245, 15.31), (24, 38, 176, 75.0, 3.625, 2.473, 31.78),
+    (25, 40, 179, 93.0, 1.061, 0.822, 22.53), (26, 19, 169, 56.5, 2.611, 2.301, 11.87),
+]
+PRE = np.array([r[4] for r in P2])
+PAN = np.array([r[5] for r in P2])
+PPCT = np.array([r[6] for r in P2])
+PBMI = np.array([r[3] / (r[2] / 100.0) ** 2 for r in P2])
+
+print("7. PART II, AND IT IS THE PAPER THAT BREAKS THE SEX CONFOUND: 26 MALES,")
+print("   SPONTANEOUSLY BREATHING. Part III was 10/13 female and paralysed and")
+print("   ventilated; this is the same group's independent cohort in the sex the")
+print("   model is configured for and the breathing state closer to apnoea.")
+print()
+print("   TRANSCRIPTION, checked against FIVE printed statistics:")
+check("   mean pre-induction FRC [table: 2.283]", float(PRE.mean()), 2.283, 0.001, " l")
+check("   mean anaesthetised FRC [table: 1.893]", float(PAN.mean()), 1.893, 0.001, " l")
+check("   mean reduction [text: 390 mL]", 1000 * float((PRE - PAN).mean()), 390.0, 0.6, " mL")
+check("   mean % reduction [text: 16.1, SD 13.4]", float(PPCT.mean()), 16.10, 0.02, " %")
+check("   SD of the % reduction [text: 13.4]", float(PPCT.std(ddof=1)), 13.37, 0.02, " %")
+check("   patients whose FRC fell [text: 24 of 26]", float((PPCT > 0).sum()), 24.0, 0.5)
+print("   Every printed statistic reproduces. This transcription is sound.")
+print()
+print("   AND A TRAP IN ITS OWN SUMMARY. The abstract gives the fall correlating")
+print("   with age at r = 0.41 and with weight/height at r = 0.30. BOTH ARE THE")
+print("   POOLED FIGURES over 54 patients (his 26 plus Don's two series), as the")
+print("   figure captions state. THIS STUDY'S OWN 26 GIVE:")
+_page = np.array([float(r[1]) for r in P2])
+_pwh = np.array([r[3] / r[2] for r in P2])
+check("   % reduction vs age, THIS COHORT ONLY", np.corrcoef(_page, PPCT)[0, 1], 0.235, 0.002)
+check("   % reduction vs wt/ht, THIS COHORT ONLY", np.corrcoef(_pwh, PPCT)[0, 1], -0.033, 0.002)
+print("   Neither of the abstract's figures belongs to these 26 patients. Do not")
+print("   quote 0.41 or 0.30 as properties of this cohort.")
+print()
+print("   THE REPLICATION, and it is why the de-coupling question is closed:")
+for _lbl, _x, _rec in (("pre-induction FRC", PRE, 0.855), ("BMI", PBMI, -0.439),
+                       ("height", np.array([r[2] / 100.0 for r in P2]), 0.230),
+                       ("age", _page, -0.081)):
+    check(f"   anaesthetised FRC vs {_lbl}", np.corrcoef(_x, PAN)[0, 1], _rec, 0.002)
+print("   Part III gave +0.894 against -0.434 in 13 mostly-female paralysed")
+print("   patients. Part II gives +0.855 against -0.439 in 26 males breathing")
+print("   spontaneously. DIFFERENT PATIENTS, DIFFERENT SEX MIX, DIFFERENT")
+print("   VENTILATION, SAME ANSWER. That is a replication, not a repetition.")
+print()
+print("   AND IT CORRECTS SOMETHING THIS FILE SAID. Section 3 explained the")
+print("   model's +510 mL awake bias against part III as what a male model")
+print("   should do against a 10/13 female cohort. AGAINST 26 MALES THE BIAS IS")
+print("   ESSENTIALLY THE SAME:")
+_eaw, _ean, _edr = [], [], []
+for _pt, _ag, _ht, _wt, _fp, _fa, _ in P2:
+    _g = dict(weight=_wt, height=_ht / 100.0, age=_ag, tilt_deg=0)
+    _p = Patient(**_g)
+    _eaw.append(_p.frc_awake() - _fp * 1000)
+    _ean.append(_p.frc_anaes() - _fa * 1000)
+    _edr.append((_p.frc_awake() - _p.frc_anaes()) - (_fp - _fa) * 1000)
+check("   awake bias against 26 MALES", float(np.mean(_eaw)), 503.0, 1.0, " mL")
+check("   anaesthetised bias against 26 MALES", float(np.mean(_ean)), 258.0, 1.0, " mL")
+check("   the DROP, model minus measured", float(np.mean(_edr)), 245.0, 1.0, " mL")
+print("   +503 mL in males against +510 mL in the mostly-female cohort. THE SEX")
+print("   CONFOUND DOES NOT EXPLAIN THE AWAKE BIAS -- it is the model's, and it")
+print("   is a real conflict with Hewlett that sex was being used to excuse.")
+print()
+print("   THE DROP, ONCE MORE SEPARATING THE PARAMETER FROM THE SHAPE:")
+_md = float(np.mean([Patient(weight=r[3], height=r[2] / 100.0, age=r[1],
+                             tilt_deg=0).frc_awake()
+                     - Patient(weight=r[3], height=r[2] / 100.0, age=r[1],
+                               tilt_deg=0).frc_anaes() for r in P2]))
+check("   model's mean effective drop", _md, 635.0, 1.0, " mL")
+check("   frc_drop, the PARAMETER", Patient().frc_drop, 400.0, 0.5, " mL")
+print("   Measured 390 mL. The PARAMETER is within 10 mL of it; the EFFECTIVE")
+print("   drop is 635 mL because Pelosi's BMI shape steepens the fall after it.")
+print("   Exactly the split part III showed, now confirmed in the right sex.")
+print()
+
 if FAILED:
     print(f"{len(FAILED)} value(s) have drifted:")
     for f in FAILED:

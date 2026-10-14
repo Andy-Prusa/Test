@@ -5,6 +5,107 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-14 (forty-ninth entry): de-coupling RULED AGAINST, and Hewlett part II replicates the evidence in 26 males. The offset now HAS a mechanism argument — and it was in the repository all along, in two papers read three weeks ago
+
+Regenerate with `python3 hewlett_numbers.py` §7 and `python3
+frc_level_numbers.py` §8. Both run in seconds.
+
+### 1. RULED BY A. HEARD, 2026-10-14: THE DE-COUPLING IS CLOSED AGAINST
+
+`frc_anaes_absolute` — taking the anaesthetised lung volume's level from the
+BMI curve instead of from the patient's awake lung — **is not adopted.** The
+switch stays in `apnoea_core.py` so the evidence reproduces, marked RULED
+AGAINST. Three independent lines closed it:
+
+1. **Six full suite runs**: worse at every offset, 43/4 at both extremes
+   against the shipped form's 45/2 and 46/1. Never better.
+2. **Hewlett part III** (13 patients, paired): awake FRC predicts the
+   anaesthetised volume at r = +0.894 (95% CI +0.676 to +0.968, p = 0.0001);
+   BMI gives −0.434 with an interval crossing zero.
+3. **Hewlett part II replicates it** — see §2.
+
+### 2. PART II: 26 MALES, SPONTANEOUSLY BREATHING — THE SEX CONFOUND BREAKER
+
+Read in full 2026-10-14. All five of its printed statistics reproduce exactly
+from the transcribed table: FRC 2.283 → 1.893 L, fall **390 mL = 16.1%** (SD
+13.4), fell in 24 of 26.
+
+**The replication.** Anaesthetised FRC vs the patient's own awake FRC
+**r = +0.855 (r² 0.73)**; vs BMI **−0.439 (r² 0.19)**. Part III gave +0.894 and
+−0.434. Different patients, different sex mix, different ventilation state,
+same answer.
+
+**AND IT CORRECTS SOMETHING THIS PROJECT WAS SAYING.** Entry 47 explained the
+model's +510 mL awake bias against part III as what a male model should do
+against a 10/13 female cohort. **Against these 26 males the bias is +503 mL.**
+The sex confound does not explain it. It is the model's own disagreement with
+Hewlett about awake supine FRC, and **Watson & Pride — which set `frc_ref` —
+and Hewlett cannot both be right.** Sex was being used to excuse a real
+conflict. That conflict is now open and unresolved.
+
+**On the drop**, the same split as part III, now in the right sex: measured
+390 mL against the `frc_drop` **parameter** of 400 mL, but the model's
+**effective** drop is 635 mL because Pelosi's BMI shape steepens the fall after
+the parameter is applied.
+
+**A trap in its own summary**: the abstract's correlations of the fall with age
+(0.41) and weight/height (0.30) are **pooled** over 54 patients including Don's
+two series, as the figure captions state. These 26 alone give 0.235 and −0.033.
+
+### 3. THE OFFSET NOW HAS A MECHANISM ARGUMENT, AND IT WAS ALREADY HELD
+
+Entry 48 §4 concluded there was **no** mechanism argument for preferring Pelosi
+or Damia, so the ruled mean stood. **That was wrong.** Two further measurements
+of the supine anaesthetised end-expiratory lung volume at high BMI have been in
+`SOURCES.md`, read, for three weeks — and neither entered the offset choice:
+
+| | BMI | method | measured | Pelosi 0.46 | ruled mean | Damia 0.92 |
+|---|---|---|---|---|---|---|
+| Valenza 2007 | 42 | helium | 460 (100) mL | **+2.12 SD** | +4.41 SD | +6.69 SD |
+| Reinius 2009 | 45 | CT | 697 (157) mL | **−0.50 SD** | +0.96 SD | +2.41 SD |
+
+**Both rank the three the same way while disagreeing with each other by 237 mL**
+at similar BMI. That mutual disagreement is what makes the *ranking* robust:
+whichever is nearer the truth, Pelosi's offset is closest and Damia's furthest.
+
+**The method argument runs the same way**, on `SOURCES.md`'s own ruling that
+helium sees only communicating gas while CT sees all of it. Damia is helium, so
+he should read at or below Reinius's CT — yet his 930 and 1090 mL at BMI 48–53
+sit **above** Reinius's 697 mL at BMI 45. A heavier lung, measured by the method
+that sees less gas, should be smaller. **Damia moves the wrong way on both
+counts.**
+
+**IT IS NOT ADOPTED.** The ruled mean remains shipped. The argument points the
+same way as the benchmark count (0.46 would also take the suite 45/2 → 46/1),
+which is exactly when to distrust oneself — so it is recorded for judgement, not
+acted on. **What would break it:** Valenza sits 2.12 SD above even Pelosi's
+curve, which argues the curve is too high *everywhere*, not just that Damia's
+offset is. That third reading is unresolved.
+
+### 4. TWO STALE RECORDS CLEARED
+
+- **The supine/seated FRC ratio comment** in `apnoea_core.py` read "against our
+  2500 mL supine, a ratio of 0.73". `frc_ref` became 2860 mL in `48ffe03` on
+  2026-09-26 and the comment was never updated. The implied ratio is **0.839**.
+  Nothing is re-anchored — the ratio is a consequence of `frc_ref`, not a source
+  for it — but 0.73 was being read as corroboration of a level it no longer
+  describes.
+- **Hewlett's "closing volume approaches FRC at about age 40" is NOT a third
+  anchor** for the model's 44-year CC=FRC target, and a note now says so where
+  that target lives. Closing *volume* is not closing *capacity* (they differ by
+  the residual volume), and Hewlett attributes his figure to Leblanc, Ruff &
+  Milic-Emili 1970 — the same primary the 44 traces to. One measurement cited
+  twice.
+
+### 5. WHAT IS STILL OPEN
+
+1. The offset ruling, now with §3's argument on the table.
+2. **The awake FRC conflict** opened by §2: Watson & Pride set `frc_ref` 2860;
+   Hewlett measures ~500 mL less in both his cohorts. Unresolved, and no longer
+   attributable to sex.
+3. Valenza's 2.12 SD above even the lowest offset (§3).
+4. `ICSM jet, PaO2 at cricothyroidotomy` — left alone by ruling 2026-10-14.
+
 ## Current state — 2026-10-13 (forty-eighth entry): the offset ruling is COSTED — de-coupling is worse at every offset, and Pelosi's offset alone is the only 46/1 configuration ever measured here. THE SECOND FACT MUST NOT BE ACTED ON, and the one mechanism argument for it was tested today and FAILS
 
 Regenerate with `python3 frc_level_numbers.py` §6–§7 (seconds). The suite rows

@@ -271,6 +271,38 @@ BENCHMARK_SOURCES = [
      "awake SUPINE FRC at BMI 53.2 as 2250 mL against Jones's SEATED 2125 "
      "mL at BMI 50. It also disagrees with Pelosi 1998 on anaesthetised FRC "
      "by a factor of two at the same BMI, same method, same conditions"),
+    ("Hewlett, Hulands, Nunn & Heath 1974, *Br J Anaesth* 46:486-94 (n=26), "
+     "part II of three",
+     "the INDUCTION DROP in 26 MALES breathing spontaneously, and the "
+     "replication that closed the de-coupling question",
+     "2026-10-14",
+     "READ IN FULL from upload. Helium dilution, supine, measured AWAKE "
+     "pre-induction and again ANAESTHETISED and SPONTANEOUSLY BREATHING "
+     "(thiopentone, halothane, no paralysis after the intubating dose), 26 "
+     "MALES for routine minor surgery, BMI 16.5-30.4. THIS IS THE PAPER THAT "
+     "BREAKS THE SEX CONFOUND -- part III was 10 of 13 FEMALE and this model "
+     "is male by ruling -- and it is also the breathing state closer to "
+     "apnoea. FRC 2.283 -> 1.893 l BTPS, mean fall 390 mL = 16.1% (SD 13.4), "
+     "fell in 24 of 26. ALL FIVE printed statistics reproduce exactly from "
+     "the transcribed table. THE REPLICATION: the patient's own awake FRC "
+     "predicts the anaesthetised FRC at r = +0.855 (r2 0.73) where BMI gives "
+     "-0.439 (r2 0.19) -- against part III's +0.894 and -0.434 in different "
+     "patients, a different sex mix and a different ventilation state. That "
+     "is what closed frc_anaes_absolute, ruled against 2026-10-14. AND IT "
+     "CORRECTS A THING THE PROJECT WAS SAYING: the model's +510 mL awake "
+     "bias against part III had been excused as a male model against a "
+     "female cohort, but against these 26 MALES the bias is +503 mL. The sex "
+     "confound does not explain it; it is the model's own disagreement with "
+     "Hewlett on awake supine FRC, and Watson & Pride (which set frc_ref) "
+     "and Hewlett cannot both be right. ON THE DROP: measured 390 mL against "
+     "the frc_drop PARAMETER of 400 mL, but the model's EFFECTIVE drop is "
+     "635 mL because Pelosi's BMI shape steepens the fall after the "
+     "parameter is applied -- the same split part III showed, now confirmed "
+     "in the right sex. A TRAP IN ITS OWN SUMMARY: the abstract's "
+     "correlations of the fall with age (0.41) and weight/height (0.30) are "
+     "the POOLED figures over 54 patients including Don's two series, as the "
+     "figure captions state; these 26 alone give 0.235 and -0.033, and the "
+     "abstract's numbers must not be quoted as properties of this cohort"),
     ("Hewlett, Hulands, Nunn & Minty 1974, *Br J Anaesth* 46:479-85, "
      "part I of three",
      "the MEASUREMENT ERROR of part III, and nothing else -- no patient data",
