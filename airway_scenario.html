@@ -595,7 +595,7 @@ function derive(P){
   // 1988 (0.9163, solved from his two measured cohorts through Pelosi's
   // own form). Used only as a ratio to BMI 22, so the lean end is
   // unchanged and the curve simply gets flatter. Mirrors apnoea_core.py.
-  const _pf=b=>11.97*Math.exp(-0.096*b)+0.6882;
+  const _pf=b=>11.97*Math.exp(-0.096*b)+0.4600;   // RULED 2026-10-15: Pelosi's own offset; the Pelosi/Damia average is retired. See apnoea_core.py pelosi_offset_l
   const _cap=frcAwake-Math.min(P.frcDrop,0.25*frcAwake);
   const _base=P.frcRef*hf*tiltF;
   const _at22=_base-Math.min(P.frcDrop,0.25*_base);

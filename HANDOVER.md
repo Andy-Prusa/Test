@@ -5,6 +5,82 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-15 (fiftieth entry): RULED — the offset is Pelosi's own 0.4600 and the Pelosi/Damia average is retired. The first parameter change in this sequence, and it makes two other disagreements WORSE, which is recorded rather than compensated
+
+Regenerate with `python3 frc_level_numbers.py` and `python3 hewlett_numbers.py`.
+`model.js` carries the same curve inline and changed in the same commit.
+
+### 1. THE RULING AND WHAT CHANGED ITS BASIS
+
+`pelosi_offset_l` **0.6882 → 0.4600**. The 2026-09-26 ruling averaged Pelosi and
+Damia *because there was no way to choose between two primary sources*. There
+now is one, and it comes from two papers already read and recorded, neither of
+which ever entered the offset choice:
+
+| | BMI | method | measured | **0.4600** | 0.6882 | 0.9163 |
+|---|---|---|---|---|---|---|
+| Valenza 2007 | 42 | helium | 460 (100) mL | **+2.12 SD** | +4.41 | +6.69 |
+| Reinius 2009 | 45 | CT | 697 (157) mL | **−0.50 SD** | +0.96 | +2.41 |
+
+They disagree with each other by 237 mL and still rank the three identically —
+which is what makes the ranking robust rather than a coin toss between two noisy
+points. **The method argument agrees:** helium sees only communicating gas, CT
+sees all of it, so Damia (helium) should read at or below Reinius's CT; his 930
+and 1090 mL at BMI 48–53 sit *above* Reinius's 697 mL at BMI 45. Wrong way on
+BMI and on method both.
+
+**The coincidence is recorded with the ruling**: 0.4600 also takes the suite from
+45/2 to 46/1. That is why it was not adopted on 2026-10-13 when the benchmark
+table first showed it, and was held until an argument independent of the suite
+existed.
+
+### 2. IT MAKES TWO DISAGREEMENTS WORSE. RECORDED, NOT COMPENSATED
+
+**(a) The awake-anchor bias quadruples.** `frc_anaes()` takes its level from the
+awake lung and carries the curve as a *ratio*, so lowering the curve widens the
+gap between the two. Against the curve the model now targets:
+
+| BMI | 22 | 26 | 30 | 40 | 50 | 66 |
+|---|---|---|---|---|---|---|
+| was (vs 0.6882) | +3.67% | +3.67% | +3.67% | +3.67% | +3.67% | +3.67% |
+| **now (vs 0.4600)** | **+16.07%** | **+16.07%** | **+16.07%** | **+16.07%** | **+16.07%** | **+16.07%** |
+
+Still a pure constant — entry 46's finding stands, and de-coupling was ruled
+against on 2026-10-14 on independent evidence — but the model's level now sits
+16% above its own target curve instead of 3.67%.
+
+**(b) The effective induction drop steepens**, away from Hewlett:
+
+| BMI | 19 | 22 | 25 | 28 | 31 |
+|---|---|---|---|---|---|
+| was | 14.1% | 14.6% | 26.7% | 35.9% | 42.8% |
+| **now** | 14.1% | 14.6% | **28.5%** | **39.2%** | **47.2%** |
+
+Hewlett measured **15.4%** (part III) and **16.1%** (part II) at cohort mean BMIs
+of 25.4 and 24.0. Against his 26 males the model's mean effective drop goes
+**635 → 671 mL** against a measured 390 mL.
+
+**Both are consequences of a ruling made on other grounds, and neither is a
+reason to reach for a compensating parameter.** They are the price of the
+ruling, and they sharpen §3.
+
+### 3. WHAT THE RULING LEAVES OPEN, AND IT IS NOW THE MAIN THING
+
+The awake FRC conflict from entry 49 §2 is now larger and harder to avoid.
+`frc_ref` 2860 comes from Watson & Pride; Hewlett measures ~500 mL less in both
+his cohorts, in both sexes; and the model's anaesthetised level now sits 16%
+above the curve it targets. **Three separate measurements now disagree with the
+awake anchor, and `frc_ref` feeds every lung volume in the model.**
+
+Also unresolved: Valenza sits **2.12 SD above even the newly ruled offset**,
+which argues the curve is too high *everywhere* rather than that Damia alone
+was. This ruling does not close that.
+
+### 4. VERIFICATION
+
+Suite and parity were run against the change and are reported with the commit.
+`model.js` changed in the same commit and `build_page.py` regenerated the page.
+
 ## Current state — 2026-10-14 (forty-ninth entry): de-coupling RULED AGAINST, and Hewlett part II replicates the evidence in 26 males. The offset now HAS a mechanism argument — and it was in the repository all along, in two papers read three weeks ago
 
 Regenerate with `python3 hewlett_numbers.py` §7 and `python3

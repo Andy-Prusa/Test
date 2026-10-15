@@ -1794,8 +1794,43 @@ class Patient:
     #
     #   Shipped, it is divided out EXACTLY at BMI 22 by the ratio form and
     #   increasingly NOT above it. "Nearly divided out" is true of the lean
-    #   end only. UNRULED: cost it with variant_cost.py pel_c046 / pel_c092.
-    pelosi_offset_l = 0.6882
+    #   end only. Cost it with variant_cost.py pel_c046 / pel_c092.
+    #
+    #   RULED 2026-10-15 BY A. HEARD: THE OFFSET IS PELOSI'S OWN 0.4600 L.
+    #   The 2026-09-26 average of Pelosi and Damia is RETIRED. What changed is
+    #   that the averaging ruling rested on there being no way to choose
+    #   between two primary sources, and there now is one -- from two papers
+    #   that were already read and that never entered the offset choice:
+    #
+    #     Valenza 2007  BMI 42  helium  460 (100) mL   0.46: +2.12 SD
+    #                                                  mean: +4.41, Damia: +6.69
+    #     Reinius 2009  BMI 45  CT      697 (157) mL   0.46: -0.50 SD
+    #                                                  mean: +0.96, Damia: +2.41
+    #
+    #   They disagree with each other by 237 mL at similar BMI and STILL rank
+    #   the three candidates identically, which is what makes the ranking
+    #   robust rather than a coin toss between two noisy points.
+    #
+    #   AND THE METHOD ARGUMENT AGREES. Helium dilution sees only gas that
+    #   COMMUNICATES with the airway; CT sees all of it, trapped included. So
+    #   in an obese anaesthetised lung CT should read HIGHER than helium.
+    #   Damia is helium, and his 930 and 1090 mL at BMI 48.4 and 53.2 sit
+    #   ABOVE Reinius's CT 697 mL at BMI 45 -- a heavier lung, measured by the
+    #   method that sees less gas, reading larger. Damia moves the wrong way
+    #   on BMI and on method both.
+    #
+    #   THE HONEST CAVEAT, RECORDED WITH THE RULING: adopting 0.4600 also
+    #   takes the benchmark suite from 45/2 to 46/1, putting Heard control in
+    #   band. That coincidence is why this was NOT adopted when the benchmark
+    #   table first showed it (2026-10-13) and was held until an argument
+    #   independent of the suite existed. The argument above is that argument.
+    #   AND VALENZA STILL SITS 2.12 SD ABOVE EVEN THIS OFFSET, which argues
+    #   the curve is too high EVERYWHERE rather than that Damia alone was.
+    #   That reading is unresolved and this ruling does not close it.
+    #
+    #   model.js carries the same curve inline and was changed in the same
+    #   commit. Regenerate the evidence with frc_level_numbers.py section 8.
+    pelosi_offset_l = 0.4600
 
     # The existing height term evaluated at Pelosi's cohort height of 1.64 m,
     # so frc_anaes_absolute can divide it out. Not a new parameter.

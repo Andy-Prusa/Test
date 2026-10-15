@@ -37,7 +37,8 @@ TONER = dict(weight=70, height=1.75, age=45, hb=15, tilt_deg=0)
 BERTHOUD = dict(weight=70, height=1.745, age=40, hb=14, tilt_deg=0)
 HEARD = dict(weight=105, height=1.74, age=42, hb=14, tilt_deg=30)
 
-MEAN_C = 0.6882      # the ruled offset: mean of Pelosi 0.4600 and Damia 0.9163
+RULED_C = 0.4600     # RULED 2026-10-15: Pelosi's own offset (see section 8)
+MEAN_C = 0.6882      # the RETIRED average of Pelosi 0.4600 and Damia 0.9163
 FAILED = []
 
 
@@ -49,7 +50,7 @@ def check(name, got, want, tol, unit=""):
           f"   recorded {want}{unit}")
 
 
-def absolute(offset=MEAN_C):
+def absolute(offset=RULED_C):
     """Patient subclass with the de-coupled level, optionally at another offset.
 
     The switch is a plain CLASS ATTRIBUTE so ordinary subclassing works. See
@@ -72,11 +73,11 @@ print("   level has a source and the model is not using it.")
 print()
 print("   Scored at Pelosi's geometry against the Pelosi/Damia mean the model")
 print("   has targeted since bffbbf4 (2026-09-26):")
-curve = lambda b: 11.97 * np.exp(-0.096 * b) * 1000.0 + MEAN_C * 1000.0
+curve = lambda b: 11.97 * np.exp(-0.096 * b) * 1000.0 + RULED_C * 1000.0
 for _b in (22, 26, 30, 40, 50, 66):
     _p = Patient(weight=_b * 1.64 ** 2, **PELOSI_GEO)
     check(f"BMI {_b}: shipped level error vs its own target",
-          100.0 * (_p.frc_anaes() - curve(_b)) / curve(_b), 3.67, 0.02, " %")
+          100.0 * (_p.frc_anaes() - curve(_b)) / curve(_b), 16.07, 0.02, " %")
 print()
 print("   THE SAME NUMBER AT EVERY BMI. The shape is carried as a ratio and is")
 print("   exact by construction, so the only thing this comparison can see is")
@@ -87,7 +88,7 @@ print("   bias and its whole size is the awake anchor.")
 print()
 _p20 = Patient(weight=20 * 1.64 ** 2, **PELOSI_GEO)
 check("BMI 20: error (the awake bound binds here)",
-      100.0 * (_p20.frc_anaes() - curve(20)) / curve(20), -7.01, 0.02, " %")
+      100.0 * (_p20.frc_anaes() - curve(20)) / curve(20), 2.57, 0.02, " %")
 print("   Below about BMI 22 the curve extrapolates the anaesthetised lung")
 print("   ABOVE the awake one, which is impossible, so `awake - drop` caps it.")
 print()
@@ -97,11 +98,11 @@ print("   re-solved frc_awake on Watson & Pride's two SUPINE AWAKE cohorts,")
 print("   moving frc_ref 2500 -> 2860 mL and k_frc_bmi 0.0012 -> 0.01074. It")
 print("   added 71 s to a desaturation benchmark. Which parameter did it:")
 check("frc_ref 2860 (shipped), anaes volume",
-      Patient(**TONER).frc_anaes(), 2328.3, 0.1, " mL")
+      Patient(**TONER).frc_anaes(), 2312.5, 0.1, " mL")
 check("frc_ref 2500 only, anaes volume",
-      Patient(frc_ref=2500.0, **TONER).frc_anaes(), 1987.6, 0.1, " mL")
+      Patient(frc_ref=2500.0, **TONER).frc_anaes(), 1974.1, 0.1, " mL")
 check("k_frc_bmi 0.0012 only, anaes volume",
-      Patient(k_frc_bmi=0.0012, **TONER).frc_anaes(), 2328.3, 0.1, " mL")
+      Patient(k_frc_bmi=0.0012, **TONER).frc_anaes(), 2312.5, 0.1, " mL")
 print("   frc_ref accounts for ALL 340.7 mL. k_frc_bmi moves it by EXACTLY")
 print("   ZERO, because Pelosi's shape now carries the BMI dependence and the")
 print("   awake exponential no longer reaches this quantity. So a ruling made")
@@ -112,15 +113,18 @@ print()
 print("3. WHAT DE-COUPLING WOULD HAVE DONE TO THAT SAME COMMIT, and why it is")
 print("   NOT independence:")
 check("de-coupled, frc_ref 2500, anaes volume",
-      absolute()(frc_ref=2500.0, **TONER).frc_anaes(), 2077.1, 0.1, " mL")
+      absolute()(frc_ref=2500.0, **TONER).frc_anaes(), 1962.0, 0.1, " mL")
 check("de-coupled, frc_ref 2860, anaes volume",
-      absolute()(**TONER).frc_anaes(), 2211.5, 0.1, " mL")
-print("   +134 mL instead of +341. NOT ZERO: Toner's patient is LEAN, so the")
-print("   curve's own level sits ABOVE `awake - drop` and the bound binds at")
-print("   the lower frc_ref. The surviving coupling runs only through the")
-print("   PHYSICAL BOUND and only in lean patients. That is far smaller and")
-print("   far more defensible than inheriting the level, but it is not")
-print("   independence and must not be recorded as independence.")
+      absolute()(**TONER).frc_anaes(), 1962.0, 0.1, " mL")
+print("   IDENTICAL AT BOTH -- so at the RULED offset of 0.4600 the de-coupled")
+print("   form IS independent of frc_ref at Toner. That differs from what this")
+print("   section said while the retired 0.6882 average was shipped, when the")
+print("   curve sat ABOVE `awake - drop` and the bound bit at the lower")
+print("   frc_ref, leaving +134 mL of residual coupling. Lowering the curve")
+print("   dropped its level below the bound, so the bound no longer binds.")
+print("   RECORDED FOR COMPLETENESS ONLY: frc_anaes_absolute was RULED AGAINST")
+print("   on 2026-10-14 and is not the shipped path, so this independence is a")
+print("   property of a retired switch, not of the model.")
 print()
 
 print("4. DE-COUPLING MAKES THE UNRULED OFFSET QUESTION LOAD-BEARING, AND THIS")
@@ -128,13 +132,15 @@ print("   IS THE REASON NOT TO ADOPT IT YET. Shipped, the offset is very")
 print("   nearly divided out by the ratio form. De-coupled, it SETS the level:")
 print()
 print(f"   {'cohort':<22}{'shipped':>10}{'C=0.460':>10}{'C=0.688':>10}{'C=0.916':>10}")
+print("   (SINCE THE RULING OF 2026-10-15 the shipped column IS the C=0.460")
+print("    column, up to the lean guard. They agreed to the mL when checked.)")
 print(f"   {'':22}{'':>10}{'Pelosi':>10}{'ruled':>10}{'Damia':>10}")
 for _name, _geo, _rec in (("Berthoud lean BMI 23", BERTHOUD,
-                           (2298.6, 1936.1, 2184.8, 2418.8)),
+                           (2280.6, 1936.1, 2184.8, 2418.8)),
                           ("Toner lean BMI 22.9", TONER,
-                           (2328.3, 1962.0, 2211.5, 2433.8)),
+                           (2312.5, 1962.0, 2211.5, 2433.8)),
                           ("Heard obese BMI 34.7", HEARD,
-                           (1713.2, 1249.7, 1570.5, 1891.3))):
+                           (1526.2, 1249.7, 1570.5, 1891.3))):
     _got = [Patient(**_geo).frc_anaes()] + [
         absolute(_c)(**_geo).frc_anaes() for _c in (0.4600, MEAN_C, 0.9163)]
     print(f"   {_name:<22}" + "".join(f"{v:>10.1f}" for v in _got))
