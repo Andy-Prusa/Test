@@ -142,7 +142,6 @@ ICSM jet, PaO2 at cricothyroidotomy
 # reason recorded, exactly as the two 2026-09-26 removals above were.
 # ======================================================================
 
-Heard control, time to SpO2<95%
 
 # REMOVED 2026-10-02, BECAUSE THEY NO LONGER BLOCK. Rule 3 above requires it,
 # and both go out in a commit of their own so that it stays separable from the
@@ -194,3 +193,30 @@ Heard control, time to SpO2<95%
 # retired rescue row simulated what happens AFTER the airway is restored. An
 # earlier draft of this note said the same argument reached both rows. It
 # does not.
+
+# REMOVED 2026-10-15, BECAUSE IT NOW PASSES, AND CI MADE ME DO IT.
+# 'Heard control, time to SpO2<95%' is 287.1 s against its band of 244-314.
+# Rule 3 of this file -- a passing row must come out -- turned CI red on
+# b7482d6 the moment the row started passing, which is the file working
+# exactly as designed and is why the ruling below did not go unnoticed.
+#
+# WHAT FIXED IT: the offset ruling of 2026-10-15 (A. Heard), pelosi_offset_l
+# 0.6882 -> 0.4600, retiring the Pelosi/Damia average for Pelosi's own
+# published offset. That lowers the anaesthetised FRC curve, most at high
+# BMI where the exponential has decayed, so Heard's obese control reaches
+# desaturation sooner: 318.5 -> 287.1 s. The suite goes 45/2 to 46/1.
+#
+# AND IT WAS NOT ADOPTED FOR THAT. The benchmark table showing 46/1 was
+# measured on 2026-10-13 and deliberately NOT acted on, because adopting a
+# parameter BECAUSE it passes a benchmark is the thing this project has
+# refused five times. It was held until an argument independent of the suite
+# existed -- Valenza 2007 and Reinius 2009, which rank the three candidate
+# offsets identically while disagreeing with each other, plus the helium/CT
+# method argument. See apnoea_core.py pelosi_offset_l and HANDOVER entry 50.
+#
+# THE SECOND TIME THIS ROW HAS LEFT. It went out 2026-09-23 on the low-V/Q
+# mechanism, came back 2026-10-01 after 48ffe03 moved the awake lung volume,
+# and leaves again now. That history is why it is left as a comment rather
+# than deleted: a row that oscillates is telling you something about the
+# parameter it depends on, and in this case it is frc_ref -- still unresolved,
+# see HANDOVER entry 50 section 3.
