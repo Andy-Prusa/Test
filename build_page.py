@@ -453,13 +453,13 @@ flattered.</p>
 <div class="transport">
 <button id="sidebtn" aria-controls="side" aria-expanded="true">Hide sliders</button>
 <button id="runbtn">Run simulation</button>
-<button id="play">Play</button><button id="rew">Restart</button>
+<button id="play">Play</button>
 <button id="graphbtn" aria-expanded="false" aria-controls="trend">Graph</button>
-<button id="swbtn" aria-expanded="false" aria-controls="sweeps">Sweeps</button>
+<button id="swbtn" aria-expanded="false" aria-controls="sweeps">Outputs</button>
 <button id="fs">Expand</button>
 <button id="snd">Sound off</button><button id="spd">4&times;</button>
 <span class="clock" id="clock">0:00</span>
-<input type="range" id="scrub" min="0" max="900" value="0" step="1" aria-label="Time">
+<input type="range" id="scrub" min="0" max="3600" value="0" step="1" aria-label="Time">
 <span class="busy" id="busy"></span>
 </div>
 <div class="steps" id="steps"></div>
@@ -588,6 +588,10 @@ const PRESETS={
    {t:420,icon:'blade',label:'Laryngoscopy',airway:'patent',
     note:'Laryngoscopy \\u2014 airway open'}]}};
 let SCENARIO=JSON.parse(JSON.stringify(PRESETS['cico']));
+// The scrubber and the playback clock follow SCENARIO.end. They were pinned at
+// a literal 900 until 2026-10-07, so raising "Run length" lengthened the
+// SIMULATION while Play still stopped dead at 15 minutes -- reported from use.
+
 const STEPS=()=>SCENARIO.segs.map(s=>[s.t,s.icon,s.label]);
 const EVENTS=()=>SCENARIO.segs.map(s=>[s.t,s.note]);
 
@@ -601,10 +605,33 @@ const DIALS=[
  ['frcScale','FRC',0.55,1.5,0.01,1.0,null],
  ['bmrScale','Metabolic rate',0.6,1.7,0.01,1.0,null],
  ['hb','Haemoglobin',4.0,18.0,0.5,14.0,null],
- ['ccScale','Closing capacity',0.6,1.6,0.01,1.0,null],
- ['maxClosed','Lung collapsibility',0.10,0.65,0.01,0.25,null],
  ['fgBuccal','Pharyngeal O\u2082 (device arm)',0.21,1.00,0.01,1.00,null],
  ['tiltDeg','Bed tilt (head up)',-20,45,1,25,null],
+ // EXTRA SHUNT FROM LUNG PATHOLOGY, 2026-10-08, ruled by A. Heard.
+ // Venous admixture added on top of what this patient's habitus already
+ // produces, so the page can show a diseased lung and not only a fat one.
+ // 0 to 40 per cent: 0 is the healthy default and bit-identical to what
+ // shipped before; the top end is lobar consolidation or a large
+ // right-to-left shunt. The readout shows the RESULTING baseline shunt, so
+ // the dial teaches that habitus and disease add.
+ // THE A-a GRADIENT DIAL, 2026-10-08, asked for twice by A. Heard.
+ // kPa of EXTRA alveolar-to-arterial oxygen difference on top of the
+ // patient's own. It does not store a gradient -- the gradient is an output
+ // -- it solves for the shunt that produces this much extra at the reference
+ // alveolar PO2 of 570 mmHg, roughly a preoxygenated lung at the start of
+ // apnoea, and then lets physics take it from there. The readout shows the
+ // shunt it implies and says WHEN the number is true, because for one fixed
+ // shunt the gradient is large at a high alveolar PO2 and small at a low one.
+ // CEILING 75 kPa, NOT 90, AND THAT IS PHYSICS NOT PREFERENCE. A. Heard asked
+ // for 90 on 2026-10-08. The TOTAL gradient cannot exceed the alveolar PO2
+ // itself -- 570 mmHg, 76.0 kPa -- because arterial tension cannot go below
+ // zero, so the dial saturates at (76 - the patient's own gradient): 58 kPa
+ // for the obese standard patient, about 67 for the lean one. Measured, not
+ // argued: at 58, 70 and 90 the obese patient gives an identical 77.93% shunt
+ // and 75.9 kPa. A dial whose top third does nothing, at a point that MOVES
+ // WITH THE PATIENT, is the control this project hides. 75 is the physical
+ // limit; past each patient's own saturation the readout says "capped".
+ ['aaExtraKpa','Extra A\u2013a gradient',0,75,1,0,null],
  ['buccalIdx','Buccal switched on',0,4,1,0,null]];
 // The decision points an anaesthetist actually has, not arbitrary seconds.
 const STARTS=[[0,'From induction'],[120,'After mask ventilation fails'],
@@ -625,7 +652,27 @@ const BASE={age:45,lmaOpens:true,frcRef:2860,frcDrop:400,tiltDeg:25,
  // nothing when dragged costs more credibility than it earns, so it
  // is hidden rather than shown. The inertness itself is a real
  // finding and is NOT fixed by hiding it: see HANDOVER.
- tauMix:45,inflowMechFrac:0.18};
+ tauMix:45,inflowMechFrac:0.18,
+ // HIDDEN 2026-10-07 BY THE SAME RULE AS tauMix/inflowMechFrac ABOVE, and
+ // for the same measured reason. ccScale ("Closing capacity") moves time to
+ // loss of cardiac output by 12 SECONDS across its whole 0.6-1.6 range -- a
+ // 2.7x change in closing capacity -- and maxClosed ("Lung collapsibility")
+ // by NOTHING AT ALL, 12.4 min at every value from 0.10 to 0.65. Both were
+ // swept through model.js for the Outputs view, so those are measurements
+ // and not estimates.
+ //
+ // WHY THEY ARE WEAK, since it is not obvious: both act only through
+ // COLLAPSE-DRIVEN SHUNT, and shunt barely moves time to hypoxia in a
+ // preoxygenated patient -- forcing shunt across Rothen 1996's entire
+ // measured range, 2.1 to 6.5 per cent, costs 2 s. See HANDOVER entry 43
+ // section 9. maxClosed is weaker still because it caps the GLOBAL closure
+ // term, the minor limb; the major one is per-compartment absorption, which
+ // it does not touch.
+ //
+ // HELD AT THEIR FORMER DIAL DEFAULTS so the model receives exactly what it
+ // did before: the page's numbers are unchanged by this edit. The inertness
+ // is a real finding and is NOT fixed by hiding it.
+ ccScale:1.0,maxClosed:0.25};
 const P=Object.assign({},BASE);
 DIALS.forEach(d=>P[d[0]]=d[5]);
 
@@ -1029,6 +1076,27 @@ function labels(){
   document.getElementById('v_hb').textContent=
     hb.toFixed(1)+' g/dL'+(f>1.005?' \u00b7 CO \u00d7'+f.toFixed(1):'');}
  document.getElementById('v_fgBuccal').textContent=(P.fgBuccal*100).toFixed(0)+'%';
+ // Show the RESULT, not just the setting: the patient's own habitus already
+ // shunts, and the dial adds to it. shuntBaseEff already includes the extra.
+ // derive(P) rather than D.B: simulate() copies only frc/cc/vo2/coBase/bmi
+ // onto its result, so shuntBaseEff is not on it. Calling derive directly also
+ // means the readout is right before the first run, not only after it.
+ // Show the gradient asked for, the shunt it implies, and -- when the dial
+ // is off -- the gradient the patient has anyway. derive(P) rather than D.B:
+ // simulate() copies only frc/cc/vo2/coBase/bmi onto its result.
+ {const _sb=derive(P).shuntBaseEff;
+  const _g=derive(P).aaG0;
+  // "capped" when the lung has run out: the gradient asked for exceeds the
+  // alveolar PO2, so the solver cannot deliver it and the dial has stopped
+  // responding. Shown rather than hidden -- a silent dead zone is worse than
+  // a stated one.
+  const _want=derive({...P,aaExtraKpa:0}).aaG0+P.aaExtraKpa;
+  const _capped=P.aaExtraKpa>0 && _g < _want-0.2;
+  document.getElementById('v_aaExtraKpa').textContent=
+    (P.aaExtraKpa>0?'+'+P.aaExtraKpa.toFixed(0)+' kPa':'none')+
+    (_capped?' \u00b7 capped':'')+
+    (isFinite(_sb)?' \u00b7 '+_g.toFixed(1)+' kPa at onset \u00b7 shunt '
+      +(_sb*100).toFixed(1)+'%':'');}
  const st=STARTS[P.buccalIdx], mm=Math.floor(st[0]/60)+':'+
    String(st[0]%60).padStart(2,'0');
  document.getElementById('v_buccalIdx').textContent=mm;
@@ -1040,9 +1108,6 @@ function labels(){
  if(D.B){
   document.getElementById('v_frcScale').textContent=D.B.frc.toFixed(0)+' mL';
   document.getElementById('v_bmrScale').textContent=D.B.vo2.toFixed(0)+' mL/min';
-  document.getElementById('v_ccScale').textContent=D.B.cc.toFixed(0)+' mL';
-  document.getElementById('v_maxClosed').textContent=
-    'shunt '+(D.B.shunt[D.B.shunt.length-1]*100).toFixed(0)+'%';
  }
 }
 function dirty(){stale=true;busy.textContent='parameters changed';
@@ -1064,7 +1129,6 @@ function run(){
    for(const k of ['A','B']){ phase[k]=0; acc[k]=0;
      trace[k].fill(0); plethTrace[k].fill(0);
      ecgStep(k, D[k].hr[0], trace[k].length/SR); }
-   runBtn.textContent='Re-run';
   }catch(err){
    busy.textContent='error: '+err.message;
   }
@@ -1425,7 +1489,7 @@ function render(){
 }
 function loop(ts){if(!playing)return;if(!last)last=ts;
  const wall=Math.min(0.1,(ts-last)/1000); last=ts;
- T=Math.min(900,T+wall*SPEED);
+ T=Math.min(SCENARIO.end,T+wall*SPEED);
  for(const k of ['A','B']){
    if(!D[k]) continue;
    const live = T<=D[k].t[D[k].t.length-1];
@@ -1435,7 +1499,7 @@ function loop(ts){if(!playing)return;if(!last)last=ts;
    if(soundArm===k && hr>1 && phase[k]<before) beep(at(D[k],'spo2',T));
  }
  render();
- if(T>=900){playing=false;document.getElementById('play').textContent='Play';return;}
+ if(T>=SCENARIO.end){playing=false;document.getElementById('play').textContent='Play';return;}
  requestAnimationFrame(loop);}
 runBtn.onclick=run;
 setPlayState();
@@ -1573,6 +1637,21 @@ function drawSweep(){
   +'and the evidence below says the acidosis alone would not be what killed them.';
  if(d.deviceOnly) note+=' This slider only affects the buccal arm, so the no-buccal '
   +'line is flat by construction.';
+ // THE A-a PAGE NEEDS SAYING OUT LOUD, 2026-10-09, ruled by A. Heard. Without
+ // it the graph reads as a broken control: nearly flat, then a cliff. Both
+ // features are real and measured, and they are the point of the dial.
+ if(d.key==='aaExtraKpa') note+=' <b>Read this page twice.</b> Below about '
+  +'60 kPa the solid line barely moves &mdash; 745 s down to 701 s across that '
+  +'whole range &mdash; because in an apnoeic patient with no supply of oxygen '
+  +'the <b>store</b> sets the clock and the gradient only sets the tension. '
+  +'The same dial halves arterial PO&#8322;. <b>The buccal arm is the opposite</b>: '
+  +'it is supplied rather than stored, so shunt decides whether supply can keep '
+  +'up, and in an obese patient the same range costs <b>17.5 minutes</b> of time '
+  +'to SpO&#8322; 95%. <b>Then both arms fall off a cliff.</b> Between 60 and 68 kPa '
+  +'the implied shunt crosses about three quarters of the cardiac output, and no '
+  +'amount of pharyngeal oxygen can oxygenate blood that never meets gas &mdash; '
+  +'the device survives the whole hour at every setting below it and then dies in '
+  +'fifty seconds. It fails abruptly rather than degrading.';
  if(d.moved.length){
   const bits=d.moved.map(k=>{
    const v=d.derived[k], a=v[0], b=v[v.length-1];
@@ -1598,7 +1677,7 @@ swBtn.onclick=()=>{
  const open=swEl.hasAttribute('hidden');
  if(open) swEl.removeAttribute('hidden'); else swEl.setAttribute('hidden','');
  swBtn.setAttribute('aria-expanded',open?'true':'false');
- swBtn.textContent=open?'Hide sweeps':'Sweeps';
+ swBtn.textContent=open?'Hide outputs':'Outputs';
  if(open) drawSweep();            // clientWidth is 0 while hidden
 };
 window.addEventListener('resize',()=>{if(!swEl.hasAttribute('hidden')) drawSweep();});
@@ -1618,7 +1697,6 @@ document.getElementById('play').onclick=e=>{
  if(stale||!D.A){run();return;}
  playing=!playing;
  e.target.textContent=playing?'Pause':'Play';last=0;if(playing)requestAnimationFrame(loop);};
-document.getElementById('rew').onclick=()=>{T=0;render();};
 document.getElementById('scrub').oninput=e=>{T=+e.target.value;render();};
 // ---- sliders panel ---------------------------------------------------------
 // Folds itself away after ten seconds so the patients get the whole width,
