@@ -5,6 +5,86 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-17 (fifty-first entry): the awake-FRC conflict is COSTED and the answer is DO NOT MOVE frc_ref. Hewlett's own value costs four extra blocking rows — and the rows it breaks are themselves measurements, so this is measurement against measurement, not a parameter error
+
+Regenerate with `python3 frc_level_numbers.py` §9. The suite rows are four full
+runs: `variant_cost.py frc_hewlett | frc_hew2 | frc_2500`, then `--diff`.
+
+### 1. THE CANDIDATES, DERIVED FROM MEASUREMENT NOT FROM BENCHMARKS
+
+`frc_ref` is the model's **awake supine FRC** at BMI 22 and reference height.
+`48ffe03` set it to 2860 mL on Watson & Pride. Hewlett measures the same
+quantity and gets far less. Solving `frc_ref` against his measured means:
+
+| source | implied `frc_ref` |
+|---|---|
+| part II, 26 **males**, spontaneous | 2344 mL |
+| part III, 13, 10 female, paralysed | 2284 mL |
+| the two pooled, n = 39 | **2325 mL** |
+
+**The two cohorts agree to 60 mL across a sex split** — a third line of evidence
+that the ~500 mL awake bias is not a sex artefact. No benchmark was consulted in
+deriving any of these.
+
+### 2. THE COST, AND IT IS MONOTONIC
+
+| `frc_ref` | source | pass/fail | new failures |
+|---|---|---|---|
+| **2860** | Watson & Pride, **shipped** | **46 / 1** | — |
+| 2500 | pre-`48ffe03` historical | 44 / 3 | + Berthoud ×2 |
+| 2344 | Hewlett part II | 42 / 5 | + Heard, + Stock PaO₂ |
+| 2325 | Hewlett pooled | 42 / 5 | same five |
+
+The lower it goes, the worse it gets. **Hewlett's own value costs four extra
+blocking rows.** What breaks:
+
+| row | shipped | at 2325 | band | |
+|---|---|---|---|---|
+| Toner sham, SpO₂<95% | 505.9 s | 397.2 | 380–525 | scrapes |
+| Berthoud control BMI 23 | 544.3 | 431.0 | 537–653 | **fails** |
+| Heard control, SpO₂<95% | 287.1 | 232.5 | 244–314 | **fails** |
+| Berthoud obese BMI 49 | 168.6 | 136.0 | 163–229 | **fails** |
+| Stock obstructed, PaO₂ at 5 min | 270.1 | 102.8 | 140–488 | **fails** |
+
+### 3. WHAT IT MEANS — AND IT IS NOT THAT HEWLETT IS WRONG
+
+**The rows that break are themselves measurements**: desaturation times in real
+patients, from Toner, Heard and Berthoud. So the conflict is not
+model-versus-measurement. It is **measurement against measurement** — Hewlett's
+awake lung volumes and those three authors' desaturation times cannot both be
+reproduced by this model with any single `frc_ref`.
+
+**Moving the parameter does not resolve that.** It relocates the disagreement
+from one lung-volume comparison onto four clinical benchmarks. So the
+awake-FRC conflict **is not a parameter error**, and `frc_ref` is not to be
+moved to fix it. It stays at 2860.
+
+### 4. THE HYPOTHESIS THAT WOULD RECONCILE THEM — untested, recorded as a hypothesis
+
+Desaturation time depends on the **total oxygen store**, not on FRC alone. If
+`frc_ref` is standing in for oxygen that physiologically lives elsewhere, or if
+the model under-counts some other store, then `frc_ref` is inflated to
+compensate and **both sets of measurements can be right**. That is a structural
+question about where this model keeps its oxygen, not a question about this
+parameter's value — and it is the natural successor to this entry.
+
+### 5. A SENSITIVITY WORTH KNOWING
+
+The two Moreault pressure rows move more than anything else in the suite —
+"pressure tracks the gas removed" −6.7 → −28.7 (77% spread), "sealed lung goes
+strongly subatmospheric" −13.2 → −35.2 (63%) — because a smaller lung swings
+further in pressure for the same gas absorbed. Both still **pass** at every
+value tested, but they are the most `frc_ref`-sensitive rows there are.
+
+### 6. STILL OPEN
+
+1. Valenza 2007 sits +2.12 SD above even the newly ruled anaesthetised offset.
+   **Not independent of this entry**: lowering `frc_ref` would have moved the
+   model toward Valenza and away from Reinius, and §2 says it cannot be lowered.
+2. §4's oxygen-store hypothesis.
+3. A supine anaesthetised FRC in litres at BMI 45+ by helium, outside Damia's
+   cohort. Still unfound; Eichenberger 2002 was withdrawn as atelectasis-only.
+
 ## Current state — 2026-10-15 (fiftieth entry): RULED — the offset is Pelosi's own 0.4600 and the Pelosi/Damia average is retired. The first parameter change in this sequence, and it makes two other disagreements WORSE, which is recorded rather than compensated
 
 Regenerate with `python3 frc_level_numbers.py` and `python3 hewlett_numbers.py`.
