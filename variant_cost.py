@@ -76,6 +76,26 @@ VARIANTS = {
     'pel_c092': {'pelosi_offset_l': 0.9163},
     'abs_c046': {'frc_anaes_absolute': True, 'pelosi_offset_l': 0.4600},
     'abs_c092': {'frc_anaes_absolute': True, 'pelosi_offset_l': 0.9163},
+    # THE AWAKE-FRC CONFLICT, opened for costing 2026-10-17 at the owner's word.
+    # frc_ref is the model's AWAKE SUPINE FRC at BMI 22 and reference height.
+    # 48ffe03 set it to 2860 mL by solving Watson & Pride's two supine awake
+    # cohorts. Hewlett measures the SAME QUANTITY and gets far less, in BOTH of
+    # his cohorts and BOTH sexes. Solving frc_ref against his measured means:
+    #
+    #     part II,  26 MALES, spontaneous      2344 mL
+    #     part III, 13, 10 female, paralysed   2284 mL
+    #     the two pooled, n = 39               2325 mL
+    #
+    # The two cohorts agree to 60 mL across a sex split, which is itself more
+    # evidence the +503/+510 mL bias is not a sex artefact.
+    #
+    # THIS IS CALIBRATION TO A MEASUREMENT OF THE QUANTITY frc_ref IS, not
+    # tuning to a benchmark: no benchmark was consulted in deriving any of the
+    # three numbers above. Costing them is still required before any ruling,
+    # because frc_ref feeds EVERY lung volume in the model.
+    'frc_hewlett': {'frc_ref': 2325.0},   # both Hewlett cohorts pooled
+    'frc_hew2':    {'frc_ref': 2344.0},   # part II alone, 26 males
+    'frc_2500':    {'frc_ref': 2500.0},   # the pre-48ffe03 historical value
 }
 
 
