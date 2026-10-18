@@ -14,8 +14,12 @@ move SILENTLY.
 
     python3 o2_store_numbers.py
 
-A few minutes: four benchmark rows at the suite's own timestep, plus a
-four-point timestep sweep for section 2b.
+SLOW -- 799 s measured 2026-10-18, so budget about 13 minutes and run it in the
+background. Four benchmark rows and the section 6 pair run at the suite's own
+timestep of 0.05 s, and section 2b sweeps four timesteps down to 0.025 s. Two
+earlier figures in this header were wrong and are corrected here: "~30 s" was
+written before section 2b existed, and "a few minutes" was a guess that was
+never timed. CLAUDE.md's table carried the same stale figure.
 
 WHY THIS FILE EXISTS. frc_level_numbers.py section 9 costed lowering frc_ref
 (the awake reference lung volume) to Hewlett 1974's measured value and found it
