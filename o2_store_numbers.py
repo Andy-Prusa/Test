@@ -29,22 +29,31 @@ TOTAL oxygen store rather than on lung volume alone, so that frc_ref could be
 standing in for oxygen the model keeps somewhere else, letting both sets of
 measurements be right.
 
-A. Heard RULED on that hypothesis 2026-10-18: THERE IS NO OTHER SIGNIFICANT
-STORE OF OXYGEN. This file is what the ruling is recorded against. It does two
-things the cost table could not:
+A. Heard ASKED, 2026-10-18: is there any other significant store of oxygen?
+This file is the working toward an answer. An earlier version of this header
+recorded that question as a RULING that no other store exists, which it was
+not; the mis-attribution is corrected here rather than quietly reworded,
+because everything below was written as though the question had been settled.
 
-  (a) it checks that the model holds the stores that DO exist -- lung gas,
-      arterial blood, venous blood and tissue -- and that its oxygen
-      book-keeping closes;
-  (b) it shows the MECHANISM that makes the ruling bite, which is that the
-      non-lung store is locked behind the saturation threshold that is itself
-      the benchmark endpoint.
+It does two things the cost table could not:
+
+  (a) it decomposes the stores the model DOES have -- lung gas, arterial
+      blood, venous blood and a compartment named tissue -- and shows what
+      each actually supplies before a benchmark's endpoint;
+  (b) it computes the one further store it CAN compute -- physically
+      dissolved oxygen -- and finds it negligible.
+
+Section 7 records how the question was disposed of: NOT by being answered.
+A. Heard decided on 2026-10-18 not to pursue it, after this agent proposed
+myoglobin-bound oxygen as a candidate store on no source held anywhere. The
+physiology is NOT settled and section 7 says so.
 
 Published sources only. The four cohorts are copied from test_validation.py and
 are Berthoud 1991 (both arms), Heard 2017 (control arm) and Stock 1989. No
 number here comes from anywhere but a simulation run in this process.
 """
 import math
+import re
 
 import numpy as np
 
@@ -129,6 +138,14 @@ RECORDED = {
     "Stock obstructed":        (300.0, 2313, 1554, 789, 66.3, 99.3,   0,  -2.3, 81.8),
 }
 
+# Quoted in HANDOVER's fifty-second entry, so recorded here: the oxygen each
+# row actually supplies (section 7 uses the range as its denominator) and the
+# arterial draw (quoted for Stock's 9 mL and the obese arm's 60 mL).
+SUPPLIED = {"Berthoud control BMI 23": 1457.0, "Berthoud obese BMI 49": 473.0,
+            "Heard control": 913.0, "Stock obstructed": 1159.0}
+ART_DRAWN = {"Berthoud control BMI 23": 55.0, "Berthoud obese BMI 49": 60.0,
+             "Heard control": 42.0, "Stock obstructed": 9.0}
+
 print("1. THE MODEL HOLDS FOUR OXYGEN COMPARTMENTS, AND ONLY FOUR. Declared")
 print("   together at apnoea_core.py:1477-1480 and integrated at 2881-2897:")
 print()
@@ -141,10 +158,12 @@ print(f"     (each blood compartment is split into pools = {Patient.pools} "
 print()
 print("   The blood and tissue volumes total "
       f"{Patient.v_art + Patient.v_ven + Patient.v_tis_o2} L of distribution")
-print("   volume. A. Heard ruled 2026-10-18 that no other significant store of")
-print("   oxygen exists in the patient, so THE ACCOUNTING IS COMPLETE and the")
-print("   oxygen-store route to reconciling Hewlett with the clinical")
-print("   desaturation times is CLOSED.")
+print("   volume. WHETHER THAT IS THE WHOLE OF THE PATIENT'S OXYGEN IS NOT")
+print("   ESTABLISHED HERE -- section 7. What the code shows is that the")
+print("   compartment NAMED tissue is not a tissue store:")
+print("   its state variable is a blood oxygen content in mL per decilitre, so")
+print("   the model carries 4.5 L of blood-like fluid and NO tissue-phase")
+print("   oxygen at all.")
 print()
 
 print("2. WHERE THE OXYGEN THAT SETS EACH BENCHMARK TIME ACTUALLY COMES FROM.")
@@ -179,7 +198,8 @@ for nm, pt, epochs, feo2, key, thr, fixed_t in CASES:
         lung_held_pct=100.0 * s0['lung'] / sum(s0.values()),
         lung_supplied_pct=100.0 * drawn['lung'] / max(supplied, 1e-9),
         inflow=crossed, resid=supplied + crossed - consumed, ds=ds_excess,
-        vo2=pt.vo2_anaes(), supplied=supplied, consumed=consumed)
+        vo2=pt.vo2_anaes(), supplied=supplied, consumed=consumed,
+        art_drawn=drawn['art'])
 
     print(f"   --- {nm}  (BMI {pt.bmi():.1f})")
     print(f"       {t_end:6.1f} s to endpoint; FRC {pt.frc_anaes():5.0f} mL; "
@@ -212,6 +232,8 @@ for nm in RECORDED:
     check(f"{nm}: crossed the dead-space face", r['inflow'], inf, 4.0, " mL")
     check(f"{nm}: mass-balance residual", r['resid'], res, 3.0, " mL")
     check(f"{nm}: dead-space excess over inspired", r['ds'], ds, 0.3, " mL")
+    check(f"{nm}: total oxygen supplied", r['supplied'], SUPPLIED[nm], 4.0, " mL")
+    check(f"{nm}: arterial oxygen drawn", r['art_drawn'], ART_DRAWN[nm], 2.0, " mL")
 print()
 
 print("2b. WHAT THE RESIDUAL IS, AND WHAT IT IS NOT. The accounting above")
@@ -244,8 +266,9 @@ for _dt in (0.2, 0.1, 0.05, 0.025):
     _prev, _last = _res, _res
 print()
 check("residual at the finest timestep", _last, -10.43, 0.15, " mL")
-check("last halving ratio (1.0 = converged, 0.5 = first order)",
-      _ratios[-1], 1.023, 0.03, " x")
+for _i, _want in enumerate((1.110, 1.049, 1.023)):
+    check(f"halving ratio {_i + 1} (1.0 = converged, 0.5 = first order)",
+          _ratios[_i], _want, 0.03, " x")
 print()
 print("    A FIRST-ORDER ERROR WOULD HALVE ON EACH HALVING. These ratios run")
 print("    1.11, 1.05, 1.02 -- toward one, not one half -- so about 10 mL of")
@@ -286,17 +309,22 @@ print()
 print("   THE REASON IS THE ENDPOINT ITSELF. Every one of these benchmarks")
 print("   stops its clock at a SATURATION threshold -- SpO2 90% for Berthoud,")
 print("   95% for Heard. Haemoglobin does not give up its oxygen until")
-print("   saturation falls, so the blood and tissue store cannot be drawn on")
-print("   until the clock has ALREADY stopped. The ~700-790 mL sitting in blood")
-print("   and tissue is real, and the ruling is right that nothing else exists,")
-print("   but almost none of it is available on the near side of the endpoint.")
+print("   saturation falls, so most of the blood and tissue store is still")
+print("   there when the clock stops. NOT ALL OF IT: read the table above and")
+print("   the obese row draws 31.3% of its oxygen from blood and tissue before")
+print("   its endpoint, about 150 mL. An earlier draft of this file said that")
+print("   store 'cannot be drawn on until the clock has already stopped',")
+print("   which its own table contradicts. What is true is the weaker and")
+print("   still decisive statement: blood and tissue hold 34-68% of the oxygen")
+print("   and supply only 1-31% of what is drawn.")
 print()
 print("   Stock is the limiting case and proves the point from the other end:")
 print("   the trachea is clamped, so there is no inflow at all, saturation")
 print("   barely moves across the 5-minute window, and the lung supplies")
 print(f"   {rows['Stock obstructed']['lung_supplied_pct']:.1f}% of the oxygen "
       f"consumed. Of the 789 mL held in blood")
-print("   and tissue, that row draws 9 mL. This is why Stock's PaO2 row is the")
+print(f"   and tissue, that row draws {rows['Stock obstructed']['art_drawn']:.0f}"
+      f" mL. This is why Stock's PaO2 row is the")
 print("   most frc_ref-sensitive in the suite: it is very nearly a pure")
 print("   measurement of lung gas.")
 print()
@@ -305,20 +333,27 @@ print("4. WHAT THIS SETTLES. Lung volume is effectively the whole lever on a")
 print("   desaturation time in this model, not because the other stores are")
 print("   missing or mis-sized, but because they are unreachable before the")
 print("   endpoint. So there is no slack anywhere for frc_ref to be trading")
-print("   against: lowering it by the ~515 mL that separates Watson & Pride")
-print("   from Hewlett removes oxygen directly from the only supply that")
+print("   against: lowering it by the 516-535 mL that separates Watson & Pride")
+print("   from Hewlett's two cohorts removes oxygen from the only supply that")
 print("   matters. That is the MECHANISM behind the monotonic cost already")
 print("   measured in frc_level_numbers.py section 9, and it means the cost")
 print("   was not an artefact of the benchmark set.")
 print()
-print("   THE OXYGEN-STORE HYPOTHESIS IS THEREFORE CLOSED, on the ruling plus")
-print("   this decomposition. frc_ref is still not to be moved, and there is")
-print("   now no store-side route by which Hewlett's awake volumes and these")
+print("   THE OXYGEN-STORE HYPOTHESIS IS CLOSED FOR SCOPE, not because the")
+print("   physiology was settled -- see section 7, which is blunt about it.")
+print("   Within the stores the model HAS, it is closed on this table. frc_ref")
+print("   still not to be moved, and that conclusion does not depend on this")
+print("   file at all: it rests on the cost table in frc_level_numbers.py")
+print("   section 9, where the rows that break are themselves measurements.")
+print("   What this file adds is why that cost is mechanism rather than")
+print("   coincidence. For the record, there is no store-side route WITHIN THE")
+print("   MODEL AS IT STANDS by which Hewlett's awake volumes and these")
 print("   four clinical desaturation times could both be reproduced.")
 print()
 
-print("5. WHAT THIS DOES *NOT* SETTLE, recorded so it is not mistaken for part")
-print("   of the ruling. The blood and tissue stores DO NOT SCALE WITH THE")
+print("5. WHAT THIS DOES *NOT* SETTLE, recorded separately so it is not taken")
+print("   for part of the above. The blood and tissue stores DO NOT SCALE WITH")
+print("   THE")
 print("   PATIENT. v_art, v_ven and v_tis_o2 are plain constants and nothing")
 print("   multiplies them by weight, height, body surface area or lean body")
 print("   mass, so the two Berthoud arms -- 63.0 kg and 123.5 kg, a 96%")
@@ -347,10 +382,10 @@ print("   a larger obese blood store would lengthen the obese arm, which")
 print("   already passes, and would not touch Stock at all.")
 print()
 
-print("6. TWO DEFECTS IN THE OXYGEN BOOK-KEEPING, FOUND WHILE CHECKING THE")
-print("   RULING AND VERIFIED HERE. Neither changes the ruling and neither")
-print("   props up the four blocking rows -- which is itself the point, and is")
-print("   why they are recorded rather than acted on.")
+print("6. TWO DEFECTS IN THE OXYGEN BOOK-KEEPING, found while working out where")
+print("   this model keeps its oxygen, and verified here. Neither props up the")
+print("   four blocking rows -- which is itself the point, and is why they are")
+print("   recorded rather than acted on.")
 print()
 print("   (a) THERE IS NO OXYGEN MASS-BALANCE INVARIANT. The carbon-dioxide")
 print("       side records its stores explicitly (the 'co2_stores' series) and")
@@ -401,7 +436,14 @@ check("check as the suite runs it (patent, 100% O2)",
 check("  ... SpO2 it ends at, so the store never moves",
       float(_r_chk['spo2'][_i_chk]), 99.7, 0.3, " %")
 check("same expression, desaturating: peak residual", _peak, 948.5, 3.0, " mL")
-check("  ... against the ceiling it is banded at", 900.0, 900.0, 0.0, " mL")
+# Read the ceiling out of test_validation.py rather than restating it. The
+# previous line here compared 900.0 to 900.0 and so could not fail, which
+# would have let HANDOVER's "over its own 900 mL ceiling" rot silently.
+_tv = open("test_validation.py").read()
+_m = re.search(r'check\("oxygen balance closes \(blood\+tissue term\)",\s*'
+               r'balance,\s*(-?[\d.]+),\s*(-?[\d.]+)', _tv)
+_ceiling = float(_m.group(2)) if _m else float("nan")
+check("  ... ceiling READ from test_validation.py", _ceiling, 900.0, 0.0, " mL")
 check("blood+tissue store the patient ever had", _bt0, 704.4, 3.0, " mL")
 check("residual at the SpO2 90% endpoint", _balance(_r_des, _i90, _pc),
       180.7, 3.0, " mL")
@@ -428,6 +470,83 @@ print()
 print("   NEITHER IS FIXED HERE. Clamping the tissue compartment or adding an")
 print("   oxygen invariant would change model behaviour or turn the suite red,")
 print("   and both need a ruling first. Recorded as open.")
+print()
+
+print("7. HOW THE QUESTION WAS DISPOSED OF -- NOT BY BEING ANSWERED.")
+print()
+print("   A. Heard asked on 2026-10-18 whether any other significant store of")
+print("   oxygen exists, available for tissue delivery. Answering it, this")
+print("   agent named MYOGLOBIN-BOUND OXYGEN IN MUSCLE as the large candidate.")
+print("   He then asked where that had been READ. The answer was NOWHERE: it")
+print("   came from background knowledge, not from any source held in this")
+print("   repository or uploaded to the session. Asked whether myoglobin was")
+print("   worth pursuing at all, he answered NO.")
+print()
+print("   SO THE ROUTE IS CLOSED FOR SCOPE, NOT BECAUSE THE PHYSIOLOGY WAS")
+print("   SETTLED -- the same way the Altermatt and Valenza rows went, and the")
+print("   ICSM rescue row after them: retired, not passed. What he decided is")
+print("   that this is not to be pursued. He made no physiological finding, and")
+print("   three successive drafts of this file wrote one for him, each time")
+print("   phrased in terms of an affinity nothing here measures. Those are")
+print("   withdrawn. THE QUESTION ITSELF REMAINS UNANSWERED BY THIS REPOSITORY.")
+print()
+print("   WHAT THE CODE AND THE ARITHMETIC DO SUPPORT, independently of any of")
+print("   that:")
+print()
+print("   (a) THE COMPARTMENT NAMED tissue IS NOT A TISSUE STORE. From the")
+print("       arithmetic at apnoea_core.py:2886 its state variable is a BLOOD")
+print("       oxygen content in mL per decilitre, initialised to mixed venous.")
+print("       The model carries 4.5 L of blood-like fluid and no tissue-phase")
+print("       oxygen. The name misdescribes it and is worth fixing.")
+print()
+print("   (b) PHYSICALLY DISSOLVED OXYGEN IS NEGLIGIBLE. This is the one")
+print("       candidate store whose size can be computed from constants already")
+print(f"       in this model (bloodgas.O2_SOL = {bg.O2_SOL} mL/dL/mmHg). It is")
+print("       computed here because it CAN be, not because it is the only")
+print("       possibility:")
+print()
+_diss = []
+for _vol, _po2, _lab in ((1.5, 40.0, "the 1.5 L the tissue compartment claims"),
+                         (40.0, 40.0, "40 L of water at venous tension"),
+                         (40.0, 100.0, "the same 40 L at arterial tension")):
+    _mL = bg.O2_SOL * _po2 * _vol * 10
+    _diss.append(_mL)
+    print(f"         {_lab:44s}{_mL:7.1f} mL")
+print()
+print("       THE 40 L IS NOT FROM A SOURCE AND NOT FROM THE MODEL. It is an")
+print("       arbitrarily generous round number, larger than any body-water")
+print("       volume this model represents, chosen so the conclusion does not")
+print("       depend on getting it right. Labelled rather than quietly used,")
+print("       because it has the same provenance as the withdrawn myoglobin")
+print("       claim: this agent's background knowledge.")
+print()
+print(f"       Against the {min(rows[k]['supplied'] for k in rows):.0f}-"
+      f"{max(rows[k]['supplied'] for k in rows):.0f} mL each row in section 2")
+print("       actually supplies, those figures are a few per cent at most --")
+print("       and the model already carries the dissolved term inside its blood")
+print("       compartments.")
+print()
+check("dissolved in 1.5 L at venous tension", _diss[0], 1.8, 0.05, " mL")
+check("dissolved in 40 L at venous tension", _diss[1], 48.0, 0.5, " mL")
+check("dissolved in 40 L at arterial tension", _diss[2], 120.0, 0.5, " mL")
+print()
+print("   (c) WHAT IS *NOT* SUPPORTED, AND WAS ASSERTED THREE TIMES ANYWAY.")
+print("       That a store must be LOWER-affinity than haemoglobin to matter")
+print("       here. The reasoning was that these benchmarks end at a SATURATION")
+print("       threshold, so a store must release above it. The hole is that the")
+print("       endpoint is ARTERIAL saturation while a muscle store would release")
+print("       at TISSUE oxygen tension, and a store that offloads locally")
+print("       reduces the draw on arterial blood -- so it could slow arterial")
+print("       desaturation while arterial saturation is still high. The argument")
+print("       treated one tension as the other. This is NOT a claim that")
+print("       myoglobin does that; nothing here measures it either way. It is")
+print("       the reason the converse must not be asserted.")
+print()
+print("   NONE OF THIS BEARS ON frc_ref, which stays at 2860 on the cost table")
+print("   in frc_level_numbers.py section 9, where the four rows that break are")
+print("   themselves clinical measurements. This file explains WHY that cost is")
+print("   mechanism rather than coincidence. It was never the reason for the")
+print("   conclusion, and nothing in section 7 changes it either way.")
 print()
 
 if FAILED:
