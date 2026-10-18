@@ -5,6 +5,172 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-18 (fifty-second entry): RULED — there is no other significant store of oxygen, so the store route is CLOSED. And the decomposition shows WHY it closes: the lung holds a third to two-thirds of the oxygen but supplies 69–99% of it, because the rest is locked behind the saturation threshold that IS the endpoint
+
+Regenerate with `python3 o2_store_numbers.py` (~30 s, four benchmark rows
+simulated at the suite's own timestep). Nothing in the model changed.
+
+### 1. THE RULING
+
+A. Heard, 2026-10-18: **there is no other significant store of oxygen.** That
+closes the hypothesis the fifty-first entry left open at its §4 — that
+`frc_ref` might be inflated because it stands in for oxygen the model keeps
+elsewhere, letting Hewlett's awake volumes and the clinical desaturation times
+both be right.
+
+The ruling settles the physiology. It does **not** by itself settle whether the
+model correctly holds the stores that *do* exist, and that part was checked
+rather than assumed.
+
+### 2. THE ACCOUNTING IS COMPLETE, AND OXYGEN IS CONSERVED
+
+The model carries four oxygen compartments and only four, declared together at
+`apnoea_core.py:1477-1480` and integrated at `2881-2897`:
+
+| compartment | volume | scales with the patient? |
+|---|---|---|
+| lung gas (the alveolar array) | from `frc_anaes()` | **yes** — height, BMI, tilt |
+| arterial blood `v_art` | 1.0 L | no |
+| venous blood `v_ven` | 2.0 L | no |
+| tissue `v_tis_o2` | 1.5 L | no |
+
+`pools = 3` splits each blood compartment into sub-pools for transit delay and
+conserves volume, so it is not a store size at all.
+
+**There is no large leak**, but the book does not close exactly, and the first
+draft of this entry got the reason wrong. Across the four rows the residual is
+−2 to −45 mL, which is 1.5–3.9% of throughput. It is smallest (−2.3 mL) in the
+Stock row, where the trachea is clamped.
+
+**That residual is structural, not discretisation.** Over a fixed 500 s window
+in the Berthoud control it *converges* rather than vanishing as the timestep
+shrinks — ratios 1.11, 1.05, 1.02 across dt 0.2 → 0.025, toward one and not
+toward one half — settling near **−10.4 mL**.
+
+**`cum_o2_in` is not oxygen entrained from the breathing circuit, and this entry
+originally mislabelled it as such.** `apnoea_core.py:2866` accumulates `add[0]`,
+and `add` is built from `ds[-1] * dn` at 2838: it is the flux across the
+**dead-space/alveolus face**. So the dead space's own preoxygenated oxygen
+excess is booked on the *inflow* side — at a 150 mL dead space, EtO₂ 0.87 and
+room air at the lips, exactly `150 × PDRY/GASK × (0.87 − 0.21)` = **81.79 mL** —
+while never appearing on the *store* side, because `rec['lung_o2']` records the
+alveolar compartments only. That asymmetry is the obvious home for an offset of
+this size and sign. **It is not confirmed to the millilitre and is recorded as
+open, not solved.**
+
+None of this touches §3: the held-and-supplied shares are computed from
+compartment contents directly and never read the balance. The balance's job was
+to catch a units error, and it earned its place doing exactly that — an early
+draft read the recorded saturations as fractions when they are percentages,
+inflating every blood figure a hundredfold.
+
+### 3. THE MECHANISM — THE NON-LUNG STORE IS LOCKED BEHIND THE ENDPOINT
+
+| row | lung HOLDS | lung SUPPLIES |
+|---|---|---|
+| Berthoud control BMI 23 | 66.0% | **90.9%** |
+| Berthoud obese BMI 49 | 32.2% | **68.7%** |
+| Heard control | 56.8% | **91.3%** |
+| Stock obstructed | 66.3% | **99.3%** |
+
+In every row the lung supplies a larger share than it holds. **The reason is the
+endpoint itself.** These benchmarks stop their clocks at a *saturation*
+threshold — SpO₂ 90% for Berthoud, 95% for Heard. Haemoglobin does not give up
+its oxygen until saturation falls, so the 692–789 mL sitting in blood and tissue
+cannot be drawn on until the clock has already stopped.
+
+Stock proves it from the other end: trachea clamped, no inflow, saturation
+barely moves across the 5-minute window, lung supplies **99.3%**. Of the 789 mL
+held in blood and tissue, that row draws **9 mL**. That is why Stock's PaO₂ row
+is the most `frc_ref`-sensitive in the suite — it is very nearly a pure
+measurement of lung gas.
+
+### 4. WHAT IT SETTLES
+
+Lung volume is effectively the **whole lever** on a desaturation time in this
+model — not because the other stores are missing or mis-sized, but because they
+are unreachable before the endpoint. So there is **no slack for `frc_ref` to be
+trading against**: lowering it by the ~515 mL between Watson & Pride and Hewlett
+removes oxygen directly from the only supply that matters.
+
+That is the **mechanism** behind the fifty-first entry's monotonic cost table,
+and it means that cost was not an artefact of the benchmark set. **`frc_ref`
+stays at 2860, and there is now no store-side route to reconciliation.**
+
+### 5. THE THREE STORE VOLUMES HAVE NO ANCHOR THAT COULD BE FOUND
+
+`v_art`, `v_ven` and `v_tis_o2` are the only bare numbers in a parameter block
+whose neighbours carry paragraph-length citations — `v_tis_co2_fast` and
+`v_tis_co2_slow`, declared three lines below, get a section header and thirty
+lines of reasoning naming six sources. Searched: `SOURCES.md` (including its own
+"values with no source at all" audit), `sources_registry.py`, `HANDOVER.md`,
+`README.md`, `protocol/`, `patches/`, `bloodgas.py`, every `*_numbers.py`, and
+the full commit history. **No anchor found in any of them.** They entered in the
+root commit "as handed over" and have never been changed.
+
+Per this project's own rule, that is reported as *what was searched and not
+found*, not as proof that no anchor exists.
+
+Two further facts about them, both computed:
+
+- **They do not scale with the patient.** The two Berthoud arms — 63.0 kg and
+  123.5 kg, a 96% difference in body weight — are given blood-plus-tissue
+  stores of 735 mL and 730 mL, differing by **0.6%**, and differing at all only
+  through haemoglobin and saturation. The lung store meanwhile falls 1428 → 347
+  mL across the same pair, so the blood share rises 34% → 68% *entirely because
+  the lung shrank*.
+- **`v_tis_o2` is not a tissue store in the physiological sense.** From the
+  arithmetic at `apnoea_core.py:2886` its state variable is a *blood* oxygen
+  content in mL/dL, initialised to mixed venous, and 1.5 L of real tissue
+  carrying only dissolved oxygen would hold ~1.7 mL against the 218 mL this
+  compartment holds. It is effectively a third blood pool, making the model's
+  total blood-equivalent volume 4.5 L.
+
+**Whether any of that is wrong is NOT established, and must not be guessed.**
+How total blood volume ought to vary with body size is not settled by anything
+held here — no measurement of blood volume against weight, lean mass or body
+surface area is in `SOURCES.md`. And §3 shows the quantity is nearly inert on
+these endpoints: the obese arm draws 60 mL of arterial oxygen in total. **It is
+not a candidate for the awake-FRC conflict** — a larger obese blood store would
+lengthen an arm that already passes, and would not touch Stock at all.
+
+### 6. TWO DEFECTS IN THE OXYGEN BOOK-KEEPING — found while checking the ruling, verified, NOT fixed
+
+1. **There is no oxygen mass-balance invariant.** The CO₂ side records its
+   stores explicitly (`co2_stores`) and bands the residual tightly. The oxygen
+   side records no store at all — there is no `o2_stores` key in any tracked
+   file. `test_validation.py:1219-1226` instead *infers* the blood-and-tissue
+   term as a residual and bands it −200 to +900 mL: a window 1100 mL wide
+   against a store of about 700 mL.
+2. **That one check never visits the regime that matters, and fails there when
+   it does.** It runs a patent 100%-O₂ case that never desaturates (residual
+   −13.4 mL, SpO₂ ends at 99.7%). The same expression on a desaturating run
+   peaks at **+948.5 mL, over its own 900 mL ceiling**, and first exceeds the
+   entire 704.4 mL store the patient ever had at **447.2 s** — because oxygen
+   consumption is a constant subtracted unconditionally and the tissue
+   compartment is unbounded below.
+
+**Read the second one carefully, because it exonerates the benchmarks.** The
+model begins supplying oxygen it does not have only once SpO₂ is under **38.7%**.
+Every graded endpoint sits far above that: at SpO₂ 90% the residual is 180.7 mL
+against 704.4 mL available. **So the four rows blocking the `frc_ref` move are
+not graded on phantom oxygen, and §4 stands independently of this defect.**
+Below SpO₂ 60–70% the model is in any case documented as invalid — see
+`plateau_sao2()`'s CAVEAT. What is *not* true today is that the suite encodes
+that boundary.
+
+Neither is fixed: clamping the tissue compartment changes model behaviour and
+adding the invariant would turn the suite red. **Both need a ruling.**
+
+### 7. STILL OPEN
+
+1. Valenza 2007 at +2.12 SD above the ruled offset, with one escape route fewer.
+2. A supine anaesthetised FRC in litres at BMI 45+ by helium, outside Damia's
+   cohort. Still unfound.
+3. §6's two defects — whether to add an oxygen invariant and whether to bound
+   the tissue compartment.
+4. §5's unanchored store volumes, if a blood-volume source can be obtained.
+
 ## Current state — 2026-10-17 (fifty-first entry): the awake-FRC conflict is COSTED and the answer is DO NOT MOVE frc_ref. Hewlett's own value costs four extra blocking rows — and the rows it breaks are themselves measurements, so this is measurement against measurement, not a parameter error
 
 Regenerate with `python3 frc_level_numbers.py` §9. The suite rows are four full
@@ -59,7 +225,7 @@ from one lung-volume comparison onto four clinical benchmarks. So the
 awake-FRC conflict **is not a parameter error**, and `frc_ref` is not to be
 moved to fix it. It stays at 2860.
 
-### 4. THE HYPOTHESIS THAT WOULD RECONCILE THEM — untested, recorded as a hypothesis
+### 4. THE HYPOTHESIS THAT WOULD RECONCILE THEM — ~~untested~~ **CLOSED 2026-10-18, see the fifty-second entry**
 
 Desaturation time depends on the **total oxygen store**, not on FRC alone. If
 `frc_ref` is standing in for oxygen that physiologically lives elsewhere, or if
@@ -67,6 +233,14 @@ the model under-counts some other store, then `frc_ref` is inflated to
 compensate and **both sets of measurements can be right**. That is a structural
 question about where this model keeps its oxygen, not a question about this
 parameter's value — and it is the natural successor to this entry.
+
+**CORRECTED IN PLACE 2026-10-18.** A. Heard ruled that there is no other
+significant store of oxygen, and `o2_store_numbers.py` then showed the model
+holds the stores that do exist and conserves oxygen across them. The route is
+closed, and §2's cost table turns out to be mechanism rather than coincidence:
+the non-lung store is locked behind the saturation threshold that is itself the
+endpoint. Left standing above as written so the sequence of reasoning is
+readable; do not cite it as open.
 
 ### 5. A SENSITIVITY WORTH KNOWING
 
@@ -81,7 +255,8 @@ value tested, but they are the most `frc_ref`-sensitive rows there are.
 1. Valenza 2007 sits +2.12 SD above even the newly ruled anaesthetised offset.
    **Not independent of this entry**: lowering `frc_ref` would have moved the
    model toward Valenza and away from Reinius, and §2 says it cannot be lowered.
-2. §4's oxygen-store hypothesis.
+2. ~~§4's oxygen-store hypothesis.~~ **CLOSED 2026-10-18 by ruling — see the
+   fifty-second entry.**
 3. A supine anaesthetised FRC in litres at BMI 45+ by helium, outside Damia's
    cohort. Still unfound; Eichenberger 2002 was withdrawn as atelectasis-only.
 
