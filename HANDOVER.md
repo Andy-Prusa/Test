@@ -253,6 +253,34 @@ that boundary.
 Neither is fixed: clamping the tissue compartment changes model behaviour and
 adding the invariant would turn the suite red. **Both need a ruling.**
 
+**THE CLAMP WAS COSTED AND RULED AGAINST, 2026-10-19.** A. Heard delegated this
+one; the ruling is mine and rests on the measurement, not on judgement.
+`tis_o2_floor` is implemented as an experimental switch, default off, and
+retained the way `frc_anaes_absolute` was retained after its own ruling.
+
+`variant_cost.py tis_floor` against the shipped baseline: **all 45 comparable
+rows numerically identical**, not one value moved in any decimal. Expected,
+since every graded endpoint sits above SpO₂ 38.7% — and on its own that argues
+for turning it ON, the defect being real and the fix apparently free.
+
+**It is off because it does not fix the defect.** On a desaturating run (107 kg,
+patent, room air) the oxygen-balance residual at 504 s is **+948.7 mL with the
+floor against +948.5 mL without**, on a store of 704.4 mL. The model still
+claims to have supplied 244 mL it never had. The clamp moves 0.2 mL.
+
+The reason it cannot work: the clamp bounds the **state** and leaves the
+**flux** alone. VO₂ is still subtracted at full rate from a compartment pinned
+at zero, so the oxygen is now *destroyed at the clamp* rather than recorded as
+negative content — an unphysical state traded for an unphysical flux, and the
+residual does not care which. Worse, it would make the defect **harder to see**:
+negative tissue content is a visible symptom, and clamping hides it while the
+cause continues. Turning it on would also force a `model.js` port and an
+artifact rebuild to buy that.
+
+**The real fix is supply-limited VO₂** — consumption falling when there is no
+oxygen left to consume. That is what would close the residual, and it is the
+open question this leaves behind.
+
 ### 7. STILL OPEN
 
 1. **§6's two defects are ONE decision, not two.** The oxygen invariant cannot

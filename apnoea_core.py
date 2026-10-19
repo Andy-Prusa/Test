@@ -1505,6 +1505,37 @@ class Patient:
     #   and more interesting change -- a real tissue running out of oxygen
     #   reduces its VO2 rather than borrowing. That would alter the metabolic
     #   model everywhere, so it is a separate question and is not this switch.
+    #
+    #   COSTED AND RULED AGAINST 2026-10-19, and the switch is kept the way
+    #   frc_anaes_absolute was kept after its own ruling, because the negative
+    #   result is worth more than the code. `variant_cost.py tis_floor` against
+    #   the shipped baseline: ALL 45 COMPARABLE ROWS NUMERICALLY IDENTICAL, not
+    #   one value moved in any decimal. That is the expected result -- every
+    #   graded endpoint sits above SpO2 38.7% -- and on its own it would argue
+    #   for turning the switch on, since the defect is real and the fix looks
+    #   free.
+    #
+    #   IT IS NOT TURNED ON BECAUSE IT DOES NOT FIX THE DEFECT. Measured on a
+    #   desaturating run, 107 kg patent on room air: the oxygen-balance
+    #   residual at 504 s is +948.7 mL WITH the floor against +948.5 mL
+    #   without, on a store of 704.4 mL. The model still claims to have
+    #   supplied 244 mL it never had. The clamp moves 0.2 mL.
+    #
+    #   WHY IT CANNOT WORK. The clamp bounds the STATE and leaves the FLUX
+    #   alone: vo2 is still subtracted at full rate from a compartment pinned
+    #   at zero, so the oxygen is now DESTROYED AT THE CLAMP instead of being
+    #   recorded as negative content. That trades an unphysical state for an
+    #   unphysical flux, and the residual -- which is what actually measures
+    #   the impossibility -- does not care which.
+    #
+    #   AND IT WOULD MAKE THE DEFECT HARDER TO SEE. Negative tissue content is
+    #   a visible, diagnosable symptom. Clamping it hides the symptom while the
+    #   cause continues. Turning it on would also force a model.js port and an
+    #   artifact rebuild to buy that.
+    #
+    #   THE REAL FIX IS SUPPLY-LIMITED VO2 -- consumption falling when there is
+    #   no oxygen left to consume. That is what would close the residual, and
+    #   it is not this switch.
     tis_o2_floor = False
 
     # --- body CO2 stores ---------------------------------------------------
