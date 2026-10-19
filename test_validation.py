@@ -1221,8 +1221,41 @@ def test_physical_consistency():
     dur = r['t'][-1] / 60
     balance = (p.vo2_anaes() * dur - (r['lung_o2'][0] - r['lung_o2'][-1])
                - r['cum_o2_in'][-1])
-    check("oxygen balance closes (blood+tissue term)", balance, -200, 900,
-          " mL", "must be a plausible blood store, not a leak")
+    # THE BAND IS NOW COMPUTED FROM THE RUN. RULED 2026-10-19 by A. Heard, who
+    # asked what made -200 to +900 "a plausible blood store" and proposed 700.
+    #
+    # The residual is oxygen that must have come OUT of blood and tissue
+    # (positive) or gone INTO them (negative), so physics bounds it both ways:
+    #   ABOVE  it cannot supply more than it HELD at the start;
+    #   BELOW  it cannot absorb more than its headroom to full saturation at
+    #          the highest alveolar tension the run reaches.
+    #
+    # THE OLD BAND WAS WRONG IN BOTH DIRECTIONS, differently. +900 exceeded the
+    # whole store by 28% -- it looks derived from 4.5 L of fully saturated blood
+    # at PO2 700, which is 938.7 mL, but that is not what this residual bounds;
+    # it would have passed a 34% leak. Meanwhile -200 was TIGHTER than the real
+    # headroom of -223.6, so it could have failed a run that was behaving. And
+    # neither figure moved with haemoglobin or with preoxygenation. These do:
+    # the store is 692 mL at Hb 14 in one benchmark cohort and 789 mL at Hb 15
+    # in another, so a hardcoded number rots the first time `hb` changes here.
+    #
+    # The one approximation left: the anatomical dead space sits outside this
+    # accounting on the store side while `cum_o2_in` books the gas crossing the
+    # dead-space/alveolus face, so the residual carries a small offset from it
+    # (see o2_store_numbers.py section 2b). It is tens of mL against bounds
+    # hundreds wide, and it is NOT what either bound is protecting against.
+    ca0 = bg.HUFNER * p.hb * (r['sao2'][0] / 100.0) + bg.O2_SOL * r['pao2'][0]
+    cv0 = bg.HUFNER * p.hb * (r['svo2'][0] / 100.0) + bg.O2_SOL * r['pvo2'][0]
+    v_ven_tis = p.v_ven + p.v_tis_o2
+    store0 = ca0 * p.v_art * 10.0 + cv0 * v_ven_tis * 10.0
+    c_full = bg.HUFNER * p.hb + bg.O2_SOL * float(np.max(r['pao2_alv']))
+    headroom = ((c_full - ca0) * p.v_art * 10.0
+                + (c_full - cv0) * v_ven_tis * 10.0)
+    check("oxygen balance closes (blood+tissue term)", balance,
+          -headroom, store0, " mL",
+          f"bounded by this run's own store ({store0:.0f} mL it could supply) "
+          f"and its headroom to full saturation ({headroom:.0f} mL it could "
+          f"absorb), not by a round number")
     check("stroke volume constant within a run",
           float(np.ptp(r['co'] * 1000 / np.maximum(r['hr'], 1e-6))), 0, 25,
           " mL", "CO is derived from HR, so SV must not drift")
