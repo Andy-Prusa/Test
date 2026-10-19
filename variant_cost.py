@@ -96,6 +96,12 @@ VARIANTS = {
     'frc_hewlett': {'frc_ref': 2325.0},   # both Hewlett cohorts pooled
     'frc_hew2':    {'frc_ref': 2344.0},   # part II alone, 26 males
     'frc_2500':    {'frc_ref': 2500.0},   # the pre-48ffe03 historical value
+
+    # Bound the tissue compartment below so it cannot supply oxygen it does
+    # not have. The defect is real and measured (HANDOVER entry 52 section 6);
+    # the question this costs is whether fixing it disturbs anything ABOVE
+    # SpO2 38.7%, which is where every graded endpoint sits.
+    'tis_floor': {'tis_o2_floor': True},
 }
 
 

@@ -1479,6 +1479,34 @@ class Patient:
     v_tis_o2: float = 1.5
     pools: int = 3
 
+    # tis_o2_floor -- EXPERIMENTAL, DEFAULT OFF. Bound the tissue compartment
+    #   below so it cannot supply oxygen it does not have.
+    #
+    #   THE DEFECT IT ADDRESSES, measured 2026-10-18 and recorded in HANDOVER's
+    #   fifty-second entry section 6. Oxygen consumption is bound once outside
+    #   the loop and subtracted from this compartment unconditionally, every
+    #   step, with nothing checking whether any oxygen is left. So past about
+    #   SpO2 38.7% the content goes NEGATIVE and the model keeps drawing on it:
+    #   on a desaturating run the oxygen-balance residual first exceeds the
+    #   entire 704.4 mL store the patient ever had at 447.2 s.
+    #
+    #   WHY IT HAS NOT SIMPLY BEEN TURNED ON. Every graded endpoint in the
+    #   suite sits ABOVE that saturation, so nothing is mis-graded today -- the
+    #   phantom oxygen appears only in a region the model already disclaims
+    #   (see plateau_sao2's CAVEAT, which states that oxygen consumption and
+    #   cardiac output are both assumed constant and that both assumptions fail
+    #   below SpO2 60-70%). Turning it on is therefore a change in a region
+    #   where the model is not valid either way, and the question is whether it
+    #   costs anything where the model IS valid. Cost it with
+    #   `python3 variant_cost.py tis_floor`, then `--diff`.
+    #
+    #   THE MINIMAL FORM, DELIBERATELY. This clamps the CONTENT at zero. It
+    #   does NOT make oxygen consumption supply-limited, which is the larger
+    #   and more interesting change -- a real tissue running out of oxygen
+    #   reduces its VO2 rather than borrowing. That would alter the metabolic
+    #   model everywhere, so it is a separate question and is not this switch.
+    tis_o2_floor = False
+
     # --- body CO2 stores ---------------------------------------------------
     # Tuned to the MODERN measured arterial rate of rise, ~2.1 mmHg/min
     # (Sci Rep 2024, n=91; Gustafsson 0.24 kPa/min; Toner 0.30 kPa/min
@@ -2885,6 +2913,11 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
 
         tis_o2 += ((co * (art_o2[-1] - tis_o2) * 10.0 - vo2)
                    / (pt.v_tis_o2 * 10.0)) * dt_min
+        if pt.tis_o2_floor:
+            # EXPERIMENTAL, default off -- see tis_o2_floor's note. Without
+            # this the compartment goes negative below about SpO2 38.7% and
+            # supplies oxygen that was never in it.
+            tis_o2 = max(0.0, tis_o2)
         flux_slow = pt.k_co2_slow * (tis_co2 - slow_co2) * 10.0
         tis_co2 += ((co * (art_co2[-1] - tis_co2) * 10.0 + vco2_metab
                      - flux_slow) / (pt.v_tis_co2_fast * 10.0)) * dt_min

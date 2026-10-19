@@ -274,7 +274,8 @@ BENCHMARK_SOURCES = [
     ("Hewlett, Hulands, Nunn & Heath 1974, *Br J Anaesth* 46:486-94 (n=26), "
      "part II of three",
      "the INDUCTION DROP in 26 MALES breathing spontaneously, and the "
-     "replication that closed the de-coupling question",
+     "replication that closed the de-coupling question -- but NOT an anchor "
+     "for frc_drop, whose state it does not match",
      "2026-10-14",
      "READ IN FULL from upload. Helium dilution, supine, measured AWAKE "
      "pre-induction and again ANAESTHETISED and SPONTANEOUSLY BREATHING "
@@ -302,10 +303,30 @@ BENCHMARK_SOURCES = [
      "correlations of the fall with age (0.41) and weight/height (0.30) are "
      "the POOLED figures over 54 patients including Don's two series, as the "
      "figure captions state; these 26 alone give 0.235 and -0.033, and the "
-     "abstract's numbers must not be quoted as properties of this cohort"),
+     "abstract's numbers must not be quoted as properties of this cohort. "
+     "THIS ROW MERGES TWO REGISTRATIONS, 2026-10-02 and 2026-10-14, which sat "
+     "in this list as separate entries until 2026-10-19 with summary verdicts "
+     "that read as opposite -- 'nothing' against 'the replication that closed "
+     "the de-coupling question'. They were never in conflict: they answer "
+     "DIFFERENT QUESTIONS of the same paper, and both answers stand. What "
+     "follows is the 2026-10-02 reading, kept in full. NOT USED TO ANCHOR "
+     "frc_drop, and the reason is recorded because it was nearly got wrong: "
+     "THESE PATIENTS WERE BREATHING SPONTANEOUSLY and frc_anaes() is the "
+     "PARALYSED lung -- the same state trap that disqualified Watson & Pride "
+     "and Couture 2018. It cites Laws 1968 for the paralysed case but quotes "
+     "no paralysed value. TWO OF ITS ROWS KILL MECHANISMS RATHER THAN SUPPORT "
+     "THEM: inspired oxygen does not drive the drop (21% at 100% O2 against "
+     "20% at 30-35%, pooled with Don), so it is not absorption collapse; and "
+     "expiratory muscle activity does not either (13.6% in the 10 patients "
+     "with none detectable). The paper states outright that no explanation is "
+     "known. The drop is complete within ~10 min with no change from 6 to 20 "
+     "min. Its age regression (% reduction = 4.0 + 0.43 x age, r=0.41, "
+     "p<0.005) is NOT implemented; see apnoea_core.py frc_drop and "
+     "height_factor()"),
     ("Hewlett, Hulands, Nunn & Minty 1974, *Br J Anaesth* 46:479-85, "
      "part I of three",
-     "the MEASUREMENT ERROR of part III, and nothing else -- no patient data",
+     "the MEASUREMENT ERROR behind part III, part II and Laws, and nothing "
+     "else -- no patient data",
      "2026-10-13",
      "READ IN FULL from upload. Methodology only: the closed-circuit helium "
      "dilution rig, its modification for IPPV, and its accuracy. IT CARRIES NO "
@@ -326,7 +347,27 @@ BENCHMARK_SOURCES = [
      "while BMI moves -0.434 to -0.444 -- the central finding survives "
      "its most obvious objection. Also states the scale plainly: \"supine "
      "patients have FRC values of the order of 2 litres\", and that 0.001 of "
-     "full-scale helium error is about 3% of FRC, 60 mL during anaesthesia"),
+     "full-scale helium error is about 3% of FRC, 60 mL during anaesthesia. "
+     "THIS ROW MERGES TWO REGISTRATIONS, 2026-10-05 and 2026-10-13, which sat "
+     "in this list as separate entries until 2026-10-19. Neither contradicted "
+     "the other -- both say the paper carries no patient data and exists to "
+     "bound measurement error -- but they applied it to different downstream "
+     "questions, so both are kept. What follows is the 2026-10-05 reading. "
+     "THE METHOD IS UNBIASED: four series, mean error +35, +31, -17 and +1 mL "
+     "on 4.5 L, no significant systematic error in either mode. WHY THAT "
+     "MATTERS FOR LAWS: Laws 1968 measured his baseline awake-spontaneous and "
+     "his post-induction value PARALYSED, so his difference carries one error "
+     "of each kind -- 116-170 mL, which is 24-51% of the 238 mL per-patient "
+     "scatter he reported. Part II, spontaneous throughout, carries only "
+     "65-85 mL, 4-7% of its 325 mL scatter, so its spread is ~95% biological. "
+     "It also shows LAWS'S OWN PRECISION CLAIM IS OPTIMISTIC BY HIS OWN "
+     "ACCOUNT: his CV 0.7% on a lung analogue is ~32 mL, 3-5x smaller, and he "
+     "states the reason -- 'no parallel for oxygen consumption could be "
+     "designed with this set-up without loss of helium at the same time'. "
+     "NOTHING IN THE MODEL WAS SET FROM IT: frc_drop stays at 400 mL. CAVEAT: "
+     "these are HEWLETT'S apparatus and model, and Laws used a Godart meter "
+     "with a 9 L Collins spirometer, so it bounds the error of the TECHNIQUE "
+     "CLASS under artificial ventilation, not Laws's specific instrument"),
     ("Hewlett, Hulands, Nunn & Milledge 1974, *Br J Anaesth* 46:495-502 "
      "(n=13), part III of three",
      "the FIRST PAIRED awake/anaesthetised FRC held, in the LEAN range, and "
@@ -365,10 +406,16 @@ BENCHMARK_SOURCES = [
      "0.327 and the corrected one gives 0.410. Both FRC columns were right "
      "throughout, so the paired findings above never depended on the error; "
      "what moved was BMI, and BMI alone. "
-     "PARTS I (46:479, methodology) and II (46:486, SPONTANEOUS "
-     "respiration, and by search 26 MALES with a 390 mL fall) ARE NOT HELD "
-     "-- the network policy blocks bjanaesthesia.org -- and nothing from "
-     "their abstracts may be used until the pages are seen"),
+     "A CLAIM THIS ROW USED TO MAKE, STRUCK 2026-10-19: it said PARTS I and "
+     "II 'ARE NOT HELD -- the network policy blocks bjanaesthesia.org -- and "
+     "nothing from their abstracts may be used until the pages are seen'. "
+     "BOTH ARE HELD AND ALWAYS WERE BY THEN: part I was read in full from "
+     "upload and registered 2026-10-13, part II 2026-10-14, and both have "
+     "their own rows in this very list. The claim was reached by not finding "
+     "the papers rather than by reading this file, which is the move CLAUDE.md "
+     "forbids by name, and it survived because check_sources.py verifies "
+     "README against this registry and cannot see the registry disagreeing "
+     "with itself"),
     ("Fraioli 1973, *Anesthesiology* 39(6):588-96 (n=31)",
      "apnoeic-oxygenation PaO2 and the FRC/weight desaturation split",
      "2026-09-28",
@@ -669,51 +716,6 @@ BENCHMARK_SOURCES = [
      "n=8, 6F/2M against an explicitly male model, mean 64.8 kg so a light "
      "cohort, and his slope CI (-0.12 to +1.02) contains both Hewlett's "
      "value AND zero"),
-    ("Hewlett, Hulands, Nunn & Heath 1974, *Br J Anaesth* 46:486-494 (n=26)",
-     "nothing -- corroborates frc_drop's magnitude, wrong state to anchor it",
-     "2026-10-02",
-     "read at source from upload. 'FRC during anaesthesia II: SPONTANEOUS "
-     "RESPIRATION' -- helium dilution, 26 males, supine, thiopentone + "
-     "halothane, before and immediately after induction. Mean reduction 390 "
-     "mL BTPS, 16.1% (SD 13.4), p<0.001; complete within ~10 min with no "
-     "change 6->20 min. TWO OF ITS ROWS KILL MECHANISMS RATHER THAN SUPPORT "
-     "THEM: inspired oxygen does not drive the drop (21% at 100% O2 against "
-     "20% at 30-35%, pooled with Don), so it is not absorption collapse; and "
-     "expiratory muscle activity does not either (13.6% in the 10 patients "
-     "with none detectable). The paper states outright that no explanation "
-     "is known. NOT USED TO ANCHOR frc_drop, and the reason is recorded "
-     "because it was nearly got wrong: THESE PATIENTS WERE BREATHING "
-     "SPONTANEOUSLY and frc_anaes() is the paralysed lung -- the same state "
-     "trap that disqualified Watson & Pride and Couture 2018. It cites Laws "
-     "1968 for the paralysed case but quotes no paralysed value. Its age "
-     "regression (% reduction = 4.0 + 0.43 x age, r=0.41, p<0.005) is NOT "
-     "implemented; see apnoea_core.py frc_drop and height_factor()"),
-    ("Hewlett, Hulands, Nunn & Minty 1974, *Br J Anaesth* 46:479-485",
-     "nothing -- it bounds the MEASUREMENT ERROR behind Laws and Hewlett II",
-     "2026-10-05",
-     "read at source from upload. 'FRC during anaesthesia I: METHODOLOGY', the "
-     "companion to Hewlett II. No FRC measurement in patients; it VALIDATES "
-     "the helium-dilution technique against a model lung of known volume "
-     "(4.528 L by water displacement). THE METHOD IS UNBIASED -- four series, "
-     "mean error +35, +31, -17 and +1 mL on 4.5 L, no significant systematic "
-     "error in either mode. BUT ARTIFICIAL VENTILATION COSTS PRECISION: SD of "
-     "a single measurement 46-60 mL spontaneous against 107-159 mL "
-     "ARTIFICIAL, 1.8-3.5x worse, mechanism given (the artificial mode adds "
-     "~1.5 L of apparatus volume to the circuit). WHY THAT MATTERS: Laws 1968 "
-     "measured his baseline awake-spontaneous and his post-induction value "
-     "PARALYSED, so his difference carries one error of each kind -- 116-170 "
-     "mL, which is 24-51% of the 238 mL per-patient scatter he reported. "
-     "Hewlett II, spontaneous throughout, carries only 65-85 mL, 4-7% of its "
-     "325 mL scatter, so its spread is ~95% biological. It also shows LAWS'S "
-     "OWN PRECISION CLAIM IS OPTIMISTIC BY HIS OWN ACCOUNT: his CV 0.7% on a "
-     "lung analogue is ~32 mL, 3-5x smaller, and he states the reason -- 'no "
-     "parallel for oxygen consumption could be designed with this set-up "
-     "without loss of helium at the same time'. NOTHING IN THE MODEL WAS SET "
-     "FROM IT: frc_drop stays at 400 mL and the 2026-10-02 ruling stands; this "
-     "only explains WHY Laws is too imprecise to move it. CAVEAT: these are "
-     "HEWLETT'S apparatus and model, and Laws used a Godart meter with a 9 L "
-     "Collins spirometer, so it bounds the error of the TECHNIQUE CLASS under "
-     "artificial ventilation, not Laws's specific instrument"),
     ("Dale WA & Rahn H. Rate of gas absorption during atelectasis. "
      "*Am J Physiol* 1952;170:606-13 (dog) -- PAGE 606 ONLY",
      "the classical source for the RATE of absorption from an occluded lobe. "
