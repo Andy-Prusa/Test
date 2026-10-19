@@ -1221,8 +1221,14 @@ def test_physical_consistency():
     dur = r['t'][-1] / 60
     balance = (p.vo2_anaes() * dur - (r['lung_o2'][0] - r['lung_o2'][-1])
                - r['cum_o2_in'][-1])
-    # THE BAND IS NOW COMPUTED FROM THE RUN. RULED 2026-10-19 by A. Heard, who
-    # asked what made -200 to +900 "a plausible blood store" and proposed 700.
+    # THE BAND IS NOW COMPUTED FROM THE RUN.
+    #
+    # WHO DID WHAT, stated precisely because the first version of this comment
+    # ran the three together and so read as though 700 were the ruling, which
+    # would have been odd given the code does not use 700. A. Heard ASKED what
+    # made -200 to +900 "a plausible blood store" -- that question is what found
+    # the error. He PROPOSED -200 to 700. Then, shown the arithmetic, he RULED
+    # both bounds computed rather than hardcoded, which is what is implemented.
     #
     # The residual is oxygen that must have come OUT of blood and tissue
     # (positive) or gone INTO them (negative), so physics bounds it both ways:
