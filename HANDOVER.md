@@ -5,6 +5,150 @@ induction, built to quantify the effect of buccal oxygen delivery. Two
 implementations that must agree: `apnoea_core.py` (reference) and `model.js`
 (browser, drives `airway_scenario.html`).
 
+## Current state — 2026-10-20 (fifty-third entry): Feldschuh & Enson 1977 read — 70 mL/kg is real, traceable, and the paper that names it exists to refute using it as a constant. The model's fixed 4.5 L under-supplies Berthoud's obese arm by 1.30–1.89 L, and for the first time the SIGN of that correction does not depend on a guess. Nothing in the model changed, and nothing may until it is costed
+
+Regenerate with `python3 bloodvol_numbers.py` (seconds, nothing simulated).
+29 checks, five of which audit the other files that restate its figures and
+fail naming any that has drifted. `o2_store_numbers.py` §5 and §6a, and §5 of
+the entry below, were all corrected the same day: this paper falsifies a claim
+they made about what the repository holds.
+
+### 1. WHAT WAS ASKED, AND THE ANSWER
+
+A. Heard, 2026-10-19: *"70 mls/kg is what I was taught. Search for proof."*
+
+The search for it was blocked — the network policy returns 403 on CONNECT for
+every scholarly host tried — so the question stood open until he uploaded
+**Feldschuh J, Enson Y. "Prediction of the normal blood volume: relation of
+blood volume to body habitus." *Circulation* 1977;56:605-12**, read in full
+2026-10-20.
+
+**The figure is real and it is traceable.** The paper names **72.6 mL/kg for
+men and 66.3 for women** as *"commonly used averages of a number of reports"*.
+Their mean is 69.5 — the taught 70 to within half a millilitre.
+
+**And it names them only in order to refute them.** Those constants are what
+its table 3 scores as *method 1*, and method 1 on body weight is the worst row
+in the table:
+
+| method | reference | r | SE of estimate |
+|---|---|---|---|
+| 1. constant ratio | body weight | 0.773 | **1529 mL** |
+| 1. constant ratio | surface area | 0.864 | 684 mL |
+| 2. linear regression | body weight | 0.842 | 531 mL |
+| 2. linear regression | surface area | 0.856 | 510 mL |
+| 3. curvilinear regression | deviation from desirable weight | 0.901 | **465 mL** |
+
+±1529 mL is about **a third of the quantity being predicted**. The authors'
+own summary: blood volume *"is not a constant fraction of body weight or SA in
+this population. Its prediction from such constant ratios results in a large
+error of estimate which is systematically biased with respect to height and
+weight."* And the bias has a direction — *"BV is overestimated in obese and
+underestimated in lean individuals."*
+
+**Why the taught figure varies by whoever taught it.** The paper attributes the
+literature's 62–86 mL/kg spread to sampling: that range *"corresponds (fig. 3)
+to population groups which vary from 25% underweight to 16% overweight."*
+
+So **70 mL/kg is sound for the habitus it was measured in and the paper gives
+it no wider warrant than that.** It is now held as the convention's value, not
+as a property of blood.
+
+### 2. WHAT THE PAPER ITSELF MEASURES
+
+188 observations in 160 normal volunteers — 80 women, 80 men — spanning
+**−38.7% to +210.8% of desirable weight**, blood volumes 2.89 to 9.65 L, blood
+volume from plasma volume and body haematocrit.
+
+The ratio runs **90–100 mL/kg in the extremely underweight** (the Discussion
+says 95–105 at 25–35% underweight) and falls with obesity to an asymptote the
+Results put at *"about 43"* and the Discussion at *"approximately 45"* — a
+2.5-fold span. All three roundings are recorded in the script rather than one
+being chosen.
+
+**THE TRAP, and it inverts the finding if missed.** The *ratio* falls with
+obesity; the *absolute volume still rises*, because both sexes' weight
+regressions have positive slopes. Reasoning from "mL/kg falls with obesity" to
+"the obese have less blood" gets the sign backwards.
+
+**The transcription validates itself.** Figure 2's six regressions and table
+1's six means were transcribed from different pages. A regression passes
+through its own sample mean, so each equation evaluated at table 1's mean x
+must return table 1's mean blood volume. All six land within 50 mL — which also
+confirms the WOMEN/MEN assignment, and that matters, because the sexes' weight
+slopes run counter-intuitively: women 0.033 L/kg is *steeper* than men 0.024 on
+a lower intercept, so a swap would look plausible and be wrong.
+
+### 3. WHAT IT SAYS ABOUT THIS MODEL
+
+`v_art` 1.0 L + `v_ven` 2.0 L + `v_tis_o2` 1.5 L = **4.5 L**. Until today
+these were three bare constants at `apnoea_core.py:1514-1516` with no comment
+and no citation, and `SOURCES.md` had never listed them either, although
+between them they are the model's **entire non-lung oxygen store**. Both
+omissions are closed in this commit. Against Feldschuh's weight regressions,
+both sexes:
+
+| arm | BMI | women | men | model | verdict |
+|---|---|---|---|---|---|
+| generic 70 kg row | 22.9 | 4.04 L | 5.10 L | 4.5 L | inside the sex span |
+| Berthoud control | 23.1 | 3.81 L | 4.94 L | 4.5 L | inside the sex span |
+| Berthoud obese | 49.0 | 5.80 L | 6.39 L | 4.5 L | **1.30–1.89 L low (22–30%)** |
+
+**THE SIGN OF THAT CORRECTION NO LONGER DEPENDS ON A GUESS.** On 2026-10-18
+**both** `o2_store_numbers.py` §5 and the fifty-second entry's own §5 said that
+*"no measurement of blood volume against weight, lean mass or body surface area
+is in `SOURCES.md`"*, and left the direction open on that ground. That sentence
+is now false in both places and has been corrected in both. What survives in
+them is the narrower finding they also made: **no anchor exists for any one of
+the three numbers**, and the 1.0 : 2.0 split is still unanchored — Feldschuh
+checks the *total*, not the split. Both sexes' regressions put the obese arm
+above the model, so the finding survives not knowing Berthoud's sex mix, which
+is not held.
+
+**THE SIZE IS STILL OPEN, AND STORE IS NOT EFFECT.** The extra blood is
+**248–360 mL of oxygen** at arterial content — the same order as the whole
+**347 mL** anaesthetised lung at that arm. But that is the *store*. What bounds
+any effect on the benchmark is what the endpoint *draws*: `o2_store_numbers.py`
+§2 measures this arm as holding **730 mL** in blood and tissue and supplying
+**148 mL** of it before SpO₂ 90% — it depletes about a **fifth** of the
+non-lung store. At fixed fractional depletion a 22–30% larger store would yield
+only **~33–44 mL** more oxygen, not 248–360.
+
+**But depletion is not fixed**, and that is the whole difficulty: a larger store
+falls more slowly, which lengthens the time, which raises the draw again. No
+arithmetic settles it. The earlier wording that *"a plausible correction would
+move little"* was withdrawn for being a guess, and has NOT been replaced with a
+different one. (The **60 mL** figure that `o2_store_numbers.py` §2 pins for
+this arm is the *arterial* compartment alone; 148 mL is the right comparator,
+because all three blood compartments would scale together. §5 of that script
+quoted the 60 mL in this role until today and has been corrected.)
+
+**NOTHING HAS BEEN CHANGED IN THE MODEL AND NOTHING MAY BE UNTIL IT IS COSTED.**
+The obese arm currently **passes**. This is a sourced correction that would push
+a passing row, which is exactly the situation the awake-FRC conflict was in, and
+it gets the same treatment: `variant_cost.py` first, ruling second.
+
+### 4. FOUR LIMITS THAT BOUND EVERY USE OF IT
+
+1. **Sex.** Every regression is sex-specific and this model has no sex
+   parameter. At 123.5 kg the sexes differ by 0.59 L — 31–45% of the correction
+   itself. Both lie above the model, so the sign survives, but the equations
+   cannot be *used* without a ruling on which sex the model represents.
+2. **The paper's preferred predictor is not reproducible here.** Method 3
+   (±465 mL) needs figure 3 plus the Metropolitan Life Insurance Company
+   Desirable Weight tables, neither held. Only method 2 (±531 mL on weight) can
+   be computed — and the paper reports method 2 as still biased with respect to
+   height, which the 1.59 m obese arm sits at the short end of.
+3. **Haematocrit is not matched.** Blood volume was computed from body
+   haematocrit and the conventional constants were corrected at 45% for men and
+   41% for women; the model's `hb` is a free parameter per benchmark.
+4. **It measures TOTAL blood volume only.** It says nothing about the model's
+   1.0 : 2.0 L arterial/venous split, nor about what `v_tis_o2` physically is.
+   Counting that 1.5 L as blood to make the comparison above is a reading taken
+   for the comparison's sake — and the two readings differ by 1.5 L, as much as
+   the correction itself. This is the first thing held that makes the
+   long-open "rename the tissue compartment" question cost something.
+
 ## Current state — 2026-10-18 (fifty-second entry): the oxygen-store route is CLOSED FOR SCOPE, not answered. The lung holds a third to two-thirds of the oxygen and supplies 69–99% of what is drawn. THREE errors of mine are recorded here as errors, all the same kind: a question of A. Heard's written up as his ruling, a candidate store (myoglobin) named from background knowledge with no source held, and then a second ruling invented to close the question the first confession reopened
 
 Regenerate with `python3 o2_store_numbers.py` (~13 min, 799 s measured; it
@@ -218,26 +362,52 @@ Two further facts about them, both computed:
   by me nor checked by anything, and both are removed.
 
 **Whether any of that is wrong is NOT established, and must not be guessed.**
-How total blood volume ought to vary with body size is not settled by anything
-held here — no measurement of blood volume against weight, lean mass or body
-surface area is in `SOURCES.md`. And §3 shows the quantity is nearly inert on
-these endpoints: the obese arm draws 60 mL of arterial oxygen in total. **It is
-not a candidate for the awake-FRC conflict** — a larger obese blood store would
-lengthen an arm that already passes, and would not touch Stock at all.
+**SUPERSEDED IN PART ON 2026-10-20 — see the fifty-third entry.** As written,
+this paragraph said that *"no measurement of blood volume against weight, lean
+mass or body surface area is in `SOURCES.md`"*, and that §3 showed the quantity
+*"nearly inert on these endpoints"*. Both statements have since been withdrawn:
+
+- Feldschuh & Enson 1977 was read two days later and **is** that measurement.
+  **The search finding above still stands** — it anchors no one of these three
+  numbers, and the 1.0 : 2.0 split remains unanchored — but it does check the
+  **total**, and it puts the obese arm **1.30–1.89 L low**. So the *sign* of a
+  correction at the obese end is now sourced where this paragraph left it open.
+- *"Nearly inert"* was a guess and is withdrawn without replacement. The extra
+  blood would be 248–360 mL of oxygen; the arm holds 730 mL in blood and tissue
+  and draws 148 mL of it before SpO₂ 90%. The 60 mL quoted here is the
+  **arterial compartment alone** and understates that draw.
+
+**What has NOT changed** is the conclusion: **it is still not a candidate for
+the awake-FRC conflict** — a larger obese blood store would lengthen an arm
+that already passes, and would not touch Stock at all.
 
 ### 6. TWO DEFECTS IN THE OXYGEN BOOK-KEEPING — found while working out where this model keeps its oxygen, verified, NOT fixed
 
 1. **There is no oxygen mass-balance invariant.** The CO₂ side records its
    stores explicitly (`co2_stores`) and bands the residual tightly. The oxygen
    side records no store at all — there is no `o2_stores` key in any tracked
-   file. `test_validation.py:1219-1226` instead *infers* the blood-and-tissue
-   term as a residual and bands it −200 to +900 mL: a window 1100 mL wide
-   against a store of about 700 mL.
+   file. `test_validation.py` instead *infers* the blood-and-tissue term as a
+   residual and bands it.
+
+   **THE BAND HALF OF THIS WAS FIXED THE NEXT DAY, 2026-10-19 — corrected here
+   rather than left to read as current.** As written above it was −200 to
+   +900 mL, a window 1100 mL wide against a store of about 700 mL. A. Heard
+   asked what made that "a plausible blood store", which is what found the
+   error: **+900 exceeded the whole store by 28% and would have passed a 34%
+   leak, while −200 was TIGHTER than the real headroom of −223.6 mL and could
+   have failed a run that was behaving.** He then ruled both bounds computed
+   rather than hardcoded, and the suite now bands the residual by the store the
+   patient actually holds — `-headroom` to `store0`, which on this patient is
+   **−223.6 to +704.4 mL**. **What is NOT fixed is the first half:** there is
+   still no explicit `o2_stores` record, so the term is still inferred rather
+   than tracked, and that is why defect 2 below was invisible.
 2. **That one check never visits the regime that matters, and fails there when
    it does.** It runs a patent 100%-O₂ case that never desaturates (residual
    −13.4 mL, SpO₂ ends at 99.7%). The same expression on a desaturating run
-   peaks at **+948.5 mL, over its own 900 mL ceiling**, and first exceeds the
-   entire 704.4 mL store the patient ever had at **447.2 s** — because oxygen
+   peaks at **+948.5 mL** — over its ceiling whichever band is used: the old
+   hardcoded 900 mL, and the **704.4 mL** the computed band replaced it with —
+   and first exceeds the entire 704.4 mL store the patient ever had at
+   **447.2 s**, because oxygen
    consumption is a constant subtracted unconditionally and the tissue
    compartment is unbounded below.
 
@@ -6840,7 +7010,7 @@ file has been leaning on it. What the 36 actually contains:
 
 | check | band | value |
 |---|---|---|
-| oxygen balance closes | -200 to +900 mL | 2.4 |
+| ~~oxygen balance closes~~ **FIXED 2026-10-19** | ~~-200 to +900 mL~~ now computed from the run, −223.6 to +704.4 mL on this patient | −13.4 |
 | O'Loughlin venous PCO2 rate | 50-350 Pa/min | 213.2 |
 | ICSM rescue not sustained | 0-60 % | 33.1 |
 | Moreault, subatmospheric | -50 to -12 cmH2O | -17.7 |

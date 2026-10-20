@@ -1474,6 +1474,43 @@ class Patient:
     co2_response_cap: float = 150.0
     pvr_base: float = 1.40        # mmHg per L/min (~112 dyne.s.cm-5)
     pcwp: float = 8.0             # mmHg, left atrial pressure
+    # THE THREE STORE VOLUMES, AND THEIR PROVENANCE, WHICH IS THIN.
+    #   Until 2026-10-20 these three carried no comment and no citation, and
+    #   SOURCES.md had never listed them either, although between them they are
+    #   the model's ENTIRE non-lung oxygen store. Both omissions are now
+    #   closed; what follows is the whole of what is known.
+    #
+    #   THE TOTAL, 4.5 L, IS PARTLY SOURCED. Feldschuh & Enson, Circulation
+    #   1977;56:605-12 (read in full from upload 2026-10-20) is the only
+    #   measurement of blood volume against body size this project holds: 188
+    #   observations in 160 normal volunteers from -38.7% to +210.8% of
+    #   desirable weight. Both sexes' weight regressions put Berthoud's 123.5 kg
+    #   obese arm at 5.80-6.39 L against this 4.5 L -- 1.30-1.89 L, or 22-30%,
+    #   LOW -- while the 70 kg generic row and the 63.0 kg Berthoud control both
+    #   sit INSIDE the two sexes' span. So the SIGN of a correction at the obese
+    #   end is sourced; its SIZE is not. Numbers and the four limits that bound
+    #   them are in bloodvol_numbers.py.
+    #
+    #   DO NOT ACT ON THAT WITHOUT COSTING IT. The obese benchmark currently
+    #   PASSES, so this is a sourced correction that would push a passing row --
+    #   the same position the awake-FRC conflict was in, and it gets the same
+    #   treatment: variant_cost.py first, ruling second. AND STORE IS NOT
+    #   EFFECT: the extra blood is 248-360 mL of oxygen, the same order as the
+    #   whole 347 mL anaesthetised lung at that arm, but the arm holds 730 mL in
+    #   blood and tissue and SUPPLIES only 148 mL of it before SpO2 90% -- about
+    #   a fifth. At fixed fractional depletion a 22-30% larger store yields only
+    #   ~33-44 mL more oxygen. Depletion is NOT fixed, though: a bigger store
+    #   falls more slowly, lengthening the time and raising the draw again, so
+    #   the sign of the net benchmark change cannot be had by arithmetic.
+    #
+    #   WHAT IS STILL WHOLLY UNCITED. (1) The 1.0 : 2.0 split -- Feldschuh
+    #   measures TOTAL volume and says nothing about it. (2) What v_tis_o2 IS.
+    #   It holds a BLOOD oxygen content (o2_store_numbers.py section 1) over
+    #   1.5 L, and no published quantity has been identified that it
+    #   represents, so whether this model's blood volume is 3.0 L or 4.5 L is a
+    #   naming question with a 1.5 L answer -- as large as the correction above.
+    #   Nothing here scales with the patient: no weight, height, surface area
+    #   or lean-mass term multiplies any of the three.
     v_art: float = 1.0
     v_ven: float = 2.0
     v_tis_o2: float = 1.5

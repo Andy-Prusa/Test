@@ -76,6 +76,19 @@ def check(name, got, want, tol, unit=""):
           f"   recorded {want}{unit}")
 
 
+def check_src(name, got, want):
+    """check() for a fragment of source text rather than a number.
+
+    Added 2026-10-20 when the numeric version below could no longer work: the
+    thing being guarded stopped being a literal.
+    """
+    ok = (got == want)
+    if not ok:
+        FAILED.append(name)
+    print(f"  {'ok  ' if ok else 'FAIL'} {name:<52}{got!r:>14}"
+          f"   recorded {want!r}")
+
+
 def content(sat_pct, po2, hb):
     """Blood oxygen content, mL per dL -- the model's own form.
 
@@ -366,20 +379,33 @@ print("   through size. The lung store meanwhile falls from 1428 to 347 mL")
 print("   across the same pair, so the blood share rises from 34% to 68%")
 print("   entirely because the lung shrank.")
 print()
-print("   WHETHER THAT IS WRONG IS NOT ESTABLISHED HERE AND MUST NOT BE GUESSED.")
-print("   How total blood volume ought to vary with body size is NOT settled by")
-print("   anything held in this repository: no measurement of blood volume")
-print("   against weight, lean mass or body surface area is in SOURCES.md, and")
-print("   this project's history is that supplying such a figure from memory")
-print("   produces retractions. So the direction of any correction is left")
-print("   OPEN here rather than asserted. Section 3 also shows the quantity")
-print("   is nearly inert on these endpoints -- the obese arm draws 60 mL of")
-print("   arterial oxygen in total -- so a plausible correction would move")
-print("   little. Recorded as an unanchored constant, not as a defect, and")
-print("   needing a held measurement of blood volume against body size before")
-print("   anything is done. It is NOT a candidate for the awake-FRC conflict:")
-print("   a larger obese blood store would lengthen the obese arm, which")
-print("   already passes, and would not touch Stock at all.")
+print("   THE DIRECTION IS NOW ESTABLISHED, WHICH IT WAS NOT WHEN THIS SECTION")
+print("   WAS WRITTEN. Until 2026-10-20 this paragraph said that no measurement")
+print("   of blood volume against weight, lean mass or body surface area was")
+print("   held, and left the direction of any correction OPEN on that ground.")
+print("   THAT IS NO LONGER TRUE. Feldschuh & Enson, Circulation 1977;56:605-12,")
+print("   was read in full from upload on 2026-10-20: 188 observations in 160")
+print("   normal volunteers from -38.7% to +210.8% of desirable weight, with")
+print("   blood volume regressed on weight and on surface area by sex. The")
+print("   numbers and their limits are in bloodvol_numbers.py; the short form is")
+print("   that BOTH sexes' weight regressions put a 123.5 kg adult between 5.80")
+print("   and 6.39 L against this model's 4.5 L, so the obese arm is 1.30-1.89 L")
+print("   LOW and the sign of the correction no longer depends on a guess.")
+print()
+print("   WHAT IS STILL OPEN IS THE SIZE OF THE EFFECT, NOT ITS SIGN. That extra")
+print("   blood is 248-360 mL of oxygen at arterial content -- the same order as")
+print("   the whole 347 mL anaesthetised lung at this arm -- so the earlier")
+print("   wording that 'a plausible correction would move little' is NOT safe and")
+print("   has been withdrawn -- and NOT replaced with a different guess. Against")
+print("   the store figure, section 2 above measures this arm as holding 730 mL")
+print("   in blood and tissue and SUPPLYING only 148 mL of it before SpO2 90%,")
+print("   about a fifth, so at fixed fractional depletion a 22-30% larger store")
+print("   would yield only ~33-44 mL more oxygen. But depletion is not fixed: a")
+print("   larger store falls more slowly, lengthening the time and raising the")
+print("   draw again. Nothing here settles it; only a variant_cost.py run can.")
+print("   Still NOT a candidate for the awake-FRC conflict, for the unchanged")
+print("   reason that a larger obese blood store would lengthen the obese arm,")
+print("   which already passes, and would not touch Stock at all.")
 print()
 
 print("6. TWO DEFECTS IN THE OXYGEN BOOK-KEEPING, found while working out where")
@@ -391,9 +417,22 @@ print("   (a) THERE IS NO OXYGEN MASS-BALANCE INVARIANT. The carbon-dioxide")
 print("       side records its stores explicitly (the 'co2_stores' series) and")
 print("       bands the residual tightly. The oxygen side records no store at")
 print("       all: there is no 'o2_stores' key anywhere in the tracked files.")
-print("       test_validation.py:1219-1226 instead INFERS the blood-and-tissue")
-print("       term as a residual and bands it -200 to +900 mL -- a window")
-print("       1100 mL wide against a store that is only about 700 mL.")
+print("       test_validation.py's test_physical_consistency instead INFERS")
+print("       the blood-and-tissue term as a residual.")
+print()
+print("       THE BAND HALF OF THIS WAS FIXED ON 2026-10-19, THE DAY AFTER IT")
+print("       WAS WRITTEN. It read -200 to +900 mL, 1100 mL wide against a")
+print("       store of about 700 mL. A. Heard asked what made that a plausible")
+print("       blood store, which found the error -- +900 exceeded the whole")
+print("       store by 28% and would have passed a 34% leak, while -200 was")
+print("       TIGHTER than the real headroom and could have failed a run that")
+print("       was behaving -- and he ruled both bounds computed. The suite now")
+print("       bands the residual by what the patient actually holds, which the")
+print("       checks below pin at -223.6 to +704.4 mL on this patient.")
+print()
+print("       WHAT IS NOT FIXED IS THE FIRST HALF. The term is still INFERRED")
+print("       rather than tracked -- no explicit oxygen store series exists --")
+print("       and that is exactly why defect (b) was invisible for so long.")
 print()
 print("   (b) THE ONE CHECK NEVER VISITS THE REGIME THAT MATTERS, AND FAILS")
 print("       THERE WHEN IT DOES. It runs a patent 100%-oxygen case that never")
@@ -436,14 +475,30 @@ check("check as the suite runs it (patent, 100% O2)",
 check("  ... SpO2 it ends at, so the store never moves",
       float(_r_chk['spo2'][_i_chk]), 99.7, 0.3, " %")
 check("same expression, desaturating: peak residual", _peak, 948.5, 3.0, " mL")
-# Read the ceiling out of test_validation.py rather than restating it. The
-# previous line here compared 900.0 to 900.0 and so could not fail, which
-# would have let HANDOVER's "over its own 900 mL ceiling" rot silently.
+# THE CEILING IS NO LONGER A LITERAL, AND THIS CHECK FIRING IS HOW THAT WAS
+# CAUGHT. Until 2026-10-19 test_validation.py bounded the residual by a
+# hardcoded -200 to +900 and this line regex-read the 900 out of it, so that
+# HANDOVER's "over its own 900 mL ceiling" could not rot silently. The band was
+# then RULED computed (A. Heard, 2026-10-19) and the suite now bounds the
+# residual by `-headroom, store0` -- the store the patient actually holds. The
+# regex stopped matching, _ceiling went to nan, and the check FAILED on the
+# next full run. That is precisely what it was built to do, and it is recorded
+# rather than quietly deleted.
+#
+# WHAT REPLACES IT, and why this is stronger than the number it guarded. The
+# ceiling's VALUE is already checked just below: _bt0 is the same quantity
+# -- ca*v_art*10 + cv*(v_ven+v_tis_o2)*10 -- computed here through stores()
+# instead of inline, so the two are independent code paths onto one bound. What
+# was left unguarded is STRUCTURAL: nothing stopped either bound reverting to a
+# round number, which is the failure mode the original 900 had. So the bounds
+# are checked to still be EXPRESSIONS.
 _tv = open("test_validation.py").read()
 _m = re.search(r'check\("oxygen balance closes \(blood\+tissue term\)",\s*'
-               r'balance,\s*(-?[\d.]+),\s*(-?[\d.]+)', _tv)
-_ceiling = float(_m.group(2)) if _m else float("nan")
-check("  ... ceiling READ from test_validation.py", _ceiling, 900.0, 0.0, " mL")
+               r'balance,\s*(-?[\w.]+),\s*(-?[\w.]+)', _tv)
+check_src("  ... suite's LOWER bound, from its source",
+          _m.group(1) if _m else None, "-headroom")
+check_src("  ... suite's UPPER bound, from its source",
+          _m.group(2) if _m else None, "store0")
 check("blood+tissue store the patient ever had", _bt0, 704.4, 3.0, " mL")
 check("residual at the SpO2 90% endpoint", _balance(_r_des, _i90, _pc),
       180.7, 3.0, " mL")

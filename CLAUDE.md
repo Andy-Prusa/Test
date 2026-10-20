@@ -98,8 +98,8 @@ clone. `git commit --no-verify` exists but say in the message which benchmark
 is broken and why.
 
 `protocol/predictions.py`, `handover_numbers.py`, `buccal_numbers.py`,
-`aa_numbers.py`, `frc_level_numbers.py`, `hewlett_numbers.py` and
-`o2_store_numbers.py` are deliberately NOT in the hook. They check claims about the world, not invariants of the code, and are
+`aa_numbers.py`, `frc_level_numbers.py`, `hewlett_numbers.py`,
+`o2_store_numbers.py` and `bloodvol_numbers.py` are deliberately NOT in the hook. They check claims about the world, not invariants of the code, and are
 expected to move when the model is corrected — the point is that they must not
 move silently.
 
@@ -118,6 +118,7 @@ move silently.
 | `frc_level_numbers.py` | regenerates WHERE THE ANAESTHETISED LUNG VOLUME'S LEVEL COMES FROM — the awake-anchor bias, the `48ffe03` cascade decomposed, and how much the unruled Pelosi/Damia offset would control if the level were de-coupled. Seconds, nothing simulated |
 | `o2_store_numbers.py` | regenerates WHERE THE OXYGEN THAT SETS A DESATURATION TIME COMES FROM — the four compartments the model holds, the held-versus-supplied decomposition at the four benchmark rows, and the two unfixed defects in the oxygen book-keeping. ~13 min (799 s measured 2026-10-18) because it simulates; run it in the background |
 | `hewlett_numbers.py` | regenerates everything quoted from Hewlett 1974 — the only PAIRED awake/anaesthetised lung-volume measurement held, the transcription's own validation, and what predicts the anaesthetised volume in his data. Seconds, nothing simulated |
+| `bloodvol_numbers.py` | regenerates everything quoted from Feldschuh & Enson 1977 — the only measurement of BLOOD VOLUME against body size held, where the taught 70 mL/kg comes from and what it is worth, and by how much the model under-supplies Berthoud's obese arm. ALSO AUDITS THE FIVE OTHER FILES that restate its headline figures, and fails naming them if one drifts. Seconds, nothing simulated |
 | `protocol/` | the three-way study, its predictions and its evidence map |
 | `sources_registry.py` | WHICH PAPERS HAVE BEEN READ. The only place that fact is written |
 | `check_sources.py` | regenerates README's read-status table from it; `--check` in the hook |
