@@ -108,6 +108,21 @@ ICSM jet, PaO2 at cricothyroidotomy
 #       this row cited for its whole life, which appears nowhere in the paper.
 #       The model gives too MUCH apnoea time from tilt.
 #
+# 48ffe03'S FULL MEASURED COST, ADDED 2026-10-13. NO ROW CHANGES HERE -- this
+# is commentary, and rule 1 is untouched. What the ruling above records is the
+# rows 48ffe03 pushed OUT of band. What it does not record, and what a reader
+# would otherwise never see, is that the same commit moved rows that still
+# PASS, by just as much. Bisected and measured 2026-10-13:
+#
+#   Toner sham, time to SpO2<95%     436.9 -> 507.8 s   band 380-525, PASSES
+#   anaesthetised FRC, Toner patient  1988 -> 2328 mL
+#
+# Decomposed at Toner's geometry, frc_ref 2860 -> 2500 accounts for ALL 340.7
+# mL of that and k_frc_bmi for EXACTLY ZERO, because Pelosi's shape now carries
+# the BMI dependence. So one AWAKE parameter moved every anaesthetised row in
+# the suite, in band and out of it alike, and only the out-of-band ones left a
+# trace. Regenerate with frc_level_numbers.py.
+#
 #   Valenza tilt_factor at 30 deg, BMI 42   1.466x            band 1.70-2.00
 #       Valenza 2007 measured 0.46 -> 0.85 L in anaesthetised paralysed
 #       patients. The model takes too LITTLE lung volume from tilt. Note the
@@ -127,7 +142,6 @@ ICSM jet, PaO2 at cricothyroidotomy
 # reason recorded, exactly as the two 2026-09-26 removals above were.
 # ======================================================================
 
-Heard control, time to SpO2<95%
 
 # REMOVED 2026-10-02, BECAUSE THEY NO LONGER BLOCK. Rule 3 above requires it,
 # and both go out in a commit of their own so that it stays separable from the
@@ -153,3 +167,56 @@ Heard control, time to SpO2<95%
 # tilt_gain_lean and tilt_gain_bmi with NO INDEPENDENT CHECK: Valenza was the
 # only anaesthetised FRC-against-tilt measurement held, and the two gains are
 # now solved on two apnoea-time trials, exactly determined.
+
+# NOTED 2026-10-07, RULED. `ICSM rescue, post-rescue PaO2` DOES NOT ENTER THIS
+# FILE. It was a new failure this morning and the honest resolution was not a
+# ruling under rule 1 but RETIREMENT: the row graded a can't-intubate-
+# can't-oxygenate rescue, and protocol/predictions.py runs one scenario -- "a
+# preoxygenated, paralysed adult whose tracheal tube is occluded at
+# end-expiration" -- with no rescue limb anywhere in the three-way study. Out
+# for SCOPE, as Altermatt and Valenza went, not to clear a red suite. The
+# reasoning sits where the test was, in test_validation.py.
+#
+# WHAT IT WAS CERTIFYING, recorded because it is the useful part: the row had
+# been PASSING at 50.54 kPa only because the model reopened collapsed lung at
+# ZERO AIRWAY PRESSURE -- 0.1593 -> 0.0000 across the rescue. Turning
+# recruitment off (recruit_frac = 0.0, ruled the same day on Magnusson &
+# Spahn 2003 and Tweed 1993) dropped it to 23.52 kPa. That is not the reason
+# for retirement, but it is how the free recruitment was found.
+#
+# `ICSM jet, PaO2 at cricothyroidotomy` STAYS, AND THE SCOPE ARGUMENT DOES
+# NOT REACH IT. Checked 2026-10-07 when A. Heard asked what the jet row is.
+# Despite the name it simulates NO jet ventilation and no rescue: it runs a
+# complete obstruction to SaO2 40% and samples the gas state AT THAT INSTANT,
+# the moment of cricothyroidotomy, before anything is done. That is this
+# project's scenario exactly -- obstruction, apnoea, gas state -- whereas the
+# retired rescue row simulated what happens AFTER the airway is restored. An
+# earlier draft of this note said the same argument reached both rows. It
+# does not.
+
+# REMOVED 2026-10-15, BECAUSE IT NOW PASSES, AND CI MADE ME DO IT.
+# 'Heard control, time to SpO2<95%' is 287.1 s against its band of 244-314.
+# Rule 3 of this file -- a passing row must come out -- turned CI red on
+# b7482d6 the moment the row started passing, which is the file working
+# exactly as designed and is why the ruling below did not go unnoticed.
+#
+# WHAT FIXED IT: the offset ruling of 2026-10-15 (A. Heard), pelosi_offset_l
+# 0.6882 -> 0.4600, retiring the Pelosi/Damia average for Pelosi's own
+# published offset. That lowers the anaesthetised FRC curve, most at high
+# BMI where the exponential has decayed, so Heard's obese control reaches
+# desaturation sooner: 318.5 -> 287.1 s. The suite goes 45/2 to 46/1.
+#
+# AND IT WAS NOT ADOPTED FOR THAT. The benchmark table showing 46/1 was
+# measured on 2026-10-13 and deliberately NOT acted on, because adopting a
+# parameter BECAUSE it passes a benchmark is the thing this project has
+# refused five times. It was held until an argument independent of the suite
+# existed -- Valenza 2007 and Reinius 2009, which rank the three candidate
+# offsets identically while disagreeing with each other, plus the helium/CT
+# method argument. See apnoea_core.py pelosi_offset_l and HANDOVER entry 50.
+#
+# THE SECOND TIME THIS ROW HAS LEFT. It went out 2026-09-23 on the low-V/Q
+# mechanism, came back 2026-10-01 after 48ffe03 moved the awake lung volume,
+# and leaves again now. That history is why it is left as a comment rather
+# than deleted: a row that oscillates is telling you something about the
+# parameter it depends on, and in this case it is frc_ref -- still unresolved,
+# see HANDOVER entry 50 section 3.

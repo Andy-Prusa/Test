@@ -60,6 +60,48 @@ VARIANTS = {
     # 1-5 min slope 4.60 -> 1.94, ICSM jet PaCO2 71.70 -> 53.81 -- came from
     # the Pelosi FRC adoption or from something else again.
     'pre_pelosi': {'frc_legacy_exp': True, 'cc_legacy': True},
+    # The anaesthetised level taken from the measured curve instead of from
+    # the awake lung minus an induction drop. Raised 2026-10-13; the whole
+    # +3.67 % the model sits above its own target is the awake anchor, and it
+    # is the same 3.67 % at every BMI. See the switch's block comment in
+    # apnoea_core.py. UNRULED -- this run is what the ruling needs.
+    'frc_abs': {'frc_anaes_absolute': True},
+    # THE OFFSET RULING, OPEN SINCE 2026-09-26 AND COSTABLE SINCE 2026-10-13.
+    # The anaesthetised FRC curve's asymptote is the mean of two primary
+    # sources that disagree twofold. These four runs are what the ruling needs:
+    # the two offsets, each in the SHIPPED form and in the de-coupled one.
+    # Shipped is NOT insensitive to this -- 22% at Heard's BMI, 45% at
+    # Berthoud's obese BMI 49. See the switch's block comment in apnoea_core.
+    'pel_c046': {'pelosi_offset_l': 0.4600},
+    'pel_c092': {'pelosi_offset_l': 0.9163},
+    'abs_c046': {'frc_anaes_absolute': True, 'pelosi_offset_l': 0.4600},
+    'abs_c092': {'frc_anaes_absolute': True, 'pelosi_offset_l': 0.9163},
+    # THE AWAKE-FRC CONFLICT, opened for costing 2026-10-17 at the owner's word.
+    # frc_ref is the model's AWAKE SUPINE FRC at BMI 22 and reference height.
+    # 48ffe03 set it to 2860 mL by solving Watson & Pride's two supine awake
+    # cohorts. Hewlett measures the SAME QUANTITY and gets far less, in BOTH of
+    # his cohorts and BOTH sexes. Solving frc_ref against his measured means:
+    #
+    #     part II,  26 MALES, spontaneous      2344 mL
+    #     part III, 13, 10 female, paralysed   2284 mL
+    #     the two pooled, n = 39               2325 mL
+    #
+    # The two cohorts agree to 60 mL across a sex split, which is itself more
+    # evidence the +503/+510 mL bias is not a sex artefact.
+    #
+    # THIS IS CALIBRATION TO A MEASUREMENT OF THE QUANTITY frc_ref IS, not
+    # tuning to a benchmark: no benchmark was consulted in deriving any of the
+    # three numbers above. Costing them is still required before any ruling,
+    # because frc_ref feeds EVERY lung volume in the model.
+    'frc_hewlett': {'frc_ref': 2325.0},   # both Hewlett cohorts pooled
+    'frc_hew2':    {'frc_ref': 2344.0},   # part II alone, 26 males
+    'frc_2500':    {'frc_ref': 2500.0},   # the pre-48ffe03 historical value
+
+    # Bound the tissue compartment below so it cannot supply oxygen it does
+    # not have. The defect is real and measured (HANDOVER entry 52 section 6);
+    # the question this costs is whether fixing it disturbs anything ABOVE
+    # SpO2 38.7%, which is where every graded endpoint sits.
+    'tis_floor': {'tis_o2_floor': True},
 }
 
 

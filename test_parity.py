@@ -173,6 +173,8 @@ def js_params(pt, feo2):
         "shuntAnat": pt.shunt_anat,
         "shuntCcK": pt.shunt_cc_k,
         "shuntCeiling": pt.shunt_ceiling,
+        "shuntExtra": pt.shunt_extra,
+        "aaExtraKpa": pt.aa_extra_kpa,
         # HPV
         "hpvEnabled": pt.hpv_enabled, "hpvPvrMax": pt.hpv_pvr_max,
         # metabolic and circulatory

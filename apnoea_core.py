@@ -156,8 +156,15 @@ class Patient:
     #     noted, as they affect lung volumes"). frc_ref 2500 mL is SUPINE. So
     #     the model takes Quanjer's SHAPE through height_factor() and sets its
     #     own LEVEL. At 1.75 m and age 45 Quanjer predicts 3410 mL seated
-    #     against our 2500 mL supine, a ratio of 0.73, which is the right
-    #     sort of size for the supine fall but is not itself sourced.
+    #     against our SUPINE frc_ref, which is the right sort of size for the
+    #     supine fall but is not itself sourced.
+    #     STALE NUMBER CORRECTED 2026-10-14: this comment read "against our
+    #     2500 mL supine, a ratio of 0.73" and was never updated when 48ffe03
+    #     moved frc_ref to 2860 mL on 2026-09-26. The implied ratio is now
+    #     2860/3410 = 0.839, not 0.73. The ratio is a CONSEQUENCE of frc_ref,
+    #     not a source for it, so nothing is re-anchored by the correction --
+    #     but 0.73 was being read as corroboration of a level it no longer
+    #     describes.
     #   * the age term (0.009*age) is DELIBERATELY NOT IMPLEMENTED --
     #     RULED 2026-09-25, and it is a decision now, not an omission.
     #     height_factor() is height-only, so FRC is AGE-FLAT.
@@ -704,15 +711,72 @@ class Patient:
     inflow_mech_frac: float = 0.18
     cv_frac: float = 0.55        # a unit closes below this fraction of its
                                  # own starting volume
-    # Reinflation partially recruits. A lung refilling after obstruction fills
-    # toward its resting distribution, not its collapsed one, so the excess
-    # inflow above the metabolic deficit is shared by ORIGINAL volume - that
-    # is what lets a collapsed unit see gas again. Recruitment is incomplete
-    # because passive reinflation cannot generate the transpulmonary pressure
-    # a deliberate recruitment manoeuvre does; recruit_frac is how much of the
-    # collapse is recoverable without positive pressure.
-    recruit_frac: float = 0.65
-    tau_recruit: float = 25.0    # s
+    # RECRUITMENT IS OFF. recruit_frac is 0.0 and nothing in this model
+    # reopens a collapsed unit. Ruled by A. Heard 2026-10-07, in two steps.
+    #
+    # THE OBJECTION: "I wonder why the reinflation, without PEEP, is so quick.
+    # Surely the studies showed no reinflation." Until that day this model
+    # recovered 65 per cent of the collapse with a 25 s time constant, purely
+    # on a unit refilling through a partially obstructed airway, with no
+    # pressure term anywhere in the limb.
+    #
+    # THE HELD LITERATURE IS EXPLICIT THAT THIS TAKES PRESSURE.
+    #   Magnusson & Spahn 2003, BJA 91:61-72, read 2026-10-07: "an airway
+    #   pressure of 20 cm H2O did NOT affect atelectasis; an airway pressure
+    #   of 30 cm H2O REDUCED atelectasis; only with a pressure of 40 cm H2O
+    #   maintained for 15 s is atelectatic lung tissue FULLY re-expanded."
+    #   They add that reopened lung is MORE prone to collapse again, because
+    #   collapse impedes surfactant function.
+    #
+    #   Tweed WA et al, Anaesth Intens Care 1993;21:806-810, read in full
+    #   2026-10-07 -- A MEASUREMENT IN PATIENTS, and the only one this project
+    #   holds. 14 at-risk adults, FiO2 0.5, supine, lungs "manually
+    #   hyperinflated three to four times to a peak pressure of 30 cm H2O,
+    #   which was held for 10 to 15 seconds". Alveolar-arterial oxygen
+    #   difference in mmHg, by order of study: 128 (41) awake, 123 (48) at
+    #   30 min, 130 (52) at 60 min, 103 (48) AFTER HYPERINFLATION. Doubling
+    #   the tidal volume did nothing at all -- 126 (44) against 127 (56).
+    #   "Only manual HI effectively improved gas exchange."
+    #
+    #   Joyce & Williams 1999's Discussion agrees from the other side: the FRC
+    #   fall and the area of atelectasis are "independent of whether ...
+    #   intermittent positive pressure ventilation is used, or spontaneous
+    #   ventilation is maintained". That is a secondary citation of
+    #   Hedenstierna, Br J Anaesth 1990;64:507-514, a review WE DO NOT HOLD,
+    #   and is weighted accordingly.
+    #
+    # WHY ZERO AND NOT A PRESSURE THRESHOLD. A threshold was tried first, as
+    # recruit_p_cmh2o = 30.0, and REMOVED THE SAME DAY when A. Heard asked
+    # where 30 cmH2O is ever applied. The answer is nowhere: the inflow term
+    # below passes gas only while the lung is BELOW atmospheric
+    # ("driving = max(0.0, (PB - p_abs) * 1.35951)"), so alveolar pressure is
+    # never positive -- under obstruction the suite checks it between -50 and
+    # -12 cmH2O. The comparison could not be true in any scenario, so the
+    # threshold was inert and the limb it guarded was dead code dressed as
+    # physiology. recruit_frac = 0.0 states the same behaviour honestly.
+    #
+    # WHAT THE NUMBERS ABOVE DO AND DO NOT ANCHOR. They are why recruitment is
+    # OFF -- reopening lung costs about 30 cmH2O and this model never delivers
+    # it, having no positive-pressure ventilation at all. They do NOT set any
+    # parameter here. Tweed's improvement was PARTIAL (130 -> 103, 21 per cent
+    # of the gradient, not abolition) and that 21 per cent is deliberately NOT
+    # converted into a recovery fraction: a fraction of an A-a gradient and a
+    # fraction of collapsed lung are different quantities, and turning one
+    # into the other is the fitting this project refuses. His caveat is kept
+    # too -- his Table 2 footnote reads "There were no significant differences
+    # among the four experimental states" under ANOVA, and the P = 0.01
+    # appears only in Table 3, by order, on a Wilcoxon signed-rank test for
+    # paired data.
+    #
+    # MEASURED COST of turning it off: 1 s to SpO2 95% at BMI 50, nothing at
+    # BMI 25, because the collapse magnitude in these scenarios is 1.5-2.7 per
+    # cent. A correctness change, not an outcome change.
+    #
+    # IF IPPV OR A VITAL-CAPACITY MANOEUVRE IS EVER MODELLED, this is where
+    # recruitment goes back in, and the three sources above are what it must
+    # be built against -- including that 30 cmH2O gives only partial recovery.
+    recruit_frac: float = 0.0
+    tau_recruit: float = 25.0    # s; inert while recruit_frac is 0.0
     # COMPLIANCE -- how much the lungs and chest wall expand per unit of
     # pressure. Question answered against the paper 2026-09-21; the data
     # exists and we hold it.
@@ -953,6 +1017,75 @@ class Patient:
     # twenty-fourth of its closing capacity -- which no timeline reaches.
     shunt_ceiling: float = 0.40
 
+    # EXTRA SHUNT FROM LUNG PATHOLOGY, added 2026-10-08 by ruling of A. Heard
+    # ("Add shunts"), so the page can show patients this study never recruited:
+    # consolidation, collapse, a right-to-left cardiac shunt, severe COPD.
+    #
+    # WHAT IT IS. A venous admixture fraction added on top of whatever this
+    # patient's own body habitus already produces. Everything above this line
+    # DERIVES shunt from lung volume against closing capacity, so a fat patient
+    # already shunts more than a thin one; this term is the DISEASE, which the
+    # habitus route cannot express because it only knows about airway closure.
+    #
+    # THE ARITHMETIC IS THE TEXTBOOK SHUNT EQUATION AND NOTHING MORE. The model
+    # already mixes CONTENTS, not tensions -- see plateau_sao2's docstring:
+    #     CaO2 = (1 - f) Cc'O2 + f CvO2
+    # so setting f to 0.20 mixes one part mixed-venous blood with four parts
+    # end-capillary blood, and the arterial oxygen tension falls out of the
+    # dissociation curve. THE A-a GRADIENT IS NOT SET; IT IS A CONSEQUENCE,
+    # which is why this is a shunt dial and not an "A-a gradient" dial. A fixed
+    # A-a gradient would be physiologically incoherent here: for one shunt the
+    # gradient is enormous at an alveolar PO2 of 600 mmHg and small once it has
+    # fallen to 60, so a number the user typed would be true for one instant of
+    # a run and wrong for the rest of it.
+    #
+    # ADDED AFTER shunt_ceiling, DELIBERATELY. That ceiling is a numerical
+    # guard on the CLOSURE route, binding at a lung a twenty-fourth of its
+    # closing capacity. Disease is not bound by it -- a lobar consolidation
+    # shunts more than 40% -- so the ceiling applies to the derived part only
+    # and the total is clamped at 0.95 where it is used.
+    #
+    # DEFAULT 0.0 MAKES THIS BIT-IDENTICAL TO WHAT SHIPPED. No benchmark can
+    # move, no row in test_validation.py can change, and handover_numbers.py's
+    # several dozen shunt_base_eff() checks are untouched. That is the point of
+    # an additive term with a zero default rather than an override.
+    #
+    # UNSOURCED, AND SAID SO. This is a USER INPUT, not a fitted constant --
+    # the user asserts the pathology and the model shows its consequence -- so
+    # it needs no source in the way a parameter would. But nothing calibrates
+    # the mapping from a named disease to a number, so the page must not claim
+    # that 20% IS pneumonia. It is 20% shunt, and what that does is the lesson.
+    shunt_extra: float = 0.0
+
+    # EXTRA A-a GRADIENT, kPa. Added 2026-10-08 by ruling of A. Heard, who
+    # asked for the control in these terms twice. It is the SAME PHYSICS as
+    # shunt_extra above, driven from the other end.
+    #
+    # WHY A SOLVER AND NOT A STORED GRADIENT. The alveolar-to-arterial oxygen
+    # difference is an OUTPUT: it falls out of shunt, cardiac output, Hb and
+    # oxygen consumption. It cannot be stored and handed back, because for one
+    # fixed shunt the gradient is enormous at an alveolar PO2 of 570 mmHg and
+    # small once that has fallen to 60 -- the dissociation curve makes it so.
+    # So this field does not SET a gradient; it asks "what shunt would produce
+    # this much extra gradient, in this patient, at the reference condition?",
+    # solves for it, and then lets the gradient evolve as physics dictates.
+    #
+    # THE REFERENCE CONDITION IS pao2_alv = 570 mmHg, which is plateau_sao2()'s
+    # existing default and is roughly a preoxygenated lung at the start of
+    # apnoea. THE NUMBER ON THE DIAL IS THEREFORE TRUE AT THAT INSTANT AND NOT
+    # THROUGHOUT A RUN. The page says so; nothing here should pretend
+    # otherwise.
+    #
+    # IT COMPOSES WITH shunt_extra RATHER THAN FIGHTING IT. The gradient the
+    # patient already has -- from habitus and from shunt_extra -- is computed
+    # first, this is added on top, and the total is inverted back to a shunt.
+    # So both dials can be used together and the arithmetic is well defined.
+    #
+    # DEFAULT 0.0 IS BIT-IDENTICAL to what shipped: the solver is not even
+    # called at zero, so no benchmark can move and nothing pays for the
+    # inversion.
+    aa_extra_kpa: float = 0.0
+
     # --- closing capacity (PLACEHOLDER VALUES, BUT THE SOURCE IS KNOWN) ----
     #
     # THE SOURCE WAS READ AT SOURCE 2026-09-23. Buist AS, Ross BB, Am Rev
@@ -976,6 +1109,17 @@ class Patient:
     #     comes from this term.
     #
     # THE CROSSOVER TEST, which has no free parameter in it: both sources put
+    # HEWLETT 1974 PART II IS NOT A THIRD ANCHOR FOR THIS, and was checked
+    # 2026-10-14 in case it were. Its discussion says closing VOLUME
+    # "approaches the FRC about the age of 40". Two reasons that is not
+    # corroboration: (1) CLOSING VOLUME IS NOT CLOSING CAPACITY -- closing
+    # capacity is closing volume PLUS residual volume, so a crossover age
+    # quoted for one does not transfer to the other; the ~44 below is
+    # explicitly CC, from Milic-Emili's "in the supine position, CC exceeds
+    # FRC much earlier (~44 years)". (2) Hewlett attributes his figure to
+    # Leblanc, Ruff and Milic-Emili 1970, which is the SAME PRIMARY the ~44
+    # traces to. It is one measurement cited twice, not two measurements.
+    #
     # CC = FRC at ~44 years supine. Ours does it at 55.0. Restoring the age
     # term that height_factor() drops makes it 59.9, i.e. WORSE, so the error
     # is not all in this block. Regenerated by handover_numbers.py.
@@ -1330,10 +1474,106 @@ class Patient:
     co2_response_cap: float = 150.0
     pvr_base: float = 1.40        # mmHg per L/min (~112 dyne.s.cm-5)
     pcwp: float = 8.0             # mmHg, left atrial pressure
+    # THE THREE STORE VOLUMES, AND THEIR PROVENANCE, WHICH IS THIN.
+    #   Until 2026-10-20 these three carried no comment and no citation, and
+    #   SOURCES.md had never listed them either, although between them they are
+    #   the model's ENTIRE non-lung oxygen store. Both omissions are now
+    #   closed; what follows is the whole of what is known.
+    #
+    #   THE TOTAL, 4.5 L, IS PARTLY SOURCED. Feldschuh & Enson, Circulation
+    #   1977;56:605-12 (read in full from upload 2026-10-20) is the only
+    #   measurement of blood volume against body size this project holds: 188
+    #   observations in 160 normal volunteers from -38.7% to +210.8% of
+    #   desirable weight. Both sexes' weight regressions put Berthoud's 123.5 kg
+    #   obese arm at 5.80-6.39 L against this 4.5 L -- 1.30-1.89 L, or 22-30%,
+    #   LOW -- while the 70 kg generic row and the 63.0 kg Berthoud control both
+    #   sit INSIDE the two sexes' span. So the SIGN of a correction at the obese
+    #   end is sourced; its SIZE is not. Numbers and the four limits that bound
+    #   them are in bloodvol_numbers.py.
+    #
+    #   DO NOT ACT ON THAT WITHOUT COSTING IT. The obese benchmark currently
+    #   PASSES, so this is a sourced correction that would push a passing row --
+    #   the same position the awake-FRC conflict was in, and it gets the same
+    #   treatment: variant_cost.py first, ruling second. AND STORE IS NOT
+    #   EFFECT: the extra blood is 248-360 mL of oxygen, the same order as the
+    #   whole 347 mL anaesthetised lung at that arm, but the arm holds 730 mL in
+    #   blood and tissue and SUPPLIES only 148 mL of it before SpO2 90% -- about
+    #   a fifth. At fixed fractional depletion a 22-30% larger store yields only
+    #   ~33-44 mL more oxygen. Depletion is NOT fixed, though: a bigger store
+    #   falls more slowly, lengthening the time and raising the draw again, so
+    #   the sign of the net benchmark change cannot be had by arithmetic.
+    #
+    #   WHAT IS STILL WHOLLY UNCITED. (1) The 1.0 : 2.0 split -- Feldschuh
+    #   measures TOTAL volume and says nothing about it. (2) What v_tis_o2 IS.
+    #   It holds a BLOOD oxygen content (o2_store_numbers.py section 1) over
+    #   1.5 L, and no published quantity has been identified that it
+    #   represents, so whether this model's blood volume is 3.0 L or 4.5 L is a
+    #   naming question with a 1.5 L answer -- as large as the correction above.
+    #   Nothing here scales with the patient: no weight, height, surface area
+    #   or lean-mass term multiplies any of the three.
     v_art: float = 1.0
     v_ven: float = 2.0
     v_tis_o2: float = 1.5
     pools: int = 3
+
+    # tis_o2_floor -- EXPERIMENTAL, DEFAULT OFF. Bound the tissue compartment
+    #   below so it cannot supply oxygen it does not have.
+    #
+    #   THE DEFECT IT ADDRESSES, measured 2026-10-18 and recorded in HANDOVER's
+    #   fifty-second entry section 6. Oxygen consumption is bound once outside
+    #   the loop and subtracted from this compartment unconditionally, every
+    #   step, with nothing checking whether any oxygen is left. So past about
+    #   SpO2 38.7% the content goes NEGATIVE and the model keeps drawing on it:
+    #   on a desaturating run the oxygen-balance residual first exceeds the
+    #   entire 704.4 mL store the patient ever had at 447.2 s.
+    #
+    #   WHY IT HAS NOT SIMPLY BEEN TURNED ON. Every graded endpoint in the
+    #   suite sits ABOVE that saturation, so nothing is mis-graded today -- the
+    #   phantom oxygen appears only in a region the model already disclaims
+    #   (see plateau_sao2's CAVEAT, which states that oxygen consumption and
+    #   cardiac output are both assumed constant and that both assumptions fail
+    #   below SpO2 60-70%). Turning it on is therefore a change in a region
+    #   where the model is not valid either way, and the question is whether it
+    #   costs anything where the model IS valid. Cost it with
+    #   `python3 variant_cost.py tis_floor`, then `--diff`.
+    #
+    #   THE MINIMAL FORM, DELIBERATELY. This clamps the CONTENT at zero. It
+    #   does NOT make oxygen consumption supply-limited, which is the larger
+    #   and more interesting change -- a real tissue running out of oxygen
+    #   reduces its VO2 rather than borrowing. That would alter the metabolic
+    #   model everywhere, so it is a separate question and is not this switch.
+    #
+    #   COSTED AND RULED AGAINST 2026-10-19, and the switch is kept the way
+    #   frc_anaes_absolute was kept after its own ruling, because the negative
+    #   result is worth more than the code. `variant_cost.py tis_floor` against
+    #   the shipped baseline: ALL 45 COMPARABLE ROWS NUMERICALLY IDENTICAL, not
+    #   one value moved in any decimal. That is the expected result -- every
+    #   graded endpoint sits above SpO2 38.7% -- and on its own it would argue
+    #   for turning the switch on, since the defect is real and the fix looks
+    #   free.
+    #
+    #   IT IS NOT TURNED ON BECAUSE IT DOES NOT FIX THE DEFECT. Measured on a
+    #   desaturating run, 107 kg patent on room air: the oxygen-balance
+    #   residual at 504 s is +948.7 mL WITH the floor against +948.5 mL
+    #   without, on a store of 704.4 mL. The model still claims to have
+    #   supplied 244 mL it never had. The clamp moves 0.2 mL.
+    #
+    #   WHY IT CANNOT WORK. The clamp bounds the STATE and leaves the FLUX
+    #   alone: vo2 is still subtracted at full rate from a compartment pinned
+    #   at zero, so the oxygen is now DESTROYED AT THE CLAMP instead of being
+    #   recorded as negative content. That trades an unphysical state for an
+    #   unphysical flux, and the residual -- which is what actually measures
+    #   the impossibility -- does not care which.
+    #
+    #   AND IT WOULD MAKE THE DEFECT HARDER TO SEE. Negative tissue content is
+    #   a visible, diagnosable symptom. Clamping it hides the symptom while the
+    #   cause continues. Turning it on would also force a model.js port and an
+    #   artifact rebuild to buy that.
+    #
+    #   THE REAL FIX IS SUPPLY-LIMITED VO2 -- consumption falling when there is
+    #   no oxygen left to consume. That is what would close the residual, and
+    #   it is not this switch.
+    tis_o2_floor = False
 
     # --- body CO2 stores ---------------------------------------------------
     # Tuned to the MODERN measured arterial rate of rise, ~2.1 mmHg/min
@@ -1549,8 +1789,151 @@ class Patient:
     frc_legacy_exp = False
     k_rv_bmi_jones = False
 
-    @staticmethod
-    def _pelosi_frc(bmi):
+    # frc_anaes_absolute -- TAKE THE ANAESTHETISED LEVEL FROM THE CURVE
+    #   INSTEAD OF FROM THE AWAKE LUNG. Raised by the owner 2026-10-13 as
+    #   "awake has no use in calculating anaesthetised", and it is an argument
+    #   about where a number comes from, not a fit.
+    #
+    #   THE SHIPPED PATH sets the level at `frc_ref * height_factor *
+    #   tilt_factor` MINUS the induction drop, then carries Pelosi's shape as
+    #   a RATIO to its own value at BMI 22. frc_ref is an AWAKE reference FRC
+    #   and frc_drop is a CHANGE from awake, so the anaesthetised starting
+    #   volume is awake-derived end to end even though the quantity has been
+    #   measured directly.
+    #
+    #   WHAT THAT COSTS, measured 2026-10-13 at Pelosi's own geometry
+    #   (1.64 m, age 52) against the Pelosi/Damia mean the model has targeted
+    #   since bffbbf4: the model sits +3.67 % high at BMI 22, 26, 30, 40, 50
+    #   AND 66 -- the SAME number at every BMI, because the shape is exact by
+    #   construction and the only thing the comparison can see is the level.
+    #   The "3.67 % mean absolute error" recorded on 2026-10-12 is therefore
+    #   not scatter around the curve, it is a pure systematic bias, and its
+    #   whole size is the awake anchor.
+    #
+    #   WITH THIS ON the level is the curve's own absolute value, scaled for
+    #   body size off Pelosi's cohort height rather than off an awake volume:
+    #       frc_anaes = _pelosi_frc(bmi) * height_factor / _PELOSI_HF * tilt
+    #   At Pelosi's geometry that is 0.00 % by construction. NO NEW PARAMETER:
+    #   _PELOSI_HF is the existing height term evaluated at the cohort's own
+    #   1.64 m, and both published offsets are already in _pelosi_frc.
+    #
+    #   THE AWAKE GUARD STAYS, and this is the one place awake belongs here:
+    #   anaesthesia cannot ADD gas, so `awake - drop` remains an UPPER BOUND
+    #   via the same min(cap, ...) the shipped path uses. A bound is not a
+    #   level. frc_awake() itself is untouched, and so are unwashed_fraction()
+    #   -- preoxygenation IS awake -- and the expiratory reserve.
+    #
+    #   WHAT IT WOULD HAVE PREVENTED, and the honest size of it. Commit
+    #   48ffe03 (2026-09-26) re-solved frc_awake on Watson & Pride's two
+    #   SUPINE AWAKE cohorts and raised `frc_ref` 2500 -> 2860 mL. The line
+    #   it changed is commented "mL supine awake at BMI 22". At Toner's
+    #   geometry that moved the ANAESTHETISED starting volume 1987.6 ->
+    #   2328.3 mL and added 71 s to a desaturation benchmark. Decomposed
+    #   2026-10-13: `frc_ref` alone accounts for ALL 340.7 mL of it, and
+    #   `k_frc_bmi` -- the other parameter that commit changed -- moves
+    #   frc_anaes by EXACTLY ZERO, because Pelosi's shape carries the BMI
+    #   dependence and the awake exponential no longer reaches this quantity.
+    #
+    #   WITH THIS SWITCH ON the same commit would have moved it 2077.1 ->
+    #   2211.5 mL, +134 mL instead of +341. NOT ZERO, and the reason matters:
+    #   Toner's patient is LEAN, so the curve's own level sits ABOVE
+    #   `awake - drop` and the guard binds at the lower `frc_ref`. The
+    #   coupling that survives is therefore only through the PHYSICAL BOUND,
+    #   and only for lean patients. That is a much smaller and much more
+    #   defensible channel than inheriting the level outright, but it is not
+    #   independence and must not be described as independence.
+    #
+    #   RULED AGAINST 2026-10-14 BY A. HEARD. The switch stays in the file so
+    #   the evidence is reproducible, but it is NOT the shipped path and is
+    #   not to be adopted. THREE INDEPENDENT LINES CLOSED IT:
+    #
+    #   1. SIX FULL SUITE RUNS. De-coupling is worse at EVERY offset -- 45/2
+    #      at the ruled mean, 43/4 at both of Pelosi's and Damia's -- against
+    #      the shipped form's 45/2 and 46/1. It is never better.
+    #   2. HEWLETT 1974 PART III, 13 patients measured awake AND anaesthetised:
+    #      the patient's own awake lung predicts the anaesthetised one at
+    #      r = +0.894 (95% CI +0.676 to +0.968, p = 0.0001) where BMI gives
+    #      -0.434 with an interval crossing zero.
+    #   3. HEWLETT 1974 PART II REPLICATES IT IN AN INDEPENDENT COHORT of 26
+    #      MALES breathing spontaneously: awake FRC r = +0.855 (r2 0.73)
+    #      against BMI's -0.439 (r2 0.19). Different patients, different sex
+    #      mix, different ventilation, same answer.
+    #
+    #   So the awake lung volume carries information about the anaesthetised
+    #   one that BMI does not, and removing it costs benchmarks. Regenerate
+    #   with frc_level_numbers.py and hewlett_numbers.py.
+    frc_anaes_absolute = False
+
+    # pelosi_offset_l -- THE OFFSET OF THE ANAESTHETISED FRC CURVE, IN LITRES,
+    #   AND THE ONE NUMBER IN IT THAT IS NOT SETTLED. Ruled 2026-09-26
+    #   (bffbbf4) to the MEAN of two primary sources that measured the same
+    #   quantity the same way and disagreed about twofold:
+    #
+    #       Pelosi 1998   C = 0.4600 L     Damia 1988   C = 0.9163 L
+    #       ruled mean    C = (0.4600 + 0.9163) / 2 = 0.6882 L
+    #
+    #   PROMOTED FROM A LITERAL TO A SWITCH 2026-10-13, so the choice can be
+    #   COSTED rather than argued. Changing it here changes nothing else; the
+    #   default IS the ruled value and this is a no-op at the defaults.
+    #
+    #   WHAT IT CONTROLS, computed 2026-10-13 -- and the shipped model is NOT
+    #   insensitive to it, which an earlier note in HANDOVER entry 46 got
+    #   wrong. The offset is the curve's ASYMPTOTE, so it bites where the
+    #   exponential has decayed, i.e. in the obese. Spread from Pelosi's
+    #   0.4600 to Damia's 0.9163, as anaesthetised FRC:
+    #
+    #                              SHIPPED   DE-COUPLED
+    #       Toner lean BMI 22.9       1.2 %      24.0 %
+    #       Berthoud lean BMI 23      1.4 %      24.9 %
+    #       Heard obese BMI 34.7     22.1 %      51.3 %
+    #       Berthoud obese BMI 49    45.4 %      80.2 %
+    #
+    #   Shipped, it is divided out EXACTLY at BMI 22 by the ratio form and
+    #   increasingly NOT above it. "Nearly divided out" is true of the lean
+    #   end only. Cost it with variant_cost.py pel_c046 / pel_c092.
+    #
+    #   RULED 2026-10-15 BY A. HEARD: THE OFFSET IS PELOSI'S OWN 0.4600 L.
+    #   The 2026-09-26 average of Pelosi and Damia is RETIRED. What changed is
+    #   that the averaging ruling rested on there being no way to choose
+    #   between two primary sources, and there now is one -- from two papers
+    #   that were already read and that never entered the offset choice:
+    #
+    #     Valenza 2007  BMI 42  helium  460 (100) mL   0.46: +2.12 SD
+    #                                                  mean: +4.41, Damia: +6.69
+    #     Reinius 2009  BMI 45  CT      697 (157) mL   0.46: -0.50 SD
+    #                                                  mean: +0.96, Damia: +2.41
+    #
+    #   They disagree with each other by 237 mL at similar BMI and STILL rank
+    #   the three candidates identically, which is what makes the ranking
+    #   robust rather than a coin toss between two noisy points.
+    #
+    #   AND THE METHOD ARGUMENT AGREES. Helium dilution sees only gas that
+    #   COMMUNICATES with the airway; CT sees all of it, trapped included. So
+    #   in an obese anaesthetised lung CT should read HIGHER than helium.
+    #   Damia is helium, and his 930 and 1090 mL at BMI 48.4 and 53.2 sit
+    #   ABOVE Reinius's CT 697 mL at BMI 45 -- a heavier lung, measured by the
+    #   method that sees less gas, reading larger. Damia moves the wrong way
+    #   on BMI and on method both.
+    #
+    #   THE HONEST CAVEAT, RECORDED WITH THE RULING: adopting 0.4600 also
+    #   takes the benchmark suite from 45/2 to 46/1, putting Heard control in
+    #   band. That coincidence is why this was NOT adopted when the benchmark
+    #   table first showed it (2026-10-13) and was held until an argument
+    #   independent of the suite existed. The argument above is that argument.
+    #   AND VALENZA STILL SITS 2.12 SD ABOVE EVEN THIS OFFSET, which argues
+    #   the curve is too high EVERYWHERE rather than that Damia alone was.
+    #   That reading is unresolved and this ruling does not close it.
+    #
+    #   model.js carries the same curve inline and was changed in the same
+    #   commit. Regenerate the evidence with frc_level_numbers.py section 8.
+    pelosi_offset_l = 0.4600
+
+    # The existing height term evaluated at Pelosi's cohort height of 1.64 m,
+    # so frc_anaes_absolute can divide it out. Not a new parameter.
+    _PELOSI_HF = (2.34 * 1.64 - 1.09) / (2.34 * 1.75 - 1.09)
+
+    @classmethod
+    def _pelosi_frc(cls, bmi):
         """Anaesthetised supine FRC shape, from TWO measurements averaged.
 
         Pelosi 1998:  FRC = 11.97 exp(-0.096 BMI) + 0.46 L, r 0.86, n = 24
@@ -1590,7 +1973,7 @@ class Patient:
 
         Regenerate the derivation with handover_numbers.py.
         """
-        return 11.97 * np.exp(-0.096 * bmi) + 0.6882
+        return 11.97 * np.exp(-0.096 * bmi) + cls.pelosi_offset_l
 
     def k_rv_bmi_eff(self):
         """How fast residual volume falls with BMI, and WHOSE measurement.
@@ -1658,6 +2041,14 @@ class Patient:
         cap = awake - min(self.frc_drop, 0.25 * awake)
         if self.frc_legacy_exp:
             return max(self.rv_eff(), cap)
+        if self.frc_anaes_absolute:
+            # The level is the measured curve's own, not awake minus a drop.
+            # `cap` is retained as the physical upper bound: see the switch's
+            # block comment above for why a bound is not a level.
+            lev = (self._pelosi_frc(self.bmi()) * 1000.0
+                   * self.height_factor() / self._PELOSI_HF
+                   * self.tilt_factor())
+            return min(cap, lev)
         base = self.frc_ref * self.height_factor() * self.tilt_factor()
         at22 = base - min(self.frc_drop, 0.25 * base)
         pel = at22 * self._pelosi_frc(self.bmi()) / self._pelosi_frc(22.0)
@@ -1953,7 +2344,23 @@ class Patient:
         """
         x = self.closure_x(self.frc_anaes())
         s = self.shunt_anat + (1.0 - self.shunt_anat) * x / (x + self.shunt_cc_k)
-        return float(min(s, self.shunt_ceiling))
+        # shunt_ceiling guards the CLOSURE route only; pathological shunt is
+        # added after it and is not bound by it. See the parameter block.
+        f = min(min(s, self.shunt_ceiling) + self.shunt_extra, 0.95)
+        if self.aa_extra_kpa <= 0.0:
+            return float(f)
+        # The A-a dial, solved. Cached because this is called every timestep
+        # and the inversion bisects; the key is every input the answer uses,
+        # so a mutated Patient re-solves rather than returning a stale number.
+        key = (f, self.aa_extra_kpa, self.hb, self.vo2_anaes(), self.co_anaes())
+        hit = getattr(self, '_aa_cache', None)
+        if hit is not None and hit[0] == key:
+            return hit[1]
+        g0 = aa_gradient_mmhg(self, f)
+        tot = shunt_for_aa_gradient(self, g0 + self.aa_extra_kpa * KPA_MMHG)
+        out = float(min(max(tot, f), 0.95))
+        object.__setattr__(self, '_aa_cache', (key, out))
+        return out
 
     def unwashed_fraction(self):
         """Perfusion share whose airway was shut throughout preoxygenation.
@@ -2004,6 +2411,56 @@ class AirwayEpoch:
 
 
 # ---------------------------------------------------------------------------
+# mmHg per kPa. Here rather than imported so this file stays standalone.
+KPA_MMHG = 7.50062
+
+# REFERENCE ALVEOLAR PO2 for the A-a dial, mmHg. The same 570 that
+# plateau_sao2() has always defaulted to: roughly a preoxygenated lung at the
+# start of apnoea. The A-a gradient a user dials is true AT THIS CONDITION and
+# nowhere else in the run, which is a property of the quantity, not a defect.
+AA_REF_PAO2 = 570.0
+
+
+def aa_gradient_mmhg(pt: Patient, shunt, pao2_alv=AA_REF_PAO2, co=None):
+    """Alveolar-to-arterial oxygen difference, mmHg, for a given shunt.
+
+    The forward direction of plateau_sao2(): mix end-capillary blood with
+    mixed-venous in the proportion the shunt sets, read the arterial oxygen
+    CONTENT, then come back through the dissociation curve to a tension. The
+    gradient is what is left over. Nothing here is fitted -- it is the shunt
+    equation and Hufner's constant.
+    """
+    cc_o2 = bg.HUFNER * pt.hb + bg.O2_SOL * pao2_alv
+    d_av = pt.vo2_anaes() / (10.0 * (co if co is not None else pt.co_anaes()))
+    f = float(np.clip(shunt, 0.0, 0.95))
+    ca_o2 = cc_o2 - (f / (1.0 - f)) * d_av
+    pa_o2 = bg.po2_from_o2_content(max(ca_o2, 1e-6), pt.hb)
+    return float(pao2_alv - pa_o2)
+
+
+def shunt_for_aa_gradient(pt: Patient, aa_mmhg, pao2_alv=AA_REF_PAO2, co=None):
+    """The shunt that produces a given A-a gradient. Inverts the above.
+
+    Solved, not iterated: from the target tension comes a target content, and
+    the shunt equation rearranges to f = r/(1+r) with r the content deficit in
+    units of the arteriovenous difference. The only numerical step is the
+    dissociation curve itself.
+
+    THIS IS WHY A SLIDER CAN BE LABELLED IN A-a GRADIENT HONESTLY. The user
+    names a gradient, the model works out what shunt that implies, and from
+    then on the gradient is free to move as the alveolar oxygen falls -- which
+    is what a real lung does and what a stored gradient could never do.
+    """
+    cc_o2 = bg.HUFNER * pt.hb + bg.O2_SOL * pao2_alv
+    d_av = pt.vo2_anaes() / (10.0 * (co if co is not None else pt.co_anaes()))
+    pa_target = max(1.0, pao2_alv - float(aa_mmhg))
+    ca_target = bg.o2_content(pa_target, pt.hb)
+    r = (cc_o2 - ca_target) / max(d_av, 1e-9)
+    if r <= 0.0:
+        return 0.0
+    return float(np.clip(r / (1.0 + r), 0.0, 0.95))
+
+
 def plateau_sao2(pt: Patient, shunt, pao2_alv=570.0, co=None):
     """
     Steady-state arterial saturation during MAINTAINED apnoeic oxygenation.
@@ -2260,6 +2717,10 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
         # be one commit. See HANDOVER entry 43.
         tau_c_c = 60.0 * fr_c[:, 0] + 900.0 * (1.0 - fr_c[:, 0])
         gain = np.maximum(exposed - coll_c, 0.0) * (dt / tau_c_c)
+        # Recruitment is OFF -- recruit_frac is 0.0, so this term is always
+        # zero and a collapsed unit stays collapsed. See the parameter for the
+        # ruling and the three sources. Kept as an expression rather than
+        # deleted so that the limb is here to re-enable if IPPV is modelled.
         loss = (np.minimum(exposed - coll_c, 0.0) * (dt / pt.tau_recruit)
                 * pt.recruit_frac)
         coll_c = np.clip(coll_c + gain + loss, 0.0, 1.0)
@@ -2520,6 +2981,11 @@ def simulate(pt: Patient, timeline, dt=0.1, feo2_start=0.87, paco2_start=40.0,
 
         tis_o2 += ((co * (art_o2[-1] - tis_o2) * 10.0 - vo2)
                    / (pt.v_tis_o2 * 10.0)) * dt_min
+        if pt.tis_o2_floor:
+            # EXPERIMENTAL, default off -- see tis_o2_floor's note. Without
+            # this the compartment goes negative below about SpO2 38.7% and
+            # supplies oxygen that was never in it.
+            tis_o2 = max(0.0, tis_o2)
         flux_slow = pt.k_co2_slow * (tis_co2 - slow_co2) * 10.0
         tis_co2 += ((co * (art_co2[-1] - tis_co2) * 10.0 + vco2_metab
                      - flux_slow) / (pt.v_tis_co2_fast * 10.0)) * dt_min
